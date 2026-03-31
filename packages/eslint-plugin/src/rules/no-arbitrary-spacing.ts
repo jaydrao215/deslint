@@ -1,6 +1,7 @@
 import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { extractClassesFromString, parseClass, isValidV4Class } from '../utils/class-extractor.js';
 import { toPx, findNearestSpacing } from '../utils/spacing-map.js';
+import { createClassVisitor } from '../utils/class-visitor.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -13,9 +14,6 @@ export type Options = [
 ];
 
 export type MessageIds = 'arbitrarySpacing' | 'suggestScale';
-
-/** Class wrapper functions that contain Tailwind classes */
-const CLASS_WRAPPERS = new Set(['cn', 'clsx', 'cva', 'cx', 'twMerge', 'classNames', 'classnames']);
 
 /**
  * Regex for arbitrary spacing values in Tailwind classes.
@@ -118,62 +116,6 @@ export default createRule<Options, MessageIds>({
       }
     }
 
-    return {
-      JSXAttribute(node) {
-        try {
-          const name = node.name.type === 'JSXIdentifier' ? node.name.name : null;
-          if (name !== 'className' && name !== 'class') return;
-
-          if (node.value?.type === 'Literal' && typeof node.value.value === 'string') {
-            checkClassString(node.value.value, node.value);
-          }
-
-          if (node.value?.type === 'JSXExpressionContainer') {
-            const expr = node.value.expression;
-
-            if (expr.type === 'Literal' && typeof expr.value === 'string') {
-              checkClassString(expr.value, expr);
-            }
-
-            if (expr.type === 'TemplateLiteral') {
-              for (const quasi of expr.quasis) {
-                if (quasi.value.raw) {
-                  checkClassString(quasi.value.raw, quasi);
-                }
-              }
-            }
-
-            if (
-              expr.type === 'CallExpression' &&
-              expr.callee.type === 'Identifier' &&
-              CLASS_WRAPPERS.has(expr.callee.name)
-            ) {
-              for (const arg of expr.arguments) {
-                if (arg.type === 'Literal' && typeof arg.value === 'string') {
-                  checkClassString(arg.value, arg);
-                }
-                if (arg.type === 'TemplateLiteral') {
-                  for (const quasi of arg.quasis) {
-                    if (quasi.value.raw) {
-                      checkClassString(quasi.value.raw, quasi);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } catch {
-          return;
-        }
-      },
-
-      'VAttribute[key.name="class"]'(node: any) {
-        try {
-          if (node.value?.value && typeof node.value.value === 'string') {
-            checkClassString(node.value.value, node.value);
-          }
-        } catch { return; }
-      },
-    };
+    return createClassVisitor(checkClassString);
   },
 });

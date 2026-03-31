@@ -1,6 +1,7 @@
 import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { ARBITRARY_PATTERNS, extractClassesFromString, parseClass, isValidV4Class } from '../utils/class-extractor.js';
 import { findNearestColor, findNearestColorByRgb, parseRgbString, parseHslString } from '../utils/color-map.js';
+import { createClassVisitor } from '../utils/class-visitor.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -14,9 +15,6 @@ export type Options = [
 ];
 
 export type MessageIds = 'arbitraryColor' | 'suggestToken';
-
-/** Class wrapper functions that contain Tailwind classes */
-const CLASS_WRAPPERS = new Set(['cn', 'clsx', 'cva', 'cx', 'twMerge', 'classNames', 'classnames']);
 
 /** Regex for arbitrary rgb/rgba/hsl/hsla color values */
 const RGB_PATTERN = /^(bg|text|border|ring|outline|shadow|accent|fill|stroke|decoration|caret|divide|placeholder)-\[(rgba?\([^)]+\))\]/;
@@ -176,69 +174,6 @@ export default createRule<Options, MessageIds>({
       }
     }
 
-    return {
-      // ─── React / Preact / Solid: className="..." or class="..." ───
-      JSXAttribute(node) {
-        try {
-          const name = node.name.type === 'JSXIdentifier' ? node.name.name : null;
-          if (name !== 'className' && name !== 'class') return;
-
-          // Static: className="bg-[#FF0000] p-4"
-          if (node.value?.type === 'Literal' && typeof node.value.value === 'string') {
-            checkClassString(node.value.value, node.value);
-          }
-
-          // Expression: className={...}
-          if (node.value?.type === 'JSXExpressionContainer') {
-            const expr = node.value.expression;
-
-            // className={"bg-[#FF0000]"}
-            if (expr.type === 'Literal' && typeof expr.value === 'string') {
-              checkClassString(expr.value, expr);
-            }
-
-            // className={`bg-[#FF0000] ${var}`}
-            if (expr.type === 'TemplateLiteral') {
-              for (const quasi of expr.quasis) {
-                if (quasi.value.raw) {
-                  checkClassString(quasi.value.raw, quasi);
-                }
-              }
-            }
-
-            // className={cn("bg-[#FF0000]", "p-4")}
-            if (
-              expr.type === 'CallExpression' &&
-              expr.callee.type === 'Identifier' &&
-              CLASS_WRAPPERS.has(expr.callee.name)
-            ) {
-              for (const arg of expr.arguments) {
-                if (arg.type === 'Literal' && typeof arg.value === 'string') {
-                  checkClassString(arg.value, arg);
-                }
-                if (arg.type === 'TemplateLiteral') {
-                  for (const quasi of arg.quasis) {
-                    if (quasi.value.raw) {
-                      checkClassString(quasi.value.raw, quasi);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } catch {
-          return;
-        }
-      },
-
-      // ─── Vue / Svelte / Angular / HTML: class="..." ───
-      'VAttribute[key.name="class"]'(node: any) {
-        try {
-          if (node.value?.value && typeof node.value.value === 'string') {
-            checkClassString(node.value.value, node.value);
-          }
-        } catch { return; }
-      },
-    };
+    return createClassVisitor(checkClassString);
   },
 });

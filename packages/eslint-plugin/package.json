@@ -24,7 +24,13 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "eslint": ">=10.0.0"
+    "eslint": ">=10.0.0",
+    "@angular-eslint/template-parser": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@angular-eslint/template-parser": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@typescript-eslint/utils": "^8.0.0"
