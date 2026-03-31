@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.turbo/
+*.tsbuildinfo
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# pnpm
+pnpm-debug.log*
+
+# Coverage
+coverage/

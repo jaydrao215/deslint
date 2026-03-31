@@ -4,6 +4,12 @@
 Vizlint is a design quality gate for AI-generated frontend code. ESLint plugin + CLI + MCP server.
 TypeScript monorepo via Turborepo + pnpm workspaces.
 
+## Sprint plan documents (READ THESE FIRST)
+- docs/vizlint-sprint-plan.docx — Full 16-sprint plan with user stories
+- docs/sprint-plan-v1.1-changes.md 
+- docs/vizlint-sprint-plan-v1.1-update.md — Three-mode model, fixers, Angular
+- docs/vizlint-sprint-plan-v1.2-update.md — User control model, no-AI architecture
+
 ## Architecture Rules
 - **ESLint v10+ flat config ONLY.** No legacy .eslintrc support anywhere.
 - **Node.js ≥20.19.0** minimum.
@@ -11,6 +17,10 @@ TypeScript monorepo via Turborepo + pnpm workspaces.
 - **Every rule wrapped in try/catch.** An unhandled exception crashes linting for the entire file. Never let that happen.
 - **Tailwind v3 AND v4 support.** Use the class mapping in `utils/class-extractor.ts`. Never assume v3-only class names.
 - **Framework-agnostic.** Rules must work with React JSX, Vue SFC, Svelte, Angular templates, and plain HTML.
+- No AI/LLM API calls. Pure deterministic static analysis.
+- Every rule: try/catch wrapped, fixable: 'code', Tailwind v3+v4 support
+- Framework agnostic: React, Vue, Svelte, Angular, HTML
+- Zero code leaves the user's machine (local-first)
 
 ## Code Style
 - TypeScript strict mode everywhere.

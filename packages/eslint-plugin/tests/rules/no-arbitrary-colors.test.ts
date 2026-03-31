@@ -39,7 +39,16 @@ ruleTester.run('no-arbitrary-colors', rule, {
     },
     {
       code: '<div className="text-[#333]" />',
-      errors: [{ messageId: 'arbitraryColor' }],
+      output: '<div className="text-slate-800" />',
+      errors: [{
+        messageId: 'arbitraryColor',
+        suggestions: [
+          {
+            messageId: 'suggestToken',
+            output: '<div className="text-slate-800" />',
+          },
+        ],
+      }],
     },
     {
       code: '<div className="border-[#abc123]" />',
@@ -48,15 +57,21 @@ ruleTester.run('no-arbitrary-colors', rule, {
     // Exact match should suggest correct token
     {
       code: '<div className="bg-[#3b82f6]" />',
-      errors: [
-        {
-          messageId: 'arbitraryColor',
-          data: {
-            className: 'bg-[#3b82f6]',
-            suggestion: expect.stringContaining('bg-blue-500'),
-          },
+      output: '<div className="bg-blue-500" />',
+      errors: [{
+        messageId: 'arbitraryColor',
+        data: {
+          className: 'bg-[#3b82f6]',
+          suggestion: ' Suggested: `bg-blue-500`',
         },
-      ],
+        suggestions: [
+          {
+            messageId: 'suggestToken',
+            data: { replacement: 'bg-blue-500' },
+            output: '<div className="bg-blue-500" />',
+          },
+        ],
+      }],
     },
     // Multiple arbitrary colors in one className
     {

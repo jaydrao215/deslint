@@ -28,7 +28,7 @@ export const TAILWIND_V3_TO_V4_MAP: Record<string, string> = {
 export const VALID_V4_CLASSES = new Set(Object.values(TAILWIND_V3_TO_V4_MAP));
 
 /** Class wrapper function names that contain Tailwind classes */
-const CLASS_WRAPPER_FUNCTIONS = new Set(['cn', 'clsx', 'cva', 'cx', 'twMerge', 'classNames', 'classnames']);
+export const CLASS_WRAPPER_FUNCTIONS = new Set(['cn', 'clsx', 'cva', 'cx', 'twMerge', 'classNames', 'classnames']);
 
 /**
  * Regex patterns for detecting arbitrary values in Tailwind classes
@@ -60,8 +60,8 @@ export interface ExtractedClass {
   variants: string[];
 }
 
-const RESPONSIVE_PREFIXES = new Set(['sm', 'md', 'lg', 'xl', '2xl']);
-const STATE_PREFIXES = new Set(['hover', 'focus', 'active', 'disabled', 'visited', 'first', 'last', 'odd', 'even', 'group-hover', 'focus-within', 'focus-visible']);
+export const RESPONSIVE_PREFIXES = new Set(['sm', 'md', 'lg', 'xl', '2xl']);
+export const STATE_PREFIXES = new Set(['hover', 'focus', 'active', 'disabled', 'visited', 'first', 'last', 'odd', 'even', 'group-hover', 'focus-within', 'focus-visible']);
 
 /**
  * Parse a single class string into its variants and base class.
