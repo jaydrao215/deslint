@@ -1,0 +1,9 @@
+@theme {
+  --color-brand: #1E3A5F;
+  --color-brand-light: #2E5A8F;
+  --color-accent: #27AE60;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --spacing-18: 4.5rem;
+  --radius-4xl: 2rem;
+}
