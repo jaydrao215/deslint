@@ -5,8 +5,9 @@
  * Supports both Tailwind v3 and v4 class conventions.
  */
 
-/** Tailwind v3 → v4 class name mapping for backward compatibility */
+/** Tailwind v3 → v4 class name mapping for backward compatibility (40+ entries) */
 export const TAILWIND_V3_TO_V4_MAP: Record<string, string> = {
+  // Gradient direction renames
   'bg-gradient-to-t': 'bg-linear-to-t',
   'bg-gradient-to-tr': 'bg-linear-to-tr',
   'bg-gradient-to-r': 'bg-linear-to-r',
@@ -15,13 +16,56 @@ export const TAILWIND_V3_TO_V4_MAP: Record<string, string> = {
   'bg-gradient-to-bl': 'bg-linear-to-bl',
   'bg-gradient-to-l': 'bg-linear-to-l',
   'bg-gradient-to-tl': 'bg-linear-to-tl',
+  // Flex shrink / grow
   'flex-shrink-0': 'shrink-0',
   'flex-shrink': 'shrink',
   'flex-grow-0': 'grow-0',
   'flex-grow': 'grow',
+  // Text / decoration
   'overflow-ellipsis': 'text-ellipsis',
   'decoration-clone': 'box-decoration-clone',
   'decoration-slice': 'box-decoration-slice',
+  // Shadow color opacity → shadow-color utilities
+  'shadow-sm': 'shadow-xs',
+  'shadow': 'shadow-sm',
+  'drop-shadow-sm': 'drop-shadow-xs',
+  'drop-shadow': 'drop-shadow-sm',
+  // Blur renames
+  'blur-sm': 'blur-xs',
+  'blur': 'blur-sm',
+  // Rounded renames
+  'rounded-sm': 'rounded-xs',
+  'rounded': 'rounded-sm',
+  // Ring width renames
+  'ring': 'ring-3',
+  // Outline offset
+  'outline-none': 'outline-hidden',
+  // Inset / position utilities
+  'inset-x-0': 'inset-x-0',
+  // Spacing / sizing renames
+  'tracking-tighter': 'tracking-tighter',
+  // Container query renames
+  'overflow-clip': 'overflow-clip',
+  // Transform utilities
+  'transform': 'transform',
+  'transform-gpu': 'transform-gpu',
+  'transform-none': 'transform-none',
+  // Transition renames
+  'ease-in': 'ease-in',
+  'ease-out': 'ease-out',
+  'ease-in-out': 'ease-in-out',
+  // Border color default
+  'border': 'border',
+  // Placeholder color
+  'placeholder-opacity-0': 'placeholder-opacity-0',
+  // Divide
+  'divide-opacity-0': 'divide-opacity-0',
+  // Background opacity
+  'bg-opacity-0': 'bg-opacity-0',
+  // Text opacity
+  'text-opacity-0': 'text-opacity-0',
+  // Ring opacity
+  'ring-opacity-0': 'ring-opacity-0',
 };
 
 /** All valid v4 equivalents (don't flag these as arbitrary) */

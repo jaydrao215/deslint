@@ -1,6 +1,6 @@
 import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { ARBITRARY_PATTERNS, extractClassesFromString, parseClass, isValidV4Class } from '../utils/class-extractor.js';
-import { findNearestColor } from '../utils/color-map.js';
+import { findNearestColor, findNearestColorByRgb, parseRgbString, parseHslString } from '../utils/color-map.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -17,6 +17,10 @@ export type MessageIds = 'arbitraryColor' | 'suggestToken';
 
 /** Class wrapper functions that contain Tailwind classes */
 const CLASS_WRAPPERS = new Set(['cn', 'clsx', 'cva', 'cx', 'twMerge', 'classNames', 'classnames']);
+
+/** Regex for arbitrary rgb/rgba/hsl/hsla color values */
+const RGB_PATTERN = /^(bg|text|border|ring|outline|shadow|accent|fill|stroke|decoration|caret|divide|placeholder)-\[(rgba?\([^)]+\))\]/;
+const HSL_PATTERN = /^(bg|text|border|ring|outline|shadow|accent|fill|stroke|decoration|caret|divide|placeholder)-\[(hsla?\([^)]+\))\]/;
 
 export default createRule<Options, MessageIds>({
   name: 'no-arbitrary-colors',
@@ -61,8 +65,7 @@ export default createRule<Options, MessageIds>({
     /**
      * Find best replacement — custom tokens first, then Tailwind defaults.
      */
-    function findReplacement(hexValue: string, utilityPrefix: string): string | null {
-      // Custom tokens: exact match takes priority
+    function findHexReplacement(hexValue: string, utilityPrefix: string): string | null {
       for (const [name, value] of Object.entries(customTokens)) {
         if (value.toLowerCase() === hexValue.toLowerCase()) {
           return `${utilityPrefix}-${name}`;
@@ -71,9 +74,44 @@ export default createRule<Options, MessageIds>({
       return findNearestColor(hexValue, `${utilityPrefix}-[${hexValue}]`);
     }
 
+    function findRgbReplacement(rgb: [number, number, number], utilityPrefix: string): string | null {
+      return findNearestColorByRgb(rgb, `${utilityPrefix}-[rgb]`);
+    }
+
+    function reportViolation(
+      node: TSESTree.Node,
+      cls: string,
+      fullReplacement: string | null,
+    ) {
+      const suggestion = fullReplacement ? ` Suggested: \`${fullReplacement}\`` : '';
+
+      context.report({
+        node,
+        messageId: 'arbitraryColor',
+        data: { className: cls, suggestion },
+        ...(fullReplacement
+          ? {
+              fix(fixer) {
+                const src = context.sourceCode.getText(node);
+                return fixer.replaceText(node, src.replace(cls, fullReplacement));
+              },
+              suggest: [
+                {
+                  messageId: 'suggestToken',
+                  data: { replacement: fullReplacement },
+                  fix(fixer) {
+                    const src = context.sourceCode.getText(node);
+                    return fixer.replaceText(node, src.replace(cls, fullReplacement));
+                  },
+                },
+              ],
+            }
+          : {}),
+      });
+    }
+
     /**
      * Check a className string for arbitrary color violations.
-     * Reports with auto-fix when replacement is available.
      */
     function checkClassString(value: string, node: TSESTree.Node) {
       try {
@@ -83,50 +121,54 @@ export default createRule<Options, MessageIds>({
           if (isValidV4Class(cls)) continue;
 
           const { baseClass, variants } = parseClass(cls);
-          const match = baseClass.match(ARBITRARY_PATTERNS.color);
-          if (!match) continue;
 
-          const hexMatch = baseClass.match(/#([0-9a-fA-F]{3,8})/);
-          if (!hexMatch) continue;
+          // ── Hex colors: bg-[#FF0000] ──
+          const hexMatch = baseClass.match(ARBITRARY_PATTERNS.color);
+          if (hexMatch) {
+            const rawHex = baseClass.match(/#([0-9a-fA-F]{3,8})/);
+            if (rawHex) {
+              const hexValue = `#${rawHex[1]}`.toLowerCase();
+              if (allowlist.has(hexValue)) continue;
 
-          const hexValue = `#${hexMatch[1]}`.toLowerCase();
-          if (allowlist.has(hexValue)) continue;
+              const prefixMatch = baseClass.match(/^([\w-]+?)-\[/);
+              if (!prefixMatch) continue;
 
-          const prefixMatch = baseClass.match(/^([\w-]+?)-\[/);
-          if (!prefixMatch) continue;
+              const replacement = findHexReplacement(hexValue, prefixMatch[1]);
+              const fullReplacement = replacement
+                ? [...variants, replacement].join(':')
+                : null;
+              reportViolation(node, cls, fullReplacement);
+              continue;
+            }
+          }
 
-          const replacement = findReplacement(hexValue, prefixMatch[1]);
-          const fullReplacement = replacement
-            ? [...variants, replacement].join(':')
-            : null;
+          // ── RGB/RGBA colors: bg-[rgb(255,0,0)] ──
+          const rgbMatch = baseClass.match(RGB_PATTERN);
+          if (rgbMatch) {
+            const rgb = parseRgbString(rgbMatch[2]);
+            if (rgb) {
+              const replacement = findRgbReplacement(rgb, rgbMatch[1]);
+              const fullReplacement = replacement
+                ? [...variants, replacement].join(':')
+                : null;
+              reportViolation(node, cls, fullReplacement);
+              continue;
+            }
+          }
 
-          const suggestion = fullReplacement ? ` Suggested: \`${fullReplacement}\`` : '';
-
-          context.report({
-            node,
-            messageId: 'arbitraryColor',
-            data: { className: cls, suggestion },
-
-            // Auto-fix: replace arbitrary class with design token
-            ...(fullReplacement
-              ? {
-                  fix(fixer) {
-                    const src = context.sourceCode.getText(node);
-                    return fixer.replaceText(node, src.replace(cls, fullReplacement));
-                  },
-                  suggest: [
-                    {
-                      messageId: 'suggestToken',
-                      data: { replacement: fullReplacement },
-                      fix(fixer) {
-                        const src = context.sourceCode.getText(node);
-                        return fixer.replaceText(node, src.replace(cls, fullReplacement));
-                      },
-                    },
-                  ],
-                }
-              : {}),
-          });
+          // ── HSL/HSLA colors: bg-[hsl(0,100%,50%)] ──
+          const hslMatch = baseClass.match(HSL_PATTERN);
+          if (hslMatch) {
+            const rgb = parseHslString(hslMatch[2]);
+            if (rgb) {
+              const replacement = findRgbReplacement(rgb, hslMatch[1]);
+              const fullReplacement = replacement
+                ? [...variants, replacement].join(':')
+                : null;
+              reportViolation(node, cls, fullReplacement);
+              continue;
+            }
+          }
         }
       } catch {
         // Production safety: never crash linting for the entire file
@@ -174,7 +216,6 @@ export default createRule<Options, MessageIds>({
                 if (arg.type === 'Literal' && typeof arg.value === 'string') {
                   checkClassString(arg.value, arg);
                 }
-                // cn(`bg-[#FF0000]`, other)
                 if (arg.type === 'TemplateLiteral') {
                   for (const quasi of arg.quasis) {
                     if (quasi.value.raw) {
@@ -191,9 +232,6 @@ export default createRule<Options, MessageIds>({
       },
 
       // ─── Vue / Svelte / Angular / HTML: class="..." ───
-      // vue-eslint-parser exposes VAttribute, svelte-eslint-parser SvelteAttribute,
-      // angular-eslint TextAttribute — all match this generic selector.
-      // Falls back to standard HTML attribute via @html-eslint/parser.
       'VAttribute[key.name="class"]'(node: any) {
         try {
           if (node.value?.value && typeof node.value.value === 'string') {
