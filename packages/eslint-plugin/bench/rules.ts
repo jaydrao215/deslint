@@ -10,13 +10,14 @@ import plugin from '../src/index.js';
 const SAMPLE_CODE = `
 const App = () => (
   <div className="bg-[#FF0000] p-[13px] text-white">
-    <h1 className="text-[#333] m-[7px]">Title</h1>
+    <h1 className="text-[#333] m-[7px] text-[18px] font-[700]">Title</h1>
     <p className={cn("bg-[#3b82f6]", "p-4 m-2")}>Content</p>
-    <div className="sm:bg-[#00FF00] md:p-[16px] border-blue-500" />
-    <span className="gap-[20px] w-[200px] h-[48px]" />
+    <div className="sm:bg-[#00FF00] md:p-[16px] border-blue-500 leading-[24px]" />
+    <span className="gap-[20px] w-[200px] h-[48px] tracking-[0.05em]" />
+    <section className="w-[1200px] bg-white p-8" />
     <div className="bg-red-500 p-4 m-2 text-white rounded-lg" />
     <div className="flex items-center justify-between gap-4" />
-    <div className="grid grid-cols-3 gap-6 p-8" />
+    <div className="grid grid-cols-3 gap-6 p-8 text-sm font-bold" />
   </div>
 );
 export default App;
@@ -32,6 +33,8 @@ async function bench() {
       rules: {
         'vizlint/no-arbitrary-colors': 'error',
         'vizlint/no-arbitrary-spacing': 'error',
+        'vizlint/no-arbitrary-typography': 'error',
+        'vizlint/responsive-required': 'error',
       },
       languageOptions: {
         parserOptions: { ecmaFeatures: { jsx: true } },
