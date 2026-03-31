@@ -1,4 +1,5 @@
 import noArbitraryColors from './rules/no-arbitrary-colors.js';
+import noArbitrarySpacing from './rules/no-arbitrary-spacing.js';
 
 const plugin = {
   meta: {
@@ -7,10 +8,10 @@ const plugin = {
   },
   rules: {
     'no-arbitrary-colors': noArbitraryColors,
-    // Sprint 2: 'no-arbitrary-spacing'
-    // Sprint 2: 'typography-scale'
+    'no-arbitrary-spacing': noArbitrarySpacing,
+    // Sprint 3: 'typography-scale'
     // Sprint 3: 'responsive-required'
-    // Sprint 3: 'consistent-component-spacing'
+    // Sprint 4: 'consistent-component-spacing'
   },
   configs: {} as Record<string, any>,
 };
@@ -20,8 +21,7 @@ plugin.configs.recommended = {
   plugins: { vizlint: plugin },
   rules: {
     'vizlint/no-arbitrary-colors': 'warn',
-    // Added as rules ship:
-    // 'vizlint/no-arbitrary-spacing': 'warn',
+    'vizlint/no-arbitrary-spacing': 'warn',
     // 'vizlint/typography-scale': 'warn',
     // 'vizlint/responsive-required': 'warn',
     // 'vizlint/consistent-component-spacing': 'warn',
@@ -32,6 +32,7 @@ plugin.configs.strict = {
   plugins: { vizlint: plugin },
   rules: {
     'vizlint/no-arbitrary-colors': 'error',
+    'vizlint/no-arbitrary-spacing': 'error',
   },
 };
 

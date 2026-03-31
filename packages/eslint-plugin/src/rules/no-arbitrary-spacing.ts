@@ -1,0 +1,179 @@
+import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
+import { extractClassesFromString, parseClass, isValidV4Class } from '../utils/class-extractor.js';
+import { toPx, findNearestSpacing } from '../utils/spacing-map.js';
+
+const createRule = ESLintUtils.RuleCreator(
+  (name) => `https://vizlint.dev/docs/rules/${name}`
+);
+
+export type Options = [
+  {
+    allowlist?: string[];
+  },
+];
+
+export type MessageIds = 'arbitrarySpacing' | 'suggestScale';
+
+/** Class wrapper functions that contain Tailwind classes */
+const CLASS_WRAPPERS = new Set(['cn', 'clsx', 'cva', 'cx', 'twMerge', 'classNames', 'classnames']);
+
+/**
+ * Regex for arbitrary spacing values in Tailwind classes.
+ * Matches: p-[13px], mx-[1.5rem], gap-[20px], w-[200px], h-[50vh], etc.
+ * Captures: (1) full prefix with direction, (2) value including unit
+ */
+const SPACING_PATTERN = /^(p|px|py|pt|pr|pb|pl|pe|ps|m|mx|my|mt|mr|mb|ml|me|ms|gap|gap-x|gap-y|space-x|space-y|inset|inset-x|inset-y|top|right|bottom|left|w|h|min-w|min-h|max-w|max-h|size)-\[(\d+(?:\.\d+)?(?:px|rem|em))\]$/;
+
+export default createRule<Options, MessageIds>({
+  name: 'no-arbitrary-spacing',
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Disallow arbitrary spacing values in Tailwind classes. Use the spacing scale instead.',
+    },
+    fixable: 'code',
+    hasSuggestions: true,
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          allowlist: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Arbitrary spacing values to allow (e.g., ["p-[18px]"])',
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+    messages: {
+      arbitrarySpacing:
+        'Arbitrary spacing `{{className}}` detected. Use the spacing scale instead.{{suggestion}}',
+      suggestScale: 'Replace with `{{replacement}}`',
+    },
+  },
+  defaultOptions: [{ allowlist: [] }],
+  create(context, [options]) {
+    const allowlist = new Set(options.allowlist ?? []);
+
+    function reportViolation(
+      node: TSESTree.Node,
+      cls: string,
+      fullReplacement: string | null,
+    ) {
+      const suggestion = fullReplacement ? ` Suggested: \`${fullReplacement}\`` : '';
+
+      context.report({
+        node,
+        messageId: 'arbitrarySpacing',
+        data: { className: cls, suggestion },
+        ...(fullReplacement
+          ? {
+              fix(fixer) {
+                const src = context.sourceCode.getText(node);
+                return fixer.replaceText(node, src.replace(cls, fullReplacement));
+              },
+              suggest: [
+                {
+                  messageId: 'suggestScale',
+                  data: { replacement: fullReplacement },
+                  fix(fixer) {
+                    const src = context.sourceCode.getText(node);
+                    return fixer.replaceText(node, src.replace(cls, fullReplacement));
+                  },
+                },
+              ],
+            }
+          : {}),
+      });
+    }
+
+    function checkClassString(value: string, node: TSESTree.Node) {
+      try {
+        const classes = extractClassesFromString(value);
+
+        for (const cls of classes) {
+          if (isValidV4Class(cls)) continue;
+          if (allowlist.has(cls)) continue;
+
+          const { baseClass, variants } = parseClass(cls);
+          const match = baseClass.match(SPACING_PATTERN);
+          if (!match) continue;
+
+          const prefix = match[1];
+          const rawValue = match[2];
+          const px = toPx(rawValue);
+          if (px === null) continue;
+
+          const nearest = findNearestSpacing(px);
+          const replacement = nearest !== null ? `${prefix}-${nearest}` : null;
+          const fullReplacement = replacement
+            ? [...variants, replacement].join(':')
+            : null;
+
+          reportViolation(node, cls, fullReplacement);
+        }
+      } catch {
+        return;
+      }
+    }
+
+    return {
+      JSXAttribute(node) {
+        try {
+          const name = node.name.type === 'JSXIdentifier' ? node.name.name : null;
+          if (name !== 'className' && name !== 'class') return;
+
+          if (node.value?.type === 'Literal' && typeof node.value.value === 'string') {
+            checkClassString(node.value.value, node.value);
+          }
+
+          if (node.value?.type === 'JSXExpressionContainer') {
+            const expr = node.value.expression;
+
+            if (expr.type === 'Literal' && typeof expr.value === 'string') {
+              checkClassString(expr.value, expr);
+            }
+
+            if (expr.type === 'TemplateLiteral') {
+              for (const quasi of expr.quasis) {
+                if (quasi.value.raw) {
+                  checkClassString(quasi.value.raw, quasi);
+                }
+              }
+            }
+
+            if (
+              expr.type === 'CallExpression' &&
+              expr.callee.type === 'Identifier' &&
+              CLASS_WRAPPERS.has(expr.callee.name)
+            ) {
+              for (const arg of expr.arguments) {
+                if (arg.type === 'Literal' && typeof arg.value === 'string') {
+                  checkClassString(arg.value, arg);
+                }
+                if (arg.type === 'TemplateLiteral') {
+                  for (const quasi of arg.quasis) {
+                    if (quasi.value.raw) {
+                      checkClassString(quasi.value.raw, quasi);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch {
+          return;
+        }
+      },
+
+      'VAttribute[key.name="class"]'(node: any) {
+        try {
+          if (node.value?.value && typeof node.value.value === 'string') {
+            checkClassString(node.value.value, node.value);
+          }
+        } catch { return; }
+      },
+    };
+  },
+});
