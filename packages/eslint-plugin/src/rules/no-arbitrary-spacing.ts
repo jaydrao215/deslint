@@ -1,6 +1,6 @@
 import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { extractClassesFromString, parseClass, isValidV4Class } from '../utils/class-extractor.js';
-import { toPx, findNearestSpacing } from '../utils/spacing-map.js';
+import { toPx, findNearestSpacing, findNearestInCustomScale } from '../utils/spacing-map.js';
 import { createClassVisitor } from '../utils/class-visitor.js';
 
 const createRule = ESLintUtils.RuleCreator(
@@ -10,6 +10,7 @@ const createRule = ESLintUtils.RuleCreator(
 export type Options = [
   {
     allowlist?: string[];
+    customScale?: Record<string, number>;
   },
 ];
 
@@ -40,6 +41,11 @@ export default createRule<Options, MessageIds>({
             items: { type: 'string' },
             description: 'Arbitrary spacing values to allow (e.g., ["p-[18px]"])',
           },
+          customScale: {
+            type: 'object',
+            additionalProperties: { type: 'number' },
+            description: 'Custom spacing scale overriding Tailwind defaults: { "18": 72 }',
+          },
         },
         additionalProperties: false,
       },
@@ -50,9 +56,10 @@ export default createRule<Options, MessageIds>({
       suggestScale: 'Replace with `{{replacement}}`',
     },
   },
-  defaultOptions: [{ allowlist: [] }],
+  defaultOptions: [{ allowlist: [], customScale: undefined }],
   create(context, [options]) {
     const allowlist = new Set(options.allowlist ?? []);
+    const customScale = options.customScale ?? null;
 
     function reportViolation(
       node: TSESTree.Node,
@@ -103,7 +110,9 @@ export default createRule<Options, MessageIds>({
           const px = toPx(rawValue);
           if (px === null) continue;
 
-          const nearest = findNearestSpacing(px);
+          const nearest = customScale
+            ? findNearestInCustomScale(px, customScale)
+            : findNearestSpacing(px);
           const replacement = nearest !== null ? `${prefix}-${nearest}` : null;
           const fullReplacement = replacement
             ? [...variants, replacement].join(':')

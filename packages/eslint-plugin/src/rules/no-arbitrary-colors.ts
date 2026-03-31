@@ -14,11 +14,14 @@ export type Options = [
   },
 ];
 
-export type MessageIds = 'arbitraryColor' | 'suggestToken';
+export type MessageIds = 'arbitraryColor' | 'suggestToken' | 'hardcodedCssVar';
 
 /** Regex for arbitrary rgb/rgba/hsl/hsla color values */
 const RGB_PATTERN = /^(bg|text|border|ring|outline|shadow|accent|fill|stroke|decoration|caret|divide|placeholder)-\[(rgba?\([^)]+\))\]/;
 const HSL_PATTERN = /^(bg|text|border|ring|outline|shadow|accent|fill|stroke|decoration|caret|divide|placeholder)-\[(hsla?\([^)]+\))\]/;
+
+/** Regex for hardcoded CSS custom property color values — Buoy competitive parity */
+const CSS_VAR_PATTERN = /^(bg|text|border|ring|outline|shadow|accent|fill|stroke|decoration|caret|divide|placeholder)-\[(var\(--[^)]+\))\]/;
 
 export default createRule<Options, MessageIds>({
   name: 'no-arbitrary-colors',
@@ -51,6 +54,8 @@ export default createRule<Options, MessageIds>({
       arbitraryColor:
         'Arbitrary color `{{className}}` detected. Use a design token instead.{{suggestion}}',
       suggestToken: 'Replace with `{{replacement}}`',
+      hardcodedCssVar:
+        'Hardcoded CSS variable `{{className}}` detected. Use a design token from your design system instead.',
     },
   },
   defaultOptions: [{ allowlist: [], customTokens: {} }],
@@ -166,6 +171,18 @@ export default createRule<Options, MessageIds>({
               reportViolation(node, cls, fullReplacement);
               continue;
             }
+          }
+
+          // ── CSS custom properties: bg-[var(--some-color)] ──
+          // Buoy competitive parity: flag hardcoded CSS vars that should use design tokens
+          const cssVarMatch = baseClass.match(CSS_VAR_PATTERN);
+          if (cssVarMatch) {
+            context.report({
+              node,
+              messageId: 'hardcodedCssVar',
+              data: { className: cls },
+            });
+            continue;
           }
         }
       } catch {

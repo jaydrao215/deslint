@@ -2,7 +2,18 @@
   "name": "eslint-plugin-vizlint",
   "version": "0.1.0",
   "description": "The design quality gate for AI-generated frontend code",
-  "keywords": ["eslint", "eslintplugin", "eslint-plugin", "design", "tailwind", "ui", "quality", "lint", "design-system", "ai"],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "design",
+    "tailwind",
+    "ui",
+    "quality",
+    "lint",
+    "design-system",
+    "ai"
+  ],
   "license": "MIT",
   "author": "Vizlint",
   "type": "module",
@@ -14,18 +25,23 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src/",
+    "bench": "node --import tsx bench/rules.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "eslint": ">=10.0.0",
-    "@angular-eslint/template-parser": ">=18.0.0"
+    "@angular-eslint/template-parser": ">=18.0.0",
+    "eslint": ">=10.0.0"
   },
   "peerDependenciesMeta": {
     "@angular-eslint/template-parser": {
@@ -36,9 +52,11 @@
     "@typescript-eslint/utils": "^8.0.0"
   },
   "devDependencies": {
-    "@typescript-eslint/rule-tester": "^8.0.0",
+    "@eslint/js": "^10.0.1",
     "@typescript-eslint/parser": "^8.0.0",
+    "@typescript-eslint/rule-tester": "^8.0.0",
     "eslint": "^10.0.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   }

@@ -1,0 +1,966 @@
+VIZLINT
+The Design Quality Gate for AI-Generated Code
+────────────────────────────────────────
+Sprint Execution Plan
+16 Sprints  ·  4 Phases  ·  16 Weeks
+Version 1.0  |  March 2026
+Confidential — Internal Use Only
+
+Table of Contents
+1. Product Overview & Vision
+2. Team Roles & Ceremonies
+3. Definition of Done
+4. Phase 1: Foundation & Service Launch (Sprints 1–4)
+5. Phase 2: Core ESLint Plugin (Sprints 5–8)
+6. Phase 3: MCP Server & CI/CD Integration (Sprints 9–12)
+7. Phase 4: Dashboard, Teams & Scale (Sprints 13–16)
+8. Release Milestones & Revenue Targets
+
+1. Product Overview & Vision
+Vizlint is the first quality gate built for how code looks, not just how it runs. It validates design quality — spacing consistency, typography hierarchy, color token adherence, responsive coverage, and accessibility — in AI-generated frontend code across any framework.
+Product Pillars
+1. Local-First: Zero code leaves the developer's machine. ESLint runs locally. MCP server uses stdio. No cloud dependency.
+2. Framework-Agnostic: Works with React, Vue, Svelte, Angular, plain HTML — any Tailwind or CSS-based output.
+3. AI-Tool Agnostic: Validates output from Claude Code, Cursor, v0, Bolt, Lovable, Copilot — any AI coding tool.
+4. Open Core: Free OSS ESLint plugin for adoption. Paid CLI, MCP server, and dashboard for revenue.
+Tech Stack
+Language: TypeScript (everything)
+ESLint Plugin: @vizlint/eslint-plugin — AST-based rules via @typescript-eslint/utils
+CLI: @vizlint/cli — Commander.js, Chalk, project-wide analysis + Design Health Score
+MCP Server: @vizlint/mcp — @modelcontextprotocol/sdk, stdio transport, local execution
+Dashboard: Next.js 15 + Tailwind + shadcn/ui (Framer for marketing site)
+API: Next.js API routes + Drizzle ORM + PostgreSQL (Supabase)
+Monorepo: Turborepo with packages/ structure
+CI/CD: GitHub Actions
+Hosting: Vercel (dashboard) + npm (packages)
+
+2. Team Roles & Ceremonies
+Solo founder wearing all hats. Each sprint simulates a full team review cycle:
+CEO Hat: Sprint planning, prioritization, business acceptance of deliverables
+CTO Hat: Architecture decisions, tech debt management, security review
+Solution Architect Hat: System design, integration patterns, scalability review
+UX Designer Hat: Landing page, dashboard UI, developer experience
+Full-Stack Developer Hat: Implementation, code reviews (self-review via PR)
+QA Hat: Test writing, manual testing, edge case validation
+McKinsey Consultant Hat: End-of-sprint business review — does this sprint move revenue needle?
+Sprint Ceremonies (1-Week Sprints)
+Monday AM: Sprint Planning (1hr) — select stories, define tasks, commit velocity
+Daily: 15min standup journal — what did I do, what will I do, blockers
+Friday PM: Sprint Review (1hr) — demo deliverables, business acceptance
+Friday PM: Retro (30min) — what worked, what didn't, one improvement for next sprint
+3. Definition of Done
+Every user story must meet ALL criteria before marking complete:
+	•	Code written in TypeScript with strict mode enabled
+	•	Unit tests written and passing (minimum 80% coverage for new code)
+	•	Integration tests passing for cross-module functionality
+	•	No TypeScript errors (tsc --noEmit passes)
+	•	ESLint passes on own codebase (dogfooding)
+	•	PR created with description, linked to user story ID
+	•	Self-review completed (CTO hat review checklist)
+	•	Security review for any external input handling
+	•	Documentation updated (README, JSDoc, CHANGELOG)
+	•	Business acceptance: CEO hat confirms story delivers stated value
+	•	McKinsey check: Does this move the product toward revenue?
+
+  PHASE 1: FOUNDATION & SERVICE LAUNCH
+  Sprints 1–4 (Weeks 1–4)  |  Monorepo scaffold, first 5 ESLint rules, productized service live, landing page shipped
+
+Sprint 1: Project Bootstrap & Rule #1
+Sprint Goal: Monorepo scaffolded, CI green, first ESLint rule (no-arbitrary-colors) shipping, domain purchased
+Velocity Target: 13 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-001: Monorepo & CI/CD Setup
+As a developer, I want a properly structured TypeScript monorepo with CI, so that I can develop across packages with confidence
+Story Points: 5
+Acceptance Criteria:
+	•	Turborepo monorepo with packages: eslint-plugin, cli, mcp, shared
+	•	TypeScript strict mode across all packages with shared tsconfig.base.json
+	•	ESLint + Prettier configured for the monorepo itself (dogfooding from day 1)
+	•	GitHub Actions CI: lint, typecheck, test on every push/PR
+	•	Vitest configured in each package with minimum test scaffolding
+	•	pnpm workspaces configured with cross-package references working
+Tasks:
+	•	Initialize Turborepo with pnpm workspaces
+	•	Create package.json for each package with correct cross-references
+	•	Configure shared tsconfig.base.json with strict: true
+	•	Set up Vitest with shared config
+	•	Create GitHub Actions workflow: lint → typecheck → test → build
+	•	Add .nvmrc (Node 20 LTS), .gitignore, LICENSE (MIT for OSS packages)
+	•	Create CONTRIBUTING.md with development setup instructions
+Test Cases:
+	•	TEST: pnpm install succeeds from clean clone
+	•	TEST: pnpm build compiles all packages without errors
+	•	TEST: pnpm test runs across all packages (placeholder tests pass)
+	•	TEST: GitHub Actions CI completes green on main branch
+	•	TEST: Cross-package imports resolve correctly (shared → eslint-plugin)
+VIZ-002: First Rule: no-arbitrary-colors
+As a developer using AI coding tools, I want Vizlint to flag hardcoded color values in my Tailwind classes, so that I maintain consistent brand colors instead of AI-generated arbitrary hex values
+Story Points: 8
+Acceptance Criteria:
+	•	Rule detects bg-[#hex], text-[#hex], border-[#hex], ring-[#hex] patterns in className attributes
+	•	Rule handles static strings, template literals, cn(), clsx(), cva() wrappers
+	•	Rule provides auto-fix suggestion mapping to nearest Tailwind color (e.g., bg-[#3B82F6] → bg-blue-500)
+	•	Rule is configurable: allowlist specific hex values, define custom color tokens
+	•	Rule reports with clear message: 'Arbitrary color bg-[#FF0000] detected. Use design token: bg-red-500'
+	•	Rule severity configurable: error | warn | off
+Tasks:
+	•	Create ESLint rule skeleton using @typescript-eslint/utils RuleCreator
+	•	Implement JSXAttribute visitor for className parsing
+	•	Build Tailwind class extractor handling: static strings, template literals, cn()/clsx()/cva()
+	•	Implement arbitrary color regex: /^(bg|text|border|ring|outline|shadow|accent|fill|stroke)-\[#[0-9a-fA-F]{3,8}\]/
+	•	Build color distance calculator (CIELAB Delta-E) for nearest-token suggestions
+	•	Create rule configuration schema with Zod validation
+	•	Write unit tests for all class extraction patterns
+	•	Write unit tests for color detection and suggestion accuracy
+	•	Add rule to plugin index.ts with recommended config
+Test Cases:
+	•	TEST: Detects bg-[#FF0000] in static className string
+	•	TEST: Detects text-[#333] inside cn('text-[#333]', 'p-4')
+	•	TEST: Detects border-[#abc123] inside template literal className={`border-[#abc123]`}
+	•	TEST: Does NOT flag bg-red-500 (standard Tailwind class)
+	•	TEST: Does NOT flag bg-[rgb(255,0,0)] (non-hex arbitrary — separate rule)
+	•	TEST: Suggests bg-blue-500 for bg-[#3B82F6] (exact match)
+	•	TEST: Suggests bg-blue-600 for bg-[#2563EB] (nearest match)
+	•	TEST: Allowlisted hex values are not flagged
+	•	TEST: Rule respects severity configuration
+	•	TEST: Auto-fix correctly replaces arbitrary color with suggested token
+Sprint 2: Rules #2–3 & Landing Page
+Sprint Goal: no-arbitrary-spacing and typography-scale rules shipping, Framer landing page live at vizlint.dev
+Velocity Target: 13 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-003: Rule: no-arbitrary-spacing
+As a developer, I want Vizlint to flag hardcoded spacing values like p-[13px] or m-[7px], so that my UI maintains consistent spacing rhythm from the Tailwind scale
+Story Points: 5
+Acceptance Criteria:
+	•	Rule detects p-[Npx], m-[Npx], gap-[Npx], space-x-[Npx], space-y-[Npx] and all directional variants
+	•	Rule suggests nearest Tailwind spacing scale value (e.g., p-[13px] → p-3 (12px) or p-3.5 (14px))
+	•	Rule handles rem, em, px units
+	•	Rule configurable: custom spacing scale, tolerance threshold for suggestions
+Tasks:
+	•	Implement spacing regex patterns for all Tailwind spacing utilities
+	•	Build spacing scale lookup table (default Tailwind 0–96 scale)
+	•	Implement nearest-value calculator with configurable tolerance
+	•	Add directional variant handling (pt, pb, pl, pr, px, py, mt, mb, etc.)
+	•	Write comprehensive unit tests
+Test Cases:
+	•	TEST: Detects p-[13px] and suggests p-3 or p-3.5
+	•	TEST: Detects gap-[7px] and suggests gap-1.5 or gap-2
+	•	TEST: Detects m-[2.5rem] and handles rem conversion
+	•	TEST: Does NOT flag p-4 or m-auto or gap-x-2
+	•	TEST: Custom spacing scale overrides work correctly
+VIZ-004: Rule: typography-scale
+As a developer, I want Vizlint to enforce consistent typography sizing, so that my UI uses a coherent type scale instead of random font sizes
+Story Points: 5
+Acceptance Criteria:
+	•	Rule detects text-[Npx], font-[N], leading-[Npx], tracking-[Nem] arbitrary values
+	•	Rule suggests nearest Tailwind typography class
+	•	Rule detects inconsistent heading hierarchy (h2 larger than h1 in same file)
+	•	Rule configurable: custom type scale definition
+Tasks:
+	•	Implement typography utility regex patterns
+	•	Build type scale lookup (xs through 9xl)
+	•	Implement font-weight arbitrary detection
+	•	Add cross-component heading hierarchy check
+	•	Write unit tests for all patterns
+Test Cases:
+	•	TEST: Detects text-[17px] and suggests text-base (16px) or text-lg (18px)
+	•	TEST: Detects font-[450] and suggests font-normal (400) or font-medium (500)
+	•	TEST: Detects leading-[22px] and suggests leading-normal or leading-relaxed
+	•	TEST: Does NOT flag text-sm, font-bold, leading-tight
+VIZ-005: Landing Page v1
+As a potential user, I want to understand what Vizlint does in 10 seconds on the landing page, so that I decide to try the tool immediately
+Story Points: 3
+Acceptance Criteria:
+	•	Page loads at vizlint.dev with < 2s LCP
+	•	Hero section: clear headline, 1-line description, install command (npx vizlint)
+	•	Before/after code comparison showing a real detection
+	•	3 feature blocks: Spacing · Typography · Colors
+	•	CTA: npm install link + GitHub star button
+	•	Footer: GitHub, Twitter/X, MIT License badge
+	•	Mobile responsive
+Tasks:
+	•	Purchase vizlint.dev domain
+	•	Set up Framer project with custom domain
+	•	Design hero section with install command snippet
+	•	Create before/after code comparison visual
+	•	Build feature blocks with icons
+	•	Add analytics (Plausible — GDPR compliant, no cookies)
+	•	Test on mobile devices
+Test Cases:
+	•	TEST: Page loads under 2 seconds (Lighthouse performance > 90)
+	•	TEST: All links functional (GitHub, npm)
+	•	TEST: Mobile layout renders correctly (320px–768px)
+	•	TEST: Copy-paste of install command works
+Sprint 3: Rules #4–5 & npm Publish
+Sprint Goal: responsive-required and consistent-component-spacing rules, first npm publish of @vizlint/eslint-plugin
+Velocity Target: 13 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-006: Rule: responsive-required
+As a developer, I want Vizlint to flag layout components with fixed widths that lack responsive breakpoints, so that my AI-generated layouts don't break on mobile
+Story Points: 5
+Acceptance Criteria:
+	•	Rule detects w-[Npx] without sm:/md:/lg: responsive variants in same component
+	•	Rule detects fixed-width containers (w-[800px], w-[1200px]) without max-w-* or responsive alternatives
+	•	Rule configurable: minimum breakpoints required (default: sm + md)
+	•	Rule ignores icon/avatar sizing (< 64px) by default
+Tasks:
+	•	Implement fixed-width detection for layout containers
+	•	Build responsive variant scanner across className attributes in same component
+	•	Add configurable breakpoint requirements
+	•	Add size threshold for ignoring small fixed elements
+	•	Write unit tests
+Test Cases:
+	•	TEST: Flags w-[800px] div without responsive variants
+	•	TEST: Does NOT flag w-[800px] if sm:w-full or md:w-1/2 present
+	•	TEST: Does NOT flag w-8 (32px) for icon containers
+	•	TEST: Configurable breakpoint requirements work
+VIZ-007: Rule: consistent-component-spacing
+As a developer, I want Vizlint to detect when similar components use different spacing patterns, so that cards, buttons, and inputs have consistent internal spacing across my project
+Story Points: 5
+Acceptance Criteria:
+	•	Rule analyzes components with similar structure (e.g., all Card-like components) for spacing divergence
+	•	Rule flags when padding/margin patterns differ by > configurable threshold across same-type components
+	•	Rule provides suggestion showing the most common pattern as the 'standard'
+Tasks:
+	•	Build component similarity classifier based on JSX structure
+	•	Implement spacing pattern extractor per component
+	•	Build divergence calculator across component groups
+	•	Add threshold configuration
+	•	Write cross-file analysis tests
+Test Cases:
+	•	TEST: Detects Card A using p-4 and Card B using p-6 in same project
+	•	TEST: Does NOT flag intentional size variants (CardSm vs CardLg)
+	•	TEST: Reports the dominant pattern as suggested standard
+VIZ-008: npm Publish Pipeline
+As a developer, I want to install @vizlint/eslint-plugin from npm, so that I can add Vizlint to any project in seconds
+Story Points: 3
+Acceptance Criteria:
+	•	Package published as @vizlint/eslint-plugin on npm
+	•	Semantic versioning (0.1.0 initial release)
+	•	README with installation instructions, rule documentation, configuration examples
+	•	Flat config (eslint.config.js) and legacy (.eslintrc) support
+	•	GitHub Release created with changelog
+Tasks:
+	•	Set up npm organization @vizlint
+	•	Configure package.json for npm publish (files, main, types, exports)
+	•	Write comprehensive README with each rule documented
+	•	Create recommended and strict presets
+	•	Set up GitHub Actions release workflow (tag → build → publish → GitHub Release)
+	•	Test installation in a fresh Next.js + Tailwind project
+Test Cases:
+	•	TEST: npm install @vizlint/eslint-plugin installs successfully
+	•	TEST: Recommended preset enables all 5 rules at 'warn' level
+	•	TEST: Strict preset enables all 5 rules at 'error' level
+	•	TEST: Works with ESLint flat config
+	•	TEST: Works with legacy .eslintrc config
+	•	TEST: VS Code ESLint extension shows Vizlint warnings inline
+Sprint 4: Service Launch & .cursorrules
+Sprint Goal: Productized service live, .cursorrules and CLAUDE.md templates published, first outreach
+Velocity Target: 10 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-009: Productized Service Page
+As a potential client (vibe coder / founder), I want to understand and purchase the Vizlint design review service, so that I get my AI-generated UI professionally reviewed
+Story Points: 5
+Acceptance Criteria:
+	•	Service page at vizlint.dev/service with clear pricing
+	•	Tier 1: One-off audit (€997) — single project review, Loom + written report
+	•	Tier 2: Monthly subscription (€1,497/mo) — 1 active review, 48hr turnaround
+	•	Stripe Checkout integration for payment
+	•	Intake form: GitHub/ZIP link, brief context, deadline preference
+	•	Confirmation email with onboarding instructions
+Tasks:
+	•	Design service page in Framer
+	•	Set up Stripe account with product/price IDs
+	•	Create Stripe Checkout session for each tier
+	•	Build intake form (Tally.so or Typeform — no custom form needed)
+	•	Set up confirmation email (Resend or Loops)
+	•	Create delivery template (Loom recording structure + written report format)
+Test Cases:
+	•	TEST: Stripe Checkout completes successfully (test mode)
+	•	TEST: Intake form submits and notification received
+	•	TEST: Confirmation email delivered within 60 seconds
+	•	TEST: Service page mobile responsive
+VIZ-010: Cursor Rules & CLAUDE.md Templates
+As a developer using Cursor or Claude Code, I want pre-built design quality rules for my AI coding environment, so that AI generates better UI from the start and I discover Vizlint
+Story Points: 3
+Acceptance Criteria:
+	•	.cursor/rules/vizlint-design-quality.mdc published to awesome-cursorrules repo (PR submitted)
+	•	CLAUDE.md template with design quality enforcement instructions published to GitHub
+	•	AGENTS.md template for cross-tool compatibility
+	•	Each template references @vizlint/eslint-plugin for automated validation
+	•	Templates cover: spacing, typography, colors, responsive, component structure
+Tasks:
+	•	Write .cursorrules file based on personal Vintor design enforcement experience
+	•	Write CLAUDE.md with checkpoint-gated design quality workflow
+	•	Write AGENTS.md for cross-tool compatibility
+	•	Submit PR to PatrickJS/awesome-cursorrules
+	•	Create standalone GitHub repo: vizlint/design-rules
+	•	Write announcement tweet thread with before/after examples
+Test Cases:
+	•	TEST: .cursorrules loads correctly in Cursor IDE
+	•	TEST: CLAUDE.md loads at Claude Code session start
+	•	TEST: Rules produce measurably better UI output in A/B test (manual)
+VIZ-011: Launch Outreach Sprint
+As a CEO, I want to announce Vizlint to the vibe coding community, so that we get first GitHub stars, npm installs, and service leads
+Story Points: 2
+Acceptance Criteria:
+	•	Twitter/X announcement thread posted (5-7 tweets with code screenshots)
+	•	Reddit posts on r/ClaudeAI, r/cursor_ai, r/webdev, r/reactjs (separate posts, not spam)
+	•	IndieHackers post with build story
+	•	dev.to article: 'I built a design linter because AI-generated UI drove me crazy'
+	•	Target: 100 GitHub stars, 50 npm installs, 2 service inquiries in first week
+Tasks:
+	•	Write Twitter thread with before/after screenshots
+	•	Write Reddit posts tailored to each subreddit's rules and audience
+	•	Write IndieHackers build story
+	•	Write dev.to technical article with real code examples
+	•	Schedule posts across 3 days (don't blast everything at once)
+Test Cases:
+	•	TEST: All posts live and links functional
+	•	TEST: GitHub repo accessible and README renders correctly
+	•	TEST: npm install command works from all linked posts
+
+  PHASE 2: CORE CLI & DESIGN HEALTH SCORE
+  Sprints 5–8 (Weeks 5–8)  |  CLI with project-wide analysis, Design Health Score, 10+ rules, service revenue growing
+
+Sprint 5: CLI Foundation & Score Engine
+Sprint Goal: vizlint CLI runs, scans project, outputs Design Health Score 0–100
+Velocity Target: 13 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-012: CLI: Project Scanner
+As a developer, I want to run `npx vizlint scan` and get a project-wide design quality report, so that I know the overall design health of my codebase
+Story Points: 8
+Acceptance Criteria:
+	•	CLI accepts project directory path (defaults to cwd)
+	•	Discovers all .tsx, .jsx, .vue, .svelte, .html files
+	•	Runs all Vizlint ESLint rules across discovered files
+	•	Outputs summary: total files, total violations, violations by rule, violations by severity
+	•	Supports --format json | text | sarif output
+	•	Exits with code 1 if any 'error' severity violations found (CI-friendly)
+	•	Respects .vizlintrc.json configuration file
+Tasks:
+	•	Initialize @vizlint/cli package with Commander.js
+	•	Build file discovery with glob patterns and .vizlintignore support
+	•	Integrate ESLint programmatic API (ESLint class with Vizlint plugin)
+	•	Build report aggregator across all files
+	•	Implement output formatters: text (chalk-colored), JSON, SARIF
+	•	Add exit code logic based on severity thresholds
+	•	Create .vizlintrc.json schema with Zod validation
+Test Cases:
+	•	TEST: CLI scans a sample Next.js project and finds known violations
+	•	TEST: JSON output is valid JSON matching defined schema
+	•	TEST: SARIF output validates against SARIF 2.1.0 schema
+	•	TEST: Exit code 1 when errors present, 0 when only warnings
+	•	TEST: .vizlintignore excludes specified patterns
+	•	TEST: --format flag correctly switches output format
+VIZ-013: Design Health Score Algorithm
+As a developer, I want a single 0–100 Design Health Score for my project, so that I can quickly assess and track design quality over time
+Story Points: 5
+Acceptance Criteria:
+	•	Score computed from weighted sub-scores: Spacing (20%), Typography (20%), Colors (20%), Responsive (20%), Consistency (20%)
+	•	Each sub-score: 100 - (violations / total_opportunities × 100), clamped to 0–100
+	•	Overall score: weighted average of sub-scores
+	•	Color-coded output: 80–100 Green, 60–79 Yellow, 0–59 Red
+	•	Score saved to .vizlint/history.json for trend tracking
+	•	Pass/fail gate configurable: --min-score 75 exits with code 1 if below
+Tasks:
+	•	Define scoring formula with sub-score calculations
+	•	Implement opportunity counting per rule category
+	•	Build weighted average calculator
+	•	Create color-coded terminal output with chalk
+	•	Implement history file with JSON append
+	•	Add --min-score CLI flag
+Test Cases:
+	•	TEST: Score is 100 for project with zero violations
+	•	TEST: Score decreases proportionally with violations
+	•	TEST: Weights are configurable in .vizlintrc.json
+	•	TEST: --min-score 75 fails project scoring 70
+	•	TEST: History file appends new entry without overwriting
+	•	TEST: Color output matches threshold ranges
+Sprint 6: Rules #6–8 & Framework Agnostic
+Sprint Goal: A11y contrast, Vue/Svelte support, rule count reaches 8
+Velocity Target: 13 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-014: Rule: a11y-color-contrast
+As a developer, I want Vizlint to flag text/background color combinations with insufficient contrast, so that my AI-generated UI meets WCAG AA accessibility standards
+Story Points: 5
+Acceptance Criteria:
+	•	Rule detects text-{color} + bg-{color} combinations on same element or parent
+	•	Rule calculates WCAG 2.1 contrast ratio (minimum 4.5:1 for normal text, 3:1 for large text)
+	•	Rule maps Tailwind color classes to actual hex values for calculation
+	•	Rule reports contrast ratio and minimum required
+Tasks:
+	•	Build Tailwind color-to-hex mapping table (all default colors)
+	•	Implement WCAG contrast ratio calculator
+	•	Build parent-child color inheritance resolver
+	•	Implement large text detection (text-lg and above)
+	•	Write unit tests with known pass/fail color combinations
+Test Cases:
+	•	TEST: Flags text-gray-400 on bg-gray-300 (fails AA)
+	•	TEST: Passes text-gray-900 on bg-white (passes AA)
+	•	TEST: Large text threshold correctly applied (3:1 for text-xl+)
+	•	TEST: Custom color tokens resolve correctly
+VIZ-015: Framework Agnostic: Vue & Svelte Support
+As a Vue or Svelte developer, I want Vizlint to work with my framework, not just React, so that I get the same design quality validation regardless of framework
+Story Points: 5
+Acceptance Criteria:
+	•	Rules parse Vue SFC <template> blocks
+	•	Rules parse Svelte component class attributes
+	•	Rules handle :class bindings (Vue) and class: directives (Svelte)
+	•	All 8 rules work identically across React, Vue, and Svelte
+	•	Plain HTML class attributes also supported
+Tasks:
+	•	Add vue-eslint-parser integration for .vue files
+	•	Add svelte-eslint-parser integration for .svelte files
+	•	Create framework-agnostic class extractor abstraction layer
+	•	Port all rules to use abstraction layer instead of JSX-specific visitors
+	•	Write cross-framework test suite
+Test Cases:
+	•	TEST: All 8 rules detect violations in React .tsx files
+	•	TEST: All 8 rules detect violations in Vue .vue files
+	•	TEST: All 8 rules detect violations in Svelte .svelte files
+	•	TEST: All 8 rules detect violations in plain .html files
+	•	TEST: Vue :class dynamic bindings handled correctly
+VIZ-016: Rules #7–8: Component Complexity & Missing States
+As a developer, I want Vizlint to flag over-complex components and missing UI states, so that my components are maintainable and handle edge cases
+Story Points: 3
+Acceptance Criteria:
+	•	max-component-lines: Flag single-file components exceeding configurable LOC (default: 300)
+	•	missing-states: Detect form elements without error/disabled state handling (missing aria-invalid, disabled prop)
+Tasks:
+	•	Implement line count calculator per component
+	•	Build form element detector (input, select, textarea, button)
+	•	Implement state attribute checker
+	•	Write unit tests
+Test Cases:
+	•	TEST: Flags 400-line component (default threshold 300)
+	•	TEST: Does NOT flag 250-line component
+	•	TEST: Flags <input> without aria-invalid handling
+	•	TEST: Passes <input> with proper error state attributes
+Sprint 7: CLI Polish & npm v0.3.0
+Sprint Goal: Polished CLI output, init command, docs site, npm 0.3.0 with 10 rules
+Velocity Target: 13 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-017: CLI: Init Command & Config Wizard
+As a developer new to Vizlint, I want to run `npx vizlint init` and get set up in 30 seconds, so that onboarding is frictionless
+Story Points: 5
+Acceptance Criteria:
+	•	`npx vizlint init` creates .vizlintrc.json with interactive prompts
+	•	Prompts: framework (React/Vue/Svelte/Other), CSS approach (Tailwind/CSS Modules/Other), strictness (recommended/strict/custom)
+	•	Auto-detects framework from package.json if possible
+	•	Adds ESLint plugin to eslint.config.js or .eslintrc with correct config
+	•	Prints next-steps summary with first scan command
+Tasks:
+	•	Build interactive CLI wizard with inquirer or @clack/prompts
+	•	Implement framework auto-detection from package.json dependencies
+	•	Create config template generator
+	•	Add ESLint config injection (detect flat vs legacy)
+	•	Write integration test with mock project
+Test Cases:
+	•	TEST: Init wizard completes in < 30 seconds for a standard Next.js project
+	•	TEST: Auto-detects React from package.json
+	•	TEST: Generated .vizlintrc.json validates against schema
+	•	TEST: ESLint config correctly modified with Vizlint plugin
+VIZ-018: Rules #9–10 & v0.3.0 Release
+As a developer, I want two more rules covering dark mode and z-index management, so that common AI-generated anti-patterns are caught
+Story Points: 5
+Acceptance Criteria:
+	•	dark-mode-coverage: Flag components with bg-* classes that lack dark: variants
+	•	no-arbitrary-zindex: Flag z-[N] arbitrary z-index values, suggest scale (z-10/20/30/40/50)
+Tasks:
+	•	Implement dark mode variant scanner
+	•	Implement z-index arbitrary value detector
+	•	Update recommended and strict presets
+	•	Update documentation with all 10 rules
+	•	Publish @vizlint/eslint-plugin@0.3.0 and @vizlint/cli@0.1.0 to npm
+Test Cases:
+	•	TEST: Flags bg-blue-500 without dark:bg-blue-700 variant
+	•	TEST: Does NOT flag bg-blue-500 when dark:bg-blue-900 present
+	•	TEST: Flags z-[999] and suggests z-50
+	•	TEST: npm publish succeeds, install works in fresh project
+VIZ-019: Documentation Site
+As a developer evaluating Vizlint, I want comprehensive docs to understand every rule and configuration option, so that I trust the tool enough to install it
+Story Points: 3
+Acceptance Criteria:
+	•	Docs at vizlint.dev/docs (Framer subpath or separate Nextra/Fumadocs site)
+	•	Every rule documented: description, rationale, examples (good/bad), configuration
+	•	Getting started guide: install → init → scan → fix
+	•	Configuration reference: .vizlintrc.json full schema
+	•	CI/CD integration guide (GitHub Actions example)
+Tasks:
+	•	Set up docs framework (Fumadocs or Nextra)
+	•	Write rule documentation for all 10 rules with code examples
+	•	Write getting started guide
+	•	Write configuration reference
+	•	Deploy to vizlint.dev/docs
+Test Cases:
+	•	TEST: Every rule page renders correctly
+	•	TEST: Code examples syntax highlighted
+	•	TEST: Search works across docs
+	•	TEST: Mobile responsive
+Sprint 8: Phase 2 Wrap & Business Review
+Sprint Goal: Service revenue tracked, metrics baseline, product-market signal assessment
+Velocity Target: 8 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-020: Metrics Dashboard (Internal)
+As a CEO, I want to track npm downloads, GitHub stars, service revenue, and website traffic, so that I make data-driven decisions about what to build next
+Story Points: 3
+Acceptance Criteria:
+	•	Weekly metrics tracked: npm downloads, GitHub stars/forks, website visits, service revenue, inquiries
+	•	Simple Notion or Google Sheet dashboard (no over-engineering)
+	•	Week-over-week growth calculated
+	•	Phase 2 business review: Go/No-Go on Phase 3 investment
+Tasks:
+	•	Set up npm download tracking (npm-stat.com API)
+	•	Set up GitHub star tracking
+	•	Set up Plausible dashboard review
+	•	Create metrics spreadsheet with weekly entry template
+	•	Write Phase 2 business review document
+Test Cases:
+	•	TEST: All metrics sources accessible and reporting data
+	•	TEST: Business review document answers: Are we on track for revenue? Should we pivot?
+VIZ-021: Community Feedback Integration
+As a developer who filed a GitHub issue, I want my feedback to be acknowledged and addressed, so that I trust Vizlint as an actively maintained project
+Story Points: 5
+Acceptance Criteria:
+	•	All GitHub issues triaged within 48 hours
+	•	Top-requested rules identified for Phase 3
+	•	Bug fixes shipped in patch releases (0.3.x)
+	•	Discord or GitHub Discussions set up for community
+Tasks:
+	•	Triage all open GitHub issues
+	•	Categorize: bugs, feature requests, rule requests
+	•	Fix critical bugs, release 0.3.x patches
+	•	Set up GitHub Discussions with categories: Rules, Configuration, Show & Tell
+	•	Write 'What's Next' roadmap post
+Test Cases:
+	•	TEST: All issues have responses
+	•	TEST: Critical bugs fixed and released
+	•	TEST: Community channel accessible and monitored
+
+  PHASE 3: MCP SERVER & CI/CD INTEGRATION
+  Sprints 9–12 (Weeks 9–12)  |  Real-time design quality feedback in Cursor/Claude Code, GitHub PR integration, Design Health in CI pipelines
+
+Sprint 9: MCP Server Core
+Sprint Goal: MCP server runs locally, provides analyze_file and suggest_fixes tools to Claude Code and Cursor
+Velocity Target: 13 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-022: MCP Server: Core Architecture
+As a developer using Claude Code, I want real-time design quality feedback as I code, so that violations are caught at generation time, not review time
+Story Points: 8
+Acceptance Criteria:
+	•	MCP server exposes 3 tools: analyze_file, analyze_project, suggest_fixes
+	•	Server communicates via stdio (JSON-RPC 2.0) — zero network calls
+	•	analyze_file: accepts file path, returns violations + Design Health sub-score
+	•	suggest_fixes: accepts violation, returns specific code fix suggestion
+	•	Server starts in < 2 seconds
+	•	Only structured analysis results sent to LLM — never raw source code
+Tasks:
+	•	Initialize @vizlint/mcp package
+	•	Implement MCP server using @modelcontextprotocol/sdk StdioServerTransport
+	•	Create tool schemas for analyze_file, analyze_project, suggest_fixes
+	•	Integrate ESLint programmatic API for file analysis
+	•	Build fix suggestion generator from ESLint autofix data
+	•	Write integration tests with mock MCP client
+	•	Create installation instructions for claude_desktop_config.json and Cursor settings
+Test Cases:
+	•	TEST: MCP server starts and responds to initialize handshake
+	•	TEST: analyze_file returns correct violations for known-bad file
+	•	TEST: analyze_file returns clean result for known-good file
+	•	TEST: suggest_fixes returns actionable code suggestion
+	•	TEST: No file content appears in MCP responses (privacy check)
+	•	TEST: Server startup time < 2 seconds
+VIZ-023: MCP Server: Cursor & Claude Code Integration
+As a developer, I want to add Vizlint to my Cursor or Claude Code environment in one command, so that design quality feedback appears automatically during AI code generation
+Story Points: 5
+Acceptance Criteria:
+	•	npx @vizlint/mcp install auto-configures Cursor/Claude Code MCP settings
+	•	Works with both Cursor MCP and Claude Desktop config
+	•	Clear documentation with screenshots of setup process
+	•	Uninstall command to cleanly remove configuration
+Tasks:
+	•	Build install CLI that detects Cursor vs Claude Desktop config locations
+	•	Implement config injection (add server to mcp_servers list)
+	•	Build uninstall command
+	•	Write setup guide with screenshots
+	•	Test on macOS, Linux, and Windows paths
+Test Cases:
+	•	TEST: Install command correctly modifies Cursor config on macOS
+	•	TEST: Install command correctly modifies claude_desktop_config.json
+	•	TEST: Uninstall cleanly removes Vizlint from config
+	•	TEST: Server appears in Cursor/Claude Code MCP tool list after install
+Sprint 10: GitHub PR Integration
+Sprint Goal: Design Health comments appear on GitHub PRs via GitHub Action
+Velocity Target: 13 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-024: GitHub Action: PR Design Review
+As a team lead, I want automatic design quality reviews on every PR, so that design drift is caught before merge, not after deploy
+Story Points: 8
+Acceptance Criteria:
+	•	GitHub Action runs vizlint scan on changed files in PR
+	•	Posts PR comment with: Design Health Score delta, top violations, inline code suggestions
+	•	Comment updates on subsequent pushes (no duplicate comments)
+	•	Configurable: fail PR check if score drops below threshold
+	•	Action published to GitHub Marketplace
+Tasks:
+	•	Create GitHub Action (composite action with Node.js)
+	•	Build PR diff analyzer to identify changed frontend files
+	•	Implement GitHub API comment posting with markdown formatting
+	•	Add comment deduplication logic (find-and-update pattern)
+	•	Add check status reporting (pass/fail based on --min-score)
+	•	Create action.yml with documented inputs
+	•	Write setup guide for teams
+	•	Publish to GitHub Marketplace
+Test Cases:
+	•	TEST: Action runs on PR creation
+	•	TEST: Comment contains Design Health Score and violation summary
+	•	TEST: Subsequent pushes update existing comment
+	•	TEST: Check fails when score below configured threshold
+	•	TEST: Action handles projects with zero frontend files gracefully
+	•	TEST: Action completes within 60 seconds for a 100-file project
+VIZ-025: Rule Expansion: 12–15 Rules Total
+As a developer, I want Vizlint to catch more design anti-patterns, so that comprehensive design quality coverage
+Story Points: 5
+Acceptance Criteria:
+	•	no-inline-styles: Flag style={{}} attributes — suggest Tailwind classes
+	•	consistent-border-radius: Detect mixed rounded-* values across same-type components
+	•	image-alt-text: Flag <img> without alt attribute or with alt=''
+	•	no-magic-numbers-layout: Flag hardcoded numbers in grid/flex layout (cols-[N], basis-[Npx])
+	•	total rule count reaches 14–15
+Tasks:
+	•	Implement 4 new rules following established patterns
+	•	Add to recommended and strict presets
+	•	Write documentation for each rule
+	•	Update npm packages to 0.5.0
+Test Cases:
+	•	TEST: Each new rule detects violations and provides suggestions
+	•	TEST: Each new rule has 0 false positives on a clean project
+	•	TEST: Documentation renders correctly
+Sprint 11: Paid CLI Tier & Licensing
+Sprint Goal: Free vs Pro CLI differentiation, license key system, Stripe subscription
+Velocity Target: 13 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-026: Paid CLI: Pro Features & License Key
+As a developer wanting advanced features, I want to unlock Pro CLI features with a subscription, so that I get project-wide analysis, CI integration, and team configs
+Story Points: 8
+Acceptance Criteria:
+	•	Free CLI: scan single file, 5 core rules, text output only
+	•	Pro CLI (€19/mo): scan full project, all rules, JSON/SARIF output, Design Health Score, history tracking, --min-score gate
+	•	License key validation: offline-first (JWT with expiry), online check weekly
+	•	License key set via VIZLINT_LICENSE env var or vizlint auth command
+	•	Stripe subscription → license key delivery via email
+	•	14-day free trial (no credit card)
+Tasks:
+	•	Implement license key generation (JWT signed with RS256)
+	•	Build license validation middleware in CLI (check before Pro features)
+	•	Create Stripe subscription product with webhook for key delivery
+	•	Build vizlint auth login/logout commands
+	•	Implement trial logic (14 days from first use timestamp)
+	•	Create pricing page on vizlint.dev
+Test Cases:
+	•	TEST: Free tier limits enforced (single file, 5 rules)
+	•	TEST: Valid license key unlocks all features
+	•	TEST: Expired license key falls back to free tier with warning
+	•	TEST: Offline validation works with valid JWT for up to 30 days
+	•	TEST: Stripe webhook delivers license key via email
+	•	TEST: Trial expires after 14 days
+VIZ-027: Product Hunt Launch Preparation
+As a CEO, I want a polished Product Hunt launch that maximizes Day 1 traction, so that Vizlint reaches 1,000+ developers on launch day
+Story Points: 5
+Acceptance Criteria:
+	•	Product Hunt listing prepared: tagline, description, 5 screenshots, maker video (< 2 min)
+	•	Launch day plan: posting time, HN cross-post, Twitter thread, Reddit posts
+	•	Teaser campaign: 2 weeks of 'coming soon' posts showing design quality insights
+	•	Email list of early users/stars notified on launch day
+Tasks:
+	•	Record 2-minute demo video showing Vizlint in action
+	•	Take 5 high-quality screenshots (CLI output, VS Code integration, before/after)
+	•	Write Product Hunt listing copy
+	•	Prepare HN Show HN post
+	•	Schedule launch for Tuesday (highest PH traffic day)
+	•	Build simple email list capture on vizlint.dev
+Test Cases:
+	•	TEST: All launch assets reviewed and approved (CEO hat)
+	•	TEST: Demo video is compelling and under 2 minutes
+	•	TEST: All links in listing are functional
+Sprint 12: Launch Week & Phase 3 Review
+Sprint Goal: Product Hunt launch, HN post, metrics assessment, Phase 4 Go/No-Go
+Velocity Target: 8 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-028: Product Hunt & Hacker News Launch
+As a CEO, I want to execute a coordinated launch across Product Hunt, Hacker News, and social channels, so that Vizlint gets maximum exposure to the developer community
+Story Points: 3
+Acceptance Criteria:
+	•	Product Hunt submitted and ranked (target: Top 5 of the day)
+	•	Hacker News Show HN posted
+	•	Twitter thread live with 10+ retweets
+	•	Reddit posts on 3+ subreddits
+	•	Target: 500 npm installs, 300 GitHub stars, 5 Pro trial signups in launch week
+Tasks:
+	•	Execute launch day plan
+	•	Respond to every PH comment within 1 hour
+	•	Respond to HN comments
+	•	Monitor and engage Reddit posts
+	•	Track metrics hourly on launch day
+Test Cases:
+	•	TEST: All channels posted and links functional
+	•	TEST: Response time to comments < 1 hour
+	•	TEST: Metrics tracked and documented
+VIZ-029: Phase 3 Business Review
+As a McKinsey consultant, I want to evaluate Vizlint's traction and decide Phase 4 investment, so that we make a data-driven Go/No-Go decision
+Story Points: 5
+Acceptance Criteria:
+	•	Metrics reviewed: npm downloads, GitHub stars, Pro trials, service revenue, website traffic, CAC
+	•	Revenue assessment: current MRR vs projection
+	•	Product-market fit signals: retention, feature requests, organic mentions
+	•	Go/No-Go decision documented with rationale
+	•	Phase 4 scope adjusted based on learnings
+Tasks:
+	•	Compile all metrics into review document
+	•	Calculate unit economics: CAC, LTV estimate, payback period
+	•	Assess PMF signals: are users coming back? Are they telling others?
+	•	Write Go/No-Go recommendation with supporting data
+	•	Adjust Phase 4 backlog based on user feedback priorities
+Test Cases:
+	•	TEST: Review document answers all McKinsey questions with data
+	•	TEST: Decision is documented and actionable
+
+  PHASE 4: DASHBOARD, TEAMS & SCALE
+  Sprints 13–16 (Weeks 13–16)  |  Web dashboard for teams, Design Health trends, team configs, enterprise readiness
+
+Sprint 13: Team Dashboard MVP
+Sprint Goal: Web dashboard showing Design Health Score trends per project
+Velocity Target: 13 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-030: Dashboard: Project Overview
+As a team lead, I want to see Design Health Score trends for my project in a web dashboard, so that I can track design quality improvement over time
+Story Points: 8
+Acceptance Criteria:
+	•	Dashboard at app.vizlint.dev behind auth (GitHub OAuth)
+	•	Project creation: connect GitHub repo
+	•	Design Health Score trend chart (last 30 days)
+	•	Violation breakdown by rule category (pie chart)
+	•	Most violated files list (top 10 hotspots)
+	•	Score comparison: current vs last week vs last month
+Tasks:
+	•	Set up Next.js 15 app with Tailwind + shadcn/ui
+	•	Implement GitHub OAuth via NextAuth.js
+	•	Create Supabase database schema: projects, scans, violations
+	•	Build API routes for project CRUD and scan data ingestion
+	•	Build Dashboard page with Recharts trend chart
+	•	Build violation breakdown with category pie chart
+	•	Implement hotspot file ranking
+	•	Deploy to Vercel
+Test Cases:
+	•	TEST: GitHub OAuth login/logout works
+	•	TEST: Project connects to GitHub repo
+	•	TEST: Score trend chart renders with historical data
+	•	TEST: Dashboard loads in < 3 seconds
+	•	TEST: Mobile responsive layout
+VIZ-031: CLI → Dashboard Data Pipeline
+As a developer running Vizlint in CI, I want scan results to automatically appear in the team dashboard, so that no manual data entry — CI/CD is the source of truth
+Story Points: 5
+Acceptance Criteria:
+	•	vizlint scan --report sends results to Vizlint API (opt-in, requires auth token)
+	•	Only aggregated metrics sent (score, violation counts) — never source code
+	•	Data pipeline encrypted in transit (HTTPS) and at rest (Supabase encryption)
+	•	Clear privacy documentation: what is sent, what is not, how to opt out
+Tasks:
+	•	Create API endpoint: POST /api/scans with auth token validation
+	•	Add --report flag to CLI that sends aggregated results
+	•	Implement auth token generation in dashboard
+	•	Write privacy documentation page
+	•	Add opt-in confirmation prompt on first --report use
+Test Cases:
+	•	TEST: Scan results appear in dashboard within 30 seconds of CI run
+	•	TEST: No source code appears in API payloads (privacy audit)
+	•	TEST: Invalid auth token returns 401
+	•	TEST: --report without auth token shows setup instructions
+Sprint 14: Team Features & Pricing
+Sprint Goal: Team subscription tier, shared rule configs, member management
+Velocity Target: 13 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-032: Team Subscription & Member Management
+As a team lead, I want to subscribe my team and manage member access, so that everyone on my team uses the same Vizlint configuration
+Story Points: 8
+Acceptance Criteria:
+	•	Team tier: €29/user/month (minimum 3 users)
+	•	Team creation with invite-by-email
+	•	Shared .vizlintrc.json synced from dashboard to all team members
+	•	Team-level Design Health Score (aggregate across all team projects)
+	•	Admin/member role distinction
+Tasks:
+	•	Implement team CRUD in Supabase (teams, team_members, invitations)
+	•	Build team settings page in dashboard
+	•	Create invitation flow with email notifications
+	•	Implement shared config sync (API endpoint team members pull from)
+	•	Add team aggregate score calculation
+	•	Create Stripe team subscription with per-seat billing
+Test Cases:
+	•	TEST: Team creation and member invitation works
+	•	TEST: Shared config syncs to team members' CLI
+	•	TEST: Team aggregate score calculated correctly
+	•	TEST: Stripe billing updates when team size changes
+	•	TEST: Admin can remove members
+VIZ-033: Custom Design System Rules
+As a design-conscious team, I want to define custom rules matching our specific design system, so that Vizlint enforces our brand guidelines, not just generic best practices
+Story Points: 5
+Acceptance Criteria:
+	•	Custom color token definitions (brand-primary: #1A5276, etc.)
+	•	Custom spacing scale override
+	•	Custom typography scale override
+	•	Custom component naming conventions
+	•	Custom rules definable in .vizlintrc.json
+Tasks:
+	•	Extend .vizlintrc.json schema with designSystem section
+	•	Implement custom color token resolution in all color rules
+	•	Implement custom spacing scale in spacing rules
+	•	Implement custom type scale in typography rules
+	•	Write guide: 'Configuring Vizlint for Your Design System'
+Test Cases:
+	•	TEST: Custom brand-primary color recognized and enforced
+	•	TEST: Custom 8px spacing scale enforced instead of Tailwind default
+	•	TEST: Custom type scale enforced
+	•	TEST: Configuration errors produce clear error messages
+Sprint 15: Security Hardening & Enterprise Prep
+Sprint Goal: Security audit, rate limiting, audit logging, enterprise feature flags
+Velocity Target: 10 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-034: Security Hardening
+As a CTO evaluating Vizlint for enterprise, I want confidence that Vizlint is secure and won't expose our code, so that I approve Vizlint for company-wide use
+Story Points: 8
+Acceptance Criteria:
+	•	Dependency audit: no known CVEs in production dependencies
+	•	API rate limiting: 100 requests/minute per auth token
+	•	Input validation on all API endpoints (Zod schemas)
+	•	CORS configured: only app.vizlint.dev origin
+	•	Auth tokens hashed in database (never stored plaintext)
+	•	Audit log: all API access logged with timestamp, action, user
+	•	Security page at vizlint.dev/security documenting practices
+	•	Responsible disclosure policy published
+Tasks:
+	•	Run npm audit and fix all vulnerabilities
+	•	Implement rate limiting middleware (upstash/ratelimit or custom)
+	•	Add Zod validation to all API route handlers
+	•	Configure CORS headers
+	•	Implement auth token hashing (argon2)
+	•	Build audit log table and write middleware
+	•	Write security documentation page
+	•	Create security@vizlint.dev email for disclosures
+Test Cases:
+	•	TEST: npm audit returns 0 vulnerabilities
+	•	TEST: Rate limit triggers at 101st request in 60 seconds
+	•	TEST: Invalid API input returns 400 with clear error
+	•	TEST: CORS blocks requests from unauthorized origins
+	•	TEST: Auth tokens not visible in database (only hashes)
+	•	TEST: Audit log records all API access
+VIZ-035: Enterprise Feature Flags
+As a enterprise buyer, I want SSO, audit exports, and SLA guarantees, so that Vizlint meets our procurement requirements
+Story Points: 2
+Acceptance Criteria:
+	•	Feature flag system for gating enterprise features
+	•	SSO placeholder (SAML/OIDC integration spec documented, not yet built)
+	•	Audit log CSV export for compliance teams
+	•	SLA documentation: 99.9% API uptime target
+	•	Enterprise pricing page: 'Contact us' with Calendly link
+Tasks:
+	•	Implement feature flag system (simple JSON config, no third-party service)
+	•	Write SSO integration spec document
+	•	Build audit log CSV export endpoint
+	•	Write SLA documentation
+	•	Create enterprise pricing page with contact form
+Test Cases:
+	•	TEST: Feature flags correctly gate enterprise features
+	•	TEST: CSV export contains correct audit data
+	•	TEST: Enterprise contact form submits notification
+Sprint 16: V1.0 Release & Business Plan
+Sprint Goal: Production release, complete documentation, revenue targets, 6-month roadmap
+Velocity Target: 8 story points
+────────────────────────────────────────────────────────────────────────────────
+VIZ-036: V1.0 Release
+As a developer, I want to use a stable, production-ready version of Vizlint, so that I trust Vizlint for production CI/CD pipelines
+Story Points: 5
+Acceptance Criteria:
+	•	@vizlint/eslint-plugin@1.0.0 published with 15+ rules
+	•	@vizlint/cli@1.0.0 published with full feature set
+	•	@vizlint/mcp@1.0.0 published with Cursor + Claude Code support
+	•	Semantic versioning commitment: no breaking changes in 1.x
+	•	Migration guide from 0.x to 1.0
+	•	CHANGELOG documenting all changes since 0.1.0
+Tasks:
+	•	Audit all public APIs for stability (no experimental exports)
+	•	Write migration guide
+	•	Update all documentation to v1.0
+	•	Create GitHub Release with comprehensive release notes
+	•	Announce on all channels
+	•	Submit to ESLint community plugins list
+Test Cases:
+	•	TEST: All packages install cleanly from npm
+	•	TEST: All rules pass against test suite (100% green)
+	•	TEST: Migration guide tested with a 0.x → 1.0 upgrade
+	•	TEST: No TypeScript errors in any package
+VIZ-037: 6-Month Business Plan
+As a CEO, I want a clear business plan for the next 6 months, so that I know exactly what to build, how to grow, and when to hire
+Story Points: 3
+Acceptance Criteria:
+	•	Revenue targets: Month 4–6 projections based on current trajectory
+	•	Product roadmap: v1.1–v2.0 feature priorities based on user feedback
+	•	Hiring plan: when to hire first contractor/employee (revenue threshold)
+	•	Marketing plan: content calendar, conference talks, partnership outreach
+	•	Competitive monitoring: track Figma, Vercel, Cursor moves in design quality
+	•	Exit scenarios documented: bootstrap to profitability vs raise seed
+Tasks:
+	•	Compile all metrics into trajectory model
+	•	Write product roadmap based on GitHub issues and user interviews
+	•	Define hiring threshold (e.g., €10K MRR = first contractor)
+	•	Create content calendar for next 3 months
+	•	Write competitive watch brief
+	•	Document strategic options
+Test Cases:
+	•	TEST: Business plan reviewed by McKinsey hat — all numbers justified
+	•	TEST: Roadmap prioritized by user demand data
+	•	TEST: Plan is actionable, not aspirational
+
+Release Milestones & Revenue Targets
+Milestone
+When
+Release
+What Ships
+Targets
+End of Sprint 3
+Week 3
+@vizlint/eslint-plugin@0.1.0
+5 rules on npm
+50 npm installs, 30 GitHub stars
+End of Sprint 4
+Week 4
+Service Launch
+Productized service live
+€0–2K MRR (service)
+End of Sprint 7
+Week 7
+@vizlint/eslint-plugin@0.3.0 + CLI
+10 rules, CLI with Design Health Score
+200 npm installs, 100 stars, €2–5K MRR
+End of Sprint 11
+Week 11
+Pro CLI + MCP + GitHub Action
+Paid tier live, MCP server, PR integration
+500 installs, 300 stars, €3–8K MRR
+End of Sprint 12
+Week 12
+Product Hunt Launch
+Public launch across all channels
+1,000 installs, 500 stars, 10 Pro trials
+End of Sprint 16
+Week 16
+V1.0 Stable Release
+Production-ready, dashboard, teams
+2,000 installs, 800 stars, €5–15K MRR
+
+Total Story Points by Phase
+Phase 1 (Sprints 1–4): 49 story points — Foundation, 5 rules, service, landing page, launch outreach
+Phase 2 (Sprints 5–8): 47 story points — CLI, Design Health Score, 10 rules, docs, framework agnostic
+Phase 3 (Sprints 9–12): 47 story points — MCP server, GitHub Action, Pro tier, Product Hunt launch
+Phase 4 (Sprints 13–16): 44 story points — Dashboard, teams, security, v1.0, business plan
+Grand Total: 187 story points across 16 sprints (avg 11.7 per sprint)

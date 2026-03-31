@@ -87,3 +87,28 @@ export function findNearestSpacing(px: number): string | null {
   }
   return null;
 }
+
+/**
+ * Find nearest spacing in a custom scale (user-defined overrides).
+ * Same logic as findNearestSpacing but operates on arbitrary scale.
+ */
+export function findNearestInCustomScale(
+  px: number,
+  scale: Record<string, number>,
+): string | null {
+  let nearest: string | null = null;
+  let minDistance = Infinity;
+
+  for (const [key, scalePx] of Object.entries(scale)) {
+    const dist = Math.abs(px - scalePx);
+    if (dist < minDistance || (dist === minDistance && scalePx < scale[nearest!])) {
+      minDistance = dist;
+      nearest = key;
+    }
+  }
+
+  if (nearest && minDistance <= 4) {
+    return nearest;
+  }
+  return null;
+}

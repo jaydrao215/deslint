@@ -36,8 +36,15 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Lint
+        run: pnpm lint
+
       - name: Typecheck
         run: pnpm typecheck
 
       - name: Test
         run: pnpm test
+
+      - name: Benchmark rules
+        run: pnpm --filter eslint-plugin-vizlint bench
+        if: matrix.node-version == 22

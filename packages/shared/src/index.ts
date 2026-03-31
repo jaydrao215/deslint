@@ -26,3 +26,6 @@ export {
 } from './tailwind/index.js';
 
 export type { ImportResult } from './tailwind/index.js';
+
+export { detectFramework } from './detect-framework.js';
+export type { Framework } from './detect-framework.js';
