@@ -162,3 +162,22 @@ Both rules registered in plugin index.ts with recommended (warn) and strict (err
 Docs build generates 8 static pages (6 routes). All 9 monorepo tasks pass (332 plugin tests + 44 shared + 1 mcp + docs build).
 **Will do:** Sprint 8 planning
 **Blockers:** None
+
+### UI Redesign — Landing Page & Docs Premium Polish
+
+**Did:** Complete UI overhaul of landing page and docs site, inspired by Linear/Supabase/Vercel patterns. Added framer-motion, @tailwindcss/typography, lucide-react, clsx, tailwind-merge. Landing page now has 7 animated sections: hero with gradient text + floating orbs + dot grid, before/after code comparison with syntax highlighting, bento grid of all 10 rules, 4-step "How it Works" flow, framework showcase, dark gradient CTA, structured footer. Docs section redesigned with fixed sidebar navigation, active state highlighting, mobile overlay, and polished prose typography. Custom motion components (FadeIn, StaggerContainer, ScaleIn) for scroll-triggered animations. Expanded Tailwind color palette with full primary scale. All 9 monorepo tasks pass.
+**Will do:** Sprint 8
+**Blockers:** None
+
+---
+
+## Future TODO (Pre-Launch Checklist)
+
+- [ ] Create `vizlint` GitHub organization
+- [ ] Transfer repo from `jaydrao215/vizlint` to `vizlint/vizlint` (public)
+- [ ] Create `vizlint/vizlint.dev` private repo for marketing site
+- [ ] Extract `apps/docs` marketing pages (hero, CTA, pricing) into `vizlint.dev`
+- [ ] Keep developer docs (rules, config, getting-started) in main repo
+- [ ] Set up npm org `@vizlint` and add NPM_TOKEN to GitHub secrets
+- [ ] Configure Vercel/Netlify deploy for `vizlint.dev`
+- [ ] Purchase `vizlint.dev` domain
