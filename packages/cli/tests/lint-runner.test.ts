@@ -48,6 +48,8 @@ describe('runLint', () => {
     return filePath;
   }
 
+  // ── Violation detection ──
+
   it('finds violations in a file with arbitrary colors and spacing', async () => {
     const filePath = await writeTsx(
       'App.tsx',
@@ -64,6 +66,8 @@ describe('runLint', () => {
     expect(result.byRule['vizlint/no-arbitrary-colors']).toBeGreaterThanOrEqual(1);
     // Should detect arbitrary spacing (p-[13px])
     expect(result.byRule['vizlint/no-arbitrary-spacing']).toBeGreaterThanOrEqual(1);
+    // dark-mode-coverage also fires for bg-[#FF0000] without a dark: variant
+    expect(result.byRule['vizlint/dark-mode-coverage']).toBeGreaterThanOrEqual(1);
   });
 
   it('returns correct bySeverity counts', async () => {
@@ -88,16 +92,18 @@ describe('runLint', () => {
 
     const result = await runLint({ files: [filePath] });
 
-    // Arbitrary color -> colors category
+    // Arbitrary color + dark-mode-coverage -> colors category
     expect(result.byCategory.colors).toBeGreaterThanOrEqual(1);
     // Arbitrary spacing -> spacing category
     expect(result.byCategory.spacing).toBeGreaterThanOrEqual(1);
   });
 
-  it('returns zero violations for a clean file', async () => {
+  // ── Clean files ──
+
+  it('returns zero violations for a file with only layout utilities', async () => {
     const filePath = await writeTsx(
       'Clean.tsx',
-      `const Clean = () => <div className="bg-white dark:bg-gray-900 p-4 text-gray-900">Clean</div>;\nexport default Clean;\n`,
+      `const Clean = () => <div className="flex items-center justify-center">Clean</div>;\nexport default Clean;\n`,
     );
 
     const result = await runLint({ files: [filePath] });
@@ -109,20 +115,35 @@ describe('runLint', () => {
     expect(result.bySeverity.warnings).toBe(0);
   });
 
+  it('returns zero violations for a file with proper dark mode coverage', async () => {
+    const filePath = await writeTsx(
+      'DarkClean.tsx',
+      `const DarkClean = () => <div className="bg-white dark:bg-gray-900 p-4 text-gray-900">Clean</div>;\nexport default DarkClean;\n`,
+    );
+
+    const result = await runLint({ files: [filePath] });
+
+    expect(result.totalViolations).toBe(0);
+    expect(result.filesWithViolations).toBe(0);
+  });
+
+  // ── Rule overrides ──
+
   it('respects ruleOverrides to disable a rule', async () => {
     const filePath = await writeTsx(
       'Override.tsx',
       `const Override = () => <div className="bg-[#FF0000] p-4">override</div>;\nexport default Override;\n`,
     );
 
-    // Run with no-arbitrary-colors turned off
     const result = await runLint({
       files: [filePath],
       ruleOverrides: { 'vizlint/no-arbitrary-colors': 'off' },
     });
 
-    // The rule should not appear in byRule
+    // The disabled rule should not appear in byRule
     expect(result.byRule['vizlint/no-arbitrary-colors']).toBeUndefined();
+    // dark-mode-coverage still fires for the bg class
+    expect(result.byRule['vizlint/dark-mode-coverage']).toBeGreaterThanOrEqual(1);
   });
 
   it('respects ruleOverrides to escalate a rule to error', async () => {
@@ -136,7 +157,10 @@ describe('runLint', () => {
       ruleOverrides: { 'vizlint/no-arbitrary-colors': 'error' },
     });
 
+    // no-arbitrary-colors should now be reported as an error (severity 2)
     expect(result.bySeverity.errors).toBeGreaterThanOrEqual(1);
+    // dark-mode-coverage still fires as a warning
+    expect(result.bySeverity.warnings).toBeGreaterThanOrEqual(1);
   });
 
   it('handles ruleOverrides without vizlint/ prefix', async () => {
@@ -153,7 +177,29 @@ describe('runLint', () => {
     expect(result.byRule['vizlint/no-arbitrary-colors']).toBeUndefined();
   });
 
-  it('lints multiple files and aggregates results', async () => {
+  it('disabling multiple rules removes all their violations', async () => {
+    const filePath = await writeTsx(
+      'MultiOff.tsx',
+      `const MultiOff = () => <div className="bg-[#FF0000] p-[13px]">multi</div>;\nexport default MultiOff;\n`,
+    );
+
+    const result = await runLint({
+      files: [filePath],
+      ruleOverrides: {
+        'vizlint/no-arbitrary-colors': 'off',
+        'vizlint/no-arbitrary-spacing': 'off',
+        'vizlint/dark-mode-coverage': 'off',
+      },
+    });
+
+    expect(result.byRule['vizlint/no-arbitrary-colors']).toBeUndefined();
+    expect(result.byRule['vizlint/no-arbitrary-spacing']).toBeUndefined();
+    expect(result.byRule['vizlint/dark-mode-coverage']).toBeUndefined();
+  });
+
+  // ── Multi-file aggregation ──
+
+  it('lints multiple files and aggregates results correctly', async () => {
     const file1 = await writeTsx(
       'Page1.tsx',
       `const Page1 = () => <div className="bg-[#FF0000]">one</div>;\nexport default Page1;\n`,
@@ -162,19 +208,23 @@ describe('runLint', () => {
       'Page2.tsx',
       `const Page2 = () => <div className="p-[13px]">two</div>;\nexport default Page2;\n`,
     );
+    // Page3 is fully clean: only layout utilities, no bg colors
     const file3 = await writeTsx(
       'Page3.tsx',
-      `const Page3 = () => <div className="bg-white dark:bg-gray-900 p-4 text-gray-900">clean</div>;\nexport default Page3;\n`,
+      `const Page3 = () => <div className="flex items-center">clean</div>;\nexport default Page3;\n`,
     );
 
     const result = await runLint({ files: [file1, file2, file3] });
 
     expect(result.totalFiles).toBe(3);
+    // Only Page1 and Page2 have violations
     expect(result.filesWithViolations).toBe(2);
     expect(result.totalViolations).toBeGreaterThanOrEqual(2);
   });
 
-  it('applies fix and produces output with fix: true', async () => {
+  // ── Auto-fix ──
+
+  it('applies fix and writes corrected file to disk', async () => {
     const filePath = await writeTsx(
       'Fixable.tsx',
       `const Fixable = () => <div className="bg-[#FF0000] p-[13px]">fix me</div>;\nexport default Fixable;\n`,
@@ -182,21 +232,15 @@ describe('runLint', () => {
 
     const result = await runLint({ files: [filePath], fix: true });
 
-    // After fix, the file should have been modified on disk
     const fixedContent = await readFile(filePath, 'utf-8');
 
-    // The fixed content should differ from the original (arbitrary values replaced)
-    // At minimum, the result should report it processed the file
     expect(result.totalFiles).toBe(1);
-
-    // If the rules are fixable, the file content should change
-    // bg-[#FF0000] should be replaced with a token like bg-red-600
-    // p-[13px] should be replaced with a scale value like p-3
-    if (fixedContent.includes('bg-[#FF0000]') === false) {
-      // Fix was applied for color
-      expect(fixedContent).not.toContain('bg-[#FF0000]');
-    }
+    // p-[13px] should be replaced with the nearest scale value (p-3)
+    expect(fixedContent).not.toContain('p-[13px]');
+    expect(fixedContent).toContain('p-3');
   });
+
+  // ── Result structure ──
 
   it('returns results with correct LintFileResult structure', async () => {
     const filePath = await writeTsx(
@@ -212,11 +256,40 @@ describe('runLint', () => {
     expect(Array.isArray(fileResult.messages)).toBe(true);
     expect(fileResult.messages.length).toBeGreaterThan(0);
 
-    const msg = fileResult.messages[0];
-    expect(msg.ruleId).toBeTruthy();
-    expect(typeof msg.severity).toBe('number');
-    expect(typeof msg.message).toBe('string');
-    expect(typeof msg.line).toBe('number');
-    expect(typeof msg.column).toBe('number');
+    // Every message should have a non-null ruleId (real violations, not file-ignored)
+    for (const msg of fileResult.messages) {
+      expect(msg.ruleId).toBeTruthy();
+      expect(typeof msg.severity).toBe('number');
+      expect(typeof msg.message).toBe('string');
+      expect(typeof msg.line).toBe('number');
+      expect(typeof msg.column).toBe('number');
+    }
+  });
+
+  it('supports explicit cwd option', async () => {
+    const filePath = await writeTsx(
+      'CwdTest.tsx',
+      `const CwdTest = () => <div className="bg-[#FF0000]">cwd test</div>;\nexport default CwdTest;\n`,
+    );
+
+    const result = await runLint({ files: [filePath], cwd: tmpDir });
+
+    expect(result.totalFiles).toBe(1);
+    expect(result.totalViolations).toBeGreaterThan(0);
+    expect(result.byRule['vizlint/no-arbitrary-colors']).toBeGreaterThanOrEqual(1);
+  });
+
+  it('handles a single-violation file with only spacing issues', async () => {
+    const filePath = await writeTsx(
+      'SpacingOnly.tsx',
+      `const SpacingOnly = () => <div className="p-[13px]">spacing only</div>;\nexport default SpacingOnly;\n`,
+    );
+
+    const result = await runLint({ files: [filePath] });
+
+    expect(result.byRule['vizlint/no-arbitrary-spacing']).toBeGreaterThanOrEqual(1);
+    // No color rules should fire (no bg or text color classes)
+    expect(result.byRule['vizlint/no-arbitrary-colors']).toBeUndefined();
+    expect(result.byCategory.spacing).toBeGreaterThanOrEqual(1);
   });
 });
