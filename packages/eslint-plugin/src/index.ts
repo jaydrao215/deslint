@@ -2,6 +2,8 @@ import noArbitraryColors from './rules/no-arbitrary-colors.js';
 import noArbitrarySpacing from './rules/no-arbitrary-spacing.js';
 import noArbitraryTypography from './rules/no-arbitrary-typography.js';
 import responsiveRequired from './rules/responsive-required.js';
+import consistentComponentSpacing from './rules/consistent-component-spacing.js';
+import a11yColorContrast from './rules/a11y-color-contrast.js';
 
 const plugin = {
   meta: {
@@ -13,7 +15,8 @@ const plugin = {
     'no-arbitrary-spacing': noArbitrarySpacing,
     'no-arbitrary-typography': noArbitraryTypography,
     'responsive-required': responsiveRequired,
-    // Sprint 4: 'consistent-component-spacing'
+    'consistent-component-spacing': consistentComponentSpacing,
+    'a11y-color-contrast': a11yColorContrast,
   },
   configs: {} as Record<string, any>,
 };
@@ -26,7 +29,8 @@ plugin.configs.recommended = {
     'vizlint/no-arbitrary-spacing': 'warn',
     'vizlint/no-arbitrary-typography': 'warn',
     'vizlint/responsive-required': 'warn',
-    // Sprint 4: 'vizlint/consistent-component-spacing': 'warn',
+    'vizlint/consistent-component-spacing': 'warn',
+    'vizlint/a11y-color-contrast': 'warn',
   },
 };
 
@@ -37,6 +41,8 @@ plugin.configs.strict = {
     'vizlint/no-arbitrary-spacing': 'error',
     'vizlint/no-arbitrary-typography': 'error',
     'vizlint/responsive-required': 'error',
+    'vizlint/consistent-component-spacing': 'error',
+    'vizlint/a11y-color-contrast': 'error',
   },
 };
 
