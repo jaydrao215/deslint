@@ -4,21 +4,99 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-:root {
-  --color-primary: #1A5276;
-  --color-pass: #27AE60;
-  --color-fail: #E74C3C;
-  --color-warn: #F39C12;
+@layer base {
+  :root {
+    --color-primary: #1A5276;
+    --color-primary-light: #2E86C1;
+    --color-pass: #10B981;
+    --color-fail: #EF4444;
+    --color-warn: #F59E0B;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: rgba(26, 82, 118, 0.15);
+    color: #1A5276;
+  }
 }
 
-html {
-  scroll-behavior: smooth;
+@layer components {
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 via-primary to-primary-dark;
+  }
+
+  .gradient-text-hero {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #1A5276 0%, #2E86C1 50%, #5DADE2 100%);
+  }
+
+  .glow-border {
+    box-shadow:
+      0 0 0 1px rgba(26, 82, 118, 0.08),
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 4px 16px rgba(26, 82, 118, 0.06);
+  }
+
+  .glow-border-hover {
+    box-shadow:
+      0 0 0 1px rgba(26, 82, 118, 0.12),
+      0 2px 4px rgba(0, 0, 0, 0.06),
+      0 8px 32px rgba(26, 82, 118, 0.1);
+  }
+
+  .card-shine {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-shine::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(255, 255, 255, 0.03) 45%,
+      rgba(255, 255, 255, 0.06) 50%,
+      rgba(255, 255, 255, 0.03) 55%,
+      transparent 60%
+    );
+    pointer-events: none;
+  }
+
+  .dot-grid {
+    background-image: radial-gradient(circle, rgba(26, 82, 118, 0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .code-block {
+    @apply rounded-xl border border-gray-800/50 bg-gray-950 font-mono text-sm overflow-hidden;
+  }
+
+  .code-block-header {
+    @apply flex items-center gap-2 px-4 py-3 border-b border-gray-800/50 bg-gray-900/50;
+  }
+
+  .code-block-dot {
+    @apply h-3 w-3 rounded-full;
+  }
 }
 
-body {
-  font-family: 'Inter', system-ui, sans-serif;
-}
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
 
-code, pre, .font-mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  .mask-fade-b {
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  }
+
+  .mask-fade-edges {
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
 }

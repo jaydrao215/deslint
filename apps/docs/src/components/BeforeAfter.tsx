@@ -1,88 +1,154 @@
-const BEFORE_CODE = `// AI-generated code — design issues hidden in plain sight
-const Card = () => (
-  <div className="bg-[#1a5276] p-[13px] rounded-[6px]">
-    <h2 className="text-[#fff] text-[18px] m-[7px]">
-      Dashboard
-    </h2>
-    <p className="text-[#aaaaaa] gap-[20px]">
-      Welcome back
-    </p>
-  </div>
-);`;
+'use client';
 
-const AFTER_CODE = `// After Vizlint — clean, consistent, design-system aligned
-const Card = () => (
-  <div className="bg-primary p-3 rounded-md">
-    <h2 className="text-white text-lg m-2">
-      Dashboard
-    </h2>
-    <p className="text-gray-400 gap-5">
-      Welcome back
-    </p>
-  </div>
-);`;
+import { FadeIn, ScaleIn } from './motion';
+import { CircleX, CircleCheck, ArrowRight } from 'lucide-react';
 
-const LINT_ERRORS = [
-  { line: 3, col: 15, type: 'error', rule: 'no-arbitrary-colors', message: 'bg-[#1a5276] → bg-primary' },
-  { line: 3, col: 35, type: 'warn', rule: 'no-arbitrary-spacing', message: 'p-[13px] → p-3' },
-  { line: 4, col: 15, type: 'error', rule: 'no-arbitrary-colors', message: 'text-[#fff] → text-white' },
-  { line: 4, col: 29, type: 'warn', rule: 'no-arbitrary-spacing', message: 'm-[7px] → m-2' },
-  { line: 6, col: 15, type: 'error', rule: 'no-arbitrary-colors', message: 'text-[#aaaaaa] → text-gray-400' },
-  { line: 6, col: 32, type: 'warn', rule: 'no-arbitrary-spacing', message: 'gap-[20px] → gap-5' },
+const BEFORE_LINES = [
+  { num: 1, text: '// AI-generated code — design issues everywhere', dim: true },
+  { num: 2, text: 'const Card = () => (' },
+  { num: 3, text: '  <div className="', after: 'bg-[#1a5276] p-[13px]', afterBad: true, end: '">' },
+  { num: 4, text: '    <h2 className="', after: 'text-[#fff] text-[18px]', afterBad: true, end: '">' },
+  { num: 5, text: '      Dashboard' },
+  { num: 6, text: '    </h2>' },
+  { num: 7, text: '    <p className="', after: 'text-[#aaa] gap-[20px]', afterBad: true, end: '">' },
+  { num: 8, text: '      Welcome back' },
+  { num: 9, text: '    </p>' },
+  { num: 10, text: '  </div>' },
+  { num: 11, text: ');' },
+];
+
+const AFTER_LINES = [
+  { num: 1, text: '// After vizlint fix — clean design tokens', dim: true },
+  { num: 2, text: 'const Card = () => (' },
+  { num: 3, text: '  <div className="', after: 'bg-primary p-3', afterGood: true, end: '">' },
+  { num: 4, text: '    <h2 className="', after: 'text-white text-lg', afterGood: true, end: '">' },
+  { num: 5, text: '      Dashboard' },
+  { num: 6, text: '    </h2>' },
+  { num: 7, text: '    <p className="', after: 'text-gray-400 gap-5', afterGood: true, end: '">' },
+  { num: 8, text: '      Welcome back' },
+  { num: 9, text: '    </p>' },
+  { num: 10, text: '  </div>' },
+  { num: 11, text: ');' },
+];
+
+const VIOLATIONS = [
+  { rule: 'no-arbitrary-colors', fix: 'bg-[#1a5276] → bg-primary' },
+  { rule: 'no-arbitrary-spacing', fix: 'p-[13px] → p-3' },
+  { rule: 'no-arbitrary-colors', fix: 'text-[#fff] → text-white' },
+  { rule: 'no-arbitrary-typography', fix: 'text-[18px] → text-lg' },
+  { rule: 'no-arbitrary-colors', fix: 'text-[#aaa] → text-gray-400' },
+  { rule: 'no-arbitrary-spacing', fix: 'gap-[20px] → gap-5' },
 ];
 
 export function BeforeAfter() {
   return (
-    <section className="bg-surface py-20 px-4">
-      <div className="mx-auto max-w-5xl">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">See it in action</h2>
-          <p className="text-lg text-gray-500">
-            Vizlint catches what code review misses — arbitrary values that break your design system.
+    <section className="relative py-24 px-6 bg-surface-100">
+      <div className="mx-auto max-w-6xl">
+        <FadeIn className="text-center mb-16">
+          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
+            See it in action
           </p>
-        </div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 text-balance">
+            From arbitrary values to design tokens
+          </h2>
+          <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+            Vizlint detects design drift in AI-generated code and auto-fixes it
+            to match your design system.
+          </p>
+        </FadeIn>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        {/* Code Comparison */}
+        <div className="grid lg:grid-cols-2 gap-6 items-start">
           {/* Before */}
-          <div className="rounded-xl border border-fail/30 overflow-hidden shadow-sm">
-            <div className="flex items-center gap-2 bg-fail/10 px-4 py-2.5 border-b border-fail/20">
-              <span className="h-3 w-3 rounded-full bg-fail" />
-              <span className="text-sm font-semibold text-fail">Before — 6 violations</span>
-            </div>
-            <pre className="p-5 text-xs font-mono text-gray-300 bg-gray-900 overflow-x-auto leading-relaxed">
-              <code>{BEFORE_CODE}</code>
-            </pre>
-            <div className="bg-gray-950 px-4 py-3 space-y-1.5 border-t border-gray-800">
-              {LINT_ERRORS.map((err, i) => (
-                <div key={i} className="flex items-start gap-2 text-xs font-mono">
-                  <span className={err.type === 'error' ? 'text-fail' : 'text-warn'}>
-                    {err.type === 'error' ? '✕' : '⚠'}
-                  </span>
-                  <span className="text-gray-400">
-                    {err.line}:{err.col}
-                  </span>
-                  <span className="text-gray-300">{err.message}</span>
+          <ScaleIn delay={0.1}>
+            <div className="code-block group">
+              <div className="code-block-header">
+                <div className="flex gap-1.5">
+                  <span className="code-block-dot bg-fail/80" />
+                  <span className="code-block-dot bg-warn/60" />
+                  <span className="code-block-dot bg-gray-600" />
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* After */}
-          <div className="rounded-xl border border-pass/30 overflow-hidden shadow-sm">
-            <div className="flex items-center gap-2 bg-pass/10 px-4 py-2.5 border-b border-pass/20">
-              <span className="h-3 w-3 rounded-full bg-pass" />
-              <span className="text-sm font-semibold text-pass">After — auto-fixed</span>
-            </div>
-            <pre className="p-5 text-xs font-mono text-gray-300 bg-gray-900 overflow-x-auto leading-relaxed">
-              <code>{AFTER_CODE}</code>
-            </pre>
-            <div className="bg-gray-950 px-4 py-3 border-t border-gray-800">
-              <div className="flex items-center gap-2 text-xs font-mono">
-                <span className="text-pass">✓</span>
-                <span className="text-gray-300">No violations — all auto-fixed by Vizlint</span>
+                <div className="flex items-center gap-2 ml-3">
+                  <CircleX className="h-3.5 w-3.5 text-fail" />
+                  <span className="text-xs font-medium text-fail">6 violations found</span>
+                </div>
+                <span className="ml-auto text-xs text-gray-500 font-mono">Card.tsx</span>
+              </div>
+              <div className="p-4 text-[13px] leading-6 overflow-x-auto">
+                {BEFORE_LINES.map((line) => (
+                  <div key={line.num} className="flex">
+                    <span className="w-8 text-right text-gray-600 select-none mr-4 shrink-0">
+                      {line.num}
+                    </span>
+                    <span className={line.dim ? 'text-gray-600' : 'text-gray-300'}>
+                      {line.text}
+                      {line.afterBad && (
+                        <span className="text-fail-light bg-fail/10 rounded px-0.5">{line.after}</span>
+                      )}
+                      {line.end ?? ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {/* Violations */}
+              <div className="border-t border-gray-800/50 bg-gray-900/40 px-4 py-3 space-y-1.5">
+                {VIOLATIONS.map((v, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs font-mono">
+                    <CircleX className="h-3 w-3 text-fail shrink-0" />
+                    <span className="text-gray-500">{v.rule}</span>
+                    <span className="text-gray-400">{v.fix}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          </ScaleIn>
+
+          {/* After */}
+          <ScaleIn delay={0.2}>
+            <div className="code-block group">
+              <div className="code-block-header">
+                <div className="flex gap-1.5">
+                  <span className="code-block-dot bg-pass/80" />
+                  <span className="code-block-dot bg-pass/50" />
+                  <span className="code-block-dot bg-gray-600" />
+                </div>
+                <div className="flex items-center gap-2 ml-3">
+                  <CircleCheck className="h-3.5 w-3.5 text-pass" />
+                  <span className="text-xs font-medium text-pass">All fixed</span>
+                </div>
+                <span className="ml-auto text-xs text-gray-500 font-mono">Card.tsx</span>
+              </div>
+              <div className="p-4 text-[13px] leading-6 overflow-x-auto">
+                {AFTER_LINES.map((line) => (
+                  <div key={line.num} className="flex">
+                    <span className="w-8 text-right text-gray-600 select-none mr-4 shrink-0">
+                      {line.num}
+                    </span>
+                    <span className={line.dim ? 'text-gray-600' : 'text-gray-300'}>
+                      {line.text}
+                      {line.afterGood && (
+                        <span className="text-pass-light bg-pass/10 rounded px-0.5">{line.after}</span>
+                      )}
+                      {line.end ?? ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {/* Score */}
+              <div className="border-t border-gray-800/50 bg-gray-900/40 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-mono">
+                    <CircleCheck className="h-3 w-3 text-pass" />
+                    <span className="text-pass">Design Health Score: 100/100</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <span>vizlint fix --all</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScaleIn>
         </div>
       </div>
     </section>
