@@ -2,7 +2,9 @@
  * Shared AST visitor factory for extracting class strings from:
  * - React/Preact/Solid: className="..." or class="..."
  * - Angular: class="...", [ngClass]="{'class': cond}", [class.name]="cond"
- * - Vue/Svelte/HTML: class="..."
+ * - Vue: class="...", :class="...", v-bind:class="..."
+ * - Svelte: class="...", class:name={expr}
+ * - HTML: class="..."
  * - Utility wrappers: cn(), clsx(), cva(), cx(), twMerge(), classNames()
  *
  * Each rule passes its own `checkClassString(value, node)` callback.
@@ -39,11 +41,39 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
       } catch { return; }
     },
 
-    // ─── Vue / Svelte / HTML: class="..." ───
+    // ─── Vue: static class="..." (vue-eslint-parser VAttribute) ───
     'VAttribute[key.name="class"]'(node: any) {
       try {
         if (node.value?.value && typeof node.value.value === 'string') {
           check(node.value.value, node.value);
+        }
+      } catch { return; }
+    },
+
+    // ─── Vue: :class binding (VExpressionContainer) ───
+    // Handles: :class="'bg-red-500 p-4'" (string literal)
+    // Handles: :class="{'bg-red-500': isActive}" (object syntax)
+    // Handles: :class="['bg-red-500', 'p-4']" (array syntax)
+    'VAttribute[directive=true][key.name.name="bind"][key.argument.name="class"]'(node: any) {
+      try {
+        visitVueClassBinding(node, check);
+      } catch { return; }
+    },
+
+    // ─── Svelte: class="..." (static attribute) ───
+    // svelte-eslint-parser produces SvelteAttribute nodes
+    'SvelteAttribute[name="class"]'(node: any) {
+      try {
+        visitSvelteClassAttribute(node, check);
+      } catch { return; }
+    },
+
+    // ─── Svelte: class:name={expr} directive ───
+    // Reports the directive name as a class (e.g., class:active → "active")
+    'SvelteDirective[kind="Class"]'(node: any) {
+      try {
+        if (node.key?.name && typeof node.key.name === 'string') {
+          check(node.key.name, node);
         }
       } catch { return; }
     },
@@ -112,6 +142,90 @@ function visitExpression(expr: any, check: CheckFn): void {
         }
       }
     }
+  }
+}
+
+/**
+ * Extract class strings from Vue :class bindings.
+ * Handles string literals, object syntax, and array syntax.
+ */
+function visitVueClassBinding(node: any, check: CheckFn): void {
+  const expr = node.value?.expression;
+  if (!expr) return;
+
+  // :class="'bg-red-500 p-4'" — string literal
+  if (expr.type === 'Literal' && typeof expr.value === 'string') {
+    check(expr.value, node);
+    return;
+  }
+
+  // :class="{'bg-red-500': isActive, 'p-4': true}" — object expression
+  if (expr.type === 'ObjectExpression') {
+    for (const prop of expr.properties ?? []) {
+      if (prop.type === 'Property' && prop.key) {
+        if (prop.key.type === 'Literal' && typeof prop.key.value === 'string') {
+          check(prop.key.value, node);
+        } else if (prop.key.type === 'Identifier' && prop.key.name) {
+          check(prop.key.name, node);
+        }
+      }
+    }
+    return;
+  }
+
+  // :class="['bg-red-500', 'p-4']" — array expression
+  if (expr.type === 'ArrayExpression') {
+    for (const el of expr.elements ?? []) {
+      if (el?.type === 'Literal' && typeof el.value === 'string') {
+        check(el.value, node);
+      }
+    }
+    return;
+  }
+
+  // :class="someVariable" — try to extract from raw source text as fallback
+  const raw = node.value?.expression?.type === 'Identifier' ? null : (node.value?.rawValue ?? null);
+  if (typeof raw === 'string' && raw.length > 0) {
+    check(raw, node);
+  }
+}
+
+/**
+ * Extract class strings from Svelte class="..." attribute.
+ * Svelte attributes can have mixed text and expression chunks.
+ */
+function visitSvelteClassAttribute(node: any, check: CheckFn): void {
+  // Simple string value
+  if (node.value === true) return; // Boolean attribute, no class value
+
+  // SvelteAttribute value is an array of SvelteLiteral and SvelteMustacheTag
+  if (Array.isArray(node.value)) {
+    for (const chunk of node.value) {
+      // SvelteLiteral: static text
+      if (chunk.type === 'SvelteLiteral' && typeof chunk.value === 'string') {
+        check(chunk.value, chunk);
+      }
+      // SvelteMustacheTag: {expression} — extract string literals from it
+      if (chunk.type === 'SvelteMustacheTag' && chunk.expression) {
+        if (chunk.expression.type === 'Literal' && typeof chunk.expression.value === 'string') {
+          check(chunk.expression.value, chunk);
+        }
+        // Template literal inside mustache
+        if (chunk.expression.type === 'TemplateLiteral') {
+          for (const quasi of chunk.expression.quasis ?? []) {
+            if (quasi.value?.raw) {
+              check(quasi.value.raw, chunk);
+            }
+          }
+        }
+      }
+    }
+    return;
+  }
+
+  // Fallback: simple string value (some parser versions)
+  if (typeof node.value === 'string') {
+    check(node.value, node);
   }
 }
 

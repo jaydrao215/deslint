@@ -109,3 +109,23 @@ Dependencies added: commander, chalk, @clack/prompts, eslint, glob, eslint-plugi
 **Did:** Built WCAG 2.1 contrast ratio calculator in `packages/eslint-plugin/src/utils/contrast.ts`: relative luminance (sRGB linearization), contrast ratio (1:1 to 21:1), `meetsWcagAA()` helper. Implemented `a11y-color-contrast` rule: detects `text-{color}` + `bg-{color}` combinations on the same JSX element, maps Tailwind color classes to hex values via existing color-map, calculates contrast ratio, flags pairs below WCAG AA thresholds (4.5:1 normal text, 3.0:1 large text). Large text detected via `text-xl+` or `text-lg` + bold font weight. Suggests accessible alternatives with their contrast ratios. Supports custom color tokens via `customColors` option. NOT auto-fixable per v1.1 spec — accessible color choice requires design judgment. 23 rule tests + 12 contrast utility tests = 35 new tests. Registered as 6th rule in recommended and strict configs. 300/300 tests green across all packages.
 **Will do:** Sprint 6 planning
 **Blockers:** None
+
+## Sprint 6 — 2026-04-01
+
+### VIZ-015: Framework Agnostic — Vue & Svelte Support
+
+**Did:** Extended `createClassVisitor()` in `packages/eslint-plugin/src/utils/class-visitor.ts` with full Vue and Svelte support. Vue: added `:class` binding selector (`VAttribute[directive=true][key.name.name="bind"][key.argument.name="class"]`) handling string literals, object syntax (extracts keys as class names), and array syntax (extracts string elements). Svelte: added `SvelteAttribute[name="class"]` selector handling mixed `SvelteLiteral` and `SvelteMustacheTag` chunks (including template literals inside mustache tags), plus `SvelteDirective[kind="Class"]` for `class:name` directives. Added `vue-eslint-parser` (≥9.0.0) and `svelte-eslint-parser` (≥0.30.0) as optional peer dependencies. All existing rules using `createClassVisitor()` automatically gain Vue/Svelte support. 11 new cross-framework unit tests (Vue :class string/object/array/identifier keys, Svelte static/mustache/template literal/boolean/directive, crash safety). 290/290 tests green.
+**Will do:** VIZ-016 max-component-lines + missing-states
+**Blockers:** None
+
+### VIZ-016: Rules #7–8 — max-component-lines + missing-states
+
+**Did:** Implemented two new rules per Sprint 6 spec:
+
+**`max-component-lines`**: Flags single-file components (function declarations, arrow functions, class declarations) that exceed a configurable LOC threshold (default: 300). Detects React components by checking if the function body contains JSX. PascalCase name detection — skips non-component helper functions. Configurable: `maxLines` (default 300), `ignoreComments` (default false), `ignoreBlankLines` (default false). NOT auto-fixable — decomposition requires human design decisions. Try/catch wrapped. 10 tests covering short components, exact threshold, non-components, arrow functions, class components, custom thresholds.
+
+**`missing-states`**: Detects form elements (`<input>`, `<select>`, `<textarea>`, `<button>`) missing state handling attributes. Checks for `disabled`/`aria-disabled` (default: required) and `aria-invalid` (default: required on non-button elements). Optional `requireAriaRequired` check. Spread attributes (`{...props}`) give benefit of the doubt. Configurable: `requireDisabled`, `requireAriaInvalid`, `requireAriaRequired`, `formElements` (custom element list). NOT auto-fixable — proper state handling requires design judgment. Try/catch wrapped. 23 tests covering all form elements, combined missing attrs, spread bypass, custom elements, option toggling.
+
+Registered both rules in plugin index.ts. Updated recommended (warn) and strict (error) configs. Plugin version bumped to 0.3.0. Total: 8 rules, 290/290 tests green across all packages. Full monorepo build (9/9 tasks) passes.
+**Will do:** Sprint 7 planning
+**Blockers:** None

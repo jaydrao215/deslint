@@ -4,11 +4,13 @@ import noArbitraryTypography from './rules/no-arbitrary-typography.js';
 import responsiveRequired from './rules/responsive-required.js';
 import consistentComponentSpacing from './rules/consistent-component-spacing.js';
 import a11yColorContrast from './rules/a11y-color-contrast.js';
+import maxComponentLines from './rules/max-component-lines.js';
+import missingStates from './rules/missing-states.js';
 
 const plugin = {
   meta: {
     name: 'eslint-plugin-vizlint',
-    version: '0.1.0',
+    version: '0.3.0',
   },
   rules: {
     'no-arbitrary-colors': noArbitraryColors,
@@ -17,6 +19,8 @@ const plugin = {
     'responsive-required': responsiveRequired,
     'consistent-component-spacing': consistentComponentSpacing,
     'a11y-color-contrast': a11yColorContrast,
+    'max-component-lines': maxComponentLines,
+    'missing-states': missingStates,
   },
   configs: {} as Record<string, any>,
 };
@@ -31,6 +35,8 @@ plugin.configs.recommended = {
     'vizlint/responsive-required': 'warn',
     'vizlint/consistent-component-spacing': 'warn',
     'vizlint/a11y-color-contrast': 'warn',
+    'vizlint/max-component-lines': 'warn',
+    'vizlint/missing-states': 'warn',
   },
 };
 
@@ -43,6 +49,8 @@ plugin.configs.strict = {
     'vizlint/responsive-required': 'error',
     'vizlint/consistent-component-spacing': 'error',
     'vizlint/a11y-color-contrast': 'error',
+    'vizlint/max-component-lines': 'error',
+    'vizlint/missing-states': 'error',
   },
 };
 
