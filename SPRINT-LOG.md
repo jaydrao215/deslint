@@ -129,3 +129,36 @@ Dependencies added: commander, chalk, @clack/prompts, eslint, glob, eslint-plugi
 Registered both rules in plugin index.ts. Updated recommended (warn) and strict (error) configs. Plugin version bumped to 0.3.0. Total: 8 rules, 290/290 tests green across all packages. Full monorepo build (9/9 tasks) passes.
 **Will do:** Sprint 7 planning
 **Blockers:** None
+
+## Sprint 7 — 2026-04-01
+
+### VIZ-018: Rules #9–10 — dark-mode-coverage + no-arbitrary-zindex
+
+**Did:** Implemented two new auto-fixable rules completing the full 10-rule set:
+
+**`dark-mode-coverage`**: Flags `bg-*` classes without corresponding `dark:` variants. Auto-fixes by inserting the inverted shade (50↔950, 100↔900, 200↔800, 300↔700, 400↔600, 500↔500). Named inversions: bg-white→dark:bg-gray-900, bg-black→dark:bg-gray-50. Skips bg-transparent, bg-inherit, bg-current, and gradient classes. Options: `ignoredPrefixes`, `ignoredColors`. Uses `createClassVisitor()` for cross-framework support. 21 tests (12 valid + 9 invalid).
+
+**`no-arbitrary-zindex`**: Flags `z-[N]` arbitrary values, replaces with nearest Tailwind scale value (z-0, z-10, z-20, z-30, z-40, z-50). Equidistant ties prefer smaller value. Preserves responsive/state variants (sm:z-[999]→sm:z-50). Allowlist option for specific z-index values. Uses `createClassVisitor()` for cross-framework support. 21 tests (11 valid + 10 invalid).
+
+Both rules registered in plugin index.ts with recommended (warn) and strict (error) configs. Plugin version 0.3.0. Updated `RULE_CATEGORY_MAP` in CLI lint-runner. 332/332 eslint-plugin tests green.
+**Will do:** VIZ-017 CLI init + VIZ-019 documentation
+**Blockers:** None
+
+### VIZ-017: CLI Init Command & Config Wizard
+
+**Did:** Implemented `npx vizlint init` interactive setup wizard using @clack/prompts. Steps: (1) check for existing .vizlintrc.json with overwrite confirmation, (2) auto-detect framework via `detectFramework()`, (3) Tailwind config auto-import showing token counts, (4) profile selection (prototype/production/custom) with all 10 rules pre-configured, (5) build and write .vizlintrc.json with design system tokens and default ignore patterns, (6) show ESLint flat config instructions, (7) optional quick-scan preview (first 20 files) with Design Health Score. Default ignore patterns: node_modules, dist, build, .next, test/story files. Wired into CLI as `vizlint init` command.
+**Will do:** VIZ-019 documentation site
+**Blockers:** None
+
+### VIZ-019: Documentation Site
+
+**Did:** Built documentation pages under `apps/docs/src/app/docs/`:
+- **Layout** (`layout.tsx`): Header with nav links (Getting Started, Configuration, Rules Reference, GitHub), prose-styled content area with Vizlint design system colors.
+- **Index** (`page.tsx`): Card grid linking to 3 sub-pages.
+- **Getting Started** (`getting-started/page.tsx`): Installation, ESLint flat config setup, init wizard, first scan, fix commands (interactive/all/dry-run), CI/CD GitHub Actions integration, framework support matrix, Tailwind v3+v4 support.
+- **Configuration** (`configuration/page.tsx`): Full .vizlintrc.json schema example, five levels of control (inline ignore, rule config, design system definition, ignore patterns, severity profiles), Tailwind auto-import documentation.
+- **Rules Reference** (`rules/page.tsx`): All 10 rules documented with descriptions, fixable/suggestions status, options schema, and before/after examples. Organized by category: colors (3), spacing (1), typography (1), responsive (1), consistency (4).
+
+Docs build generates 8 static pages (6 routes). All 9 monorepo tasks pass (332 plugin tests + 44 shared + 1 mcp + docs build).
+**Will do:** Sprint 8 planning
+**Blockers:** None

@@ -6,6 +6,8 @@ import consistentComponentSpacing from './rules/consistent-component-spacing.js'
 import a11yColorContrast from './rules/a11y-color-contrast.js';
 import maxComponentLines from './rules/max-component-lines.js';
 import missingStates from './rules/missing-states.js';
+import darkModeCoverage from './rules/dark-mode-coverage.js';
+import noArbitraryZindex from './rules/no-arbitrary-zindex.js';
 
 const plugin = {
   meta: {
@@ -21,6 +23,8 @@ const plugin = {
     'a11y-color-contrast': a11yColorContrast,
     'max-component-lines': maxComponentLines,
     'missing-states': missingStates,
+    'dark-mode-coverage': darkModeCoverage,
+    'no-arbitrary-zindex': noArbitraryZindex,
   },
   configs: {} as Record<string, any>,
 };
@@ -37,6 +41,8 @@ plugin.configs.recommended = {
     'vizlint/a11y-color-contrast': 'warn',
     'vizlint/max-component-lines': 'warn',
     'vizlint/missing-states': 'warn',
+    'vizlint/dark-mode-coverage': 'warn',
+    'vizlint/no-arbitrary-zindex': 'warn',
   },
 };
 
@@ -51,6 +57,8 @@ plugin.configs.strict = {
     'vizlint/a11y-color-contrast': 'error',
     'vizlint/max-component-lines': 'error',
     'vizlint/missing-states': 'error',
+    'vizlint/dark-mode-coverage': 'error',
+    'vizlint/no-arbitrary-zindex': 'error',
   },
 };
 
