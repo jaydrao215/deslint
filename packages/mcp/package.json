@@ -7,13 +7,21 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "@vizlint/mcp": "./dist/cli.js",
+    "vizlint-mcp": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -22,7 +30,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vizlint/shared": "workspace:*"
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@vizlint/cli": "workspace:^",
+    "@vizlint/shared": "workspace:*",
+    "eslint": "^10.0.0",
+    "eslint-plugin-vizlint": "workspace:^",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -95,6 +95,11 @@ export function formatText(
       }
       lines.push('');
     }
+
+    // ── False positive reporting ──
+    lines.push(chalk.gray('  ─'.repeat(24)));
+    lines.push(`  ${chalk.dim('See a false positive?')} ${chalk.cyan('https://github.com/vizlint/vizlint/issues/new?labels=false-positive')}`);
+    lines.push('');
   }
 
   return lines.join('\n');

@@ -276,6 +276,23 @@ export default function RulesReference() {
         <code>{`{/* vizlint-ignore no-arbitrary-colors -- brand gradient requires exact hex */}
 <div className="bg-[#1E3A5F]" />`}</code>
       </pre>
+
+      {/* ── Report False Positive ─────────────────────── */}
+      <h2>Report a False Positive</h2>
+      <p>
+        If a rule flags code that you believe is correct, please report it so we can improve
+        Vizlint for everyone. Include the rule name, the flagged code, and why you think
+        it&apos;s a false positive.
+      </p>
+      <p>
+        <a
+          href="https://github.com/vizlint/vizlint/issues/new?labels=false-positive"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Report a false positive on GitHub &rarr;
+        </a>
+      </p>
     </div>
   );
 }

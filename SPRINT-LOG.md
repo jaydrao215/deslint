@@ -181,3 +181,33 @@ Docs build generates 8 static pages (6 routes). All 9 monorepo tasks pass (332 p
 - [ ] Set up npm org `@vizlint` and add NPM_TOKEN to GitHub secrets
 - [ ] Configure Vercel/Netlify deploy for `vizlint.dev`
 - [ ] Purchase `vizlint.dev` domain
+
+## Sprint 8 — 2026-04-01
+
+### VIZ-020 + VIZ-021: Phase 2 Wrap (Code Portions)
+
+**Did:** Implemented the code-deliverable portion of Sprint 8 per v1.1 spec: added "Report False Positive" link (`https://github.com/vizlint/vizlint/issues/new?labels=false-positive`) to CLI text formatter output — appears after violation listing with a separator line. Added matching "Report a False Positive" section to the docs rules reference page with description and GitHub link. Remaining Sprint 8 items (metrics dashboard, community setup, business review) are operational tasks outside the codebase.
+**Will do:** Sprint 9 MCP server
+**Blockers:** Metrics dashboard (VIZ-020) and community setup (VIZ-021) require GitHub org, npm publish, and external tooling
+
+## Sprint 9 — 2026-04-01
+
+### VIZ-022: MCP Server Core Architecture
+
+**Did:** Built full MCP server implementation in `@vizlint/mcp` using `@modelcontextprotocol/sdk` with stdio transport (JSON-RPC 2.0). Three tools exposed:
+
+**`analyze_file`**: Accepts file path, runs ESLint programmatically with all 10 Vizlint rules, returns violations with line numbers, severity, rule IDs, fix data, and a file-level score (0-100). Never sends source code externally.
+
+**`analyze_project`**: Scans entire project using CLI's `discoverFiles()` + `runLint()` + `calculateScore()` pipeline. Returns Design Health Score with per-category breakdowns (colors, spacing, typography, responsive, consistency), grade, and top 10 violations. Configurable `maxFiles` limit (default 200).
+
+**`analyze_and_fix`**: Runs ESLint with `fix: true` on a single file. Returns the corrected code block, count of fixed violations, and remaining non-fixable violations. Does NOT modify files on disk — the AI agent receives corrected code and can apply it.
+
+Server architecture: `McpServer` from SDK with zod schema validation on all tool inputs. ESLint plugin loaded dynamically via async import with caching. JSX parsing enabled via `parserOptions.ecmaFeatures`. 5 tool tests + 2 server tests passing.
+**Will do:** VIZ-023 install CLI
+**Blockers:** None
+
+### VIZ-023: MCP Install CLI for Cursor & Claude Code
+
+**Did:** Built `npx @vizlint/mcp install` and `npx @vizlint/mcp uninstall` commands. Platform-aware config path detection: Claude Desktop (macOS: ~/Library/Application Support/Claude/, Windows: AppData/Roaming/Claude/, Linux: ~/.config/Claude/) and Cursor (~/.cursor/mcp.json). Install injects `vizlint` server entry into `mcpServers` in the appropriate JSON config file, preserving existing entries. Uninstall cleanly removes it. Falls back to manual instructions if no editor detected. CLI entry point at `src/cli.ts` with bin entry in package.json (`vizlint-mcp`). 3 install/config tests. 10/10 MCP tests green. All 9 monorepo tasks pass.
+**Will do:** Sprint 10 planning
+**Blockers:** None
