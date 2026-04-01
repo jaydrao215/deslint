@@ -1,4 +1,5 @@
 import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
+import { debugLog } from '../utils/debug.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -179,7 +180,8 @@ export default createRule<Options, MessageIds>({
             },
           });
         }
-      } catch {
+      } catch (err) {
+        debugLog('max-component-lines', err);
         return;
       }
     }
@@ -208,7 +210,8 @@ export default createRule<Options, MessageIds>({
               },
             });
           }
-        } catch {
+        } catch (err) {
+          debugLog('max-component-lines', err);
           return;
         }
       },

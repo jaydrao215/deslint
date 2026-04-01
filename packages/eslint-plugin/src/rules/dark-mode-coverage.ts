@@ -1,6 +1,7 @@
 import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { extractClassesFromString, parseClass } from '../utils/class-extractor.js';
 import { createClassVisitor } from '../utils/class-visitor.js';
+import { debugLog } from '../utils/debug.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -186,7 +187,8 @@ export default createRule<Options, MessageIds>({
               : {}),
           });
         }
-      } catch {
+      } catch (err) {
+        debugLog('dark-mode-coverage', err);
         return;
       }
     }

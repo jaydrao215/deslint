@@ -9,6 +9,7 @@ import {
   findNearestTracking,
 } from '../utils/typography-map.js';
 import { createClassVisitor } from '../utils/class-visitor.js';
+import { debugLog } from '../utils/debug.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -175,7 +176,8 @@ export default createRule<Options, MessageIds>({
               : {}),
           });
         }
-      } catch {
+      } catch (err) {
+        debugLog('no-arbitrary-typography', err);
         return;
       }
     }

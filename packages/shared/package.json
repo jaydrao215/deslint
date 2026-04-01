@@ -4,6 +4,9 @@
   "description": "Shared types, schemas, and utilities for Vizlint",
   "license": "MIT",
   "author": "Vizlint",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

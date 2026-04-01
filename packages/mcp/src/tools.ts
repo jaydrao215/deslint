@@ -111,13 +111,7 @@ export async function analyzeFile(params: {
   const absPath = resolve(projectDir, params.filePath);
 
   if (!existsSync(absPath)) {
-    return {
-      filePath: params.filePath,
-      violations: [],
-      score: 100,
-      totalErrors: 0,
-      totalWarnings: 0,
-    };
+    throw new Error(`File not found: ${params.filePath}`);
   }
 
   const eslint = await createEslintInstance(projectDir);
@@ -234,32 +228,30 @@ export async function analyzeAndFix(params: {
   const absPath = resolve(projectDir, params.filePath);
 
   if (!existsSync(absPath)) {
-    return {
-      filePath: params.filePath,
-      originalCode: '',
-      fixedCode: '',
-      fixedViolations: 0,
-      remainingViolations: [],
-    };
+    throw new Error(`File not found: ${params.filePath}`);
   }
 
   const originalCode = readFileSync(absPath, 'utf-8');
 
-  // Run ESLint with fix mode (does not write to disk)
-  const eslint = await createEslintInstance(projectDir, true);
-  const results = await eslint.lintFiles([absPath]);
+  // Single lint pass without fix to count original violations
+  const eslint = await createEslintInstance(projectDir, false);
+  const originalResults = await eslint.lintFiles([absPath]);
+  let originalViolationCount = 0;
+  for (const r of originalResults) {
+    originalViolationCount += r.messages.length;
+  }
+
+  // Single lint pass with fix to get corrected code
+  const eslintFix = await createEslintInstance(projectDir, true);
+  const fixResults = await eslintFix.lintFiles([absPath]);
 
   let fixedCode = originalCode;
-  let fixedCount = 0;
   const remaining: Violation[] = [];
 
-  for (const result of results) {
-    // ESLint provides the fixed output when fix=true
+  for (const result of fixResults) {
     if (result.output !== undefined) {
       fixedCode = result.output;
     }
-
-    // Count how many were fixed vs remaining
     for (const msg of result.messages) {
       remaining.push({
         ruleId: msg.ruleId ?? 'unknown',
@@ -271,20 +263,11 @@ export async function analyzeAndFix(params: {
     }
   }
 
-  // Fixed count = original violations minus remaining
-  const eslintNoFix = await createEslintInstance(projectDir, false);
-  const originalResults = await eslintNoFix.lintFiles([absPath]);
-  let originalViolationCount = 0;
-  for (const r of originalResults) {
-    originalViolationCount += r.messages.length;
-  }
-  fixedCount = originalViolationCount - remaining.length;
-
   return {
     filePath: relative(projectDir, absPath),
     originalCode,
     fixedCode,
-    fixedViolations: Math.max(0, fixedCount),
+    fixedViolations: Math.max(0, originalViolationCount - remaining.length),
     remainingViolations: remaining,
   };
 }

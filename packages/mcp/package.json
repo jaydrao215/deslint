@@ -4,6 +4,9 @@
   "description": "MCP server for Vizlint — real-time design quality feedback in Cursor/Claude Code",
   "license": "MIT",
   "author": "Vizlint",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -1,4 +1,5 @@
 import { ESLint } from 'eslint';
+import { dirname } from 'node:path';
 
 /** Rule categories used for Design Health Score sub-scores */
 export type RuleCategory = 'colors' | 'spacing' | 'typography' | 'responsive' | 'consistency';
@@ -58,6 +59,8 @@ export interface LintRunnerOptions {
   ruleOverrides?: Record<string, any>;
   /** Whether to apply fixes */
   fix?: boolean;
+  /** Working directory (base path for ESLint). Defaults to process.cwd(). */
+  cwd?: string;
 }
 
 /**
@@ -75,6 +78,11 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     'vizlint/no-arbitrary-typography': 'warn',
     'vizlint/responsive-required': 'warn',
     'vizlint/consistent-component-spacing': 'warn',
+    'vizlint/a11y-color-contrast': 'warn',
+    'vizlint/max-component-lines': 'warn',
+    'vizlint/missing-states': 'warn',
+    'vizlint/dark-mode-coverage': 'warn',
+    'vizlint/no-arbitrary-zindex': 'warn',
   };
 
   // Apply user overrides
@@ -85,9 +93,15 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     }
   }
 
+  // Determine cwd so ESLint treats all target files as within its base path.
+  // If not provided, derive from the first file's directory.
+  const cwd = options.cwd ?? (options.files.length > 0 ? dirname(options.files[0]) : process.cwd());
+
   const eslint = new ESLint({
     overrideConfigFile: true,
+    cwd,
     overrideConfig: {
+      files: ['**/*.tsx', '**/*.jsx', '**/*.vue', '**/*.svelte', '**/*.html', '**/*.js', '**/*.ts'],
       plugins: { vizlint: plugin } as any,
       rules,
       languageOptions: {

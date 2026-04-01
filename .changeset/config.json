@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
+  "changelog": ["@changesets/changelog-github", { "repo": "vizlint/vizlint" }],
+  "commit": false,
+  "fixed": [],
+  "linked": [
+    ["eslint-plugin-vizlint", "@vizlint/shared", "@vizlint/cli", "@vizlint/mcp"]
+  ],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["@vizlint/docs"]
+}

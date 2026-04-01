@@ -9,10 +9,14 @@ import missingStates from './rules/missing-states.js';
 import darkModeCoverage from './rules/dark-mode-coverage.js';
 import noArbitraryZindex from './rules/no-arbitrary-zindex.js';
 
+import { createRequire } from 'node:module';
+const _require = createRequire(import.meta.url);
+const _pkg = _require('../package.json') as { version: string };
+
 const plugin = {
   meta: {
     name: 'eslint-plugin-vizlint',
-    version: '0.3.0',
+    version: _pkg.version,
   },
   rules: {
     'no-arbitrary-colors': noArbitraryColors,

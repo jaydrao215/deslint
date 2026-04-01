@@ -4,6 +4,9 @@
   "description": "CLI for Vizlint — project-wide design quality analysis + Design Health Score",
   "license": "MIT",
   "author": "Vizlint",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "type": "module",
   "bin": {
     "vizlint": "./dist/index.js"

@@ -11,6 +11,7 @@
  */
 
 import type { TSESTree } from '@typescript-eslint/utils';
+import { debugLog } from './debug.js';
 
 /** Class wrapper function names that contain Tailwind classes */
 const CLASS_WRAPPERS = new Set([
@@ -38,7 +39,7 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
         if (node.value?.type === 'JSXExpressionContainer') {
           visitExpression(node.value.expression, check);
         }
-      } catch { return; }
+      } catch (err) { debugLog('class-visitor', err); return; }
     },
 
     // ─── Vue: static class="..." (vue-eslint-parser VAttribute) ───
@@ -47,7 +48,7 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
         if (node.value?.value && typeof node.value.value === 'string') {
           check(node.value.value, node.value);
         }
-      } catch { return; }
+      } catch (err) { debugLog('class-visitor', err); return; }
     },
 
     // ─── Vue: :class binding (VExpressionContainer) ───
@@ -57,7 +58,7 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
     'VAttribute[directive=true][key.name.name="bind"][key.argument.name="class"]'(node: any) {
       try {
         visitVueClassBinding(node, check);
-      } catch { return; }
+      } catch (err) { debugLog('class-visitor', err); return; }
     },
 
     // ─── Svelte: class="..." (static attribute) ───
@@ -65,7 +66,7 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
     'SvelteAttribute[name="class"]'(node: any) {
       try {
         visitSvelteClassAttribute(node, check);
-      } catch { return; }
+      } catch (err) { debugLog('class-visitor', err); return; }
     },
 
     // ─── Svelte: class:name={expr} directive ───
@@ -75,7 +76,7 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
         if (node.key?.name && typeof node.key.name === 'string') {
           check(node.key.name, node);
         }
-      } catch { return; }
+      } catch (err) { debugLog('class-visitor', err); return; }
     },
 
     // ─── Angular: BoundAttribute for [ngClass] and [class.*] ───
@@ -83,7 +84,7 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
     'BoundAttribute[name="ngClass"]'(node: any) {
       try {
         visitAngularNgClass(node, check);
-      } catch { return; }
+      } catch (err) { debugLog('class-visitor', err); return; }
     },
 
     // ─── Angular: TextAttribute for static class="..." ───
@@ -92,7 +93,7 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
         if (typeof node.value === 'string') {
           check(node.value, node);
         }
-      } catch { return; }
+      } catch (err) { debugLog('class-visitor', err); return; }
     },
 
     // ─── Angular: BoundAttribute for [class]="expr" ───
@@ -102,7 +103,7 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
           const ast = node.value.ast ?? node.value;
           visitAngularExpression(ast, node, check);
         }
-      } catch { return; }
+      } catch (err) { debugLog('class-visitor', err); return; }
     },
   };
 }

@@ -1,8 +1,12 @@
 import chalk from 'chalk';
 import { relative } from 'node:path';
+import { createRequire } from 'node:module';
 import type { LintResult } from './lint-runner.js';
 import type { ScoreResult, CategoryScore } from './score.js';
 import type { RuleCategory } from './lint-runner.js';
+
+const _require = createRequire(import.meta.url);
+const _pkg = _require('../package.json') as { version: string };
 
 export type OutputFormat = 'text' | 'json' | 'sarif';
 
@@ -138,7 +142,7 @@ export function formatJson(
   cwd: string,
 ): string {
   const report: JsonReport = {
-    version: '0.1.0',
+    version: _pkg.version,
     timestamp: new Date().toISOString(),
     score: {
       overall: scoreResult.overall,
@@ -221,7 +225,7 @@ export function formatSarif(
         tool: {
           driver: {
             name: 'Vizlint',
-            version: '0.1.0',
+            version: _pkg.version,
             informationUri: 'https://vizlint.dev',
             rules: Object.keys(lintResult.byRule).map((ruleId) => ({
               id: ruleId,
