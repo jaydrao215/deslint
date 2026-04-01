@@ -16,6 +16,9 @@
   ],
   "license": "MIT",
   "author": "Vizlint",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,8 +45,8 @@
   "peerDependencies": {
     "@angular-eslint/template-parser": ">=18.0.0",
     "eslint": ">=10.0.0",
-    "vue-eslint-parser": ">=9.0.0",
-    "svelte-eslint-parser": ">=0.30.0"
+    "svelte-eslint-parser": ">=0.30.0",
+    "vue-eslint-parser": ">=9.0.0"
   },
   "peerDependenciesMeta": {
     "@angular-eslint/template-parser": {
@@ -61,6 +64,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/node": "^25.5.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@typescript-eslint/rule-tester": "^8.0.0",
     "eslint": "^10.0.0",

@@ -1,5 +1,6 @@
 import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { extractClassesFromString, parseClass } from '../utils/class-extractor.js';
+import { debugLog } from '../utils/debug.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -202,7 +203,8 @@ export default createRule<Options, MessageIds>({
             fingerprint,
             rawClasses: classValue,
           });
-        } catch {
+        } catch (err) {
+          debugLog('consistent-component-spacing', err);
           return;
         }
       },
@@ -271,7 +273,8 @@ export default createRule<Options, MessageIds>({
               }
             }
           }
-        } catch {
+        } catch (err) {
+          debugLog('consistent-component-spacing', err);
           return;
         }
       },

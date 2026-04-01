@@ -1,4 +1,5 @@
 import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
+import { debugLog } from '../utils/debug.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -189,7 +190,8 @@ export default createRule<Options, MessageIds>({
               data: { element: tagName },
             });
           }
-        } catch {
+        } catch (err) {
+          debugLog('missing-states', err);
           return;
         }
       },

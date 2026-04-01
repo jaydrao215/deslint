@@ -2,6 +2,7 @@ import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { ARBITRARY_PATTERNS, extractClassesFromString, parseClass, isValidV4Class } from '../utils/class-extractor.js';
 import { findNearestColor, findNearestColorByRgb, parseRgbString, parseHslString } from '../utils/color-map.js';
 import { createClassVisitor } from '../utils/class-visitor.js';
+import { debugLog } from '../utils/debug.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -185,8 +186,9 @@ export default createRule<Options, MessageIds>({
             continue;
           }
         }
-      } catch {
+      } catch (err) {
         // Production safety: never crash linting for the entire file
+        debugLog('no-arbitrary-colors', err);
         return;
       }
     }

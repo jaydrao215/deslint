@@ -32,7 +32,11 @@ import {
 } from './generate-config.js';
 import { initWizard } from './init.js';
 
-export const VERSION = '0.1.0';
+import { createRequire } from 'node:module';
+const _require = createRequire(import.meta.url);
+const _pkg = _require('../package.json') as { version: string };
+
+export const VERSION = _pkg.version;
 
 // Re-exports for library usage
 export { generateConfig, loadDesignSystem, getOutputFilename, isValidTarget } from './generate-config.js';

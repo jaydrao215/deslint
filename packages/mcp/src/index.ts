@@ -9,7 +9,11 @@
  * Zero network calls. Pure local static analysis.
  */
 
-export const VERSION = '0.1.0';
+import { createRequire } from 'node:module';
+const _require = createRequire(import.meta.url);
+const _pkg = _require('../package.json') as { version: string };
+
+export const VERSION = _pkg.version;
 
 export { createServer, startServer } from './server.js';
 export { analyzeFile, analyzeProject, analyzeAndFix } from './tools.js';

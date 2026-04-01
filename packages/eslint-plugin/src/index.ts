@@ -8,11 +8,19 @@ import maxComponentLines from './rules/max-component-lines.js';
 import missingStates from './rules/missing-states.js';
 import darkModeCoverage from './rules/dark-mode-coverage.js';
 import noArbitraryZindex from './rules/no-arbitrary-zindex.js';
+import noInlineStyles from './rules/no-inline-styles.js';
+import consistentBorderRadius from './rules/consistent-border-radius.js';
+import imageAltText from './rules/image-alt-text.js';
+import noMagicNumbersLayout from './rules/no-magic-numbers-layout.js';
+
+import { createRequire } from 'node:module';
+const _require = createRequire(import.meta.url);
+const _pkg = _require('../package.json') as { version: string };
 
 const plugin = {
   meta: {
     name: 'eslint-plugin-vizlint',
-    version: '0.3.0',
+    version: _pkg.version,
   },
   rules: {
     'no-arbitrary-colors': noArbitraryColors,
@@ -25,6 +33,10 @@ const plugin = {
     'missing-states': missingStates,
     'dark-mode-coverage': darkModeCoverage,
     'no-arbitrary-zindex': noArbitraryZindex,
+    'no-inline-styles': noInlineStyles,
+    'consistent-border-radius': consistentBorderRadius,
+    'image-alt-text': imageAltText,
+    'no-magic-numbers-layout': noMagicNumbersLayout,
   },
   configs: {} as Record<string, any>,
 };
@@ -43,6 +55,10 @@ plugin.configs.recommended = {
     'vizlint/missing-states': 'warn',
     'vizlint/dark-mode-coverage': 'warn',
     'vizlint/no-arbitrary-zindex': 'warn',
+    'vizlint/no-inline-styles': 'warn',
+    'vizlint/consistent-border-radius': 'warn',
+    'vizlint/image-alt-text': 'warn',
+    'vizlint/no-magic-numbers-layout': 'warn',
   },
 };
 
@@ -59,6 +75,10 @@ plugin.configs.strict = {
     'vizlint/missing-states': 'error',
     'vizlint/dark-mode-coverage': 'error',
     'vizlint/no-arbitrary-zindex': 'error',
+    'vizlint/no-inline-styles': 'error',
+    'vizlint/consistent-border-radius': 'error',
+    'vizlint/image-alt-text': 'error',
+    'vizlint/no-magic-numbers-layout': 'error',
   },
 };
 
