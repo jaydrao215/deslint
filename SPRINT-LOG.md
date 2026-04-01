@@ -65,3 +65,47 @@
 **Did:** Wrote comprehensive README for `eslint-plugin-vizlint` with all 4 rules documented (description, detect patterns, before/after examples, full options reference, framework support matrix). Created `.github/workflows/release.yml`: tag push (`v*.*.*`) → frozen install → build → test → benchmark → publish `eslint-plugin-vizlint` + `@vizlint/shared` to npm → create GitHub Release from CHANGELOG entry. Follows flat-config-only requirement (v1.1: no legacy .eslintrc mention). 191/191 tests green across all packages.
 **Will do:** Sprint 4: VIZ-007 consistent-component-spacing
 **Blockers:** npm org @vizlint must be created and NPM_TOKEN secret added to GitHub repo before first publish
+
+## Sprint 4 — 2026-04-01
+
+### VIZ-007: Rule — consistent-component-spacing
+
+**Did:** Implemented `consistent-component-spacing` rule: detects when same-type components (e.g., Card, Button) use divergent spacing patterns within a file. Compares padding, margin, and gap independently across component instances. Reports the dominant pattern as the suggested standard. Strips size suffixes by default (CardSm/CardLg → Card) so variants are compared together. Supports JSXMemberExpression tags (UI.Card). Ignores responsive/state variants — only compares base spacing. NOT auto-fixable — choosing the "correct" spacing is a design decision. Configurable `threshold` (min instances before checking, default: 2) and `ignoreSizeVariants`. 20 tests, benchmark 0.04ms/file (budget: 2ms). 211/211 tests green.
+**Will do:** VIZ-010 AI tool templates
+**Blockers:** None
+
+### VIZ-010 + VIZ-010B: Cursor Rules, CLAUDE.md, AGENTS.md Templates + generate-config
+
+**Did:** Built three template generators in `packages/cli/src/templates/`: `generateCursorRules()` produces `.cursor/rules/vizlint-design-quality.mdc` with MDC frontmatter (description, globs, alwaysApply); `generateClaudeMd()` produces CLAUDE.md with checkpoint-gated workflow; `generateAgentsMd()` produces cross-tool AGENTS.md. All three templates cover all 5 Vizlint rules and include project-specific design tokens (colors, spacing, fonts) when a DesignSystem is provided. Implemented `generate-config` command module (VIZ-010B): `loadDesignSystem()` merges .vizlintrc.json + Tailwind auto-import; `generateConfig(target, ds)` dispatches to correct template; `getOutputFilename(target)` returns default paths. 20 tests covering all three generators with/without design systems, cross-template validation. 231/231 tests green.
+**Will do:** Sprint 5: VIZ-012 CLI + VIZ-013 Design Health Score + VIZ-014 a11y-color-contrast
+**Blockers:** VIZ-009 (Stripe service page) and VIZ-011 (outreach) are external marketing tasks requiring Stripe account, domain hosting, and social media
+
+## Sprint 5 — 2026-04-01
+
+### VIZ-012: CLI Project Scanner + Fix Modes
+
+**Did:** Full CLI implementation with Commander.js. Three execution modes per v1.1 spec:
+
+**Scan mode** (`vizlint scan [dir]`): file discovery with glob patterns, `.vizlintignore` support, and config ignore patterns. ESLint programmatic integration running all 6 Vizlint rules via overrideConfig. Three output formatters: text (chalk color-coded with score bars), JSON (structured report schema), and SARIF 2.1.0. `--min-score` threshold for CI/CD pass/fail gating. `--profile` support for severity profiles from .vizlintrc.json. Score history saved to `.vizlint/history.json`. Exit code 1 on errors or score below threshold.
+
+**Fix --all** (`vizlint fix --all`): applies all auto-fixable violations at once via ESLint's fix API. `--dry-run` shows unified diff without modifying files.
+
+**Fix --interactive** (`vizlint fix --interactive`): walks through violations one by one using @clack/prompts. Per-violation actions: apply, skip, apply-all-similar, ignore-rule, quit. Shows category and file location for each violation.
+
+**Generate-config** (`vizlint generate-config <target>`): wired up as CLI command with `--output` and `--stdout` options.
+
+Dependencies added: commander, chalk, @clack/prompts, eslint, glob, eslint-plugin-vizlint (workspace). 54 CLI tests covering discovery (9), score algorithm (12), formatters (7), CLI commands (5), generate-config (19), lint-runner (2). All passing.
+**Will do:** VIZ-013 Design Health Score
+**Blockers:** None
+
+### VIZ-013: Design Health Score Algorithm
+
+**Did:** Implemented scoring engine in `packages/cli/src/score.ts`. Formula: 5 equal-weighted categories (colors, spacing, typography, responsive, consistency) at 20% each. Per-category score: `max(0, 100 - (violations/files * 50))` — so ~1 violation per file yields ~50% category score. Overall = weighted average of category scores, rounded. Grades: pass (≥80), warn (60-79), fail (<60). Custom weights supported. Score history appended to `.vizlint/history.json` as JSON array with timestamp, scores, file/violation counts. 12 tests covering zero violations (100), proportional decrease, clamping to 0, grading thresholds, custom weights, edge cases (zero files, single file).
+**Will do:** VIZ-014 a11y-color-contrast
+**Blockers:** None
+
+### VIZ-014: Rule — a11y-color-contrast
+
+**Did:** Built WCAG 2.1 contrast ratio calculator in `packages/eslint-plugin/src/utils/contrast.ts`: relative luminance (sRGB linearization), contrast ratio (1:1 to 21:1), `meetsWcagAA()` helper. Implemented `a11y-color-contrast` rule: detects `text-{color}` + `bg-{color}` combinations on the same JSX element, maps Tailwind color classes to hex values via existing color-map, calculates contrast ratio, flags pairs below WCAG AA thresholds (4.5:1 normal text, 3.0:1 large text). Large text detected via `text-xl+` or `text-lg` + bold font weight. Suggests accessible alternatives with their contrast ratios. Supports custom color tokens via `customColors` option. NOT auto-fixable per v1.1 spec — accessible color choice requires design judgment. 23 rule tests + 12 contrast utility tests = 35 new tests. Registered as 6th rule in recommended and strict configs. 300/300 tests green across all packages.
+**Will do:** Sprint 6 planning
+**Blockers:** None
