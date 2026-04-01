@@ -10,6 +10,9 @@ export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'vizlint/no-arbitrary-typography': 'typography',
   'vizlint/responsive-required': 'responsive',
   'vizlint/consistent-component-spacing': 'consistency',
+  'vizlint/a11y-color-contrast': 'colors',
+  'vizlint/dark-mode-coverage': 'colors',
+  'vizlint/no-arbitrary-zindex': 'consistency',
 };
 
 export interface LintMessage {

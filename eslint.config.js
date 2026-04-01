@@ -3,7 +3,7 @@ import js from '@eslint/js';
 export default [
   js.configs.recommended,
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/.turbo/**'],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/.turbo/**', 'apps/docs/**'],
   },
   {
     files: ['**/*.ts'],

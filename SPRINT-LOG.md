@@ -109,3 +109,105 @@ Dependencies added: commander, chalk, @clack/prompts, eslint, glob, eslint-plugi
 **Did:** Built WCAG 2.1 contrast ratio calculator in `packages/eslint-plugin/src/utils/contrast.ts`: relative luminance (sRGB linearization), contrast ratio (1:1 to 21:1), `meetsWcagAA()` helper. Implemented `a11y-color-contrast` rule: detects `text-{color}` + `bg-{color}` combinations on the same JSX element, maps Tailwind color classes to hex values via existing color-map, calculates contrast ratio, flags pairs below WCAG AA thresholds (4.5:1 normal text, 3.0:1 large text). Large text detected via `text-xl+` or `text-lg` + bold font weight. Suggests accessible alternatives with their contrast ratios. Supports custom color tokens via `customColors` option. NOT auto-fixable per v1.1 spec — accessible color choice requires design judgment. 23 rule tests + 12 contrast utility tests = 35 new tests. Registered as 6th rule in recommended and strict configs. 300/300 tests green across all packages.
 **Will do:** Sprint 6 planning
 **Blockers:** None
+
+## Sprint 6 — 2026-04-01
+
+### VIZ-015: Framework Agnostic — Vue & Svelte Support
+
+**Did:** Extended `createClassVisitor()` in `packages/eslint-plugin/src/utils/class-visitor.ts` with full Vue and Svelte support. Vue: added `:class` binding selector (`VAttribute[directive=true][key.name.name="bind"][key.argument.name="class"]`) handling string literals, object syntax (extracts keys as class names), and array syntax (extracts string elements). Svelte: added `SvelteAttribute[name="class"]` selector handling mixed `SvelteLiteral` and `SvelteMustacheTag` chunks (including template literals inside mustache tags), plus `SvelteDirective[kind="Class"]` for `class:name` directives. Added `vue-eslint-parser` (≥9.0.0) and `svelte-eslint-parser` (≥0.30.0) as optional peer dependencies. All existing rules using `createClassVisitor()` automatically gain Vue/Svelte support. 11 new cross-framework unit tests (Vue :class string/object/array/identifier keys, Svelte static/mustache/template literal/boolean/directive, crash safety). 290/290 tests green.
+**Will do:** VIZ-016 max-component-lines + missing-states
+**Blockers:** None
+
+### VIZ-016: Rules #7–8 — max-component-lines + missing-states
+
+**Did:** Implemented two new rules per Sprint 6 spec:
+
+**`max-component-lines`**: Flags single-file components (function declarations, arrow functions, class declarations) that exceed a configurable LOC threshold (default: 300). Detects React components by checking if the function body contains JSX. PascalCase name detection — skips non-component helper functions. Configurable: `maxLines` (default 300), `ignoreComments` (default false), `ignoreBlankLines` (default false). NOT auto-fixable — decomposition requires human design decisions. Try/catch wrapped. 10 tests covering short components, exact threshold, non-components, arrow functions, class components, custom thresholds.
+
+**`missing-states`**: Detects form elements (`<input>`, `<select>`, `<textarea>`, `<button>`) missing state handling attributes. Checks for `disabled`/`aria-disabled` (default: required) and `aria-invalid` (default: required on non-button elements). Optional `requireAriaRequired` check. Spread attributes (`{...props}`) give benefit of the doubt. Configurable: `requireDisabled`, `requireAriaInvalid`, `requireAriaRequired`, `formElements` (custom element list). NOT auto-fixable — proper state handling requires design judgment. Try/catch wrapped. 23 tests covering all form elements, combined missing attrs, spread bypass, custom elements, option toggling.
+
+Registered both rules in plugin index.ts. Updated recommended (warn) and strict (error) configs. Plugin version bumped to 0.3.0. Total: 8 rules, 290/290 tests green across all packages. Full monorepo build (9/9 tasks) passes.
+**Will do:** Sprint 7 planning
+**Blockers:** None
+
+## Sprint 7 — 2026-04-01
+
+### VIZ-018: Rules #9–10 — dark-mode-coverage + no-arbitrary-zindex
+
+**Did:** Implemented two new auto-fixable rules completing the full 10-rule set:
+
+**`dark-mode-coverage`**: Flags `bg-*` classes without corresponding `dark:` variants. Auto-fixes by inserting the inverted shade (50↔950, 100↔900, 200↔800, 300↔700, 400↔600, 500↔500). Named inversions: bg-white→dark:bg-gray-900, bg-black→dark:bg-gray-50. Skips bg-transparent, bg-inherit, bg-current, and gradient classes. Options: `ignoredPrefixes`, `ignoredColors`. Uses `createClassVisitor()` for cross-framework support. 21 tests (12 valid + 9 invalid).
+
+**`no-arbitrary-zindex`**: Flags `z-[N]` arbitrary values, replaces with nearest Tailwind scale value (z-0, z-10, z-20, z-30, z-40, z-50). Equidistant ties prefer smaller value. Preserves responsive/state variants (sm:z-[999]→sm:z-50). Allowlist option for specific z-index values. Uses `createClassVisitor()` for cross-framework support. 21 tests (11 valid + 10 invalid).
+
+Both rules registered in plugin index.ts with recommended (warn) and strict (error) configs. Plugin version 0.3.0. Updated `RULE_CATEGORY_MAP` in CLI lint-runner. 332/332 eslint-plugin tests green.
+**Will do:** VIZ-017 CLI init + VIZ-019 documentation
+**Blockers:** None
+
+### VIZ-017: CLI Init Command & Config Wizard
+
+**Did:** Implemented `npx vizlint init` interactive setup wizard using @clack/prompts. Steps: (1) check for existing .vizlintrc.json with overwrite confirmation, (2) auto-detect framework via `detectFramework()`, (3) Tailwind config auto-import showing token counts, (4) profile selection (prototype/production/custom) with all 10 rules pre-configured, (5) build and write .vizlintrc.json with design system tokens and default ignore patterns, (6) show ESLint flat config instructions, (7) optional quick-scan preview (first 20 files) with Design Health Score. Default ignore patterns: node_modules, dist, build, .next, test/story files. Wired into CLI as `vizlint init` command.
+**Will do:** VIZ-019 documentation site
+**Blockers:** None
+
+### VIZ-019: Documentation Site
+
+**Did:** Built documentation pages under `apps/docs/src/app/docs/`:
+- **Layout** (`layout.tsx`): Header with nav links (Getting Started, Configuration, Rules Reference, GitHub), prose-styled content area with Vizlint design system colors.
+- **Index** (`page.tsx`): Card grid linking to 3 sub-pages.
+- **Getting Started** (`getting-started/page.tsx`): Installation, ESLint flat config setup, init wizard, first scan, fix commands (interactive/all/dry-run), CI/CD GitHub Actions integration, framework support matrix, Tailwind v3+v4 support.
+- **Configuration** (`configuration/page.tsx`): Full .vizlintrc.json schema example, five levels of control (inline ignore, rule config, design system definition, ignore patterns, severity profiles), Tailwind auto-import documentation.
+- **Rules Reference** (`rules/page.tsx`): All 10 rules documented with descriptions, fixable/suggestions status, options schema, and before/after examples. Organized by category: colors (3), spacing (1), typography (1), responsive (1), consistency (4).
+
+Docs build generates 8 static pages (6 routes). All 9 monorepo tasks pass (332 plugin tests + 44 shared + 1 mcp + docs build).
+**Will do:** Sprint 8 planning
+**Blockers:** None
+
+### UI Redesign — Landing Page & Docs Premium Polish
+
+**Did:** Complete UI overhaul of landing page and docs site, inspired by Linear/Supabase/Vercel patterns. Added framer-motion, @tailwindcss/typography, lucide-react, clsx, tailwind-merge. Landing page now has 7 animated sections: hero with gradient text + floating orbs + dot grid, before/after code comparison with syntax highlighting, bento grid of all 10 rules, 4-step "How it Works" flow, framework showcase, dark gradient CTA, structured footer. Docs section redesigned with fixed sidebar navigation, active state highlighting, mobile overlay, and polished prose typography. Custom motion components (FadeIn, StaggerContainer, ScaleIn) for scroll-triggered animations. Expanded Tailwind color palette with full primary scale. All 9 monorepo tasks pass.
+**Will do:** Sprint 8
+**Blockers:** None
+
+---
+
+## Future TODO (Pre-Launch Checklist)
+
+- [ ] Create `vizlint` GitHub organization
+- [ ] Transfer repo from `jaydrao215/vizlint` to `vizlint/vizlint` (public)
+- [ ] Create `vizlint/vizlint.dev` private repo for marketing site
+- [ ] Extract `apps/docs` marketing pages (hero, CTA, pricing) into `vizlint.dev`
+- [ ] Keep developer docs (rules, config, getting-started) in main repo
+- [ ] Set up npm org `@vizlint` and add NPM_TOKEN to GitHub secrets
+- [ ] Configure Vercel/Netlify deploy for `vizlint.dev`
+- [ ] Purchase `vizlint.dev` domain
+
+## Sprint 8 — 2026-04-01
+
+### VIZ-020 + VIZ-021: Phase 2 Wrap (Code Portions)
+
+**Did:** Implemented the code-deliverable portion of Sprint 8 per v1.1 spec: added "Report False Positive" link (`https://github.com/vizlint/vizlint/issues/new?labels=false-positive`) to CLI text formatter output — appears after violation listing with a separator line. Added matching "Report a False Positive" section to the docs rules reference page with description and GitHub link. Remaining Sprint 8 items (metrics dashboard, community setup, business review) are operational tasks outside the codebase.
+**Will do:** Sprint 9 MCP server
+**Blockers:** Metrics dashboard (VIZ-020) and community setup (VIZ-021) require GitHub org, npm publish, and external tooling
+
+## Sprint 9 — 2026-04-01
+
+### VIZ-022: MCP Server Core Architecture
+
+**Did:** Built full MCP server implementation in `@vizlint/mcp` using `@modelcontextprotocol/sdk` with stdio transport (JSON-RPC 2.0). Three tools exposed:
+
+**`analyze_file`**: Accepts file path, runs ESLint programmatically with all 10 Vizlint rules, returns violations with line numbers, severity, rule IDs, fix data, and a file-level score (0-100). Never sends source code externally.
+
+**`analyze_project`**: Scans entire project using CLI's `discoverFiles()` + `runLint()` + `calculateScore()` pipeline. Returns Design Health Score with per-category breakdowns (colors, spacing, typography, responsive, consistency), grade, and top 10 violations. Configurable `maxFiles` limit (default 200).
+
+**`analyze_and_fix`**: Runs ESLint with `fix: true` on a single file. Returns the corrected code block, count of fixed violations, and remaining non-fixable violations. Does NOT modify files on disk — the AI agent receives corrected code and can apply it.
+
+Server architecture: `McpServer` from SDK with zod schema validation on all tool inputs. ESLint plugin loaded dynamically via async import with caching. JSX parsing enabled via `parserOptions.ecmaFeatures`. 5 tool tests + 2 server tests passing.
+**Will do:** VIZ-023 install CLI
+**Blockers:** None
+
+### VIZ-023: MCP Install CLI for Cursor & Claude Code
+
+**Did:** Built `npx @vizlint/mcp install` and `npx @vizlint/mcp uninstall` commands. Platform-aware config path detection: Claude Desktop (macOS: ~/Library/Application Support/Claude/, Windows: AppData/Roaming/Claude/, Linux: ~/.config/Claude/) and Cursor (~/.cursor/mcp.json). Install injects `vizlint` server entry into `mcpServers` in the appropriate JSON config file, preserving existing entries. Uninstall cleanly removes it. Falls back to manual instructions if no editor detected. CLI entry point at `src/cli.ts` with bin entry in package.json (`vizlint-mcp`). 3 install/config tests. 10/10 MCP tests green. All 9 monorepo tasks pass.
+**Will do:** Sprint 10 planning
+**Blockers:** None

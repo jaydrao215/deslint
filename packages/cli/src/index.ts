@@ -30,6 +30,7 @@ import {
   getOutputFilename,
   isValidTarget,
 } from './generate-config.js';
+import { initWizard } from './init.js';
 
 export const VERSION = '0.1.0';
 
@@ -218,6 +219,20 @@ program
       }
       writeFileSync(outputPath, content);
       console.log(chalk.green(`  ✓ Generated ${outputPath}`));
+    } catch (err) {
+      console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
+      process.exit(1);
+    }
+  });
+
+// ── init command ────────────────────────────────────────────────────
+
+program
+  .command('init')
+  .description('Set up Vizlint in your project with an interactive wizard')
+  .action(async () => {
+    try {
+      await initWizard({ cwd: process.cwd() });
     } catch (err) {
       console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
       process.exit(1);
