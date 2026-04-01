@@ -1,0 +1,41 @@
+name: 'Vizlint Design Review'
+description: 'Run Vizlint design quality checks on pull requests and post a Design Health Score comment.'
+author: 'Vizlint'
+
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
+inputs:
+  github-token:
+    description: 'GitHub token for posting PR comments and check status.'
+    required: true
+    default: ${{ github.token }}
+  min-score:
+    description: 'Minimum Design Health Score (0-100). PR check fails below this threshold.'
+    required: false
+    default: '0'
+  config-path:
+    description: 'Path to .vizlintrc.json config file.'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Working directory for the scan.'
+    required: false
+    default: '.'
+  file-patterns:
+    description: 'Glob patterns for frontend files (comma-separated).'
+    required: false
+    default: '**/*.tsx,**/*.jsx,**/*.vue,**/*.svelte,**/*.html'
+
+outputs:
+  score:
+    description: 'Design Health Score (0-100)'
+  total-violations:
+    description: 'Total number of violations found'
+  passed:
+    description: 'Whether the score met the minimum threshold (true/false)'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

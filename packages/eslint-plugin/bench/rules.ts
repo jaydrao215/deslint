@@ -22,6 +22,9 @@ const App = () => (
     <input className="border rounded px-3 py-2" type="text" />
     <div className="bg-white text-black p-6">No dark mode variant</div>
     <div className="z-[999] absolute top-0 left-0">Arbitrary z-index</div>
+    <div style={{color: 'red', fontSize: '16px'}}>Inline styles</div>
+    <img src="hero.jpg" />
+    <div className="grid grid-cols-[3] gap-[17px]">Magic numbers</div>
   </div>
 );
 export default App;
@@ -45,6 +48,10 @@ async function bench() {
         'vizlint/missing-states': 'error',
         'vizlint/dark-mode-coverage': 'error',
         'vizlint/no-arbitrary-zindex': 'error',
+        'vizlint/no-inline-styles': 'error',
+        'vizlint/consistent-border-radius': 'error',
+        'vizlint/image-alt-text': 'error',
+        'vizlint/no-magic-numbers-layout': 'error',
       },
       languageOptions: {
         parserOptions: { ecmaFeatures: { jsx: true } },

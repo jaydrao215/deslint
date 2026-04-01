@@ -14,6 +14,10 @@ export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'vizlint/a11y-color-contrast': 'colors',
   'vizlint/dark-mode-coverage': 'colors',
   'vizlint/no-arbitrary-zindex': 'consistency',
+  'vizlint/no-inline-styles': 'consistency',
+  'vizlint/consistent-border-radius': 'consistency',
+  'vizlint/image-alt-text': 'responsive',
+  'vizlint/no-magic-numbers-layout': 'spacing',
 };
 
 export interface LintMessage {
@@ -83,6 +87,10 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     'vizlint/missing-states': 'warn',
     'vizlint/dark-mode-coverage': 'warn',
     'vizlint/no-arbitrary-zindex': 'warn',
+    'vizlint/no-inline-styles': 'warn',
+    'vizlint/consistent-border-radius': 'warn',
+    'vizlint/image-alt-text': 'warn',
+    'vizlint/no-magic-numbers-layout': 'warn',
   };
 
   // Apply user overrides
