@@ -211,3 +211,40 @@ Server architecture: `McpServer` from SDK with zod schema validation on all tool
 **Did:** Built `npx @vizlint/mcp install` and `npx @vizlint/mcp uninstall` commands. Platform-aware config path detection: Claude Desktop (macOS: ~/Library/Application Support/Claude/, Windows: AppData/Roaming/Claude/, Linux: ~/.config/Claude/) and Cursor (~/.cursor/mcp.json). Install injects `vizlint` server entry into `mcpServers` in the appropriate JSON config file, preserving existing entries. Uninstall cleanly removes it. Falls back to manual instructions if no editor detected. CLI entry point at `src/cli.ts` with bin entry in package.json (`vizlint-mcp`). 3 install/config tests. 10/10 MCP tests green. All 9 monorepo tasks pass.
 **Will do:** Sprint 10 planning
 **Blockers:** None
+
+## Sprint 10 — 2026-04-01
+
+### Code Quality Hardening (Pre-Sprint)
+
+**Did:** Comprehensive acquisition-grade code quality review identifying 16 issues across P0/P1/P2 priorities. Fixed all 16: added `debugLog()` utility for silent catch blocks across all 10 rules + class-visitor; replaced hardcoded version strings in eslint-plugin, CLI, MCP, and formatters with `createRequire()` pattern reading from package.json; fixed a11y-color-contrast being React-only (added Vue/Svelte/Angular visitors); fixed lint-runner only enabling 5 of 10 rules; fixed MCP analyzeFile returning score 100 for missing files (now throws); fixed MCP analyzeAndFix double-ESLint instantiation; added all missing rules to benchmark; added v8 coverage thresholds to all 4 vitest configs; added `engines.node >= 20.19.0` to all package.json files; added .prettierrc/.prettierignore; added SECURITY.md; added @changesets/cli for versioning; rewrote CLI and MCP test suites for comprehensive coverage. 479 tests passing.
+
+### VIZ-025: Rule Expansion — 4 New Rules (5 pts)
+
+**Did:** Implemented 4 new ESLint rules bringing the total to 14:
+
+**`no-inline-styles`**: Flags `style={{}}` and `style="..."` attributes across all frameworks (JSX, Vue, Svelte, Angular). Options: `allowlist` (CSS property names to permit), `allowDynamic` (skip dynamic expressions). Suggestions provided but not auto-fixable — converting CSS to Tailwind requires design judgment. 40 tests.
+
+**`consistent-border-radius`**: Detects mixed `rounded-*` values across same-type components. Same pattern as `consistent-component-spacing` — accumulates instances, reports non-dominant on `Program:exit`. Handles all rounded variants including directional (`rounded-t-*`), arbitrary (`rounded-[8px]`), and Tailwind v4 (`rounded-xs`). Options: `threshold`, `ignoreSizeVariants`. NOT auto-fixable. 26 tests.
+
+**`image-alt-text`**: Flags `<img>` and `<Image>` (Next.js) without `alt`, with empty alt (unless decorative with `role="presentation"`/`aria-hidden`), or with meaningless alt text ("image", "photo", "placeholder", etc.). Spread attribute benefit-of-the-doubt. Options: `checkNextImage`, `meaninglessPatterns`. NOT auto-fixable. 44 tests.
+
+**`no-magic-numbers-layout`**: Flags arbitrary bracket values in layout classes: `grid-cols-[N]`, `grid-rows-[N]`, `col-span-[N]`, `row-span-[N]`, `basis-[Npx]`, `gap-[Npx]`, `order-[N]`, `grow-[N]`, `shrink-[N]`. Auto-fixes when a clear Tailwind scale match exists (e.g., `gap-[16px]` → `gap-4`). Preserves responsive variants. CSS variable values skipped by default. Uses `createClassVisitor` for cross-framework support. 70 tests.
+
+All 4 rules registered in plugin index, recommended/strict configs, lint-runner defaults, benchmark, and RULE_CATEGORY_MAP.
+
+### VIZ-024: GitHub Action — PR Design Review (8 pts)
+
+**Did:** Built composite Node.js 20 GitHub Action in `action/` directory:
+
+- **Changed file detection**: Fetches PR diff via GitHub API with pagination, filters by configurable frontend file patterns (`**/*.tsx`, `**/*.jsx`, `**/*.vue`, `**/*.svelte`, `**/*.html`)
+- **Scan engine**: Runs all 14 Vizlint rules via ESLint programmatic API, computes Design Health Score with 5 category breakdowns (20% each)
+- **PR comment**: Markdown-formatted report with score badge, metrics table, category breakdown, top violations. Comment deduplication via HTML marker — updates existing comment on subsequent pushes
+- **Check status**: Configurable `min-score` threshold; fails PR check if score drops below
+- **Inputs**: `github-token`, `min-score`, `config-path`, `working-directory`, `file-patterns`
+- **Outputs**: `score`, `total-violations`, `passed`
+- `action.yml` with Marketplace branding (check-circle icon, blue)
+- 17 tests (12 comment formatting + 5 changed-files filtering)
+
+Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli + 25 mcp + 44 shared + 17 action). Clean build across all 6 packages.
+**Will do:** Sprint 11 planning
+**Blockers:** None
