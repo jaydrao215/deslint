@@ -2,6 +2,7 @@ import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { extractClassesFromString, parseClass } from '../utils/class-extractor.js';
 import { createClassVisitor } from '../utils/class-visitor.js';
 import { debugLog } from '../utils/debug.js';
+import { safeGetText, safeGetRange } from '../utils/safe-source.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -119,20 +120,28 @@ export default createRule<Options, MessageIds>({
             node,
             messageId: 'arbitraryZIndex',
             data: { className: cls, suggested },
-            fix(fixer) {
-              const src = context.sourceCode.getText(node);
-              return fixer.replaceText(node, src.replace(cls, suggested));
-            },
-            suggest: [
-              {
-                messageId: 'suggestScale',
-                data: { suggested },
-                fix(fixer) {
-                  const src = context.sourceCode.getText(node);
-                  return fixer.replaceText(node, src.replace(cls, suggested));
-                },
-              },
-            ],
+            ...(suggested
+              ? {
+                  fix(fixer) {
+                    const src = safeGetText(context.sourceCode, node);
+                    const range = safeGetRange(context.sourceCode, node);
+                    if (!src || !range) return null;
+                    return fixer.replaceTextRange(range, src.replace(cls, suggested));
+                  },
+                  suggest: [
+                    {
+                      messageId: 'suggestScale',
+                      data: { suggested },
+                      fix(fixer) {
+                        const src = safeGetText(context.sourceCode, node);
+                        const range = safeGetRange(context.sourceCode, node);
+                        if (!src || !range) return null;
+                        return fixer.replaceTextRange(range, src.replace(cls, suggested));
+                      },
+                    },
+                  ],
+                }
+              : {}),
           });
         }
       } catch (err) {

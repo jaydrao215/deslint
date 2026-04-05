@@ -78,6 +78,23 @@ ruleTester.run('no-magic-numbers-layout', rule, {
       options: [{ allowlist: ['gap-[17px]'] }],
     },
 
+    // ── Complex CSS Grid templates (no Tailwind scale equivalent) — NOT flagged ──
+    { code: '<div className="grid-cols-[minmax(0,1fr)_320px]" />' },
+    { code: '<div className="grid-cols-[repeat(auto-fit,minmax(260px,1fr))]" />' },
+    { code: '<div className="grid-cols-[1fr_auto]" />' },
+    { code: '<div className="grid-cols-[8.5rem_minmax(0,1fr)]" />' },
+    { code: '<div className="grid-cols-[1.1fr_0.9fr]" />' },
+    { code: '<div className="grid-cols-[min(180px,40%)_1fr]" />' },
+    { code: '<div className="lg:grid-cols-[minmax(0,1fr)_300px]" />' },
+    { code: '<div className="grid-rows-[auto_1fr_auto]" />' },
+    { code: '<div className="grid-rows-[minmax(100px,auto)_1fr]" />' },
+    { code: '<div className="grid-cols-[fit-content(200px)_1fr]" />' },
+    // fr followed by _ (Tailwind's space separator) — should also be exempt
+    { code: '<div className="grid-cols-[1fr_300px]" />' },
+    { code: '<div className="xl:grid-cols-[1fr_300px]" />' },
+    { code: '<div className="lg:grid-cols-[1fr_300px]" />' },
+    { code: '<div className="grid-cols-[2fr_1fr_200px]" />' },
+
     // ── Empty / no className ──
     { code: '<div id="test" />' },
     { code: '<div className="" />' },

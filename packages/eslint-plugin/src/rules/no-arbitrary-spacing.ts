@@ -3,6 +3,7 @@ import { extractClassesFromString, parseClass, isValidV4Class } from '../utils/c
 import { toPx, findNearestSpacing, findNearestInCustomScale } from '../utils/spacing-map.js';
 import { createClassVisitor } from '../utils/class-visitor.js';
 import { debugLog } from '../utils/debug.js';
+import { safeGetText, safeGetRange } from '../utils/safe-source.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -12,6 +13,10 @@ export type Options = [
   {
     allowlist?: string[];
     customScale?: Record<string, number>;
+    /** Skip min-w, max-w, min-h, max-h (usually intentional constraints). Default: true */
+    skipConstraints?: boolean;
+    /** Skip values at or below this px threshold (fine-tuning, not design system violations). Default: 2 */
+    minPxThreshold?: number;
   },
 ];
 
@@ -47,6 +52,14 @@ export default createRule<Options, MessageIds>({
             additionalProperties: { type: 'number' },
             description: 'Custom spacing scale overriding Tailwind defaults: { "18": 72 }',
           },
+          skipConstraints: {
+            type: 'boolean',
+            description: 'Skip min-w, max-w, min-h, max-h (usually intentional). Default: true',
+          },
+          minPxThreshold: {
+            type: 'number',
+            description: 'Skip values at or below this px size. Default: 2',
+          },
         },
         additionalProperties: false,
       },
@@ -57,10 +70,15 @@ export default createRule<Options, MessageIds>({
       suggestScale: 'Replace with `{{replacement}}`',
     },
   },
-  defaultOptions: [{ allowlist: [], customScale: undefined }],
+  defaultOptions: [{ allowlist: [], customScale: undefined, skipConstraints: true, minPxThreshold: 2 }],
   create(context, [options]) {
     const allowlist = new Set(options.allowlist ?? []);
     const customScale = options.customScale ?? null;
+    const skipConstraints = options.skipConstraints ?? true;
+    const minPxThreshold = options.minPxThreshold ?? 2;
+
+    /** Prefixes that are usually intentional layout constraints, not design system violations */
+    const CONSTRAINT_PREFIXES = new Set(['min-w', 'max-w', 'min-h', 'max-h']);
 
     function reportViolation(
       node: TSESTree.Node,
@@ -76,16 +94,20 @@ export default createRule<Options, MessageIds>({
         ...(fullReplacement
           ? {
               fix(fixer) {
-                const src = context.sourceCode.getText(node);
-                return fixer.replaceText(node, src.replace(cls, fullReplacement));
+                const src = safeGetText(context.sourceCode, node);
+                const range = safeGetRange(context.sourceCode, node);
+                if (!src || !range) return null;
+                return fixer.replaceTextRange(range, src.replace(cls, fullReplacement));
               },
               suggest: [
                 {
                   messageId: 'suggestScale',
                   data: { replacement: fullReplacement },
                   fix(fixer) {
-                    const src = context.sourceCode.getText(node);
-                    return fixer.replaceText(node, src.replace(cls, fullReplacement));
+                    const src = safeGetText(context.sourceCode, node);
+                    const range = safeGetRange(context.sourceCode, node);
+                    if (!src || !range) return null;
+                    return fixer.replaceTextRange(range, src.replace(cls, fullReplacement));
                   },
                 },
               ],
@@ -110,6 +132,12 @@ export default createRule<Options, MessageIds>({
           const rawValue = match[2];
           const px = toPx(rawValue);
           if (px === null) continue;
+
+          // Skip constraint prefixes (min-w, max-w, etc.) — usually intentional
+          if (skipConstraints && CONSTRAINT_PREFIXES.has(prefix)) continue;
+
+          // Skip tiny values (1px, 2px) — fine-tuning, not design system violations
+          if (minPxThreshold > 0 && px <= minPxThreshold) continue;
 
           const nearest = customScale
             ? findNearestInCustomScale(px, customScale)

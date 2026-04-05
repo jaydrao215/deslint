@@ -66,8 +66,7 @@ describe('runLint', () => {
     expect(result.byRule['vizlint/no-arbitrary-colors']).toBeGreaterThanOrEqual(1);
     // Should detect arbitrary spacing (p-[13px])
     expect(result.byRule['vizlint/no-arbitrary-spacing']).toBeGreaterThanOrEqual(1);
-    // dark-mode-coverage also fires for bg-[#FF0000] without a dark: variant
-    expect(result.byRule['vizlint/dark-mode-coverage']).toBeGreaterThanOrEqual(1);
+    // dark-mode-coverage skips arbitrary bg-[...] values (they're not standard color patterns)
   });
 
   it('returns correct bySeverity counts', async () => {
@@ -142,14 +141,12 @@ describe('runLint', () => {
 
     // The disabled rule should not appear in byRule
     expect(result.byRule['vizlint/no-arbitrary-colors']).toBeUndefined();
-    // dark-mode-coverage still fires for the bg class
-    expect(result.byRule['vizlint/dark-mode-coverage']).toBeGreaterThanOrEqual(1);
   });
 
   it('respects ruleOverrides to escalate a rule to error', async () => {
     const filePath = await writeTsx(
       'Escalate.tsx',
-      `const Escalate = () => <div className="bg-[#FF0000]">escalate</div>;\nexport default Escalate;\n`,
+      `const Escalate = () => <div className="bg-[#FF0000] bg-blue-500">escalate</div>;\nexport default Escalate;\n`,
     );
 
     const result = await runLint({
@@ -159,8 +156,6 @@ describe('runLint', () => {
 
     // no-arbitrary-colors should now be reported as an error (severity 2)
     expect(result.bySeverity.errors).toBeGreaterThanOrEqual(1);
-    // dark-mode-coverage still fires as a warning
-    expect(result.bySeverity.warnings).toBeGreaterThanOrEqual(1);
   });
 
   it('handles ruleOverrides without vizlint/ prefix', async () => {

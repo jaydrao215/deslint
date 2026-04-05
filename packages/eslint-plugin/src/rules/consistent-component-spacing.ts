@@ -16,13 +16,36 @@ export type Options = [
 export type MessageIds = 'inconsistentSpacing';
 
 /**
- * Spacing utility prefixes — padding, margin, and gap patterns in Tailwind.
- * We group by category (padding, margin, gap) to compare like-for-like.
+ * Spacing utility prefixes — grouped by axis so we only compare like-for-like.
+ * `my-1` vs `-mr-3` are different axes and should never be compared.
+ *
+ * Each key is a distinct comparison group. Classes can only conflict within a group.
  */
 const SPACING_CATEGORIES: Record<string, RegExp> = {
-  padding: /^p([xytrblse])?-/,
-  margin: /^(-)?m([xytrblse])?-/,
-  gap: /^gap(-[xy])?-/,
+  // Padding (by axis)
+  'padding-all': /^p-/,
+  'padding-x': /^px-/,
+  'padding-y': /^py-/,
+  'padding-t': /^pt-/,
+  'padding-b': /^pb-/,
+  'padding-l': /^pl-/,
+  'padding-r': /^pr-/,
+  'padding-s': /^ps-/,
+  'padding-e': /^pe-/,
+  // Margin (by axis, including negative)
+  'margin-all': /^-?m-/,
+  'margin-x': /^-?mx-/,
+  'margin-y': /^-?my-/,
+  'margin-t': /^-?mt-/,
+  'margin-b': /^-?mb-/,
+  'margin-l': /^-?ml-/,
+  'margin-r': /^-?mr-/,
+  'margin-s': /^-?ms-/,
+  'margin-e': /^-?me-/,
+  // Gap — patterns are mutually exclusive
+  'gap-all': /^gap-(?![xy]-)/,
+  'gap-x': /^gap-x-/,
+  'gap-y': /^gap-y-/,
 };
 
 /**

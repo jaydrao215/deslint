@@ -60,11 +60,12 @@ ruleTester.run('no-arbitrary-typography', rule, {
 
   invalid: [
     // ── font-size ──
-    // text-[17px] = 17px; equidistant from text-base(16) and text-lg(18) → smaller wins → text-base
-    fixable(
-      '<div className="text-[17px]" />',
-      '<div className="text-base" />',
-    ),
+    // text-[17px] = 17px; not exact match to any scale value → no suggestion (report only)
+    {
+      code: '<div className="text-[17px]" />',
+      errors: [{ messageId: 'arbitraryTypography' as const }],
+    },
+    // text-[16px] = 16px; exact match to text-base
     fixable(
       '<div className="text-[16px]" />',
       '<div className="text-base" />',
@@ -77,11 +78,11 @@ ruleTester.run('no-arbitrary-typography', rule, {
       '<div className="text-[1.5rem]" />',
       '<div className="text-2xl" />',
     ),
-    // text-[13px] equidistant from text-xs(12) and text-sm(14) → smaller wins → text-xs
-    fixable(
-      '<div className="text-[13px]" />',
-      '<div className="text-xs" />',
-    ),
+    // text-[13px] not exact match to any scale value → no suggestion
+    {
+      code: '<div className="text-[13px]" />',
+      errors: [{ messageId: 'arbitraryTypography' as const }],
+    },
     fixable(
       '<div className="text-[48px]" />',
       '<div className="text-5xl" />',
@@ -148,14 +149,13 @@ ruleTester.run('no-arbitrary-typography', rule, {
       '<div className="hover:font-bold" />',
     ),
 
-    // ── Multiple violations — separate errors, overlapping fixes need array form ──
+    // ── Multiple violations — text-[17px] has no exact match (no fix), font-[450] is within tolerance of font-normal (400) ──
     {
       code: '<div className="text-[17px] font-[450]" />',
-      output: ['<div className="text-base font-[450]" />', '<div className="text-base font-normal" />'],
+      output: '<div className="text-[17px] font-normal" />',
       errors: [
         {
           messageId: 'arbitraryTypography' as const,
-          suggestions: [{ messageId: 'suggestScale' as const, output: '<div className="text-base font-[450]" />' }],
         },
         {
           messageId: 'arbitraryTypography' as const,

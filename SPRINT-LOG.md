@@ -248,3 +248,114 @@ All 4 rules registered in plugin index, recommended/strict configs, lint-runner 
 Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli + 25 mcp + 44 shared + 17 action). Clean build across all 6 packages.
 **Will do:** Sprint 11 planning
 **Blockers:** None
+
+## Validation Sprint — 2026-04-01
+
+### Vintor Real-World Validation (Stage 1)
+
+**Did:** First real-world validation of all 14 Vizlint rules against the Vintor Angular 21 frontend (73 files, Tailwind v4.2).
+
+**Initial scan:** 187 violations, 82% false positive rate — unacceptable. Found and fixed 7 bugs:
+
+1. **lint-runner Angular parser not wired** (P0) — All Angular `.html` templates silently failed to parse. Added framework-specific parser detection for Angular/Vue/Svelte.
+2. **Angular template nodes crash auto-fix** (P0) — Angular parser nodes lack `range`, crashing `getText()` and `replaceText()`. Created `safeGetText()` + `nodeSupportsAutofix()` guards across all 6 fixable rules.
+3. **no-arbitrary-colors flags CSS variables** (P1) — `var()` references ARE design tokens. Added `allowCssVariables` option (default: true).
+4. **dark-mode-coverage too broad** (P1) — Flagged semantic tokens, gradients, opacity modifiers, custom token families. Added 4 filters + standard Tailwind color family whitelist.
+5. **no-magic-numbers-layout flags complex grid templates** (P2) — Skips CSS functions (minmax, repeat, min, max, fit-content), fractional values, auto.
+6. **no-arbitrary-typography wrong suggestions** (P2) — Exact-match tolerance: font-size/leading require 0px deviation. Prevents wrong suggestions like text-[10px] → text-xs.
+7. **no-magic-numbers-layout missing rem + fractional scale** (P3) — Added rem-to-px conversion and expanded spacing map with fractional Tailwind values.
+
+**Final scan:** 423 violations — 116 true positives, 0 false positives, 306 noise (custom type scale + no dark mode). **FP rate: 0%.** Scan time: 0.34s.
+
+**Tests:** 541 eslint-plugin + 78 cli + 25 mcp + 44 shared + 17 action = 705 tests passing. 29 new test cases added for real-world patterns from validation.
+
+**Will do:** Validate on 2-3 open-source Tailwind projects (JSX/Vue — to test auto-fix). Investigate rules with 0 violations on Angular. Create validation/SUMMARY.md.
+**Blockers:** None
+
+### OSS Validation (Stage 2) — nextjs/saas-starter + shadcn-ui/taxonomy
+
+**Did:** Validated Vizlint on 2 real open-source Next.js + shadcn/ui projects. Found and fixed 6 additional bugs (total: 13 bugs fixed across validation sprint):
+
+8. **TypeScript parser missing** (P0) — All `.tsx`/`.ts` files failed to parse with "Unexpected token" errors. The lint-runner used Espree for ALL files including TypeScript. Added `@typescript-eslint/parser` for `.tsx`/`.ts` files.
+9. **scan command not passing cwd** (P0) — `scan` CLI command computed correct `cwd` but didn't pass it to `runLint()`. ESLint defaulted to a subdirectory and reported all other files as "outside base path". Fixed: pass `cwd` in the `runLint` call.
+10. **Third-party rule leakage** (P1) — `eslint-disable-next-line @next/next/no-img-element` comments caused ESLint to report "rule not found" violations. Fixed: `aggregateResults()` now filters to `vizlint/*` rules only.
+11. **no-magic-numbers-layout fr_ FP** (P1) — `grid-cols-[1fr_300px]` flagged as magic number. `fr\b` regex doesn't match `fr_` (underscore is `\w`). Fixed: `fr(?:[^a-z]|$)`.
+12. **consistent-component-spacing cross-axis comparison** (P1) — All margin classes (`my-`, `mr-`, `ml-`) grouped as one "margin" category. `my-1` vs `-mr-3` compared as the same type → FP. Fixed: split into axis-specific sub-categories (`margin-y`, `margin-r`, etc.).
+13. **no-inline-styles flags dynamic template literals** (P1) — `style={{ transform: \`translateX(-${val}%)\` }}` (progress bar) was flagged even though dynamic values can't be Tailwind classes. Changed `allowDynamic` default to `true`. Added `hasDynamicValues()` check within ObjectExpression.
+
+**Final results:**
+- saas-starter: 23 files, 51 violations, 0 FPs, 0 crashes, 0.31s
+- taxonomy: 94 files, 71 violations, 0 FPs, 0 crashes, 0.40s
+- Auto-fix verified correct on real JSX code (6 fixes verified across both projects)
+- FP rate across all 3 validated projects (Vintor + 2 OSS): **0%**
+
+**Tests:** 551 eslint-plugin + 78 cli = 629 tests passing. 6 new rule tests, 9 new test cases for dynamic inline styles and fr_ grid patterns.
+
+**Will do:** Monitor Vintor dogfood for 1 week (ends 2026-04-09). Fix any new FP types found in real usage.
+**Blockers:** None
+
+### Vintor Dogfood Setup — 2026-04-02
+
+**Did:** Configured Vizlint for active daily development use in Vintor:
+- `npm link`'d eslint-plugin-vizlint (local build) into autoscore-frontend
+- Created `eslint.config.js` with flat config: TypeScript parser for .ts files, Angular template parser for .html files
+- Created `.vizlintrc.json` tuned for Vintor's design system: dark-mode-coverage OFF (CSS variable theming, not dark: prefix), no-arbitrary-typography OFF (custom 15px base type scale), all other 12 rules at warn
+- Added `npm run vizlint` and `npm run vizlint:json` scripts to package.json
+- First dogfood scan: **74 files, 71 violations, 0 FPs, 0 crashes, 0.39s**
+  - no-arbitrary-spacing: 64 (max-w-[800px], h-[64px], py-[1px], etc.)
+  - no-arbitrary-zindex: 4 (z-[1], z-[70], z-[200])
+  - no-magic-numbers-layout: 3 (gap-[0.625rem] → gap-2.5)
+
+**Will do:** Run vizlint daily during development for 1 week. If new FP types appear, fix the rule and add test coverage. Dogfood ends 2026-04-09 → fill in trust metrics date in VIZLINT-EXECUTION.md → Stage 2 begins.
+**Blockers:** None
+
+### Angular Auto-Fix + responsive-required Extension — 2026-04-02
+
+**Did:** Resolved the core Angular auto-fix problem and extended `responsive-required` to catch more layout issues.
+
+**Angular auto-fix (P0 bug):**
+- Angular template parser provides `loc` but NOT `range` on AST nodes
+- `fixer.replaceText(node)` requires `node.range` — silently returned null on all Angular files
+- Built `safeGetRange()` in `safe-source.ts`: computes character offsets from `loc.line/column` by summing line lengths
+- Switched all 6 fixable rules (`no-arbitrary-spacing`, `no-arbitrary-colors`, `no-arbitrary-zindex`, `no-arbitrary-typography`, `no-magic-numbers-layout`, `dark-mode-coverage`) to `fixer.replaceTextRange()` 
+- Deprecated `nodeSupportsAutofix()` (now always returns true)
+- Verified: `npm run vizlint:fix` on Vintor → h-[64px] → h-16 confirmed in Angular HTML. 71 → 28 violations.
+
+**`responsive-required` extended to `max-w` and `min-w`:**
+- Old rule only caught `w-[Npx]`. Extended regex to `/^(w|max-w|min-w)-\[(\d+(?:\.\d+)?)(px|rem)\]$/`
+- `max-w` always flagged regardless of iconSizeThreshold (any fixed max-w can break mobile)
+- Added valid/invalid test cases for max-w and min-w patterns (8 new test cases)
+
+**`vizlint init` wizard:**
+- Generates framework-specific `eslint.config.js` (Angular, Vue, Svelte, React/Next.js)
+- Adds `vizlint` and `vizlint:fix` npm scripts to package.json without touching existing
+- New user workflow: `npx vizlint init` → answer 2 questions → `npm run vizlint` / `npm run vizlint:fix`
+
+**Will do:** Continue dogfood week. Build suggest-tokens command.
+**Blockers:** None
+
+### `vizlint suggest-tokens` Command + Grouped Formatter — 2026-04-02
+
+**Did:** Built two major developer experience improvements:
+
+**Grouped violation formatter** (`formatters.ts`):
+- Violations that appear 2+ times are now grouped: "max-w-[800px] — 8 occurrences across 4 files" instead of 8 separate lines
+- Singletons shown per-file in traditional view below the grouped section
+- Tip appended when unfixable spacing violations are present
+
+**`vizlint suggest-tokens` command** (new CLI command at `packages/cli/src/suggest-tokens.ts`):
+- Classifies each arbitrary value into 3 tiers:
+  - **Near-miss**: within 15% of a Tailwind semantic class → "is the 32px difference intentional? consider max-w-3xl"
+  - **Repeated custom** (2+ occurrences, no close Tailwind match) → design decision worth naming — generates semantic CSS block
+  - **One-off** (appears once) → "review intent — probably accidental"
+- CSS block ONLY generated for repeated custom values
+- Uses Tailwind max-w semantic scale (max-w-xs through max-w-7xl, screen-*) for near-miss detection
+- Philosophy: guide toward the design system, not toward CSS variable bloat
+
+**Vintor results with new command:**
+- 8 near-miss values (e.g. max-w-[800px] → "closest: max-w-3xl, 32px difference — intentional?")
+- 1 repeated custom (w-[480px] — no Tailwind equivalent, appears in 2 admin components)
+- 1 one-off (max-w-[120px] — specific component constraint, nearest max-w-xs is 200px away)
+
+**Will do:** Monitor dogfood. Extend suggest-tokens to cover no-arbitrary-colors violations.
+**Blockers:** None

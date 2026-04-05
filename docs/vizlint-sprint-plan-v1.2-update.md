@@ -1,6 +1,6 @@
 # Vizlint Sprint Plan v1.2 — Final Update
 
-> Apply ON TOP of v1.0 (vizlint-sprint-plan.docx) + v1.1 (vizlint-sprint-plan-v1.1-update.md).
+> Apply ON TOP of v1.0 (vizlint-sprint-plan.txt) + v1.1 (vizlint-sprint-plan-v1.1-update.md).
 > This is the last overlay before Sprint 1 begins.
 
 ---
@@ -387,26 +387,205 @@ while the need for enforcement remains permanent.
 
 ---
 
+## NEW SECTION: Product Vision — Beyond a Linter (v1.2 Strategic Expansion)
+
+> Added April 2026 based on market research and strategic analysis.
+> This section expands Vizlint's scope from "ESLint plugin" to "design quality infrastructure."
+> See VIZLINT-EXECUTION.md for implementation staging and gating criteria.
+
+### The Market Opportunity (April 2026)
+
+- 92% of US developers use AI coding tools daily. 41-42% of all new code is AI-generated.
+- AI-generated PRs have 1.7x more issues, 3x readability problems, 2.74x security vulnerabilities.
+- Developer trust in AI code has collapsed: favorability dropped from 77% → 60%.
+- The AI code review market is $12.8B. CodeRabbit ($88M raised), Qodo ($70M raised), Anthropic Code Review — all focus on logic/security. **Nobody owns design quality.**
+- eslint-plugin-tailwindcss (5.9M downloads/month) has stalled on Tailwind v4. eslint-plugin-jsx-a11y (123M downloads/month) is React-only.
+- No existing tool combines design system enforcement + accessibility + responsiveness + framework-agnostic linting in a single, local-first ESLint plugin.
+
+### Five-Level Product Hierarchy
+
+| Level | What | For Whom |
+|-------|------|----------|
+| **L1: ESLint Plugin** | Rules that catch design quality violations | Individual developers |
+| **L2: Design Quality CLI** | Scan + Score + Fix for whole projects | Teams using CI/CD |
+| **L3: AI Code Quality Gate** | MCP server + Hooks + AI self-correction loop | AI tool users |
+| **L4: Design System Compliance Engine** | Token import (Figma/W3C/Tailwind) + cross-file analysis + design debt + compliance reports | Enterprise design system teams |
+| **L5: Embeddable Design Quality API** | Core engine as a library for platform integration | AI code generation platforms |
+
+L1-L2 are built. L3-L5 are the path from "nice linter" to "acquisition-worthy infrastructure."
+
+### What Each Target Company Needs
+
+**Anthropic / Claude Code:**
+- Code Review (March 2026) explicitly ignores style. `frontend-design` skill is guidance-only. IBM research says LLM review + deterministic static analysis = optimal.
+- Vizlint = the deterministic design quality enforcement layer. Hook-integrated (auto-lint after edits). MCP Apps UI (live score in chat). "Skills + Enforcement" pair.
+
+**Figma:**
+- MCP server provides tokens TO code generation but has zero output validation. No "enforcement" story. Design-code drift is undetected.
+- Vizlint = the verification layer completing their pipeline. Figma MCP → AI generates → Vizlint validates. Design-code alignment metric.
+
+**Lovable / Bolt / v0 / Google Stitch:**
+- Users burn credits in debugging loops from design quality problems. Lovable: security incidents. Bolt: 31% enterprise success rate. Stitch: "falls apart in existing design systems."
+- Vizlint = built-in quality gate reducing credit waste. AI self-corrects before user sees bad version. Design Quality Score as a product feature.
+
+**Enterprise Design System Teams:**
+- Every enterprise builds bespoke ESLint rules. Design debt measured via manual audits. Component usage tracked but quality is not.
+- Vizlint = general-purpose compliance linter. Design debt as a number. Component quality analytics. DORA-equivalent metrics for design.
+
+### Positioning
+
+> "Visual regression tools tell you the screenshot looks wrong. Vizlint tells you why — and fixes it."
+
+Screenshot diffing (Applitools, Percy, Chromatic) is a $500M+ category that operates at the pixel level.
+Code-level design quality enforcement is a **zero-player category** — no one owns it yet.
+
+---
+
+## NEW SECTION: Expanded Capability Roadmap
+
+These capabilities are staged per VIZLINT-EXECUTION.md Stages 2-4. They do NOT override the trust-first validation approach.
+
+### Stage 2 Capabilities (Post-Validation)
+
+#### Accessibility Expansion (6-9 new rules)
+
+Target: Cover the automatable WCAG 2.1 AA criteria that AI code consistently gets wrong. All rules framework-agnostic (React + Vue + Svelte + Angular + HTML).
+
+| Rule | What It Catches | WCAG Criteria |
+|------|----------------|---------------|
+| `heading-hierarchy` | h3 used before h1, skipped levels | 1.3.1 Info & Relationships |
+| `keyboard-navigation` | Interactive elements without keyboard handlers | 2.1.1 Keyboard |
+| `focus-indicators` | `outline-none` without visible replacement | 2.4.7 Focus Visible |
+| `aria-validation` | Misused roles, redundant ARIA, missing required attrs | 4.1.2 Name, Role, Value |
+| `semantic-html` | div used instead of nav/main/aside/dialog/section | 1.3.1 Info & Relationships |
+| `skip-navigation` | No "skip to content" link on layouts | 2.4.1 Bypass Blocks |
+| `form-labels` | Inputs without associated label elements | 1.3.1 / 3.3.2 Labels |
+| `touch-target-size` | Tap targets smaller than 24x24 CSS px | 2.5.8 Target Size |
+| `prefers-reduced-motion` | Animations without `prefers-reduced-motion` check | 2.3.3 Animation from Interactions |
+
+Why now: ADA Title II deadline April 26, 2026. EAA enforceable since June 2025. 5,100+ federal lawsuits in 2025 (+37% YoY). eslint-plugin-jsx-a11y is React-only. No framework-agnostic competitor exists.
+
+#### Design System Input Expansion
+
+| Source | Format | What It Unlocks |
+|--------|--------|-----------------|
+| **W3C Design Tokens** | `.tokens.json` (DTCG spec 2025.10) | Standard format — connects to Figma → Tokens Studio → Style Dictionary pipeline |
+| **Figma Variables API** | REST API / MCP `get_variable_defs` | Direct Figma sync — no middleware needed |
+| **CSS/SCSS files** | `.css`, `.scss`, `.module.css` | Catch design token violations in stylesheets, not just Tailwind classes |
+| **Style Dictionary output** | Generated CSS variables | Auto-detect Style Dictionary builds |
+
+#### Cross-File Consistency Engine
+
+Per-file linting is commodity. Project-wide analysis is the differentiator:
+
+- **Component inventory:** "47 Button instances across 23 files. Here's how they diverge."
+- **Token usage map:** "These 12 files use non-standard colors."
+- **Consistency score:** "83% of Card components use p-4. 17% use p-6 or p-[18px]."
+- **Design drift detection:** "14 new arbitrary values introduced this week."
+
+### Stage 3 Capabilities (Post-Adoption)
+
+#### Claude Code Hooks Integration
+```json
+// .claude/settings.json
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Edit|Write",
+      "command": "npx vizlint scan --format json --quiet"
+    }]
+  }
+}
+```
+Auto-validates after every file edit. Claude sees violations and self-corrects before presenting to developer.
+
+#### MCP Apps UI
+Render a live Design Health Score dashboard inside Claude Code / Cursor chat window using the MCP Apps extension (SEP-1865, January 2026). Score updates in real-time as AI generates code.
+
+#### Embeddable Core Engine
+```typescript
+import { analyze } from '@vizlint/core';
+
+const result = analyze(sourceCode, {
+  framework: 'react',
+  designSystem: myTokens,
+  rules: { 'no-arbitrary-colors': 'error' }
+});
+// → { violations: [...], score: 87, fixes: [...] }
+```
+Pure function API for platforms (Lovable, Bolt, v0, Stitch) to integrate into their generation pipeline.
+
+#### Component Library Presets
+```json
+// .vizlintrc.json
+{
+  "extends": ["vizlint:shadcn-ui"]
+}
+```
+Reduces false positives by knowing which classes come from the library vs. custom code. Presets for: shadcn/ui, MUI, Chakra, Radix, Ant Design.
+
+#### Enterprise Reports
+- **HTML report:** Shareable, branded design quality summary
+- **PDF report:** For compliance teams, investors, client handoffs
+- **WCAG conformance mapping:** Violations mapped to specific WCAG success criteria
+- **VPAT-compatible export:** For enterprise procurement / Section 508
+
+#### Design Debt Scoring
+```
+Design Debt Score: 34 (was 28 last month)
+Primary contributor: 47 new arbitrary colors in checkout module
+Trend: ↑ 21% over 4 weeks — design system adoption is declining
+```
+
+---
+
+## UPDATED COMPETITIVE POSITIONING TABLE (April 2026)
+
+| Capability | Vizlint | jsx-a11y (123M/mo) | tailwindcss plugin (5.9M/mo) | CodeRabbit ($88M) | Qodo ($70M) | Applitools/Percy |
+|------------|:---:|:---:|:---:|:---:|:---:|:---:|
+| Design token enforcement | ✅ | ❌ | Partial | ❌ | ❌ | ❌ |
+| Accessibility (WCAG) | ✅ (expanding) | ✅ (React only) | ❌ | ❌ | ❌ | ❌ |
+| Framework agnostic | ✅ (5 frameworks) | ❌ (React) | ❌ (React) | ✅ | ✅ | ✅ |
+| Spacing/typography/z-index | ✅ | ❌ | Partial | ❌ | ❌ | ❌ |
+| Responsive coverage | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Dark mode coverage | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Design Health Score | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Auto-fix | ✅ (8/14 rules) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| MCP AI self-correction | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Cross-file consistency | 🔜 Stage 2 | ❌ | ❌ | ❌ | ❌ | ❌ |
+| W3C Design Tokens | 🔜 Stage 2 | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Figma token import | 🔜 Stage 2 | ❌ | ❌ | ❌ | ❌ | ❌ |
+| CSS file scanning | 🔜 Stage 2 | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Compliance reports | 🔜 Stage 3 | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Embeddable engine | 🔜 Stage 3 | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Local-first / offline | ✅ | ✅ | ✅ | ❌ (cloud) | ❌ (cloud) | ❌ (cloud) |
+| Deterministic | ✅ | ✅ | ✅ | ❌ (LLM) | ❌ (LLM) | ✅ |
+| CI/CD gate | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
+
+---
+
 ## UPDATED STORY POINTS SUMMARY
 
-| Phase | v1.0 | v1.1 | v1.2 (Final) | Delta |
+| Phase | v1.0 | v1.1 | v1.2 | Notes |
 |-------|:---:|:---:|:---:|:---:|
-| Phase 1 (Sprints 1–4) | 49 | 54 | 61 | +12 |
-| Phase 2 (Sprints 5–8) | 47 | 50 | 50 | +3 |
-| Phase 3 (Sprints 9–12) | 47 | 47 | 47 | 0 |
-| Phase 4 (Sprints 13–16) | 44 | 44 | 44 | 0 |
-| **Total** | **187** | **195** | **202** | **+15** |
-
-Phase 1 is the heaviest investment — foundation, first rules, Angular support, Tailwind auto-import, service launch. Sprints 1-2 run hot (~20 points each). If needed, VIZ-001B (Tailwind auto-import) can slip to Sprint 3 without blocking core rule development.
+| Phase 1 (Sprints 1–4) | 49 | 54 | 61 | Foundation — COMPLETE |
+| Phase 2 (Sprints 5–8) | 47 | 50 | 50 | CLI & Score — COMPLETE |
+| Phase 3 (Sprints 9–12) | 47 | 47 | 47 | MCP & CI/CD — COMPLETE |
+| Phase 4 (Sprints 13–16) | 44 | 44 | 44 | Deferred per VIZLINT-EXECUTION.md |
+| **Stage 2 new work** | — | — | ~65 | A11y + tokens + cross-file + MCP validation |
+| **Stage 3 new work** | — | — | ~80 | Hooks + embeddable + reports + VS Code |
+| **Total built** | — | — | **202** | Sprints 1-12 complete |
+| **Total remaining** | — | — | **~189** | Stages 2-4 (estimate) |
 
 ---
 
 ## DOCUMENT HIERARCHY
 
-Your complete implementation reference is three documents read in order:
+Your complete implementation reference is these documents read in order:
 
-1. **vizlint-sprint-plan.docx** — Original 16-sprint plan with all user stories
-2. **vizlint-sprint-plan-v1.1-update.md** — Three-mode model, ESLint v10, Tailwind v4, Angular, Buoy coverage, fixability matrix
-3. **vizlint-sprint-plan-v1.2-update.md** (this document) — Five-level user control, no-AI architecture, Tailwind auto-import, competitive positioning, survival thesis
+1. **VIZLINT-EXECUTION.md** — **READ FIRST.** Active execution plan. Overrides all sprint plan sequencing. Contains product vision, staging, gating criteria.
+2. **vizlint-sprint-plan.docx** — Original 16-sprint plan with all user stories (Sprints 1-12 complete)
+3. **vizlint-sprint-plan-v1.1-update.md** — Three-mode model, ESLint v10, Tailwind v4, Angular, fixability matrix
+4. **vizlint-sprint-plan-v1.2-update.md** (this document) — Five-level user control, no-AI architecture, Tailwind auto-import, L3-L5 product vision, strategic positioning, expanded roadmap
 
-Sprint 1 starts today. The scaffold is ready. Go build.
+The trust-first approach remains: validate first, expand second. But the expansion now has a clear destination — L3-L5 capabilities that make Vizlint acquisition-worthy.

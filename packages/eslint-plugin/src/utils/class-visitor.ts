@@ -42,7 +42,18 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
       } catch (err) { debugLog('class-visitor', err); return; }
     },
 
-    // ─── Vue: static class="..." (vue-eslint-parser VAttribute) ───
+    // ─── Vue: walk templateBody manually ───
+    // vue-eslint-parser puts the template AST on Program.templateBody,
+    // which ESLint's traverser does NOT walk. We must walk it ourselves.
+    'Program'(node: any) {
+      try {
+        if (!node.templateBody) return;
+        walkVueTemplate(node.templateBody, check);
+      } catch (err) { debugLog('class-visitor-vue', err); return; }
+    },
+
+    // Keep the VAttribute selectors for environments where ESLint does traverse them
+    // (e.g., vue-eslint-parser with defineTemplateBodyVisitor)
     'VAttribute[key.name="class"]'(node: any) {
       try {
         if (node.value?.value && typeof node.value.value === 'string') {
@@ -51,10 +62,6 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
       } catch (err) { debugLog('class-visitor', err); return; }
     },
 
-    // ─── Vue: :class binding (VExpressionContainer) ───
-    // Handles: :class="'bg-red-500 p-4'" (string literal)
-    // Handles: :class="{'bg-red-500': isActive}" (object syntax)
-    // Handles: :class="['bg-red-500', 'p-4']" (array syntax)
     'VAttribute[directive=true][key.name.name="bind"][key.argument.name="class"]'(node: any) {
       try {
         visitVueClassBinding(node, check);
@@ -106,6 +113,46 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
       } catch (err) { debugLog('class-visitor', err); return; }
     },
   };
+}
+
+/**
+ * Walk the Vue template AST tree (from Program.templateBody) and
+ * extract class strings from VAttribute nodes.
+ * ESLint does not traverse templateBody — we must do it manually.
+ */
+function walkVueTemplate(node: any, check: CheckFn): void {
+  if (!node || typeof node !== 'object') return;
+
+  // VAttribute with static class="..."
+  if (node.type === 'VAttribute' && !node.directive) {
+    if (node.key?.name === 'class' && node.value?.value && typeof node.value.value === 'string') {
+      check(node.value.value, node.value);
+    }
+  }
+
+  // VAttribute with :class or v-bind:class directive
+  if (
+    node.type === 'VAttribute' &&
+    node.directive === true &&
+    node.key?.name?.name === 'bind' &&
+    node.key?.argument?.name === 'class'
+  ) {
+    visitVueClassBinding(node, check);
+  }
+
+  // Recurse into children, startTag, attributes
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      walkVueTemplate(child, check);
+    }
+  }
+  if (node.startTag) {
+    if (Array.isArray(node.startTag.attributes)) {
+      for (const attr of node.startTag.attributes) {
+        walkVueTemplate(attr, check);
+      }
+    }
+  }
 }
 
 function visitExpression(expr: any, check: CheckFn): void {

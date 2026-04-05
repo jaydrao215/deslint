@@ -83,20 +83,102 @@ export function formatText(
   }
   lines.push('');
 
-  // ── Per-file violations (only files with issues) ──
+  // ── Per-file violations (grouped by class for repeated violations) ──
   if (lintResult.totalViolations > 0) {
+    // Group violations: key = ruleId + first backtick-quoted token (or full message)
+    const grouped = new Map<string, {
+      ruleId: string;
+      message: string;
+      severity: number;
+      cls: string;
+      locations: Array<{ file: string; line: number; column: number }>;
+    }>();
+
     for (const result of lintResult.results) {
       if (result.messages.length === 0) continue;
-
-      const filePath = relative(cwd, result.filePath);
-      lines.push(chalk.underline(filePath));
-
+      const file = relative(cwd, result.filePath);
       for (const msg of result.messages) {
-        const loc = `${msg.line}:${msg.column}`;
-        const sev = severityLabel(msg.severity);
-        const rule = chalk.gray(msg.ruleId ?? '');
-        lines.push(`  ${chalk.gray(loc.padEnd(8))} ${sev.padEnd(18)} ${msg.message}  ${rule}`);
+        // Extract class token from message for grouping (e.g. `max-w-[800px]`)
+        const clsMatch = msg.message.match(/`([^`]+)`/);
+        const cls = clsMatch ? clsMatch[1] : msg.message.slice(0, 40);
+        const key = `${msg.ruleId ?? ''}::${cls}`;
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            ruleId: msg.ruleId ?? 'unknown',
+            message: msg.message,
+            severity: msg.severity,
+            cls,
+            locations: [],
+          });
+        }
+        grouped.get(key)!.locations.push({ file, line: msg.line, column: msg.column });
       }
+    }
+
+    // Separate singletons (appear once) from repeated (appear 2+)
+    const singletons: typeof grouped extends Map<string, infer V> ? V[] : never[] = [];
+    const repeated: typeof singletons = [];
+    for (const entry of grouped.values()) {
+      if (entry.locations.length === 1) singletons.push(entry);
+      else repeated.push(entry);
+    }
+    // Sort repeated by count desc
+    repeated.sort((a, b) => b.locations.length - a.locations.length);
+
+    // ── Grouped (repeated) violations ──
+    if (repeated.length > 0) {
+      lines.push(chalk.bold('  Grouped violations (same class, multiple locations):'));
+      lines.push('');
+      for (const entry of repeated) {
+        const fileSet = new Set(entry.locations.map(l => l.file));
+        const sev = severityLabel(entry.severity);
+        const rule = chalk.gray(entry.ruleId);
+        const count = chalk.bold(String(entry.locations.length));
+        lines.push(
+          `  ${sev}  ${chalk.cyan(entry.cls)}  ${count} occurrences across ${fileSet.size} file${fileSet.size !== 1 ? 's' : ''}  ${rule}`,
+        );
+        // Show compact file list
+        for (const file of fileSet) {
+          const linesInFile = entry.locations
+            .filter(l => l.file === file)
+            .map(l => l.line)
+            .sort((a, b) => a - b);
+          lines.push(chalk.gray(`    ${file}  lines ${linesInFile.join(', ')}`));
+        }
+        // Show the message once (stripped of repeated cls prefix)
+        lines.push(chalk.dim(`    ${entry.message}`));
+        lines.push('');
+      }
+    }
+
+    // ── Singleton violations (per-file, traditional view) ──
+    if (singletons.length > 0) {
+      // Re-group singletons by file for a cleaner display
+      const byFile = new Map<string, typeof singletons>();
+      for (const entry of singletons) {
+        const file = entry.locations[0].file;
+        if (!byFile.has(file)) byFile.set(file, []);
+        byFile.get(file)!.push(entry);
+      }
+      if (repeated.length > 0) {
+        lines.push(chalk.bold('  Individual violations:'));
+        lines.push('');
+      }
+      for (const [file, entries] of byFile) {
+        lines.push(chalk.underline(file));
+        for (const entry of entries) {
+          const loc = `${entry.locations[0].line}:${entry.locations[0].column}`;
+          const sev = severityLabel(entry.severity);
+          const rule = chalk.gray(entry.ruleId);
+          lines.push(`  ${chalk.gray(loc.padEnd(8))} ${sev.padEnd(18)} ${entry.message}  ${rule}`);
+        }
+        lines.push('');
+      }
+    }
+
+    // ── Tip for unfixable grouped violations ──
+    if (repeated.some(e => e.ruleId === 'vizlint/no-arbitrary-spacing')) {
+      lines.push(chalk.dim('  Tip: run `vizlint suggest-tokens .` to get design guidance for these custom values.'));
       lines.push('');
     }
 

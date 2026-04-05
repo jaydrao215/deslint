@@ -71,7 +71,12 @@ ruleTester.run('no-inline-styles', rule, {
       options: [{ allowlist: ['height', 'width'] }],
     },
 
-    // ── allowDynamic: true — dynamic expressions NOT flagged ─────
+    // ── allowDynamic: true (default) — dynamic expressions NOT flagged ─────
+    // These are valid by default since allowDynamic defaults to true
+    { code: '<div style={dynamicStyles} />' },
+    { code: '<div style={getStyles()} />' },
+    { code: '<div style={condition ? styleA : styleB} />' },
+    // Explicit allowDynamic: true also works
     {
       code: '<div style={dynamicStyles} />',
       options: [{ allowDynamic: true }],
@@ -84,6 +89,11 @@ ruleTester.run('no-inline-styles', rule, {
       code: '<div style={condition ? styleA : styleB} />',
       options: [{ allowDynamic: true }],
     },
+    // ObjectExpression with dynamic property values — also skipped by default
+    // (e.g., progress bar translateX, satori OG image routes)
+    { code: '<div style={{ transform: `translateX(-${val}%)` }} />' },
+    { code: '<div style={{ width: `${progress}%` }} />' },
+    { code: '<ProgressIndicator style={{ transform: `translateX(-${100 - (value || 0)}%)` }} />' },
 
     // ── Other attributes named similarly — NOT flagged ───────────
     { code: '<div data-style="bold" />' },
@@ -125,18 +135,21 @@ ruleTester.run('no-inline-styles', rule, {
       '<div  />',
     ),
 
-    // ── Dynamic expression: style={variable} (allowDynamic: false) ──
+    // ── Dynamic expression: style={variable} (allowDynamic: false explicitly) ──
     invalid(
       '<div style={styles} />',
       '<div  />',
+      { options: [{ allowDynamic: false }] },
     ),
     invalid(
       '<div style={getStyles()} />',
       '<div  />',
+      { options: [{ allowDynamic: false }] },
     ),
     invalid(
       '<div style={condition ? styleA : styleB} />',
       '<div  />',
+      { options: [{ allowDynamic: false }] },
     ),
 
     // ── Mixed with Tailwind classes ──────────────────────────────

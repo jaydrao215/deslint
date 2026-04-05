@@ -71,6 +71,14 @@ ruleTester.run('no-arbitrary-colors', rule, {
     // ── Empty className ──
     { code: '<div className="" />' },
     { code: '<div className="   " />' },
+
+    // ── CSS custom property references (default: allowed, they ARE design tokens) ──
+    { code: '<div className="shadow-[var(--shadow-glass)]" />' },
+    { code: '<div className="shadow-[var(--shadow-elevated)]" />' },
+    { code: '<div className="text-[var(--text-on-dark)]" />' },
+    { code: '<div className="bg-[var(--glass-9)]" />' },
+    { code: '<div className="hover:shadow-[var(--shadow-float)]" />' },
+    { code: '<div className="shadow-[var(--shadow-card)] bg-surface" />' },
   ],
   invalid: [
     // ── Hex color detection ──────────────────────────────────────────

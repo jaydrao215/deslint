@@ -1,6 +1,6 @@
 # Vizlint Sprint Plan v1.1 — Definitive Update
 
-> Apply this document ON TOP of the original `vizlint-sprint-plan.docx`.  
+> Apply this document ON TOP of the original `vizlint-sprint-plan.txt`.  
 > Every section below either replaces or adds to the original sprint plan.  
 > If a section is not mentioned here, the original plan stands unchanged.
 

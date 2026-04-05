@@ -24,6 +24,7 @@ import { calculateScore, saveHistory } from './score.js';
 import { format } from './formatters.js';
 import type { OutputFormat } from './formatters.js';
 import { fixAll, fixInteractive } from './fix.js';
+import { generateHtmlReport } from './report-html.js';
 import {
   generateConfig,
   loadDesignSystem,
@@ -31,6 +32,7 @@ import {
   isValidTarget,
 } from './generate-config.js';
 import { initWizard } from './init.js';
+import { buildTokenSuggestions, formatSuggestTokens } from './suggest-tokens.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -120,7 +122,7 @@ program
         process.exit(0);
       }
 
-      const lintResult = await runLint({ files, ruleOverrides: rules });
+      const lintResult = await runLint({ files, ruleOverrides: rules, cwd });
       const scoreResult = calculateScore(lintResult);
 
       const outputFormat = opts.format as OutputFormat;
@@ -129,6 +131,13 @@ program
       // Save history (unless --no-history)
       if (opts.history && outputFormat === 'text') {
         saveHistory(cwd, lintResult, scoreResult);
+      }
+
+      // Always generate HTML report (unless JSON/SARIF output — piping mode)
+      if (outputFormat === 'text') {
+        generateHtmlReport(lintResult, scoreResult, cwd);
+        console.log(chalk.gray(`  Full report: .vizlint/report.html`));
+        console.log('');
       }
 
       // Exit code logic
@@ -241,6 +250,67 @@ program
       console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
       process.exit(1);
     }
+  });
+
+// ── suggest-tokens command ───────────────────────────────────────────
+
+program
+  .command('suggest-tokens')
+  .description('Group unfixable arbitrary values and generate a ready-to-paste @theme CSS block')
+  .argument('[dir]', 'Project directory to scan', '.')
+  .option('--profile <name>', 'Use a named severity profile from .vizlintrc.json')
+  .action(async (dir: string, opts: { profile?: string }) => {
+    try {
+      const cwd = resolve(dir);
+      const config = loadConfig(cwd);
+      const rules = resolveRules(config, opts.profile);
+
+      const files = await discoverFiles({
+        cwd,
+        ignorePatterns: config?.ignore,
+      });
+
+      if (files.length === 0) {
+        console.log(chalk.yellow('\n  No files found to scan.\n'));
+        process.exit(0);
+      }
+
+      const lintResult = await runLint({ files, ruleOverrides: rules, cwd });
+      const { suggestions, fixable } = buildTokenSuggestions(lintResult, cwd);
+
+      console.log(formatSuggestTokens(suggestions, fixable));
+    } catch (err) {
+      console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
+      process.exit(1);
+    }
+  });
+
+// ── report command ──────────────────────────────────────────────────
+
+program
+  .command('report')
+  .description('Open the latest HTML report in your browser')
+  .argument('[dir]', 'Project directory', '.')
+  .action(async (dir: string) => {
+    const cwd = resolve(dir);
+    const reportPath = resolve(cwd, '.vizlint', 'report.html');
+
+    if (!existsSync(reportPath)) {
+      console.log(chalk.yellow('\n  No report found. Run `vizlint scan` first.\n'));
+      process.exit(1);
+    }
+
+    // Open in default browser
+    const { exec } = await import('node:child_process');
+    const platform = process.platform;
+    const cmd = platform === 'darwin' ? 'open' : platform === 'win32' ? 'start' : 'xdg-open';
+    exec(`${cmd} "${reportPath}"`, (err) => {
+      if (err) {
+        console.log(chalk.gray(`  Report: ${reportPath}`));
+      } else {
+        console.log(chalk.green(`  Opened report in browser`));
+      }
+    });
   });
 
 // ── Parse and run ────────────────────────────────────────────────────

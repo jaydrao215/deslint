@@ -83,11 +83,11 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     'vizlint/responsive-required': 'warn',
     'vizlint/consistent-component-spacing': 'warn',
     'vizlint/a11y-color-contrast': 'warn',
-    'vizlint/max-component-lines': 'warn',
-    'vizlint/missing-states': 'warn',
-    'vizlint/dark-mode-coverage': 'warn',
+    'vizlint/max-component-lines': 'off',
+    'vizlint/missing-states': 'off',
+    'vizlint/dark-mode-coverage': 'off',
     'vizlint/no-arbitrary-zindex': 'warn',
-    'vizlint/no-inline-styles': 'warn',
+    'vizlint/no-inline-styles': 'off',
     'vizlint/consistent-border-radius': 'warn',
     'vizlint/image-alt-text': 'warn',
     'vizlint/no-magic-numbers-layout': 'warn',
@@ -105,19 +105,118 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
   // If not provided, derive from the first file's directory.
   const cwd = options.cwd ?? (options.files.length > 0 ? dirname(options.files[0]) : process.cwd());
 
-  const eslint = new ESLint({
-    overrideConfigFile: true,
-    cwd,
-    overrideConfig: {
-      files: ['**/*.tsx', '**/*.jsx', '**/*.vue', '**/*.svelte', '**/*.html', '**/*.js', '**/*.ts'],
-      plugins: { vizlint: plugin } as any,
-      rules,
+  // Load TypeScript parser (required for .tsx/.ts files with type annotations)
+  let typescriptParser: any;
+  try {
+    typescriptParser = await import('@typescript-eslint/parser');
+  } catch {
+    // Not installed — TypeScript files may fail to parse
+  }
+
+  // Load framework-specific parsers (optional peer deps of eslint-plugin-vizlint)
+  let angularTemplateParser: any;
+  try {
+    angularTemplateParser = await import('@angular-eslint/template-parser');
+  } catch {
+    // Not installed — Angular template files will be skipped
+  }
+
+  let vueParser: any;
+  try {
+    vueParser = await import('vue-eslint-parser');
+  } catch {
+    // Not installed — Vue files will use default parser
+  }
+
+  let svelteParser: any;
+  try {
+    svelteParser = await import('svelte-eslint-parser');
+  } catch {
+    // Not installed — Svelte files will use default parser
+  }
+
+  const baseConfig = {
+    plugins: { vizlint: plugin } as any,
+    rules,
+    // Don't report eslint-disable comments for rules not in our config
+    linterOptions: {
+      reportUnusedDisableDirectives: false,
+    },
+  };
+
+  const configs: any[] = [];
+
+  // TypeScript/TSX files — use @typescript-eslint/parser if available (handles TS syntax + JSX)
+  if (typescriptParser) {
+    configs.push({
+      ...baseConfig,
+      files: ['**/*.tsx', '**/*.ts'],
       languageOptions: {
+        parser: typescriptParser,
         parserOptions: {
+          ecmaFeatures: { jsx: true },
+          // No project needed — we only do AST pattern matching, no type info
+          project: false,
+        },
+      },
+    });
+  }
+
+  // JSX/JS files — default Espree parser with JSX enabled (no TS syntax)
+  configs.push({
+    ...baseConfig,
+    files: typescriptParser
+      ? ['**/*.jsx', '**/*.js', '**/*.mjs', '**/*.cjs']
+      : ['**/*.tsx', '**/*.jsx', '**/*.js', '**/*.ts', '**/*.mjs', '**/*.cjs'],
+    languageOptions: {
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+      },
+    },
+  });
+
+  // Angular HTML templates
+  if (angularTemplateParser) {
+    configs.push({
+      ...baseConfig,
+      files: ['**/*.html'],
+      languageOptions: {
+        parser: angularTemplateParser,
+      },
+    });
+  }
+
+  // Vue SFC files
+  if (vueParser) {
+    configs.push({
+      ...baseConfig,
+      files: ['**/*.vue'],
+      languageOptions: {
+        parser: vueParser,
+        parserOptions: {
+          // vue-eslint-parser needs a sub-parser for <script> blocks
+          parser: typescriptParser ?? undefined,
           ecmaFeatures: { jsx: true },
         },
       },
-    },
+    });
+  }
+
+  // Svelte files
+  if (svelteParser) {
+    configs.push({
+      ...baseConfig,
+      files: ['**/*.svelte'],
+      languageOptions: {
+        parser: svelteParser,
+      },
+    });
+  }
+
+  const eslint = new ESLint({
+    overrideConfigFile: true,
+    cwd,
+    overrideConfig: configs,
     fix: options.fix ?? false,
   });
 
@@ -149,11 +248,17 @@ function aggregateResults(results: LintFileResult[]): LintResult {
   };
 
   for (const result of results) {
-    if (result.messages.length > 0) {
+    // Filter to only vizlint/* violations and parse errors (ruleId null = parse error)
+    // This prevents third-party eslint-disable comments from leaking into our results
+    const vizlintMessages = result.messages.filter(
+      (msg) => msg.ruleId === null || msg.ruleId.startsWith('vizlint/'),
+    );
+
+    if (vizlintMessages.length > 0) {
       filesWithViolations++;
     }
 
-    for (const msg of result.messages) {
+    for (const msg of vizlintMessages) {
       totalViolations++;
 
       if (msg.severity === 2) {
@@ -172,8 +277,16 @@ function aggregateResults(results: LintFileResult[]): LintResult {
     }
   }
 
+  // Return results with non-vizlint messages stripped for clean output
+  const filteredResults = results.map((r) => ({
+    ...r,
+    messages: r.messages.filter(
+      (msg) => msg.ruleId === null || msg.ruleId.startsWith('vizlint/'),
+    ),
+  }));
+
   return {
-    results,
+    results: filteredResults as LintFileResult[],
     totalFiles: results.length,
     totalViolations,
     bySeverity: { errors, warnings },

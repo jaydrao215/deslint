@@ -42,6 +42,30 @@ function allPropertiesAllowed(propertyNames: string[], allowlist: Set<string>): 
   return propertyNames.every((name) => allowlist.has(name));
 }
 
+/**
+ * Check whether an ObjectExpression contains any non-static property values.
+ * Used to allow dynamic inline styles (e.g., style={{ transform: `translateX(-${val}%)` }})
+ * which cannot be expressed as static Tailwind classes.
+ */
+function hasDynamicValues(node: TSESTree.ObjectExpression): boolean {
+  for (const prop of node.properties) {
+    if (prop.type !== 'Property') continue;
+    const val = prop.value;
+    // Static: string/number/boolean literals
+    if (val.type === 'Literal') continue;
+    // Dynamic: template literals with expressions, identifiers, calls, etc.
+    if (val.type === 'TemplateLiteral' && val.expressions.length > 0) return true;
+    if (val.type === 'Identifier') return true;
+    if (val.type === 'CallExpression') return true;
+    if (val.type === 'MemberExpression') return true;
+    if (val.type === 'ConditionalExpression') return true;
+    if (val.type === 'BinaryExpression') return true;
+    if (val.type === 'UnaryExpression') return true;
+    if (val.type === 'LogicalExpression') return true;
+  }
+  return false;
+}
+
 export default createRule<Options, MessageIds>({
   name: 'no-inline-styles',
   meta: {
@@ -78,10 +102,10 @@ export default createRule<Options, MessageIds>({
         'Remove the inline style and use Tailwind utility classes.',
     },
   },
-  defaultOptions: [{ allowlist: [], allowDynamic: false }],
+  defaultOptions: [{ allowlist: [], allowDynamic: true }],
   create(context, [options]) {
     const allowlist = new Set(options.allowlist ?? []);
-    const allowDynamic = options.allowDynamic ?? false;
+    const allowDynamic = options.allowDynamic ?? true;
 
     /**
      * Report an inline style violation on the given node.
@@ -130,6 +154,11 @@ export default createRule<Options, MessageIds>({
             if (propertyNames && allowlist.size > 0 && allPropertiesAllowed(propertyNames, allowlist)) {
               return;
             }
+            // If allowDynamic, skip objects that contain any non-literal values
+            // (e.g., style={{ transform: `translateX(-${val}%)` }} can't be a Tailwind class)
+            if (allowDynamic && hasDynamicValues(expr)) {
+              return;
+            }
             report(node);
             return;
           }
@@ -140,7 +169,13 @@ export default createRule<Options, MessageIds>({
             return;
           }
 
-          // Dynamic expression: Identifier, CallExpression, ConditionalExpression, etc.
+          // Static template literal with no expressions: `color: red` — flag it (effectively a string)
+          if (expr.type === 'TemplateLiteral' && expr.expressions.length === 0) {
+            report(node);
+            return;
+          }
+
+          // Dynamic expression: Identifier, CallExpression, ConditionalExpression, TemplateLiteral with expressions, etc.
           if (allowDynamic) {
             return;
           }

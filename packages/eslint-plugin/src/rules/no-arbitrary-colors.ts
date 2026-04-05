@@ -3,6 +3,7 @@ import { ARBITRARY_PATTERNS, extractClassesFromString, parseClass, isValidV4Clas
 import { findNearestColor, findNearestColorByRgb, parseRgbString, parseHslString } from '../utils/color-map.js';
 import { createClassVisitor } from '../utils/class-visitor.js';
 import { debugLog } from '../utils/debug.js';
+import { safeGetText, safeGetRange } from '../utils/safe-source.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -12,6 +13,7 @@ export type Options = [
   {
     allowlist?: string[];
     customTokens?: Record<string, string>;
+    allowCssVariables?: boolean;
   },
 ];
 
@@ -47,6 +49,11 @@ export default createRule<Options, MessageIds>({
             additionalProperties: { type: 'string' },
             description: 'Custom color tokens: { "brand-primary": "#1A5276" }',
           },
+          allowCssVariables: {
+            type: 'boolean',
+            description:
+              'When true (default), do not flag CSS custom property references like bg-[var(--color)]. CSS variables are design tokens by definition.',
+          },
         },
         additionalProperties: false,
       },
@@ -59,12 +66,13 @@ export default createRule<Options, MessageIds>({
         'Hardcoded CSS variable `{{className}}` detected. Use a design token from your design system instead.',
     },
   },
-  defaultOptions: [{ allowlist: [], customTokens: {} }],
+  defaultOptions: [{ allowlist: [], customTokens: {}, allowCssVariables: true }],
   create(context, [options]) {
     const allowlist = new Set(
       options.allowlist?.map((h) => h.toLowerCase()) ?? []
     );
     const customTokens = options.customTokens ?? {};
+    const allowCssVariables = options.allowCssVariables ?? true;
 
     /**
      * Find best replacement — custom tokens first, then Tailwind defaults.
@@ -96,16 +104,20 @@ export default createRule<Options, MessageIds>({
         ...(fullReplacement
           ? {
               fix(fixer) {
-                const src = context.sourceCode.getText(node);
-                return fixer.replaceText(node, src.replace(cls, fullReplacement));
+                const src = safeGetText(context.sourceCode, node);
+                const range = safeGetRange(context.sourceCode, node);
+                if (!src || !range) return null;
+                return fixer.replaceTextRange(range, src.replace(cls, fullReplacement));
               },
               suggest: [
                 {
                   messageId: 'suggestToken',
                   data: { replacement: fullReplacement },
                   fix(fixer) {
-                    const src = context.sourceCode.getText(node);
-                    return fixer.replaceText(node, src.replace(cls, fullReplacement));
+                    const src = safeGetText(context.sourceCode, node);
+                    const range = safeGetRange(context.sourceCode, node);
+                    if (!src || !range) return null;
+                    return fixer.replaceTextRange(range, src.replace(cls, fullReplacement));
                   },
                 },
               ],
@@ -175,9 +187,10 @@ export default createRule<Options, MessageIds>({
           }
 
           // ── CSS custom properties: bg-[var(--some-color)] ──
-          // Buoy competitive parity: flag hardcoded CSS vars that should use design tokens
+          // Skip by default: CSS variables ARE design tokens. Only flag if explicitly configured.
           const cssVarMatch = baseClass.match(CSS_VAR_PATTERN);
           if (cssVarMatch) {
+            if (allowCssVariables) continue;
             context.report({
               node,
               messageId: 'hardcodedCssVar',

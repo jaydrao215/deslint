@@ -2,6 +2,7 @@ import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { extractClassesFromString, parseClass, isValidV4Class } from '../utils/class-extractor.js';
 import { createClassVisitor } from '../utils/class-visitor.js';
 import { debugLog } from '../utils/debug.js';
+import { safeGetText, safeGetRange } from '../utils/safe-source.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -25,15 +26,23 @@ const PX_TO_TAILWIND: Record<number, string> = {
   1: 'px',
   2: '0.5',
   4: '1',
+  5: '1.25',
   6: '1.5',
+  7: '1.75',
   8: '2',
+  10: '2.5',
   12: '3',
+  14: '3.5',
   16: '4',
   20: '5',
   24: '6',
+  28: '7',
   32: '8',
+  36: '9',
   40: '10',
+  44: '11',
   48: '12',
+  56: '14',
   64: '16',
   80: '20',
   96: '24',
@@ -56,11 +65,16 @@ function isCssVariable(value: string): boolean {
   return /^var\(--/.test(value);
 }
 
-/** Parse a px value from a string like "16px" or "0px". Returns null if not px. */
+/** Parse a px value from a string like "16px", "0px", or "0.625rem" (converted to px). Returns null if not parseable. */
 function parsePxValue(value: string): number | null {
-  const match = value.match(/^(-?\d+(?:\.\d+)?)px$/);
-  if (!match) return null;
-  return parseFloat(match[1]);
+  const pxMatch = value.match(/^(-?\d+(?:\.\d+)?)px$/);
+  if (pxMatch) return parseFloat(pxMatch[1]);
+
+  // Convert rem to px (1rem = 16px)
+  const remMatch = value.match(/^(-?\d+(?:\.\d+)?)rem$/);
+  if (remMatch) return parseFloat(remMatch[1]) * 16;
+
+  return null;
 }
 
 /** Parse a plain integer from a string like "3" or "12". Returns null if not a plain integer. */
@@ -80,6 +94,12 @@ function resolveLayoutFix(
 ): { suggested: string; replacement: string | null } {
   switch (prefix) {
     case 'grid-cols': {
+      // Skip complex CSS Grid templates that have no Tailwind scale equivalent:
+      // minmax(), repeat(), min(), max(), fractional (fr), auto, fit-content
+      // Note: Tailwind uses _ as space separator, so 1fr_300px contains fr followed by _
+      if (/(?:minmax|repeat|min|max|fit-content)\s*\(|fr(?:[^a-z]|$)|auto/.test(rawValue)) {
+        return { suggested: '', replacement: null };
+      }
       const n = parseIntValue(rawValue);
       if (n !== null && n >= 1 && n <= 12) {
         return {
@@ -91,6 +111,10 @@ function resolveLayoutFix(
     }
 
     case 'grid-rows': {
+      // Skip complex CSS Grid templates (same as grid-cols)
+      if (/(?:minmax|repeat|min|max|fit-content)\s*\(|fr(?:[^a-z]|$)|auto/.test(rawValue)) {
+        return { suggested: '', replacement: null };
+      }
       const n = parseIntValue(rawValue);
       if (n !== null && n >= 1 && n <= 12) {
         return {
@@ -240,16 +264,20 @@ export default createRule<Options, MessageIds>({
         ...(fullReplacement
           ? {
               fix(fixer) {
-                const src = context.sourceCode.getText(node);
-                return fixer.replaceText(node, src.replace(cls, fullReplacement));
+                const src = safeGetText(context.sourceCode, node);
+                const range = safeGetRange(context.sourceCode, node);
+                if (!src || !range) return null;
+                return fixer.replaceTextRange(range, src.replace(cls, fullReplacement));
               },
               suggest: [
                 {
                   messageId: 'suggestScale',
                   data: { replacement: fullReplacement },
                   fix(fixer) {
-                    const src = context.sourceCode.getText(node);
-                    return fixer.replaceText(node, src.replace(cls, fullReplacement));
+                    const src = safeGetText(context.sourceCode, node);
+                    const range = safeGetRange(context.sourceCode, node);
+                    if (!src || !range) return null;
+                    return fixer.replaceTextRange(range, src.replace(cls, fullReplacement));
                   },
                 },
               ],
@@ -281,6 +309,10 @@ export default createRule<Options, MessageIds>({
           if (allowCssVariables && isCssVariable(rawValue)) continue;
 
           const { suggested, replacement } = resolveLayoutFix(prefix, rawValue);
+
+          // Skip complex patterns that have no scale equivalent (empty suggested)
+          if (!suggested) continue;
+
           const fullReplacement = replacement
             ? [...variants, replacement].join(':')
             : null;

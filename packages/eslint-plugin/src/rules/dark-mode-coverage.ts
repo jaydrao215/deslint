@@ -2,6 +2,7 @@ import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { extractClassesFromString, parseClass } from '../utils/class-extractor.js';
 import { createClassVisitor } from '../utils/class-visitor.js';
 import { debugLog } from '../utils/debug.js';
+import { safeGetText, safeGetRange } from '../utils/safe-source.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -34,9 +35,19 @@ const SHADE_INVERSION: Record<string, string> = {
   '950': '50',
 };
 
+/** Standard Tailwind color families (v3+v4). Custom tokens (surface, brand, etc.) are excluded. */
+const TAILWIND_COLOR_FAMILIES = new Set([
+  'slate', 'gray', 'zinc', 'neutral', 'stone',
+  'red', 'orange', 'amber', 'yellow', 'lime',
+  'green', 'emerald', 'teal', 'cyan', 'sky',
+  'blue', 'indigo', 'violet', 'purple', 'fuchsia',
+  'pink', 'rose',
+]);
+
 /**
- * Matches a bg-{color}-{shade} pattern.
+ * Matches a bg-{color}-{shade} pattern where the color is a STANDARD Tailwind family.
  * E.g., bg-blue-500, bg-slate-100, bg-red-700
+ * Skips custom tokens like bg-surface-50, bg-brand-500, bg-accent-500.
  */
 const BG_COLOR_PATTERN = /^bg-([a-z]+)-(\d{2,3})$/;
 
@@ -142,6 +153,23 @@ export default createRule<Options, MessageIds>({
           const suffix = baseClass.slice(BG_PREFIX.length);
           if (SKIP_SUFFIXES.has(suffix)) continue;
 
+          // Skip arbitrary values: bg-[...] (gradients, CSS vars, complex expressions)
+          if (suffix.startsWith('[')) continue;
+
+          // Skip opacity modifiers: bg-accent-500/10, bg-white/78
+          if (baseClass.includes('/')) continue;
+
+          // Only flag standard Tailwind color patterns (bg-{color}-{shade}) with
+          // a recognized Tailwind color family, and named inversions (bg-white, bg-black).
+          // Skip custom tokens (bg-surface-50, bg-brand-500, bg-accent-500, etc.)
+          // because these are CSS-variable-based and handle dark mode via theme switching.
+          const colorMatch = baseClass.match(BG_COLOR_PATTERN);
+          if (colorMatch) {
+            if (!TAILWIND_COLOR_FAMILIES.has(colorMatch[1])) continue;
+          } else if (!BG_NAMED_INVERSIONS[baseClass]) {
+            continue;
+          }
+
           // Skip ignored prefixes
           if ([...ignoredPrefixes].some((p) => baseClass.startsWith(p))) continue;
 
@@ -167,19 +195,22 @@ export default createRule<Options, MessageIds>({
             ...(darkInversion
               ? {
                   fix(fixer) {
-                    const src = context.sourceCode.getText(node);
-                    // Insert the dark variant right after the bg class
+                    const src = safeGetText(context.sourceCode, node);
+                    const range = safeGetRange(context.sourceCode, node);
+                    if (!src || !range) return null;
                     const replacement = src.replace(cls, `${cls} ${suggested}`);
-                    return fixer.replaceText(node, replacement);
+                    return fixer.replaceTextRange(range, replacement);
                   },
                   suggest: [
                     {
                       messageId: 'suggestDarkVariant',
                       data: { suggested },
                       fix(fixer) {
-                        const src = context.sourceCode.getText(node);
+                        const src = safeGetText(context.sourceCode, node);
+                        const range = safeGetRange(context.sourceCode, node);
+                        if (!src || !range) return null;
                         const replacement = src.replace(cls, `${cls} ${suggested}`);
-                        return fixer.replaceText(node, replacement);
+                        return fixer.replaceTextRange(range, replacement);
                       },
                     },
                   ],

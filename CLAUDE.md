@@ -1,14 +1,26 @@
 # CLAUDE.md — Vizlint Development Guidelines
+## IMPORTANT: Read VIZLINT-EXECUTION.md before any work
+
+VIZLINT-EXECUTION.md contains the active execution plan.
+It overrides sprint plan sequencing for all work after VIZ-025.
+The current priority is VALIDATION, not new features.
+Read it before starting any task.
 
 ## Project Overview
-Vizlint is a design quality gate for AI-generated frontend code. ESLint plugin + CLI + MCP server.
-TypeScript monorepo via Turborepo + pnpm workspaces.
+Vizlint is the design quality infrastructure layer for the AI code generation era. It validates design quality — spacing consistency, typography hierarchy, color token adherence, responsive coverage, accessibility, and dark mode — in AI-generated frontend code across any framework.
 
-## Sprint plan documents (READ THESE FIRST)
-- docs/vizlint-sprint-plan.docx — Full 16-sprint plan with user stories
-- docs/sprint-plan-v1.1-changes.md 
-- docs/vizlint-sprint-plan-v1.1-update.md — Three-mode model, fixers, Angular
-- docs/vizlint-sprint-plan-v1.2-update.md — User control model, no-AI architecture
+**Product levels:** ESLint plugin (L1) → CLI with Design Health Score (L2) → MCP AI self-correction loop (L3) → Design system compliance engine with Figma/W3C token import (L4) → Embeddable API for platforms like Lovable/Bolt/v0 (L5).
+
+TypeScript monorepo via Turborepo + pnpm workspaces. Local-first, deterministic, zero cloud dependency.
+
+**Positioning:** "Visual regression tools tell you the screenshot looks wrong. Vizlint tells you why — and fixes it."
+
+## Planning documents (READ IN THIS ORDER)
+1. **VIZLINT-EXECUTION.md** — Active execution plan. READ FIRST. Overrides all other sequencing.
+2. docs/vizlint-sprint-plan.docx — Full 16-sprint plan with user stories
+3. docs/sprint-plan-v1.1-changes.md
+4. docs/vizlint-sprint-plan-v1.1-update.md — Three-mode model, fixers, Angular
+5. docs/vizlint-sprint-plan-v1.2-update.md — User control model, no-AI architecture, L3-L5 vision, strategic positioning
 
 ## Architecture Rules
 - **ESLint v10+ flat config ONLY.** No legacy .eslintrc support anywhere.
@@ -18,9 +30,11 @@ TypeScript monorepo via Turborepo + pnpm workspaces.
 - **Tailwind v3 AND v4 support.** Use the class mapping in `utils/class-extractor.ts`. Never assume v3-only class names.
 - **Framework-agnostic.** Rules must work with React JSX, Vue SFC, Svelte, Angular templates, and plain HTML.
 - No AI/LLM API calls. Pure deterministic static analysis.
-- Every rule: try/catch wrapped, fixable: 'code', Tailwind v3+v4 support
+- Every rule: try/catch wrapped, fixable: 'code' where appropriate, Tailwind v3+v4 support
 - Framework agnostic: React, Vue, Svelte, Angular, HTML
 - Zero code leaves the user's machine (local-first)
+- Design system inputs: Tailwind config, W3C Design Tokens (.tokens.json), Figma Variables (planned), CSS :root
+- MCP server enables AI self-correction loop (Cursor, Claude Code, Copilot)
 
 ## Code Style
 - TypeScript strict mode everywhere.
@@ -53,6 +67,15 @@ packages/
   cli/            — Commander.js CLI (npm: @vizlint/cli)  
   mcp/            — MCP server for Cursor/Claude Code (npm: @vizlint/mcp)
   shared/         — Shared types and utilities
+  core/           — (planned) Embeddable analysis engine for platform integration
 apps/
   docs/           — Documentation site
+action/           — GitHub Action for PR design review
+validation/       — Real-world validation results (Vintor, OSS projects)
 ```
+
+## Strategic Context
+- Target acquirers/partners: Anthropic (Claude Code integration), Figma (design-code enforcement), Microsoft (VS Code/Copilot), AI code gen platforms (Lovable, Bolt, v0, Stitch)
+- No existing tool combines design system enforcement + accessibility + responsiveness + framework-agnostic linting, local-first
+- eslint-plugin-jsx-a11y (123M/mo) is React-only. eslint-plugin-tailwindcss (5.9M/mo) stalled on v4. Vizlint occupies the gap.
+- See VIZLINT-EXECUTION.md Section 10 for full strategic integration analysis

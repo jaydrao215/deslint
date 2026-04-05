@@ -1,5 +1,9 @@
 # Vizlint Sprint Plan v1.1 — Critical Changes from Validation
 
+> Apply this document ON TOP of the original `vizlint-sprint-plan.txt`.  
+> Every section below either replaces or adds to the original sprint plan.  
+> If a section is not mentioned here, the original plan stands unchanged.
+
 ## Change 1: ESLint v10 Flat Config Only
 
 **Remove all legacy .eslintrc references from the entire plan.**

@@ -7,9 +7,14 @@ import {
   findNearestFontWeight,
   findNearestLeading,
   findNearestTracking,
+  TAILWIND_FONT_SIZE_SCALE,
+  TAILWIND_FONT_WEIGHT_SCALE,
+  TAILWIND_LEADING_SCALE,
+  TAILWIND_TRACKING_SCALE,
 } from '../utils/typography-map.js';
 import { createClassVisitor } from '../utils/class-visitor.js';
 import { debugLog } from '../utils/debug.js';
+import { safeGetText, safeGetRange } from '../utils/safe-source.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://vizlint.dev/docs/rules/${name}`
@@ -84,6 +89,15 @@ export default createRule<Options, MessageIds>({
     const allowlist = new Set(options.allowlist ?? []);
     const customScale = options.customScale ?? null;
 
+    /**
+     * Find nearest scale value for a typography class.
+     * Returns null if no scale match exists within tolerance.
+     *
+     * Tolerance prevents false positives: text-[11px] won't suggest text-xs (12px)
+     * because 11px is likely an intentional custom size, not a mistake.
+     * Font-size and leading require exact px match (tolerance 0).
+     * Font-weight allows 50 units tolerance, tracking allows 10 milli-em.
+     */
     function findNearest(baseClass: string): string | null {
       let match: RegExpMatchArray | null;
 
@@ -94,7 +108,12 @@ export default createRule<Options, MessageIds>({
         if (customScale?.fontSize) {
           return findNearestInCustom(px, customScale.fontSize, 'text-');
         }
-        return findNearestFontSize(px);
+        const nearest = findNearestFontSize(px);
+        if (!nearest) return null;
+        // Only suggest if exact px match — even 1px difference in font size is intentional
+        const scalePx = TAILWIND_FONT_SIZE_SCALE[nearest];
+        if (scalePx !== undefined && Math.abs(px - scalePx) > 0) return null;
+        return nearest;
       }
 
       match = baseClass.match(FONT_WEIGHT_PATTERN);
@@ -103,7 +122,12 @@ export default createRule<Options, MessageIds>({
         if (customScale?.fontWeight) {
           return findNearestInCustom(weight, customScale.fontWeight, 'font-');
         }
-        return findNearestFontWeight(weight);
+        const nearest = findNearestFontWeight(weight);
+        if (!nearest) return null;
+        // Only suggest if within 50 of scale value
+        const scaleWeight = TAILWIND_FONT_WEIGHT_SCALE[nearest];
+        if (scaleWeight !== undefined && Math.abs(weight - scaleWeight) > 50) return null;
+        return nearest;
       }
 
       match = baseClass.match(LEADING_PATTERN);
@@ -113,7 +137,12 @@ export default createRule<Options, MessageIds>({
         if (customScale?.leading) {
           return findNearestInCustom(px, customScale.leading, 'leading-');
         }
-        return findNearestLeading(px);
+        const nearest = findNearestLeading(px);
+        if (!nearest) return null;
+        // Only suggest if exact px match
+        const scalePx = TAILWIND_LEADING_SCALE[nearest];
+        if (scalePx !== undefined && Math.abs(px - scalePx) > 0) return null;
+        return nearest;
       }
 
       match = baseClass.match(TRACKING_PATTERN);
@@ -123,7 +152,12 @@ export default createRule<Options, MessageIds>({
         if (customScale?.tracking) {
           return findNearestInCustomTrack(milliEm, customScale.tracking);
         }
-        return findNearestTracking(milliEm);
+        const nearest = findNearestTracking(milliEm);
+        if (!nearest) return null;
+        // Only suggest if within 10 milli-em
+        const scaleMilliEm = TAILWIND_TRACKING_SCALE[nearest];
+        if (scaleMilliEm !== undefined && Math.abs(milliEm - scaleMilliEm) > 10) return null;
+        return nearest;
       }
 
       return null;
@@ -159,16 +193,20 @@ export default createRule<Options, MessageIds>({
             ...(fullReplacement
               ? {
                   fix(fixer) {
-                    const src = context.sourceCode.getText(node);
-                    return fixer.replaceText(node, src.replace(cls, fullReplacement));
+                    const src = safeGetText(context.sourceCode, node);
+                    const range = safeGetRange(context.sourceCode, node);
+                    if (!src || !range) return null;
+                    return fixer.replaceTextRange(range, src.replace(cls, fullReplacement));
                   },
                   suggest: [
                     {
                       messageId: 'suggestScale',
                       data: { replacement: fullReplacement },
                       fix(fixer) {
-                        const src = context.sourceCode.getText(node);
-                        return fixer.replaceText(node, src.replace(cls, fullReplacement));
+                        const src = safeGetText(context.sourceCode, node);
+                        const range = safeGetRange(context.sourceCode, node);
+                        if (!src || !range) return null;
+                        return fixer.replaceTextRange(range, src.replace(cls, fullReplacement));
                       },
                     },
                   ],

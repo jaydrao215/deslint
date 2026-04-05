@@ -18,11 +18,13 @@ export type Options = [
 export type MessageIds = 'missingResponsive';
 
 /**
- * Matches fixed-width arbitrary values: w-[Npx], w-[Nrem].
- * Also catches non-arbitrary fixed widths that are large layout containers
- * (w-full, w-screen are fine; w-8 at 32px is fine for icons).
+ * Matches fixed-width arbitrary values: w-[Npx], w-[Nrem], max-w-[Npx], min-w-[Npx].
+ * Captures: (1) prefix (w, max-w, min-w), (2) numeric value, (3) unit (px|rem)
+ *
+ * These are layout-affecting constraints that can break mobile layouts when
+ * set without responsive variants.
  */
-const FIXED_WIDTH_ARBITRARY = /^w-\[(\d+(?:\.\d+)?(?:px|rem))\]$/;
+const FIXED_WIDTH_ARBITRARY = /^(w|max-w|min-w)-\[(\d+(?:\.\d+)?)(px|rem)\]$/;
 
 /** Standard responsive breakpoints in Tailwind */
 const STANDARD_BREAKPOINTS = new Set(['sm', 'md', 'lg', 'xl', '2xl']);
@@ -61,7 +63,7 @@ export default createRule<Options, MessageIds>({
     ],
     messages: {
       missingResponsive:
-        '`{{className}}` sets a fixed width of {{px}}px without responsive breakpoints ({{missing}}). Consider adding `sm:w-full` or `md:w-auto` for responsive behavior.',
+        '`{{className}}` sets a fixed {{prefix}} of {{px}}px without responsive breakpoints ({{missing}}). Add `sm:w-full` or `sm:{{prefix}}-full` to prevent broken mobile layouts.',
     },
   },
   defaultOptions: [
@@ -112,14 +114,23 @@ export default createRule<Options, MessageIds>({
       return result;
     }
 
-    function hasResponsiveCoverage(classes: Set<string>, bps: string[]): string[] {
+    function hasResponsiveCoverage(
+      classes: Set<string>,
+      bps: string[],
+      prefix: string,
+    ): string[] {
       const missing: string[] = [];
       for (const bp of bps) {
         if (!STANDARD_BREAKPOINTS.has(bp)) continue;
+        // Covered if any responsive variant of the same prefix family exists
+        // e.g. max-w-[800px] is covered by sm:max-w-full, sm:max-w-[600px], sm:w-full, etc.
         const covered = [...classes].some(
-          (cls) => cls.startsWith(`${bp}:w-`) || cls.startsWith(`${bp}:max-w-`) || cls.startsWith(`${bp}:min-w-`)
+          (cls) =>
+            cls.startsWith(`${bp}:w-`) ||
+            cls.startsWith(`${bp}:max-w-`) ||
+            cls.startsWith(`${bp}:min-w-`),
         );
-        if (!covered) missing.push(`${bp}:w-*`);
+        if (!covered) missing.push(`${bp}:${prefix}-*`);
       }
       return missing;
     }
@@ -141,13 +152,17 @@ export default createRule<Options, MessageIds>({
             const match = baseClass.match(FIXED_WIDTH_ARBITRARY);
             if (!match) continue;
 
-            const px = toPx(match[1]);
+            const prefix = match[1]; // 'w', 'max-w', or 'min-w'
+            const rawValue = match[2] + match[3]; // e.g. '800px' or '1.5rem'
+            const px = toPx(rawValue);
             if (px === null) continue;
 
-            // Ignore icon/avatar sizing below threshold
-            if (px < iconThreshold) continue;
+            // Ignore small sizing (icons, avatars) — only flag layout-scale widths
+            // max-w always flags regardless of threshold (any fixed max-w can break mobile)
+            if (prefix === 'w' && px < iconThreshold) continue;
+            if (prefix === 'min-w' && px < iconThreshold) continue;
 
-            const missing = hasResponsiveCoverage(allClasses, requiredBreakpoints);
+            const missing = hasResponsiveCoverage(allClasses, requiredBreakpoints, prefix);
             if (missing.length === 0) continue;
 
             // Find the JSX attribute node for accurate reporting location
@@ -167,6 +182,7 @@ export default createRule<Options, MessageIds>({
               messageId: 'missingResponsive',
               data: {
                 className: cls,
+                prefix,
                 px: String(Math.round(px)),
                 missing: missing.join(', '),
               },

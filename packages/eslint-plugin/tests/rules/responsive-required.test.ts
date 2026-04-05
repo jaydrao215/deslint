@@ -53,6 +53,14 @@ ruleTester.run('responsive-required', rule, {
       options: [{ ignoredPrefixes: ['w-'] }],
     },
 
+    // ── max-w WITH responsive coverage — NOT flagged ──
+    { code: '<div className="max-w-[800px] sm:w-full md:w-auto" />' },
+    { code: '<div className="max-w-[1240px] sm:max-w-full md:max-w-screen-lg" />' },
+    { code: '<div className="max-w-[800px] sm:max-w-[600px]" />', options: [{ requiredBreakpoints: ['sm'] }] },
+
+    // ── min-w WITH responsive coverage — NOT flagged ──
+    { code: '<div className="min-w-[200px] sm:min-w-0 md:min-w-full" />' },
+
     // ── Custom required breakpoints — satisfied ──
     {
       code: '<div className="w-[800px] lg:w-full" />',
@@ -116,6 +124,27 @@ ruleTester.run('responsive-required', rule, {
     {
       code: '<div className="w-[800px] sm:w-full md:w-1/2" />',
       options: [{ requiredBreakpoints: ['sm', 'md', 'lg'] }],
+      errors: [{ messageId: 'missingResponsive' as const }],
+    },
+
+    // ── max-w without responsive variants — flagged ──
+    {
+      code: '<div className="max-w-[800px]" />',
+      errors: [{ messageId: 'missingResponsive' as const }],
+    },
+    {
+      code: '<div className="max-w-[1240px]" />',
+      errors: [{ messageId: 'missingResponsive' as const }],
+    },
+    // max-w with only one breakpoint when two are required
+    {
+      code: '<div className="max-w-[800px] sm:max-w-full" />',
+      errors: [{ messageId: 'missingResponsive' as const }],
+    },
+
+    // ── min-w without responsive variants — flagged ──
+    {
+      code: '<div className="min-w-[200px]" />',
       errors: [{ messageId: 'missingResponsive' as const }],
     },
   ],

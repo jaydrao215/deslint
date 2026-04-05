@@ -49,6 +49,25 @@ ruleTester.run('dark-mode-coverage', rule, {
       code: '<div className="bg-blue-500" />',
       options: [{ ignoredPrefixes: ['bg-blue'] }],
     },
+
+    // ── Semantic/custom tokens (CSS-variable-based theming) — NOT flagged ──
+    { code: '<div className="bg-background" />' },
+    { code: '<div className="bg-surface" />' },
+    { code: '<div className="bg-surface-muted" />' },
+    { code: '<div className="bg-danger-soft" />' },
+    { code: '<div className="bg-success-soft" />' },
+    { code: '<div className="bg-danger" />' },
+
+    // ── Arbitrary values (gradients, CSS vars) — NOT flagged ──
+    { code: '<div className="bg-[linear-gradient(135deg,rgba(15,23,41,0.03),rgba(0,200,150,0.08))]" />' },
+    { code: '<div className="bg-[var(--glass-9)]" />' },
+    { code: '<div className="bg-[radial-gradient(circle,_rgba(90,113,191,0.26),_transparent_32%)]" />' },
+
+    // ── Opacity modifiers — NOT flagged ──
+    { code: '<div className="bg-accent-500/10" />' },
+    { code: '<div className="bg-white/78" />' },
+    { code: '<div className="bg-black/60" />' },
+    { code: '<div className="bg-emerald-500/15" />' },
   ],
 
   invalid: [

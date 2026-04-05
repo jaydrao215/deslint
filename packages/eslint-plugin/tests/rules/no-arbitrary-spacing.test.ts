@@ -51,6 +51,17 @@ ruleTester.run('no-arbitrary-spacing', rule, {
     { code: '<div className="h-[100vh]" />' },
     { code: '<div className="w-[calc(100%-20px)]" />' },
 
+    // ── Constraint prefixes skipped by default (skipConstraints: true) ──
+    { code: '<div className="min-w-[64px]" />' },
+    { code: '<div className="max-w-[128px]" />' },
+    { code: '<div className="min-h-[96px]" />' },
+    { code: '<div className="max-h-[160px]" />' },
+
+    // ── Tiny values skipped by default (minPxThreshold: 2) ──
+    { code: '<div className="p-[1px]" />' },
+    { code: '<div className="m-[0px]" />' },
+    { code: '<div className="gap-[2px]" />' },
+
     // ── Allowlisted values ──
     {
       code: '<div className="p-[18px]" />',
@@ -88,14 +99,18 @@ ruleTester.run('no-arbitrary-spacing', rule, {
       '<div className="m-2" />',
     ),
 
+    // p-[1px] and m-[0px] now skipped by default (minPxThreshold: 2)
+    // Test with skipConstraints=false and minPxThreshold=0 to verify they still work:
     fixable(
       '<div className="p-[1px]" />',
       '<div className="p-px" />',
+      { options: [{ skipConstraints: false, minPxThreshold: 0 }] },
     ),
 
     fixable(
       '<div className="m-[0px]" />',
       '<div className="m-0" />',
+      { options: [{ skipConstraints: false, minPxThreshold: 0 }] },
     ),
 
     // ── Rem values ──────────────────────────────────────────────────
@@ -144,10 +159,11 @@ ruleTester.run('no-arbitrary-spacing', rule, {
 
     fixable('<div className="w-[32px]" />', '<div className="w-8" />'),
     fixable('<div className="h-[48px]" />', '<div className="h-12" />'),
-    fixable('<div className="min-w-[64px]" />', '<div className="min-w-16" />'),
-    fixable('<div className="min-h-[96px]" />', '<div className="min-h-24" />'),
-    fixable('<div className="max-w-[128px]" />', '<div className="max-w-32" />'),
-    fixable('<div className="max-h-[160px]" />', '<div className="max-h-40" />'),
+    // Constraint prefixes now skipped by default. Test with skipConstraints=false:
+    fixable('<div className="min-w-[64px]" />', '<div className="min-w-16" />', { options: [{ skipConstraints: false, minPxThreshold: 0 }] }),
+    fixable('<div className="min-h-[96px]" />', '<div className="min-h-24" />', { options: [{ skipConstraints: false, minPxThreshold: 0 }] }),
+    fixable('<div className="max-w-[128px]" />', '<div className="max-w-32" />', { options: [{ skipConstraints: false, minPxThreshold: 0 }] }),
+    fixable('<div className="max-h-[160px]" />', '<div className="max-h-40" />', { options: [{ skipConstraints: false, minPxThreshold: 0 }] }),
     fixable('<div className="size-[40px]" />', '<div className="size-10" />'),
 
     // ── Inset / position ────────────────────────────────────────────
