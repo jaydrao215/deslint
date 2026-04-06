@@ -359,3 +359,40 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 
 **Will do:** Monitor dogfood. Extend suggest-tokens to cover no-arbitrary-colors violations.
 **Blockers:** None
+
+### Dogfood Week Progress — 2026-04-06
+
+**Did:** Day 4 of 7 in Vintor dogfood week. Status:
+- 0 new false positive types discovered since Round 1 fixes
+- Vintor codebase stable at 3 violations (all `no-arbitrary-spacing` — intentional design decisions)
+- No crashes during daily development
+- Plugin does not noticeably affect editor performance
+- `dark-mode-coverage` correctly silent after being set to `off`
+
+**Trust metrics status:**
+- FP rate: 0% — MET
+- Crash rate: 0 — MET
+- Performance: <0.5s per scan — MET
+- Auto-fix correctness: 100% — MET
+- Vintor dogfood: 4/7 days complete — IN PROGRESS (ends 2026-04-09)
+
+### Launch Preparation Sprint — 2026-04-06
+
+**Did:** Comprehensive documentation update for v0.1.0 release readiness.
+
+**README updates:**
+- Root README.md: updated from 4 rules to all 14, added badges, performance table, MCP section, GitHub Action section, "Why Vizlint?" section, sharpened tagline to "ESLint catches code bugs. Vizlint catches design bugs."
+- Plugin README: full documentation for all 14 rules with examples, options, framework support matrix, validation results table (7 projects, 4,061 files, 0% FP)
+- CLI README: created — documents scan, fix, init, generate-config, suggest-tokens commands with output format table
+- MCP README: created — documents 3 tools, installation for Cursor/Claude Code, manual config examples
+
+**Planning document alignment:**
+- VIZLINT-EXECUTION.md: filled trust metrics date (2026-04-06), updated "What has been validated" section with Round 1 + Round 2 results, marked all VIZ-001-VIZ-025 tasks complete
+- CHANGELOG.md: consolidated all work into proper v0.1.0 release section with 14 rules, 15 bug fixes, validation results
+- SPRINT-LOG.md: added dogfood progress entry and this launch preparation entry
+- validation/SUMMARY.md: confirmed complete with all 7 projects and cumulative metrics
+
+**npm org:** `@vizlint` created on npmjs.com. NPM_TOKEN configured in GitHub secrets.
+
+**Will do:** Complete dogfood week (ends 2026-04-09). Tag v0.1.0 and publish to npm. Deploy docs site. Begin traction strategy.
+**Blockers:** Domain purchase (vizlint.dev) and docs deployment (Vercel/Cloudflare) are external tasks.

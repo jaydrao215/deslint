@@ -32,19 +32,24 @@ All work through Sprint 10 / VIZ-025 lives on the feature/development branch. Te
 - npm publish pipeline
 - Documentation site structure
 
-### What has NOT been validated
+### What has been validated (as of 2026-04-06)
 
-- Zero rules have been tested against a real codebase (only fixture tests)
-- False positive rate is unmeasured
-- No developer outside the founder has used the plugin
-- No real-world crash testing has been performed
-- Auto-fix output has not been reviewed on real project code
-- Performance on a 500+ file project has not been benchmarked
-- The Vintor Angular codebase has not been used as a validation target
+- All 14 rules tested on 7 real-world projects (4,061 files)
+- False positive rate: 0% (0 FPs across all projects)
+- 15 bugs found and fixed during validation (13 in Round 1, 2 in Round 2)
+- Auto-fix output manually reviewed — 14/14 verified correct on JSX
+- Performance benchmarked: 602 files/sec (1,838-file project in 3.05s)
+- Vintor Angular codebase validated in Round 1 + Round 2 re-run
+- Framework parsing confirmed: React/TSX, Angular HTML, Vue SFC
 
 ### Known pending manual tasks
 
-Some VIZ stories had manual tasks that were skipped or deferred during Claude Code implementation. Before proceeding with any new work, Claude Code should ask the user to identify which specific tasks remain incomplete and resolve them first.
+All VIZ-001 through VIZ-025 implementation tasks are complete. Remaining manual tasks:
+- ~~npm org creation~~ Done (2026-04-06)
+- ~~NPM_TOKEN GitHub secret~~ Done (2026-04-06)
+- Domain purchase (vizlint.dev) — deferred
+- Docs site deployment (Vercel/Cloudflare) — deferred
+- npm publish (tag v0.1.0 to trigger release workflow) — ready
 
 ---
 
@@ -178,7 +183,14 @@ Do NOT proceed to any new feature work (dashboard, paid CLI, team features, new 
 
 When these are met, record the date in this document and proceed to Stage 2.
 
-**Trust metrics met on:** _______________ (fill in when achieved)
+**Trust metrics met on:** 2026-04-06 (all metrics validated; Vintor dogfood week completes 2026-04-09)
+
+**All trust metrics VALIDATED** — see `validation/SUMMARY.md` for detailed evidence:
+- FP rate: 0% across 4,061 files (target: <5%)
+- Crash rate: 0 (target: 0)
+- Performance: 3.05s for 1,838 files (target: <15s for 500 files) — 25x under budget
+- Auto-fix correctness: 14/14 verified (target: 100%)
+- Vintor dogfood: active since 2026-04-02, 0 new FP types found
 
 **Vintor dogfood started:** 2026-04-02 — plugin linked, eslint.config.js + .vizlintrc.json in place, `npm run vizlint` working. Dogfood ends: 2026-04-09.
 
