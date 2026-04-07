@@ -396,3 +396,29 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 
 **Will do:** Complete dogfood week (ends 2026-04-09). Tag v0.1.0 and publish to npm. Deploy docs site. Begin traction strategy.
 **Blockers:** Domain purchase (vizlint.dev) and docs deployment (Vercel/Cloudflare) are external tasks.
+
+## Sprint 11 — Stage 2 Enterprise Foundation (KPMG Phase 1)
+
+> Strategic context: per the KPMG defensibility plan, Phase 1 ("Enterprise Foundation") builds the SonarQube-for-design positioning before Stage 2 accessibility expansion. All features ship backwards-compatible and opt-in for v0.1.0 users.
+
+### VIZ-026: Design Debt Scoring — 2026-04-07
+
+**Did:** Shipped Design Debt metric — minutes of remediation effort calibrated from real auto-fix data. `packages/cli/src/debt.ts` with `calculateDebt()` and `formatDebt()` helpers. Per-rule effort table: trivial class renames 2m, small refactors 3m, medium refactors 5m, design work 10m, large splits 30m. Rendered in scan text output (summary + top-3 contributors), JSON output (`debt` block with breakdown), and HTML report (Overview tab table). 12 new unit tests, 90/90 CLI tests green. Purely additive — zero breaking changes. Unlocks enterprise positioning (Moat 2).
+**Will do:** VIZ-027 Quality Gates
+**Blockers:** None
+
+### VIZ-027: Quality Gates (opt-in CI enforcement) — 2026-04-07
+
+**Did:** Shipped CI enforcement layer — SonarQube-style quality gates applied to design metrics (Moat 3). `.vizlintrc.json` now accepts a `qualityGate` block with `enforce` (default false), `minOverallScore`, `minCategoryScores`, `maxViolations`, `maxDebtMinutes`, `maxScoreRegression`. Pure `evaluateQualityGate()` function in `@vizlint/shared` — no I/O, fully testable. CLI scan reads gate + previous score from history (for regression checks), prints pass/fail with reasons, exits 1 ONLY when `enforce: true` and any condition fails. GitHub Action evaluates gate, shows it in PR comment with warn-only hint, fails check only when enforced. New Action outputs: `debt-minutes`, `quality-gate-passed`. `RULE_EFFORT_MINUTES` table moved to `@vizlint/shared/debt-table.ts` so CLI + Action share one source of truth. 15 new gate tests, 757 tests green repo-wide.
+
+**Safety:** `enforce` defaults to false. v0.1.0 users upgrading see no behavior change — gate failures are warn-only by default, surface in output but don't break CI.
+
+**Will do:** VIZ-028 Trend command
+**Blockers:** None
+
+### VIZ-028: `vizlint trend` command — 2026-04-07
+
+**Did:** Shipped read-only trend analytics over existing `.vizlint/history.json` (Moat 4 — historical context). New `packages/cli/src/trend.ts` with `loadHistory()`, pure `analyzeTrend()` (window limit, score delta first→latest, high/low/avg, per-category deltas, regression detection by alert threshold), `sparkline()` ASCII chart helper, and text/JSON formatters. Registered `vizlint trend [dir] [--limit N] [--format text|json] [--alert-threshold N]` in CLI. Non-zero exit code when regressions detected (informational — users opt into CI blocking). 12 new unit tests, 102/102 CLI tests green. Zero changes to data on disk — uses history written by existing `saveHistory()` calls. Backwards compatible.
+**Will do:** VIZ-029 W3C Design Tokens import
+**Blockers:** None
+

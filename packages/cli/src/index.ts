@@ -35,6 +35,12 @@ import {
 } from './generate-config.js';
 import { initWizard } from './init.js';
 import { buildTokenSuggestions, formatSuggestTokens } from './suggest-tokens.js';
+import {
+  loadHistory,
+  analyzeTrend,
+  formatTrendText,
+  formatTrendJson,
+} from './trend.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -333,6 +339,40 @@ program
       const { suggestions, fixable } = buildTokenSuggestions(lintResult, cwd);
 
       console.log(formatSuggestTokens(suggestions, fixable));
+    } catch (err) {
+      console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
+      process.exit(1);
+    }
+  });
+
+// ── trend command ────────────────────────────────────────────────────
+
+program
+  .command('trend')
+  .description('Show Design Health Score trend over time from .vizlint/history.json')
+  .argument('[dir]', 'Project directory', '.')
+  .option('-l, --limit <n>', 'Number of recent entries to include', '10')
+  .option('-f, --format <format>', 'Output format: text, json', 'text')
+  .option('--alert-threshold <n>', 'Flag score drops of this many points or more', '5')
+  .action(async (dir: string, opts: { limit: string; format: string; alertThreshold: string }) => {
+    try {
+      const cwd = resolve(dir);
+      const history = loadHistory(cwd);
+      const limit = parseInt(opts.limit, 10);
+      const alertThreshold = parseInt(opts.alertThreshold, 10);
+      const summary = analyzeTrend(history, { limit, alertThreshold });
+
+      if (opts.format === 'json') {
+        console.log(formatTrendJson(summary));
+      } else {
+        console.log(formatTrendText(summary, history, { limit, alertThreshold }));
+      }
+
+      // Non-zero exit if regressions were detected (informational — does not
+      // block CI unless user wires it into their pipeline explicitly).
+      if (summary.regressions.length > 0) {
+        process.exitCode = 1;
+      }
     } catch (err) {
       console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
       process.exit(1);
