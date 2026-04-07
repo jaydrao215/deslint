@@ -1,6 +1,12 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { safeParseConfig, importTailwindConfig, mergeDesignSystems } from '@vizlint/shared';
+import {
+  safeParseConfig,
+  importTailwindConfig,
+  mergeDesignSystems,
+  findW3CTokensFile,
+  loadW3CTokensFile,
+} from '@vizlint/shared';
 import type { DesignSystem, VizlintConfig } from '@vizlint/shared';
 import { generateCursorRules } from './templates/cursorrules.js';
 import { generateClaudeMd } from './templates/claude-md.js';
@@ -43,13 +49,29 @@ export async function loadDesignSystem(projectDir: string): Promise<DesignSystem
     // No Tailwind config found — that's fine
   }
 
-  // Merge: manual .vizlintrc.json overrides auto-imported Tailwind tokens
-  const manual = config?.designSystem;
-
-  if (manual && tailwindDesignSystem) {
-    return mergeDesignSystems(tailwindDesignSystem, manual);
+  // Try W3C Design Tokens (DTCG) auto-import — .tokens.json / tokens.json
+  let w3cDesignSystem: DesignSystem | undefined;
+  try {
+    const tokensFile = findW3CTokensFile(projectDir);
+    if (tokensFile) {
+      const parsed = loadW3CTokensFile(tokensFile, projectDir);
+      w3cDesignSystem = parsed?.designSystem;
+    }
+  } catch {
+    // Malformed tokens file — ignore, fall back to Tailwind/manual
   }
-  return manual ?? tailwindDesignSystem;
+
+  // Merge priority (lowest → highest): Tailwind → W3C tokens → manual .vizlintrc.json
+  const manual = config?.designSystem;
+  let merged: DesignSystem | undefined;
+  if (tailwindDesignSystem) merged = tailwindDesignSystem;
+  if (w3cDesignSystem) {
+    merged = merged ? mergeDesignSystems(merged, w3cDesignSystem) : w3cDesignSystem;
+  }
+  if (manual) {
+    merged = merged ? mergeDesignSystems(merged, manual) : manual;
+  }
+  return merged;
 }
 
 /**

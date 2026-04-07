@@ -359,3 +359,93 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 
 **Will do:** Monitor dogfood. Extend suggest-tokens to cover no-arbitrary-colors violations.
 **Blockers:** None
+
+### Dogfood Week Progress — 2026-04-06
+
+**Did:** Day 4 of 7 in Vintor dogfood week. Status:
+- 0 new false positive types discovered since Round 1 fixes
+- Vintor codebase stable at 3 violations (all `no-arbitrary-spacing` — intentional design decisions)
+- No crashes during daily development
+- Plugin does not noticeably affect editor performance
+- `dark-mode-coverage` correctly silent after being set to `off`
+
+**Trust metrics status:**
+- FP rate: 0% — MET
+- Crash rate: 0 — MET
+- Performance: <0.5s per scan — MET
+- Auto-fix correctness: 100% — MET
+- Vintor dogfood: 4/7 days complete — IN PROGRESS (ends 2026-04-09)
+
+### Launch Preparation Sprint — 2026-04-06
+
+**Did:** Comprehensive documentation update for v0.1.0 release readiness.
+
+**README updates:**
+- Root README.md: updated from 4 rules to all 14, added badges, performance table, MCP section, GitHub Action section, "Why Vizlint?" section, sharpened tagline to "ESLint catches code bugs. Vizlint catches design bugs."
+- Plugin README: full documentation for all 14 rules with examples, options, framework support matrix, validation results table (7 projects, 4,061 files, 0% FP)
+- CLI README: created — documents scan, fix, init, generate-config, suggest-tokens commands with output format table
+- MCP README: created — documents 3 tools, installation for Cursor/Claude Code, manual config examples
+
+**Planning document alignment:**
+- VIZLINT-EXECUTION.md: filled trust metrics date (2026-04-06), updated "What has been validated" section with Round 1 + Round 2 results, marked all VIZ-001-VIZ-025 tasks complete
+- CHANGELOG.md: consolidated all work into proper v0.1.0 release section with 14 rules, 15 bug fixes, validation results
+- SPRINT-LOG.md: added dogfood progress entry and this launch preparation entry
+- validation/SUMMARY.md: confirmed complete with all 7 projects and cumulative metrics
+
+**npm org:** `@vizlint` created on npmjs.com. NPM_TOKEN configured in GitHub secrets.
+
+**Will do:** Complete dogfood week (ends 2026-04-09). Tag v0.1.0 and publish to npm. Deploy docs site. Begin traction strategy.
+**Blockers:** Domain purchase (vizlint.dev) and docs deployment (Vercel/Cloudflare) are external tasks.
+
+## Sprint 11 — Stage 2 Enterprise Foundation (KPMG Phase 1)
+
+> Strategic context: per the KPMG defensibility plan, Phase 1 ("Enterprise Foundation") builds the SonarQube-for-design positioning before Stage 2 accessibility expansion. All features ship backwards-compatible and opt-in for v0.1.0 users.
+
+### VIZ-026: Design Debt Scoring — 2026-04-07
+
+**Did:** Shipped Design Debt metric — minutes of remediation effort calibrated from real auto-fix data. `packages/cli/src/debt.ts` with `calculateDebt()` and `formatDebt()` helpers. Per-rule effort table: trivial class renames 2m, small refactors 3m, medium refactors 5m, design work 10m, large splits 30m. Rendered in scan text output (summary + top-3 contributors), JSON output (`debt` block with breakdown), and HTML report (Overview tab table). 12 new unit tests, 90/90 CLI tests green. Purely additive — zero breaking changes. Unlocks enterprise positioning (Moat 2).
+**Will do:** VIZ-027 Quality Gates
+**Blockers:** None
+
+### VIZ-027: Quality Gates (opt-in CI enforcement) — 2026-04-07
+
+**Did:** Shipped CI enforcement layer — SonarQube-style quality gates applied to design metrics (Moat 3). `.vizlintrc.json` now accepts a `qualityGate` block with `enforce` (default false), `minOverallScore`, `minCategoryScores`, `maxViolations`, `maxDebtMinutes`, `maxScoreRegression`. Pure `evaluateQualityGate()` function in `@vizlint/shared` — no I/O, fully testable. CLI scan reads gate + previous score from history (for regression checks), prints pass/fail with reasons, exits 1 ONLY when `enforce: true` and any condition fails. GitHub Action evaluates gate, shows it in PR comment with warn-only hint, fails check only when enforced. New Action outputs: `debt-minutes`, `quality-gate-passed`. `RULE_EFFORT_MINUTES` table moved to `@vizlint/shared/debt-table.ts` so CLI + Action share one source of truth. 15 new gate tests, 757 tests green repo-wide.
+
+**Safety:** `enforce` defaults to false. v0.1.0 users upgrading see no behavior change — gate failures are warn-only by default, surface in output but don't break CI.
+
+**Will do:** VIZ-028 Trend command
+**Blockers:** None
+
+### VIZ-028: `vizlint trend` command — 2026-04-07
+
+**Did:** Shipped read-only trend analytics over existing `.vizlint/history.json` (Moat 4 — historical context). New `packages/cli/src/trend.ts` with `loadHistory()`, pure `analyzeTrend()` (window limit, score delta first→latest, high/low/avg, per-category deltas, regression detection by alert threshold), `sparkline()` ASCII chart helper, and text/JSON formatters. Registered `vizlint trend [dir] [--limit N] [--format text|json] [--alert-threshold N]` in CLI. Non-zero exit code when regressions detected (informational — users opt into CI blocking). 12 new unit tests, 102/102 CLI tests green. Zero changes to data on disk — uses history written by existing `saveHistory()` calls. Backwards compatible.
+**Will do:** VIZ-029 W3C Design Tokens import
+**Blockers:** None
+
+### VIZ-029: W3C Design Tokens (DTCG) import — 2026-04-07
+
+**Did:** Shipped W3C Design Tokens Community Group parser (Moat 4 — Figma bridge / design-to-code alignment). New `packages/shared/src/tokens/w3c-parser.ts` — pure `parseW3CTokens(raw)` walks DTCG trees, honors group-level `$type` inheritance, resolves `{group.token}` aliases up to depth 10 with cycle protection, records unresolved aliases and unmapped types without crashing. Buckets `$type: color|dimension|fontFamily` into the existing `DesignSystem` shape; dimensions under `radius`/`borderRadius`/`radii` paths route to `borderRadius`, everything else to `spacing`. Heuristic fallback infers type from value shape (`#hex` → color, `Npx/rem` → dimension) so untyped Style Dictionary output still works. New `loadW3CTokensFile()` + `findW3CTokensFile()` loaders auto-discover `tokens.json`, `design-tokens.json`, `.tokens.json`, `tokens/tokens.json`, `src/tokens.json`. CLI `loadDesignSystem()` in `generate-config.ts` now auto-imports W3C tokens with merge priority Tailwind → W3C → manual `.vizlintrc.json`. 13 parser tests covering flat/nested groups, inheritance, alias chains, cycles, unresolved refs, dimension→borderRadius heuristic, fontFamily mapping, unmapped types, untyped inference, descriptions.
+
+**Safety:** Opt-in via file presence — no behavior change for projects without a `.tokens.json`. Malformed files are swallowed and fall through to Tailwind/manual sources.
+
+**Will do:** VIZ-030 Compliance report export
+**Blockers:** None
+
+### VIZ-030: WCAG 2.2 compliance report export — 2026-04-07
+
+**Did:** Closed out Phase 1 with the compliance report — the feature enterprise legal / a11y teams ask for first. New `packages/shared/src/compliance.ts` maps Vizlint rules to WCAG 2.2 Success Criteria (1.1.1 Non-text Content, 1.4.3 Contrast Minimum, 1.4.10 Reflow, 1.4.11 Non-text Contrast, 1.4.12 Text Spacing, 2.4.7 Focus Visible). Pure `evaluateCompliance()` takes a scan snapshot and returns per-criterion pass/fail/not-evaluated, the highest conformance Level reached (requires at-least-one criterion at that exact level to be evaluated — no false AAA claims), coverage %, pass rate %, and deduped total violations. `formatComplianceSummary()` for CLI/PR-comment text. New `packages/cli/src/compliance-report.ts` renders a self-contained printable HTML report (inline CSS, no JS, no external fonts — safe to email / attach to SOC2 audit / print to PDF) with conformance badges, per-SC table, and links into the WCAG 2.2 spec. New CLI command `vizlint compliance [dir] [--format html|json|text] [--output path]` writes to `.vizlint/compliance.html` by default. 10 new compliance tests, 82 shared + 102 CLI tests green, full repo build clean.
+
+**Safety:** Net-new command. Zero change to existing scan/fix/trend output. Only rules already in Vizlint's catalog are mapped — no new rules, no new violations. Docstring clarifies this is automated evidence, full conformance still requires manual audit.
+
+**Will do:** Integrate KPMG 7-moat strategy into sprint planning docs
+**Blockers:** None
+
+### PLAN-001: KPMG 7-moat strategy integrated into sprint planning — 2026-04-07
+
+**Did:** Wired the approved KPMG defensibility plan into sprint planning so nothing is lost. Added `VIZLINT-EXECUTION.md` Section 15 as the authoritative 7-moat status tracker (phase table, Phase 1 complete w/ VIZ-026→VIZ-030, Phase 2 next, Phase 3 later, non-negotiables preserved). Updated Section 6 "Explicitly Deferred" list — the five Stage 3 items pulled forward into KPMG Phase 1 are now marked ✅ with their story IDs; cross-file engine, component presets, embeddable core, and design-code alignment metric carry forward to KPMG Phase 2/3. Added a status-update note at the top of `docs/vizlint-sprint-plan-v1.2-update.md` Stage 3 section pointing at Section 15. Created `docs/vizlint-sprint-plan-v1.3-kpmg-moats.md` as a full overlay (same pattern as v1.1/v1.2) capturing the 7 moats, Phase 1 shipped table, Phase 2 backlog, Phase 3 backlog, safety model, and document hierarchy. Registered v1.3 in `CLAUDE.md` reading order so future agents pick it up.
+
+**Safety:** Zero code changes. Planning-only.
+
+**Will do:** Stand by for Phase 2 kickoff direction from the founder.
+**Blockers:** None
+

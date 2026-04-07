@@ -35,6 +35,9 @@ importers:
       '@actions/github':
         specifier: ^6.0.0
         version: 6.0.1
+      '@vizlint/shared':
+        specifier: workspace:*
+        version: link:../packages/shared
       eslint:
         specifier: ^9.27.0
         version: 9.39.4(jiti@1.21.7)

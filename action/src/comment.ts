@@ -2,7 +2,22 @@
  * Format the PR comment body for the Design Health Score report.
  */
 
+import type { GateResult } from '@vizlint/shared';
 import type { ScanResult } from './scan.js';
+
+function formatDebt(minutes: number): string {
+  if (minutes <= 0) return '0m';
+  if (minutes < 60) return `${minutes}m`;
+  const hours = minutes / 60;
+  if (hours < 8) {
+    const h = Math.floor(hours);
+    const m = minutes - h * 60;
+    return m === 0 ? `${h}h` : `${h}h ${m}m`;
+  }
+  const days = Math.round((hours / 8) * 10) / 10;
+  const roundedHours = Math.round(hours * 10) / 10;
+  return `${days}d (${roundedHours}h)`;
+}
 
 /**
  * Produce a score badge emoji based on score thresholds.
@@ -26,7 +41,11 @@ function categoryStatus(score: number, maxScore: number): string {
 /**
  * Format the Design Health Score comment for a PR.
  */
-export function formatComment(result: ScanResult, minScore: number): string {
+export function formatComment(
+  result: ScanResult,
+  minScore: number,
+  gateResult?: GateResult,
+): string {
   const badge = scoreBadge(result.score);
   const passedThreshold = minScore === 0 || result.score >= minScore;
   const thresholdLine = minScore > 0
@@ -45,8 +64,31 @@ export function formatComment(result: ScanResult, minScore: number): string {
     `| Total violations | ${result.totalViolations} |`,
     `| Errors | ${result.errors} |`,
     `| Warnings | ${result.warnings} |`,
+    `| Design debt | ${formatDebt(result.debtMinutes)} |`,
     '',
   ];
+
+  // Quality gate status (only if configured)
+  if (gateResult && gateResult.conditionsChecked > 0) {
+    const gateBadge = gateResult.passed ? ':white_check_mark:' : ':x:';
+    const enforceLabel = gateResult.enforced ? '' : ' _(warn-only)_';
+    lines.push(`### ${gateBadge} Quality Gate${enforceLabel}`);
+    lines.push('');
+    if (gateResult.passed) {
+      lines.push(`All ${gateResult.conditionsChecked} configured condition${gateResult.conditionsChecked === 1 ? '' : 's'} passed.`);
+    } else {
+      lines.push(`**${gateResult.failures.length} of ${gateResult.conditionsChecked} conditions failed:**`);
+      lines.push('');
+      for (const f of gateResult.failures) {
+        lines.push(`- ${f.message}`);
+      }
+      if (!gateResult.enforced) {
+        lines.push('');
+        lines.push('> Set `"qualityGate": { "enforce": true }` in `.vizlintrc.json` to fail the check on gate failures.');
+      }
+    }
+    lines.push('');
+  }
 
   // Category breakdown
   if (result.categories.length > 0) {

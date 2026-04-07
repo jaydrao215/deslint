@@ -9,6 +9,7 @@ import { resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import type { LintResult, RuleCategory } from './lint-runner.js';
 import type { ScoreResult, HistoryEntry } from './score.js';
+import { calculateDebt, formatDebt, type DebtResult } from './debt.js';
 
 const _require = createRequire(import.meta.url);
 const _pkg = _require('../package.json') as { version: string };
@@ -158,11 +159,14 @@ export function generateHtmlReport(
     } catch { /* ignore */ }
   }
 
+  const debt = calculateDebt(lintResult);
+
   const html = buildHtml({
     version: _pkg.version,
     timestamp: new Date().toISOString(),
     projectName: cwd.split('/').pop() ?? 'Project',
     score: scoreResult,
+    debt,
     summary: {
       totalFiles: lintResult.totalFiles,
       filesWithViolations: lintResult.filesWithViolations,
@@ -187,6 +191,7 @@ interface ReportData {
   timestamp: string;
   projectName: string;
   score: ScoreResult;
+  debt: DebtResult;
   summary: {
     totalFiles: number;
     filesWithViolations: number;
@@ -427,6 +432,20 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
       <div class="card-sub">of 14 available</div>
     </div>
   </div>
+
+  ${data.debt.totalMinutes > 0 ? `
+  <div class="section">
+    <div class="section-head">Design Debt <span class="sh-count">${formatDebt(data.debt.totalMinutes)} estimated remediation effort</span></div>
+    <div class="section-desc">Estimated time to resolve all violations, calibrated from real auto-fix data. Auto-fixable rules take 2&ndash;3 minutes; design and accessibility decisions take longer.</div>
+    <table class="tbl"><thead><tr><th>Rule</th><th>Violations</th><th>Per&nbsp;violation</th><th>Total effort</th></tr></thead><tbody>
+      ${data.debt.breakdown.slice(0, 10).map(b => `<tr>
+        <td><span class="mono" style="color:var(--blue)">${esc(b.ruleId.replace(/^vizlint\//, ''))}</span></td>
+        <td style="color:var(--text3)">${b.violations}</td>
+        <td style="color:var(--text3)">${b.minutesPerViolation}m</td>
+        <td style="font-weight:600">${esc(formatDebt(b.totalMinutes))}</td>
+      </tr>`).join('')}
+    </tbody></table>
+  </div>` : ''}
 
   ${data.history.length > 1 ? `
   <div class="section">

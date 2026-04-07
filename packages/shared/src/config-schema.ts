@@ -52,6 +52,47 @@ export const ProfileSchema = z.object({
 });
 export type Profile = z.infer<typeof ProfileSchema>;
 
+// ── Quality Gate (Phase 1, Moat 3) ───────────────────────────────────
+//
+// Quality gates enforce design quality thresholds in CI. Modeled after
+// SonarQube quality gates, but applied to design metrics.
+//
+// IMPORTANT: `enforce` defaults to false. v0.1.0 users upgrading to v0.2.0
+// see no behavior change unless they explicitly opt in.
+export const QualityGateSchema = z
+  .object({
+    /**
+     * When true, scan/Action exit non-zero if any condition fails.
+     * When false (default), failures are reported but exit code is 0.
+     */
+    enforce: z.boolean().optional().default(false),
+    /** Minimum overall Design Health Score required to pass (0-100). */
+    minOverallScore: z.number().min(0).max(100).optional(),
+    /** Per-category minimum scores. Missing keys are not enforced. */
+    minCategoryScores: z
+      .object({
+        colors: z.number().min(0).max(100).optional(),
+        spacing: z.number().min(0).max(100).optional(),
+        typography: z.number().min(0).max(100).optional(),
+        responsive: z.number().min(0).max(100).optional(),
+        consistency: z.number().min(0).max(100).optional(),
+      })
+      .strict()
+      .optional(),
+    /** Maximum total violations allowed in the scan. */
+    maxViolations: z.number().int().min(0).optional(),
+    /** Maximum estimated remediation effort, in minutes. */
+    maxDebtMinutes: z.number().int().min(0).optional(),
+    /**
+     * Maximum allowed score regression compared to the previous history
+     * entry. e.g. 5 means "score can drop by at most 5 points per scan".
+     */
+    maxScoreRegression: z.number().min(0).max(100).optional(),
+  })
+  .strict();
+
+export type QualityGate = z.infer<typeof QualityGateSchema>;
+
 // ── Root .vizlintrc.json Schema ──────────────────────────────────────
 export const VizlintConfigSchema = z
   .object({
@@ -66,6 +107,9 @@ export const VizlintConfigSchema = z
       .record(ProfileSchema)
       .optional()
       .describe('Named rule sets, e.g. { "strict": { rules: { ... } } }'),
+    qualityGate: QualityGateSchema.optional().describe(
+      'Quality gate thresholds. Opt-in: enforce defaults to false.',
+    ),
   })
   .strict();
 

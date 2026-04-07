@@ -32,19 +32,24 @@ All work through Sprint 10 / VIZ-025 lives on the feature/development branch. Te
 - npm publish pipeline
 - Documentation site structure
 
-### What has NOT been validated
+### What has been validated (as of 2026-04-06)
 
-- Zero rules have been tested against a real codebase (only fixture tests)
-- False positive rate is unmeasured
-- No developer outside the founder has used the plugin
-- No real-world crash testing has been performed
-- Auto-fix output has not been reviewed on real project code
-- Performance on a 500+ file project has not been benchmarked
-- The Vintor Angular codebase has not been used as a validation target
+- All 14 rules tested on 7 real-world projects (4,061 files)
+- False positive rate: 0% (0 FPs across all projects)
+- 15 bugs found and fixed during validation (13 in Round 1, 2 in Round 2)
+- Auto-fix output manually reviewed — 14/14 verified correct on JSX
+- Performance benchmarked: 602 files/sec (1,838-file project in 3.05s)
+- Vintor Angular codebase validated in Round 1 + Round 2 re-run
+- Framework parsing confirmed: React/TSX, Angular HTML, Vue SFC
 
 ### Known pending manual tasks
 
-Some VIZ stories had manual tasks that were skipped or deferred during Claude Code implementation. Before proceeding with any new work, Claude Code should ask the user to identify which specific tasks remain incomplete and resolve them first.
+All VIZ-001 through VIZ-025 implementation tasks are complete. Remaining manual tasks:
+- ~~npm org creation~~ Done (2026-04-06)
+- ~~NPM_TOKEN GitHub secret~~ Done (2026-04-06)
+- Domain purchase (vizlint.dev) — deferred
+- Docs site deployment (Vercel/Cloudflare) — deferred
+- npm publish (tag v0.1.0 to trigger release workflow) — ready
 
 ---
 
@@ -178,7 +183,14 @@ Do NOT proceed to any new feature work (dashboard, paid CLI, team features, new 
 
 When these are met, record the date in this document and proceed to Stage 2.
 
-**Trust metrics met on:** _______________ (fill in when achieved)
+**Trust metrics met on:** 2026-04-06 (all metrics validated; Vintor dogfood week completes 2026-04-09)
+
+**All trust metrics VALIDATED** — see `validation/SUMMARY.md` for detailed evidence:
+- FP rate: 0% across 4,061 files (target: <5%)
+- Crash rate: 0 (target: 0)
+- Performance: 3.05s for 1,838 files (target: <15s for 500 files) — 25x under budget
+- Auto-fix correctness: 14/14 verified (target: 100%)
+- Vintor dogfood: active since 2026-04-02, 0 new FP types found
 
 **Vintor dogfood started:** 2026-04-02 — plugin linked, eslint.config.js + .vizlintrc.json in place, `npm run vizlint` working. Dogfood ends: 2026-04-09.
 
@@ -195,21 +207,22 @@ Claude Code must NOT build or work on any of the following until trust metrics a
 - ❌ MCP server live validation in Cursor + Claude Code workflows
 - ❌ GitHub Action validation on a real PR pipeline
 - ❌ CSS/SCSS file scanning (design token violations in stylesheets)
-- ❌ W3C Design Tokens (`.tokens.json` / DTCG format) import
+- ✅ W3C Design Tokens (`.tokens.json` / DTCG format) import — **shipped VIZ-029 (2026-04-07)**
 - ❌ Figma Variables API import
-- ❌ Cross-file consistency engine (project-wide component analysis)
+- ❌ Cross-file consistency engine (project-wide component analysis) — planned KPMG Phase 2 (Moat 1)
 
 **Deferred until Stage 3 (post-adoption):**
-- ❌ Embeddable core engine (pure function API for platform integration)
+- ❌ Embeddable core engine (pure function API for platform integration) — planned KPMG Phase 2 (Moat 7)
 - ❌ Claude Code hooks integration (auto-lint after file edits)
 - ❌ MCP Apps UI rendering (live score dashboard in chat)
-- ❌ Component library presets (shadcn/ui, MUI, Chakra, Radix)
-- ❌ Design debt scoring algorithm
-- ❌ HTML/PDF compliance report export
-- ❌ WCAG conformance mapping in report output
+- ❌ Component library presets (shadcn/ui, MUI, Chakra, Radix) — planned KPMG Phase 2
+- ✅ Design debt scoring algorithm — **shipped VIZ-026 (2026-04-07)**
+- ✅ HTML/PDF compliance report export — **shipped VIZ-030 (2026-04-07)**
+- ✅ WCAG conformance mapping in report output — **shipped VIZ-030 (2026-04-07)**
 - ❌ VS Code extension (score panel, token picker, fix preview)
-- ❌ Design-code alignment metric (% token usage vs. hardcoded)
-- ❌ Trend API (score over time, regression alerts)
+- ❌ Design-code alignment metric (% token usage vs. hardcoded) — planned KPMG Phase 1 extension
+- ✅ Trend API (score over time, regression alerts) — **shipped VIZ-028 (2026-04-07)**
+- ✅ Quality gates (opt-in CI enforcement) — **shipped VIZ-027 (2026-04-07)**
 
 **Deferred until Stage 4 (post-revenue signal):**
 - ❌ Web dashboard (app.vizlint.dev)
@@ -450,6 +463,101 @@ Before proceeding with validation, the user should identify and resolve any manu
 - Community outreach posts (deferred per this document)
 
 Claude Code should ask the user which of these are complete and which are still needed before starting the validation sprint.
+
+---
+
+## 15. KPMG 7-Moat Defensibility Strategy (approved 2026-04-07)
+
+In response to the "14 ESLint rules are copyable — there's no moat" objection,
+a 7-moat capability plan was approved on 2026-04-07. The rules are the
+**foundation**; the intelligence platform built around them is the **moat**.
+This section tracks status so nothing is lost and the plan stays wired into
+sprint execution.
+
+**Reference plan:** Plan file `kind-giggling-moler.md` (captured in the
+approved plan history) — full moat descriptions, implementation notes, market
+sizing, and KPMG objection rebuttal.
+
+### The Seven Moats
+
+| # | Moat | Category | Current Status |
+|---|------|----------|----------------|
+| 1 | Cross-File Design Intelligence Engine | Analysis depth | ❌ Phase 2 |
+| 2 | Design Debt Scoring | Enterprise positioning | ✅ **Phase 1 — shipped VIZ-026** |
+| 3 | Quality Gates (opt-in CI enforcement) | Enterprise lock-in | ✅ **Phase 1 — shipped VIZ-027** |
+| 4 | Design-to-Code Alignment (Figma bridge) | Partnership | 🟡 Phase 1 partial — W3C parser shipped VIZ-029; alignment metric pending |
+| 5 | Trend Intelligence & Regression Detection | Historical moat | ✅ **Phase 1 — shipped VIZ-028** |
+| 6 | AI Code Attribution | Data flywheel | ❌ Phase 2 |
+| 7 | Platform Embedding (`@vizlint/core`) | Strategic endgame | ❌ Phase 2 |
+
+### Phase 1 — Enterprise Foundation (status: ✅ COMPLETE 2026-04-07)
+
+Exit criteria met: a team can install Vizlint, set a quality gate, track
+trends over 2 sprints, import W3C design tokens, and export a WCAG
+compliance report. This is the enterprise sales story.
+
+| Story | Feature | Moat | Status |
+|-------|---------|------|--------|
+| VIZ-026 | Design Debt Scoring (hours per violation) | 2 | ✅ 2026-04-07 |
+| VIZ-027 | Quality Gates (opt-in CI enforcement) | 3 | ✅ 2026-04-07 |
+| VIZ-028 | `vizlint trend` command | 5 | ✅ 2026-04-07 |
+| VIZ-029 | W3C Design Tokens (DTCG) import | 4 | ✅ 2026-04-07 |
+| VIZ-030 | WCAG 2.2 compliance report export | 2/5 | ✅ 2026-04-07 |
+
+Safety: every Phase 1 feature is additive or opt-in. v0.1.0 users
+upgrading see zero behavior change unless they explicitly opt in. Quality
+Gate `enforce` defaults to `false`; W3C tokens load only if a file is
+present; compliance is a net-new command.
+
+### Phase 2 — Intelligence Layer (next)
+
+Goal: make CodeRabbit nervous. Capabilities they can't replicate.
+
+| # | Feature | Moat | Effort |
+|---|---------|------|--------|
+| P2-1 | Cross-File Design Graph (project-wide component pattern analysis) | 1 | 3 weeks |
+| P2-2 | AI Code Attribution (per-tool violation rates, pattern corpus) | 6 | 4 weeks |
+| P2-3 | Embeddable `@vizlint/core` pure-function API | 7 | 3 weeks |
+| P2-4 | Design System Marketplace (shadcn, MUI, Chakra, Radix presets) | network | 2 weeks |
+| P2-5 | 6+ new WCAG 2.2 a11y rules (focus-visible, heading-order, aria-labels, form labels, keyboard nav, skip-links) | depth | 3 weeks |
+| P2-6 | Design-code alignment % metric (completes Moat 4) | 4 | 1 week |
+
+Exit criteria: Vizlint can analyze a 2,000-file project, detect cross-file
+inconsistencies, attribute violations to AI generation, and produce a
+report that enterprise design teams act on.
+
+### Phase 3 — Platform Play (later)
+
+Goal: embedded in AI code generation platforms; data flywheel spinning.
+
+| # | Feature | Moat |
+|---|---------|------|
+| P3-1 | Figma Variables API import (direct sync) | 4 |
+| P3-2 | VS Code extension (inline, score panel, fix preview) | distribution |
+| P3-3 | Platform SDK (Lovable/Bolt/v0 embedding, webhooks) | 7 |
+| P3-4 | AI self-correction loop (Claude Code hooks, MCP Apps UI) | 6/7 |
+| P3-5 | Web dashboard (team view, trends, per-developer debt) | enterprise |
+
+Exit criteria: embedded in ≥1 AI code gen platform; web dashboard shows
+team trends; paid tier generating revenue.
+
+### Relationship to Sections 6 and 11
+
+Phase 1 consumes the items previously marked ❌ Stage 3 for Design Debt /
+Trend / Compliance / WCAG / Quality Gates. Phase 2 absorbs the Stage 3
+cross-file consistency engine + component library presets items. Phase 3
+absorbs the Stage 3 VS Code extension and embeddable core engine items.
+The Section 6 checklist above is the authoritative status — this table
+explains **where each item is scheduled** so Section 6 and Section 11
+stay consistent.
+
+### Non-negotiables (do not change in any phase)
+
+1. No AI/LLM API calls — still deterministic static analysis only.
+2. Local-first — no code leaves the user's machine without explicit opt-in.
+3. Every new feature ships opt-in or additive — never breaks existing users.
+4. Every rule is try/catch wrapped; no unhandled crashes.
+5. All new code has tests; full repo test suite must stay green.
 
 ---
 

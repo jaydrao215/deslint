@@ -21,6 +21,7 @@ function makeScanResult(overrides: Partial<ScanResult> = {}): ScanResult {
     ],
     filesScanned: 10,
     filesWithViolations: 3,
+    debtMinutes: 0,
     ...overrides,
   };
 }

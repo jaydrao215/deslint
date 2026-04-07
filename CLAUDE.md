@@ -16,11 +16,12 @@ TypeScript monorepo via Turborepo + pnpm workspaces. Local-first, deterministic,
 **Positioning:** "Visual regression tools tell you the screenshot looks wrong. Vizlint tells you why — and fixes it."
 
 ## Planning documents (READ IN THIS ORDER)
-1. **VIZLINT-EXECUTION.md** — Active execution plan. READ FIRST. Overrides all other sequencing.
+1. **VIZLINT-EXECUTION.md** — Active execution plan. READ FIRST. Overrides all other sequencing. Section 15 = authoritative KPMG 7-moat status tracker.
 2. docs/vizlint-sprint-plan.docx — Full 16-sprint plan with user stories
 3. docs/sprint-plan-v1.1-changes.md
 4. docs/vizlint-sprint-plan-v1.1-update.md — Three-mode model, fixers, Angular
 5. docs/vizlint-sprint-plan-v1.2-update.md — User control model, no-AI architecture, L3-L5 vision, strategic positioning
+6. docs/vizlint-sprint-plan-v1.3-kpmg-moats.md — KPMG 7-moat defensibility overlay (Phase 1 ✅ shipped VIZ-026→VIZ-030, Phase 2/3 scheduled)
 
 ## Architecture Rules
 - **ESLint v10+ flat config ONLY.** No legacy .eslintrc support anywhere.

@@ -485,6 +485,16 @@ Per-file linting is commodity. Project-wide analysis is the differentiator:
 
 ### Stage 3 Capabilities (Post-Adoption)
 
+> **Update 2026-04-07:** The KPMG 7-Moat defensibility strategy pulled
+> five of the items below forward into **Phase 1 (Enterprise Foundation)**
+> which is now ✅ complete. Shipped: Design Debt Scoring (VIZ-026),
+> Quality Gates (VIZ-027), Trend Command (VIZ-028), W3C Design Tokens
+> import (VIZ-029), WCAG 2.2 Compliance Report (VIZ-030). All were
+> shipped opt-in / additive — zero breaking changes for v0.1.0 users.
+> See `VIZLINT-EXECUTION.md` Section 15 for the full 7-moat plan and
+> Phase 2/3 scheduling.
+
+
 #### Claude Code Hooks Integration
 ```json
 // .claude/settings.json

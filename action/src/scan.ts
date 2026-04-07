@@ -5,6 +5,8 @@
 import { ESLint } from 'eslint';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import { effortForRule, safeParseConfig } from '@vizlint/shared';
+import type { QualityGate } from '@vizlint/shared';
 
 export interface ViolationSummary {
   ruleId: string;
@@ -34,6 +36,10 @@ export interface ScanResult {
   filesScanned: number;
   /** Number of files with violations */
   filesWithViolations: number;
+  /** Estimated remediation effort, in minutes (Design Debt). */
+  debtMinutes: number;
+  /** Quality gate config loaded from .vizlintrc.json (undefined if not configured). */
+  qualityGate?: QualityGate;
 }
 
 /** Map rule IDs → score category */
@@ -71,12 +77,25 @@ export async function runScan(
 
   // Load user config overrides
   let ruleOverrides: Record<string, unknown> = {};
-  if (configPath) {
-    const fullPath = path.resolve(workingDirectory, configPath);
-    if (fs.existsSync(fullPath)) {
-      const raw = fs.readFileSync(fullPath, 'utf-8');
-      const config = JSON.parse(raw) as { rules?: Record<string, unknown> };
-      ruleOverrides = config.rules ?? {};
+  let qualityGate: QualityGate | undefined;
+  // Resolve config: explicit configPath, otherwise try ./.vizlintrc.json
+  const resolvedConfigPath = configPath
+    ? path.resolve(workingDirectory, configPath)
+    : path.resolve(workingDirectory, '.vizlintrc.json');
+  if (fs.existsSync(resolvedConfigPath)) {
+    try {
+      const raw = JSON.parse(fs.readFileSync(resolvedConfigPath, 'utf-8'));
+      const parsed = safeParseConfig(raw);
+      if (parsed.success) {
+        ruleOverrides = (parsed.data.rules ?? {}) as Record<string, unknown>;
+        qualityGate = parsed.data.qualityGate;
+      } else {
+        // Fall back to permissive parse so an unrecognized field doesn't
+        // break legacy users' configs.
+        ruleOverrides = (raw.rules ?? {}) as Record<string, unknown>;
+      }
+    } catch {
+      /* ignore — leave defaults */
     }
   }
 
@@ -123,7 +142,8 @@ export async function runScan(
   const absoluteFiles = files.map((f) => path.resolve(cwd, f));
   const results = await eslint.lintFiles(absoluteFiles);
 
-  return aggregateResults(results);
+  const aggregated = aggregateResults(results);
+  return { ...aggregated, qualityGate };
 }
 
 function aggregateResults(results: ESLint.LintResult[]): ScanResult {
@@ -131,6 +151,7 @@ function aggregateResults(results: ESLint.LintResult[]): ScanResult {
   let errors = 0;
   let warnings = 0;
   let filesWithViolations = 0;
+  let debtMinutes = 0;
 
   const byRule = new Map<string, { count: number; severity: number }>();
   const byCategory = new Map<string, number>();
@@ -151,6 +172,10 @@ function aggregateResults(results: ESLint.LintResult[]): ScanResult {
       const existing = byRule.get(ruleId) ?? { count: 0, severity: msg.severity };
       existing.count++;
       byRule.set(ruleId, existing);
+
+      if (ruleId.startsWith('vizlint/')) {
+        debtMinutes += effortForRule(ruleId);
+      }
 
       const category = RULE_CATEGORY_MAP[ruleId];
       if (category) {
@@ -188,5 +213,6 @@ function aggregateResults(results: ESLint.LintResult[]): ScanResult {
     categories,
     filesScanned: results.length,
     filesWithViolations,
+    debtMinutes,
   };
 }

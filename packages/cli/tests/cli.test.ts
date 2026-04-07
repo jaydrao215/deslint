@@ -41,7 +41,7 @@ describe('CLI commands', () => {
 
   it('has exactly the expected set of commands', () => {
     const names = commandNames().sort();
-    expect(names).toEqual(['fix', 'generate-config', 'init', 'report', 'scan', 'suggest-tokens']);
+    expect(names).toEqual(['compliance', 'fix', 'generate-config', 'init', 'report', 'scan', 'suggest-tokens', 'trend']);
   });
 
   it('scan command accepts format option', () => {

@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import type { LintResult } from './lint-runner.js';
 import type { ScoreResult, CategoryScore } from './score.js';
 import type { RuleCategory } from './lint-runner.js';
+import { calculateDebt, formatDebt } from './debt.js';
 
 const _require = createRequire(import.meta.url);
 const _pkg = _require('../package.json') as { version: string };
@@ -80,6 +81,25 @@ export function formatText(
     lines.push(`  Total violations: ${chalk.red(String(lintResult.bySeverity.errors))} error${lintResult.bySeverity.errors !== 1 ? 's' : ''}, ${chalk.yellow(String(lintResult.bySeverity.warnings))} warning${lintResult.bySeverity.warnings !== 1 ? 's' : ''}`);
   } else {
     lines.push(chalk.green('  No violations found!'));
+  }
+
+  // ── Design Debt ──
+  const debt = calculateDebt(lintResult);
+  if (debt.totalMinutes > 0) {
+    const debtColor = debt.totalHours >= 8 ? chalk.red : debt.totalHours >= 2 ? chalk.yellow : chalk.gray;
+    lines.push(`  Design debt: ${debtColor(formatDebt(debt.totalMinutes))} ${chalk.gray('estimated remediation effort')}`);
+    // Top 3 contributors
+    const top = debt.breakdown.slice(0, 3);
+    if (top.length > 0) {
+      for (const entry of top) {
+        const ruleShort = entry.ruleId.replace(/^vizlint\//, '');
+        lines.push(
+          chalk.gray(
+            `    ${formatDebt(entry.totalMinutes).padStart(8)}  ${ruleShort} (${entry.violations}× ${entry.minutesPerViolation}m)`,
+          ),
+        );
+      }
+    }
   }
   lines.push('');
 
@@ -208,6 +228,17 @@ export interface JsonReport {
     errors: number;
     warnings: number;
   };
+  debt: {
+    totalMinutes: number;
+    totalHours: number;
+    byCategory: Record<RuleCategory, number>;
+    breakdown: Array<{
+      ruleId: string;
+      violations: number;
+      minutesPerViolation: number;
+      totalMinutes: number;
+    }>;
+  };
   violations: Array<{
     file: string;
     line: number;
@@ -223,6 +254,7 @@ export function formatJson(
   scoreResult: ScoreResult,
   cwd: string,
 ): string {
+  const debt = calculateDebt(lintResult);
   const report: JsonReport = {
     version: _pkg.version,
     timestamp: new Date().toISOString(),
@@ -237,6 +269,12 @@ export function formatJson(
       totalViolations: lintResult.totalViolations,
       errors: lintResult.bySeverity.errors,
       warnings: lintResult.bySeverity.warnings,
+    },
+    debt: {
+      totalMinutes: debt.totalMinutes,
+      totalHours: debt.totalHours,
+      byCategory: debt.byCategory,
+      breakdown: debt.breakdown,
     },
     violations: [],
   };
