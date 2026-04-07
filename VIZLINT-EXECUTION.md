@@ -183,7 +183,7 @@ Do NOT proceed to any new feature work (dashboard, paid CLI, team features, new 
 
 When these are met, record the date in this document and proceed to Stage 2.
 
-**Trust metrics met on:** 2026-04-06 (all metrics validated; Vintor dogfood week completes 2026-04-09)
+**Trust metrics met on:** 2026-04-06 (all metrics validated; Vintor dogfood completed early on 2026-04-07 — founder confirmed 0 new FP types over the dogfood window, plugin stayed enabled in daily development)
 
 **All trust metrics VALIDATED** — see `validation/SUMMARY.md` for detailed evidence:
 - FP rate: 0% across 4,061 files (target: <5%)
@@ -192,7 +192,7 @@ When these are met, record the date in this document and proceed to Stage 2.
 - Auto-fix correctness: 14/14 verified (target: 100%)
 - Vintor dogfood: active since 2026-04-02, 0 new FP types found
 
-**Vintor dogfood started:** 2026-04-02 — plugin linked, eslint.config.js + .vizlintrc.json in place, `npm run vizlint` working. Dogfood ends: 2026-04-09.
+**Vintor dogfood started:** 2026-04-02 — plugin linked, eslint.config.js + .vizlintrc.json in place, `npm run vizlint` working. Dogfood completed early on 2026-04-07 (founder call: enough signal gathered, 0 new FP types).
 
 ---
 

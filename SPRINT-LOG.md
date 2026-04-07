@@ -360,6 +360,14 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 **Will do:** Monitor dogfood. Extend suggest-tokens to cover no-arbitrary-colors violations.
 **Blockers:** None
 
+---
+
+### Visual Report Previews — 2026-04-06
+
+**Did:** Added visual preview system to HTML report (`report-html.ts`). Violations are now grouped by unique pattern (e.g. 459 `no-arbitrary-spacing` violations → 87 unique patterns shown once with instance counts). Each category tab renders CSS-based visual proof: contrast pairs with actual text-on-background rendering + before/after fix, spacing bars showing arbitrary vs token values, typography at rendered font sizes, dark mode light/dark/fixed 3-panel comparison, missing interactive states on buttons/inputs, responsive desktop-vs-mobile viewport overflow, and border-radius/consistency shape comparisons. Full Tailwind color palette (22 families × 11 shades) for accurate color rendering. Verified on Dub.co (1,838 files, 243 unique patterns from ~1,900 violations). All 78 CLI tests pass.
+**Will do:** Record demo video using visual report. Validate MCP self-correction loop.
+**Blockers:** None
+
 ### Dogfood Week Progress — 2026-04-06
 
 **Did:** Day 4 of 7 in Vintor dogfood week. Status:
@@ -448,4 +456,13 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 
 **Will do:** Stand by for Phase 2 kickoff direction from the founder.
 **Blockers:** None
+
+### RELEASE-PREP: v0.1.0 ship readiness — 2026-04-07
+
+**Did:** Closed the gap between the planning docs and the actual release pipeline ahead of the v0.1.0 tag. Founder confirmed early dogfood completion (Vintor: 0 new FP types found over the dogfood window, plugin stayed enabled in daily development — trust metrics from VIZLINT-EXECUTION.md Section 5 all hold). Inspected `.github/workflows/release.yml` and found it only published `eslint-plugin-vizlint` and `@vizlint/shared` — `@vizlint/cli` and `@vizlint/mcp` were missing despite being primary v0.1.0 deliverables (they ship `vizlint scan`, `vizlint trend`, `vizlint compliance`, `vizlint fix`, and the MCP server — the entire KPMG Phase 1 user-facing surface). Added publish steps for both, reordered to dependency order (shared → eslint-plugin → cli → mcp) so pnpm rewrites `workspace:^`/`workspace:*` deps to real semver on publish. Folded in the staged 531-line visual preview system in `packages/cli/src/report-html.ts` (pattern grouping, Tailwind palette → hex lookup, contrast/spacing/typography/dark-mode/states/responsive/radius visual proofs — verified on Dub.co's 1,838-file scan). Cleaned a duplicate "Visual Report Previews" entry from this log. Mirrored the release workflow locally end-to-end: `pnpm install --frozen-lockfile` clean, `pnpm build` 6/6 tasks successful, full test suite 792 tests green (82 shared + 566 eslint-plugin + 102 cli + 25 mcp + 17 action), `pnpm --filter eslint-plugin-vizlint bench` PASS at 0.02ms/file (100× under the 2ms/file budget).
+
+**Safety:** Workflow change is additive (more publish steps, no removals). Reordering shared first is safer because pnpm resolves workspace deps at publish time. Visual report change is net-new code in `report-html.ts` only — no rule logic touched, no existing test broken.
+
+**Will do:** Tag v0.1.0 and push to trigger release workflow. Monitor the four publish steps in GitHub Actions. Verify all four packages land on npmjs.com under `@vizlint`. Then stand by for Phase 2 kickoff.
+**Blockers:** None — all gates green.
 

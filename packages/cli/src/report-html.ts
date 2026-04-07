@@ -58,6 +58,436 @@ const FIXABLE_RULES = new Set([
   'vizlint/no-magic-numbers-layout',
 ]);
 
+// ─── Visual Pattern Types ────────────────────────────────────────────
+
+interface VisualPattern {
+  key: string;          // unique grouping key
+  ruleId: string;
+  count: number;
+  files: Set<string>;
+  data: Record<string, string>;  // parsed fields from message
+}
+
+// ─── Tailwind → hex lookup for contrast rendering ────────────────────
+
+// Full Tailwind color palette for visual rendering (all 22 families × 11 shades + white/black)
+// Imported inline to keep report self-contained — mirrors packages/eslint-plugin/src/utils/color-map.ts
+const TW_COLOR_HEX: Record<string, string> = {
+  'white':'#ffffff','black':'#000000','transparent':'transparent','current':'currentColor',
+  'slate-50':'#f8fafc','slate-100':'#f1f5f9','slate-200':'#e2e8f0','slate-300':'#cbd5e1','slate-400':'#94a3b8','slate-500':'#64748b','slate-600':'#475569','slate-700':'#334155','slate-800':'#1e293b','slate-900':'#0f172a','slate-950':'#020617',
+  'gray-50':'#f9fafb','gray-100':'#f3f4f6','gray-200':'#e5e7eb','gray-300':'#d1d5db','gray-400':'#9ca3af','gray-500':'#6b7280','gray-600':'#4b5563','gray-700':'#374151','gray-800':'#1f2937','gray-900':'#111827','gray-950':'#030712',
+  'zinc-50':'#fafafa','zinc-100':'#f4f4f5','zinc-200':'#e4e4e7','zinc-300':'#d4d4d8','zinc-400':'#a1a1aa','zinc-500':'#71717a','zinc-600':'#52525b','zinc-700':'#3f3f46','zinc-800':'#27272a','zinc-900':'#18181b','zinc-950':'#09090b',
+  'neutral-50':'#fafafa','neutral-100':'#f5f5f5','neutral-200':'#e5e5e5','neutral-300':'#d4d4d4','neutral-400':'#a3a3a3','neutral-500':'#737373','neutral-600':'#525252','neutral-700':'#404040','neutral-800':'#262626','neutral-900':'#171717','neutral-950':'#0a0a0a',
+  'stone-50':'#fafaf9','stone-100':'#f5f5f4','stone-200':'#e7e5e4','stone-300':'#d6d3d1','stone-400':'#a8a29e','stone-500':'#78716c','stone-600':'#57534e','stone-700':'#44403c','stone-800':'#292524','stone-900':'#1c1917','stone-950':'#0c0a09',
+  'red-50':'#fef2f2','red-100':'#fee2e2','red-200':'#fecaca','red-300':'#fca5a5','red-400':'#f87171','red-500':'#ef4444','red-600':'#dc2626','red-700':'#b91c1c','red-800':'#991b1b','red-900':'#7f1d1d','red-950':'#450a0a',
+  'orange-50':'#fff7ed','orange-100':'#ffedd5','orange-200':'#fed7aa','orange-300':'#fdba74','orange-400':'#fb923c','orange-500':'#f97316','orange-600':'#ea580c','orange-700':'#c2410c','orange-800':'#9a3412','orange-900':'#7c2d12','orange-950':'#431407',
+  'amber-50':'#fffbeb','amber-100':'#fef3c7','amber-200':'#fde68a','amber-300':'#fcd34d','amber-400':'#fbbf24','amber-500':'#f59e0b','amber-600':'#d97706','amber-700':'#b45309','amber-800':'#92400e','amber-900':'#78350f','amber-950':'#451a03',
+  'yellow-50':'#fefce8','yellow-100':'#fef9c3','yellow-200':'#fef08a','yellow-300':'#fde047','yellow-400':'#facc15','yellow-500':'#eab308','yellow-600':'#ca8a04','yellow-700':'#a16207','yellow-800':'#854d0e','yellow-900':'#713f12','yellow-950':'#422006',
+  'lime-50':'#f7fee7','lime-100':'#ecfccb','lime-200':'#d9f99d','lime-300':'#bef264','lime-400':'#a3e635','lime-500':'#84cc16','lime-600':'#65a30d','lime-700':'#4d7c0f','lime-800':'#3f6212','lime-900':'#365314','lime-950':'#1a2e05',
+  'green-50':'#f0fdf4','green-100':'#dcfce7','green-200':'#bbf7d0','green-300':'#86efac','green-400':'#4ade80','green-500':'#22c55e','green-600':'#16a34a','green-700':'#15803d','green-800':'#166534','green-900':'#14532d','green-950':'#052e16',
+  'emerald-50':'#ecfdf5','emerald-100':'#d1fae5','emerald-200':'#a7f3d0','emerald-300':'#6ee7b7','emerald-400':'#34d399','emerald-500':'#10b981','emerald-600':'#059669','emerald-700':'#047857','emerald-800':'#065f46','emerald-900':'#064e3b','emerald-950':'#022c22',
+  'teal-50':'#f0fdfa','teal-100':'#ccfbf1','teal-200':'#99f6e4','teal-300':'#5eead4','teal-400':'#2dd4bf','teal-500':'#14b8a6','teal-600':'#0d9488','teal-700':'#0f766e','teal-800':'#115e59','teal-900':'#134e4a','teal-950':'#042f2e',
+  'cyan-50':'#ecfeff','cyan-100':'#cffafe','cyan-200':'#a5f3fc','cyan-300':'#67e8f9','cyan-400':'#22d3ee','cyan-500':'#06b6d4','cyan-600':'#0891b2','cyan-700':'#0e7490','cyan-800':'#155e75','cyan-900':'#164e63','cyan-950':'#083344',
+  'sky-50':'#f0f9ff','sky-100':'#e0f2fe','sky-200':'#bae6fd','sky-300':'#7dd3fc','sky-400':'#38bdf8','sky-500':'#0ea5e9','sky-600':'#0284c7','sky-700':'#0369a1','sky-800':'#075985','sky-900':'#0c4a6e','sky-950':'#082f49',
+  'blue-50':'#eff6ff','blue-100':'#dbeafe','blue-200':'#bfdbfe','blue-300':'#93c5fd','blue-400':'#60a5fa','blue-500':'#3b82f6','blue-600':'#2563eb','blue-700':'#1d4ed8','blue-800':'#1e40af','blue-900':'#1e3a8a','blue-950':'#172554',
+  'indigo-50':'#eef2ff','indigo-100':'#e0e7ff','indigo-200':'#c7d2fe','indigo-300':'#a5b4fc','indigo-400':'#818cf8','indigo-500':'#6366f1','indigo-600':'#4f46e5','indigo-700':'#4338ca','indigo-800':'#3730a3','indigo-900':'#312e81','indigo-950':'#1e1b4b',
+  'violet-50':'#f5f3ff','violet-100':'#ede9fe','violet-200':'#ddd6fe','violet-300':'#c4b5fd','violet-400':'#a78bfa','violet-500':'#8b5cf6','violet-600':'#7c3aed','violet-700':'#6d28d9','violet-800':'#5b21b6','violet-900':'#4c1d95','violet-950':'#2e1065',
+  'purple-50':'#faf5ff','purple-100':'#f3e8ff','purple-200':'#e9d5ff','purple-300':'#d8b4fe','purple-400':'#c084fc','purple-500':'#8b5cf6','purple-600':'#7c3aed','purple-700':'#6d28d9','purple-800':'#5b21b6','purple-900':'#4c1d95','purple-950':'#2e1065',
+  'fuchsia-50':'#fdf4ff','fuchsia-100':'#fae8ff','fuchsia-200':'#f5d0fe','fuchsia-300':'#f0abfc','fuchsia-400':'#e879f9','fuchsia-500':'#d946ef','fuchsia-600':'#c026d3','fuchsia-700':'#a21caf','fuchsia-800':'#86198f','fuchsia-900':'#701a75','fuchsia-950':'#4a044e',
+  'pink-50':'#fdf2f8','pink-100':'#fce7f3','pink-200':'#fbcfe8','pink-300':'#f9a8d4','pink-400':'#f472b6','pink-500':'#ec4899','pink-600':'#db2777','pink-700':'#be185d','pink-800':'#9d174d','pink-900':'#831843','pink-950':'#500724',
+  'rose-50':'#fff1f2','rose-100':'#ffe4e6','rose-200':'#fecdd3','rose-300':'#fda4af','rose-400':'#fb7185','rose-500':'#f43f5e','rose-600':'#e11d48','rose-700':'#be123c','rose-800':'#9f1239','rose-900':'#881337','rose-950':'#4c0519',
+};
+
+function twClassToHex(cls: string): string | null {
+  // text-white → white, bg-red-500 → red-500
+  const m = cls.match(/^(?:text|bg|border|ring|fill|stroke|accent|caret|outline|decoration|placeholder|divide|shadow)-(.+)$/);
+  if (!m) return null;
+  return TW_COLOR_HEX[m[1]] ?? null;
+}
+
+// ─── Pattern Extraction from Violation Messages ──────────────────────
+
+function extractPatterns(violations: ViolationEntry[]): VisualPattern[] {
+  const map = new Map<string, VisualPattern>();
+
+  for (const v of violations) {
+    let key = '';
+    const data: Record<string, string> = {};
+
+    if (v.ruleId === 'vizlint/a11y-color-contrast') {
+      const m = v.message.match(/Contrast ratio ([\d.]+):1 between `([^`]+)` and `([^`]+)` fails WCAG AA \(needs ([\d.]+):1\)/);
+      if (m) {
+        data.ratio = m[1]; data.textClass = m[2]; data.bgClass = m[3]; data.required = m[4];
+        const sugM = v.message.match(/Try `([^`]+)` on `([^`]+)` \(ratio ([\d.]+):1\)/);
+        if (sugM) { data.suggestedText = sugM[1]; data.suggestedBg = sugM[2]; data.suggestedRatio = sugM[3]; }
+        key = `contrast:${data.textClass}|${data.bgClass}`;
+      }
+    } else if (v.ruleId === 'vizlint/no-arbitrary-spacing') {
+      const m = v.message.match(/Arbitrary spacing `([^`]+)` detected/);
+      if (m) {
+        data.className = m[1];
+        const sugM = v.message.match(/Suggested: `([^`]+)`/);
+        if (sugM) data.suggested = sugM[1];
+        key = `spacing:${data.className}→${data.suggested ?? '?'}`;
+      }
+    } else if (v.ruleId === 'vizlint/no-arbitrary-typography') {
+      const m = v.message.match(/Arbitrary typography `([^`]+)` detected/);
+      if (m) {
+        data.className = m[1];
+        const sugM = v.message.match(/Suggested: `([^`]+)`/);
+        if (sugM) data.suggested = sugM[1];
+        key = `typo:${data.className}→${data.suggested ?? '?'}`;
+      }
+    } else if (v.ruleId === 'vizlint/no-arbitrary-colors') {
+      const m = v.message.match(/Arbitrary color `([^`]+)` detected/);
+      if (m) {
+        data.className = m[1];
+        const sugM = v.message.match(/Suggested: `([^`]+)`/);
+        if (sugM) data.suggested = sugM[1];
+        key = `color:${data.className}→${data.suggested ?? '?'}`;
+      }
+    } else if (v.ruleId === 'vizlint/dark-mode-coverage') {
+      const m = v.message.match(/`([^`]+)` has no `dark:` variant\. Add `([^`]+)`/);
+      if (m) {
+        data.className = m[1]; data.suggested = m[2];
+        key = `dark:${data.className}→${data.suggested}`;
+      }
+    } else if (v.ruleId === 'vizlint/consistent-border-radius') {
+      const m = v.message.match(/`([^`]+)` uses `([^`]+)` but (\d+) of (\d+) instances use `([^`]+)`/);
+      if (m) {
+        data.component = m[1]; data.actual = m[2]; data.count = m[3]; data.total = m[4]; data.dominant = m[5];
+        key = `radius:${data.component}:${data.actual}|${data.dominant}`;
+      }
+    } else if (v.ruleId === 'vizlint/consistent-component-spacing') {
+      const m = v.message.match(/`([^`]+)` uses ([^ ]+) `([^`]+)` but (\d+) of (\d+) instances use `([^`]+)`/);
+      if (m) {
+        data.component = m[1]; data.category = m[2]; data.actual = m[3]; data.count = m[4]; data.total = m[5]; data.dominant = m[6];
+        key = `cspacing:${data.component}:${data.actual}|${data.dominant}`;
+      }
+    } else if (v.ruleId === 'vizlint/missing-states') {
+      const m = v.message.match(/`<(\w+)>` is missing (disabled state|error state|required indicator)/);
+      if (m) {
+        data.element = m[1]; data.stateType = m[2];
+        key = `states:${data.element}:${data.stateType}`;
+      }
+    } else if (v.ruleId === 'vizlint/responsive-required') {
+      const m = v.message.match(/`([^`]+)` sets a fixed ([^ ]+) of (\d+)px/);
+      if (m) {
+        data.className = m[1]; data.prefix = m[2]; data.px = m[3];
+        key = `responsive:${data.className}`;
+      }
+    } else if (v.ruleId === 'vizlint/no-arbitrary-zindex') {
+      const m = v.message.match(/Arbitrary z-index `([^`]+)` detected\. Use scale value `([^`]+)`/);
+      if (m) {
+        data.className = m[1]; data.suggested = m[2];
+        key = `zindex:${data.className}→${data.suggested}`;
+      }
+    } else if (v.ruleId === 'vizlint/no-magic-numbers-layout') {
+      const m = v.message.match(/Arbitrary layout value `([^`]+)` detected\. Use Tailwind scale value `([^`]+)`/);
+      if (m) {
+        data.className = m[1]; data.suggested = m[2];
+        key = `magic:${data.className}→${data.suggested}`;
+      }
+    } else if (v.ruleId === 'vizlint/image-alt-text') {
+      const m = v.message.match(/`<(\w+)>` (?:is missing an `alt`|has an empty `alt`|has meaningless alt text)/);
+      if (m) {
+        data.element = m[1];
+        const altM = v.message.match(/meaningless alt text "([^"]+)"/);
+        data.issue = altM ? `meaningless: "${altM[1]}"` : v.message.includes('empty') ? 'empty' : 'missing';
+        key = `alt:${data.element}:${data.issue}`;
+      }
+    }
+
+    if (!key) continue;
+
+    if (!map.has(key)) {
+      map.set(key, { key, ruleId: v.ruleId, count: 0, files: new Set(), data });
+    }
+    const p = map.get(key)!;
+    p.count++;
+    p.files.add(v.file);
+  }
+
+  return [...map.values()].sort((a, b) => b.count - a.count);
+}
+
+// ─── Visual Renderers (pure CSS/HTML) ────────────────────────────────
+
+function renderContrastPreview(patterns: VisualPattern[]): string {
+  if (patterns.length === 0) return '';
+  const items = patterns.slice(0, 6);
+  return `<div class="section">
+    <div class="section-head">Contrast Issues — Visual <span class="sh-count">${patterns.length} unique pair${patterns.length !== 1 ? 's' : ''}, ${patterns.reduce((s, p) => s + p.count, 0)} total</span></div>
+    <div class="section-desc">Each pair shows the actual text-on-background rendering. WCAG AA requires 4.5:1 for normal text, 3:1 for large text.</div>
+    <div class="vp-grid">${items.map(p => {
+      const textHex = twClassToHex(p.data.textClass) ?? '#ffffff';
+      const bgHex = twClassToHex(p.data.bgClass) ?? '#000000';
+      const sugTextHex = p.data.suggestedText ? (twClassToHex(p.data.suggestedText) ?? textHex) : null;
+      const sugBgHex = p.data.suggestedBg ? (twClassToHex(p.data.suggestedBg) ?? bgHex) : null;
+      return `<div class="vp-card">
+        <div class="vp-label"><span class="pill pill-err">FAIL</span> ${esc(p.data.ratio)}:1 — needs ${esc(p.data.required)}:1 <span class="vp-count">&times;${p.count}</span></div>
+        <div class="vp-contrast-row">
+          <div class="vp-contrast-box" style="background:${bgHex};color:${textHex}">
+            <div class="vp-contrast-sample">Sample Text</div>
+            <div class="vp-contrast-meta">${esc(p.data.textClass)} on ${esc(p.data.bgClass)}</div>
+          </div>
+          ${sugTextHex || sugBgHex ? `<div class="vp-arrow">&rarr;</div>
+          <div class="vp-contrast-box" style="background:${sugBgHex ?? bgHex};color:${sugTextHex ?? textHex};border-color:var(--pass)">
+            <div class="vp-contrast-sample">Sample Text</div>
+            <div class="vp-contrast-meta">${esc(p.data.suggestedText ?? p.data.textClass)} on ${esc(p.data.suggestedBg ?? p.data.bgClass)}${p.data.suggestedRatio ? ` (${p.data.suggestedRatio}:1)` : ''}</div>
+          </div>` : ''}
+        </div>
+        <div class="vp-files">${p.files.size} file${p.files.size !== 1 ? 's' : ''}</div>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
+function renderColorPreview(patterns: VisualPattern[]): string {
+  if (patterns.length === 0) return '';
+  const items = patterns.slice(0, 8);
+  return `<div class="section">
+    <div class="section-head">Arbitrary Colors — Visual <span class="sh-count">${patterns.length} unique, ${patterns.reduce((s, p) => s + p.count, 0)} total</span></div>
+    <div class="vp-grid vp-grid-sm">${items.map(p => {
+      const hexM = p.data.className.match(/\[([^\]]+)\]/);
+      const hex = hexM?.[1] ?? '#888';
+      const sugHex = p.data.suggested ? (twClassToHex(p.data.suggested) ?? null) : null;
+      return `<div class="vp-card vp-card-sm">
+        <div class="vp-color-row">
+          <div class="vp-color-swatch" style="background:${/^#[0-9a-fA-F]{3,8}$/.test(hex) ? hex : 'var(--bg4)'}"></div>
+          ${sugHex ? `<div class="vp-arrow-sm">&rarr;</div><div class="vp-color-swatch" style="background:${sugHex};border-color:var(--pass)"></div>` : ''}
+        </div>
+        <div class="vp-color-label mono">${esc(p.data.className)}</div>
+        ${p.data.suggested ? `<div class="vp-color-sug">&rarr; ${esc(p.data.suggested)}</div>` : ''}
+        <div class="vp-count-sm">&times;${p.count} in ${p.files.size} file${p.files.size !== 1 ? 's' : ''}</div>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
+function renderSpacingPreview(patterns: VisualPattern[]): string {
+  if (patterns.length === 0) return '';
+  const items = patterns.slice(0, 8);
+  return `<div class="section">
+    <div class="section-head">Spacing Issues — Visual <span class="sh-count">${patterns.length} unique pattern${patterns.length !== 1 ? 's' : ''}, ${patterns.reduce((s, p) => s + p.count, 0)} total</span></div>
+    <div class="section-desc">Each bar shows the arbitrary value vs. the nearest design token. Tokenized spacing keeps your layout on a consistent rhythm.</div>
+    <div class="vp-spacing-list">${items.map(p => {
+      const valM = p.data.className.match(/\[([\d.]+)(px|rem|em)?\]/);
+      const arbPx = valM ? (valM[2] === 'rem' ? parseFloat(valM[1]) * 16 : parseFloat(valM[1])) : 0;
+      const sugM = p.data.suggested?.match(/^[a-z]+-(\d+(?:\.\d+)?)$/);
+      const sugPx = sugM ? parseFloat(sugM[1]) * 4 : arbPx; // tw scale: 1 unit = 4px
+      const maxPx = Math.max(arbPx, sugPx, 1);
+      const scale = 200 / maxPx; // max bar width 200px
+      return `<div class="vp-spacing-row">
+        <div class="vp-spacing-bars">
+          <div class="vp-spacing-pair">
+            <div class="vp-spacing-bar vp-bar-before" style="width:${Math.max(arbPx * scale, 2)}px">${Math.round(arbPx)}px</div>
+            <span class="mono vp-spacing-cls">${esc(p.data.className)}</span>
+          </div>
+          ${p.data.suggested ? `<div class="vp-spacing-pair">
+            <div class="vp-spacing-bar vp-bar-after" style="width:${Math.max(sugPx * scale, 2)}px">${Math.round(sugPx)}px</div>
+            <span class="mono vp-spacing-cls" style="color:var(--pass)">${esc(p.data.suggested)}</span>
+          </div>` : ''}
+        </div>
+        <div class="vp-count-sm">&times;${p.count} in ${p.files.size} file${p.files.size !== 1 ? 's' : ''}</div>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
+function renderTypographyPreview(patterns: VisualPattern[]): string {
+  if (patterns.length === 0) return '';
+  const items = patterns.slice(0, 6);
+  const TW_FONT_SIZE: Record<string, number> = {
+    'text-xs': 12, 'text-sm': 14, 'text-base': 16, 'text-lg': 18,
+    'text-xl': 20, 'text-2xl': 24, 'text-3xl': 30, 'text-4xl': 36,
+    'text-5xl': 48, 'text-6xl': 60, 'text-7xl': 72, 'text-8xl': 96, 'text-9xl': 128,
+  };
+  return `<div class="section">
+    <div class="section-head">Typography Issues — Visual <span class="sh-count">${patterns.length} unique, ${patterns.reduce((s, p) => s + p.count, 0)} total</span></div>
+    <div class="section-desc">Each row renders text at the arbitrary size vs. the nearest scale value. Sticking to the type scale keeps hierarchy consistent.</div>
+    <div class="vp-typo-list">${items.map(p => {
+      const valM = p.data.className.match(/\[([\d.]+)(px|rem|em)?\]/);
+      const arbPx = valM ? (valM[2] === 'rem' ? parseFloat(valM[1]) * 16 : parseFloat(valM[1])) : 16;
+      const clampedPx = Math.min(Math.max(arbPx, 10), 48); // clamp for display
+      const sugPx = p.data.suggested ? (TW_FONT_SIZE[p.data.suggested] ?? 16) : null;
+      const clampedSugPx = sugPx ? Math.min(Math.max(sugPx, 10), 48) : null;
+      return `<div class="vp-typo-row">
+        <div class="vp-typo-pair">
+          <div class="vp-typo-sample" style="font-size:${clampedPx}px"><span style="color:var(--fail)">Aa</span> <span class="mono" style="font-size:12px;color:var(--text3)">${esc(p.data.className)} (${Math.round(arbPx)}px)</span></div>
+          ${clampedSugPx ? `<div class="vp-typo-sample" style="font-size:${clampedSugPx}px"><span style="color:var(--pass)">Aa</span> <span class="mono" style="font-size:12px;color:var(--text3)">${esc(p.data.suggested!)} (${sugPx}px)</span></div>` : ''}
+        </div>
+        <div class="vp-count-sm">&times;${p.count} in ${p.files.size} file${p.files.size !== 1 ? 's' : ''}</div>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
+function renderDarkModePreview(patterns: VisualPattern[]): string {
+  if (patterns.length === 0) return '';
+  const items = patterns.slice(0, 6);
+  return `<div class="section">
+    <div class="section-head">Dark Mode Gaps — Visual <span class="sh-count">${patterns.length} unique, ${patterns.reduce((s, p) => s + p.count, 0)} total</span></div>
+    <div class="section-desc">Light mode looks fine. Dark mode breaks. Each card shows what happens when the user switches themes.</div>
+    <div class="vp-grid">${items.map(p => {
+      const hex = twClassToHex(p.data.className) ?? '#ffffff';
+      const darkHex = twClassToHex(p.data.suggested) ?? '#1f2937';
+      return `<div class="vp-card">
+        <div class="vp-label mono">${esc(p.data.className)} <span class="vp-count">&times;${p.count}</span></div>
+        <div class="vp-dark-row">
+          <div class="vp-dark-panel" style="background:#f9fafb">
+            <div class="vp-dark-elem" style="background:${hex};color:${hex === '#ffffff' ? '#111' : '#fff'}">Card</div>
+            <div class="vp-dark-mode-label">Light &#10003;</div>
+          </div>
+          <div class="vp-dark-panel" style="background:#111827">
+            <div class="vp-dark-elem" style="background:${hex};color:${hex === '#ffffff' ? '#111' : '#fff'}">Card</div>
+            <div class="vp-dark-mode-label" style="color:var(--fail)">Dark &#10007;</div>
+          </div>
+          <div class="vp-dark-panel" style="background:#111827">
+            <div class="vp-dark-elem" style="background:${darkHex};color:#fff">Card</div>
+            <div class="vp-dark-mode-label" style="color:var(--pass)">Fixed &#10003;</div>
+          </div>
+        </div>
+        <div class="vp-files">${p.files.size} file${p.files.size !== 1 ? 's' : ''} &mdash; add <code class="mono" style="color:var(--pass)">${esc(p.data.suggested)}</code></div>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
+function renderMissingStatesPreview(patterns: VisualPattern[]): string {
+  if (patterns.length === 0) return '';
+  const items = patterns.slice(0, 6);
+  return `<div class="section">
+    <div class="section-head">Missing States — Visual <span class="sh-count">${patterns.length} unique, ${patterns.reduce((s, p) => s + p.count, 0)} total</span></div>
+    <div class="section-desc">Interactive elements need visible feedback for every state. Missing states break keyboard navigation and accessibility.</div>
+    <div class="vp-grid vp-grid-sm">${items.map(p => {
+      const el = p.data.element ?? 'button';
+      const isBtn = el === 'button' || el === 'Button';
+      const stateLabel = p.data.stateType === 'disabled state' ? 'disabled' : p.data.stateType === 'error state' ? 'aria-invalid' : 'required';
+      return `<div class="vp-card vp-card-sm">
+        <div class="vp-label mono">&lt;${esc(el)}&gt; — ${stateLabel} <span class="vp-count">&times;${p.count}</span></div>
+        <div class="vp-states-row">
+          <div class="vp-state-box">
+            <div class="vp-state-elem ${isBtn ? 'vp-state-btn' : 'vp-state-input'}">${isBtn ? 'Submit' : ''}</div>
+            <div class="vp-state-label">Default &#10003;</div>
+          </div>
+          <div class="vp-state-box">
+            <div class="vp-state-elem ${isBtn ? 'vp-state-btn' : 'vp-state-input'} vp-state-missing">${isBtn ? 'Submit' : ''}</div>
+            <div class="vp-state-label" style="color:var(--fail)">${stateLabel} &#10007;</div>
+          </div>
+        </div>
+        <div class="vp-files">${p.files.size} file${p.files.size !== 1 ? 's' : ''}</div>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
+function renderConsistencyPreview(patterns: VisualPattern[]): string {
+  // Combine border-radius + component-spacing patterns
+  if (patterns.length === 0) return '';
+  const items = patterns.slice(0, 6);
+  const RADIUS_MAP: Record<string, string> = {
+    'rounded-none':'0','rounded-sm':'2px','rounded':'4px','rounded-md':'6px',
+    'rounded-lg':'8px','rounded-xl':'12px','rounded-2xl':'16px','rounded-3xl':'24px','rounded-full':'9999px',
+  };
+  return `<div class="section">
+    <div class="section-head">Consistency Issues — Visual <span class="sh-count">${patterns.length} unique, ${patterns.reduce((s, p) => s + p.count, 0)} total</span></div>
+    <div class="section-desc">Same component, different values. Standardize to the dominant pattern for visual consistency.</div>
+    <div class="vp-grid">${items.map(p => {
+      if (p.ruleId === 'vizlint/consistent-border-radius') {
+        const actR = RADIUS_MAP[p.data.actual] ?? '8px';
+        const domR = RADIUS_MAP[p.data.dominant] ?? '8px';
+        return `<div class="vp-card">
+          <div class="vp-label mono">${esc(p.data.component)} <span class="vp-count">&times;${p.count}</span></div>
+          <div class="vp-consistency-row">
+            <div class="vp-consistency-box">
+              <div class="vp-radius-demo" style="border-radius:${actR}"></div>
+              <div class="mono" style="font-size:.7rem;color:var(--fail)">${esc(p.data.actual)}</div>
+            </div>
+            <div class="vp-arrow">&rarr;</div>
+            <div class="vp-consistency-box">
+              <div class="vp-radius-demo" style="border-radius:${domR}"></div>
+              <div class="mono" style="font-size:.7rem;color:var(--pass)">${esc(p.data.dominant)} (${p.data.count}/${p.data.total})</div>
+            </div>
+          </div>
+        </div>`;
+      }
+      // consistent-component-spacing
+      return `<div class="vp-card">
+        <div class="vp-label mono">${esc(p.data.component)} — ${esc(p.data.category ?? '')} <span class="vp-count">&times;${p.count}</span></div>
+        <div class="vp-consistency-row">
+          <div class="vp-consistency-box">
+            <div class="mono" style="font-size:.85rem;color:var(--fail)">${esc(p.data.actual)}</div>
+            <div style="font-size:.65rem;color:var(--text4)">this instance</div>
+          </div>
+          <div class="vp-arrow">&rarr;</div>
+          <div class="vp-consistency-box">
+            <div class="mono" style="font-size:.85rem;color:var(--pass)">${esc(p.data.dominant)}</div>
+            <div style="font-size:.65rem;color:var(--text4)">${p.data.count}/${p.data.total} instances</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
+function renderResponsivePreview(patterns: VisualPattern[]): string {
+  if (patterns.length === 0) return '';
+  const items = patterns.slice(0, 6);
+  return `<div class="section">
+    <div class="section-head">Responsive Issues — Visual <span class="sh-count">${patterns.length} unique, ${patterns.reduce((s, p) => s + p.count, 0)} total</span></div>
+    <div class="section-desc">Fixed-width elements overflow on mobile. These components have no responsive breakpoints.</div>
+    <div class="vp-grid">${items.map(p => {
+      const px = parseInt(p.data.px ?? '600', 10);
+      return `<div class="vp-card">
+        <div class="vp-label mono">${esc(p.data.className)} <span class="vp-count">&times;${p.count}</span></div>
+        <div class="vp-responsive-row">
+          <div class="vp-viewport vp-vp-desktop">
+            <div class="vp-vp-elem" style="width:${Math.min(px / 4, 100)}%"></div>
+            <div class="vp-vp-label">Desktop &#10003;</div>
+          </div>
+          <div class="vp-viewport vp-vp-mobile">
+            <div class="vp-vp-elem vp-vp-overflow" style="width:${Math.min(px / 2, 200)}%"></div>
+            <div class="vp-vp-label" style="color:var(--fail)">Mobile &#10007;</div>
+          </div>
+        </div>
+        <div class="vp-files">${p.data.px}px fixed — ${p.files.size} file${p.files.size !== 1 ? 's' : ''}</div>
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
+/** Build visual previews for a given category tab */
+function buildVisualPreviews(allPatterns: VisualPattern[], category: string): string {
+  const catRules: Record<string, string[]> = {
+    'Colors': ['vizlint/a11y-color-contrast', 'vizlint/no-arbitrary-colors', 'vizlint/dark-mode-coverage'],
+    'Spacing': ['vizlint/no-arbitrary-spacing', 'vizlint/no-magic-numbers-layout'],
+    'Typography': ['vizlint/no-arbitrary-typography'],
+    'Responsive': ['vizlint/responsive-required', 'vizlint/missing-states', 'vizlint/image-alt-text'],
+    'Consistency': ['vizlint/consistent-component-spacing', 'vizlint/consistent-border-radius', 'vizlint/no-arbitrary-zindex', 'vizlint/no-inline-styles', 'vizlint/max-component-lines'],
+  };
+  const rules = catRules[category] ?? [];
+  const catPatterns = allPatterns.filter(p => rules.includes(p.ruleId));
+  if (catPatterns.length === 0) return '';
+
+  let html = '';
+  if (category === 'Colors') {
+    html += renderContrastPreview(catPatterns.filter(p => p.ruleId === 'vizlint/a11y-color-contrast'));
+    html += renderColorPreview(catPatterns.filter(p => p.ruleId === 'vizlint/no-arbitrary-colors'));
+    html += renderDarkModePreview(catPatterns.filter(p => p.ruleId === 'vizlint/dark-mode-coverage'));
+  } else if (category === 'Spacing') {
+    html += renderSpacingPreview(catPatterns);
+  } else if (category === 'Typography') {
+    html += renderTypographyPreview(catPatterns);
+  } else if (category === 'Responsive') {
+    html += renderResponsivePreview(catPatterns.filter(p => p.ruleId === 'vizlint/responsive-required'));
+    html += renderMissingStatesPreview(catPatterns.filter(p => p.ruleId === 'vizlint/missing-states'));
+  } else if (category === 'Consistency') {
+    html += renderConsistencyPreview(catPatterns.filter(p => p.ruleId === 'vizlint/consistent-border-radius' || p.ruleId === 'vizlint/consistent-component-spacing'));
+  }
+  return html;
+}
+
 function gradeColor(score: number): string {
   if (score >= 80) return '#27AE60';
   if (score >= 60) return '#F39C12';
@@ -225,6 +655,9 @@ function buildHtml(data: ReportData): string {
     byCat[cat].push(v);
   }
 
+  // Extract visual patterns for grouped previews
+  const allPatterns = extractPatterns(data.violations);
+
   const jsonData = JSON.stringify({
     violations: data.violations,
     ruleSummaries: data.ruleSummaries.map(r => ({ ...r, files: [...r.files] })),
@@ -358,6 +791,78 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
   .cards-5 { grid-template-columns:repeat(2,1fr); }
 }
 .mob-toggle { display:none; position:fixed; top:.75rem; left:.75rem; z-index:99; background:var(--bg3); border:1px solid var(--border); color:var(--text); width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:1.1rem; }
+
+/* ─── Visual Previews ─── */
+.vp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1rem; margin-bottom:1rem; }
+.vp-grid-sm { grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); }
+.vp-card { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:1rem; }
+.vp-card-sm { padding:.75rem; }
+.vp-label { font-size:.78rem; color:var(--text2); margin-bottom:.65rem; display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; }
+.vp-count { margin-left:auto; font-size:.7rem; color:var(--text3); font-family:var(--mono); }
+.vp-count-sm { font-size:.65rem; color:var(--text4); margin-top:.4rem; }
+.vp-files { font-size:.65rem; color:var(--text4); margin-top:.5rem; }
+.vp-arrow { color:var(--text4); font-size:1.2rem; padding:0 .5rem; display:flex; align-items:center; }
+.vp-arrow-sm { color:var(--text4); font-size:.9rem; padding:0 .3rem; }
+
+/* Contrast */
+.vp-contrast-row { display:flex; align-items:stretch; gap:0; }
+.vp-contrast-box { flex:1; padding:1rem .75rem; border:2px solid var(--border); border-radius:8px; text-align:center; }
+.vp-contrast-sample { font-size:1.25rem; font-weight:600; margin-bottom:.25rem; }
+.vp-contrast-meta { font-size:.6rem; font-family:var(--mono); opacity:.8; }
+
+/* Colors */
+.vp-color-row { display:flex; align-items:center; gap:0; }
+.vp-color-swatch { width:42px; height:42px; border-radius:8px; border:2px solid var(--border); flex-shrink:0; }
+.vp-color-label { font-size:.72rem; color:var(--text2); margin-top:.4rem; }
+.vp-color-sug { font-size:.7rem; color:var(--pass); margin-top:.15rem; }
+
+/* Spacing */
+.vp-spacing-list { display:flex; flex-direction:column; gap:.5rem; }
+.vp-spacing-row { display:flex; align-items:center; gap:1rem; padding:.5rem .75rem; background:var(--bg2); border:1px solid var(--border); border-radius:8px; }
+.vp-spacing-bars { flex:1; }
+.vp-spacing-pair { display:flex; align-items:center; gap:.5rem; margin-bottom:.3rem; }
+.vp-spacing-pair:last-child { margin-bottom:0; }
+.vp-spacing-bar { height:16px; border-radius:3px; display:flex; align-items:center; padding:0 6px; font-size:.6rem; font-family:var(--mono); color:#fff; min-width:20px; }
+.vp-bar-before { background:var(--fail); opacity:.7; }
+.vp-bar-after { background:var(--pass); opacity:.8; }
+.vp-spacing-cls { font-size:.72rem; color:var(--text3); }
+
+/* Typography */
+.vp-typo-list { display:flex; flex-direction:column; gap:.65rem; }
+.vp-typo-row { display:flex; align-items:center; gap:1rem; padding:.65rem .75rem; background:var(--bg2); border:1px solid var(--border); border-radius:8px; }
+.vp-typo-pair { flex:1; }
+.vp-typo-sample { margin-bottom:.35rem; line-height:1.2; display:flex; align-items:baseline; gap:.5rem; }
+.vp-typo-sample:last-child { margin-bottom:0; }
+
+/* Dark mode */
+.vp-dark-row { display:flex; gap:.5rem; }
+.vp-dark-panel { flex:1; border-radius:8px; padding:.65rem; text-align:center; border:1px solid var(--border); }
+.vp-dark-elem { padding:.5rem; border-radius:6px; font-size:.8rem; font-weight:500; }
+.vp-dark-mode-label { font-size:.6rem; margin-top:.35rem; color:var(--text3); }
+
+/* States */
+.vp-states-row { display:flex; gap:.75rem; margin:.5rem 0; }
+.vp-state-box { text-align:center; }
+.vp-state-elem { border-radius:6px; font-size:.75rem; }
+.vp-state-btn { background:var(--blue); color:#fff; padding:.4rem .8rem; cursor:default; }
+.vp-state-input { background:var(--bg3); border:1px solid var(--border2); padding:.35rem .6rem; width:80px; height:28px; border-radius:5px; }
+.vp-state-missing { opacity:.4; position:relative; }
+.vp-state-missing::after { content:'?'; position:absolute; top:-4px; right:-4px; background:var(--fail); color:#fff; width:14px; height:14px; border-radius:50%; font-size:.55rem; display:flex; align-items:center; justify-content:center; }
+.vp-state-label { font-size:.6rem; margin-top:.25rem; color:var(--text3); }
+
+/* Consistency / radius */
+.vp-consistency-row { display:flex; align-items:center; gap:0; justify-content:center; }
+.vp-consistency-box { text-align:center; padding:.5rem; }
+.vp-radius-demo { width:48px; height:48px; background:var(--blue); margin:0 auto .35rem; }
+
+/* Responsive viewport */
+.vp-responsive-row { display:flex; gap:.75rem; margin:.5rem 0; }
+.vp-viewport { border:1px solid var(--border2); border-radius:6px; padding:.5rem; overflow:hidden; position:relative; }
+.vp-vp-desktop { flex:2; height:50px; }
+.vp-vp-mobile { flex:1; height:50px; max-width:80px; }
+.vp-vp-elem { background:var(--blue); opacity:.5; height:30px; border-radius:3px; }
+.vp-vp-overflow { background:var(--fail); opacity:.5; }
+.vp-vp-label { font-size:.55rem; text-align:center; color:var(--text3); margin-top:.25rem; }
 </style>
 </head>
 <body>
@@ -453,6 +958,26 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
     <div class="trend-box">${buildTrendSvg(data.history)}</div>
   </div>` : ''}
 
+  ${allPatterns.length > 0 ? `<div class="section">
+    <div class="section-head">Top Issues — Visual Preview <span class="sh-count">${allPatterns.length} unique patterns</span></div>
+    <div class="section-desc">Grouped by pattern — each card represents multiple identical violations across your codebase. Click a category tab for the full visual breakdown.</div>
+    ${(() => {
+      const top = allPatterns.slice(0, 4);
+      const byRule: Record<string, VisualPattern[]> = {};
+      for (const p of top) { if (!byRule[p.ruleId]) byRule[p.ruleId] = []; byRule[p.ruleId].push(p); }
+      let out = '';
+      if (byRule['vizlint/a11y-color-contrast']) out += renderContrastPreview(byRule['vizlint/a11y-color-contrast']);
+      if (byRule['vizlint/no-arbitrary-spacing'] || byRule['vizlint/no-magic-numbers-layout']) out += renderSpacingPreview([...(byRule['vizlint/no-arbitrary-spacing'] ?? []), ...(byRule['vizlint/no-magic-numbers-layout'] ?? [])]);
+      if (byRule['vizlint/no-arbitrary-typography']) out += renderTypographyPreview(byRule['vizlint/no-arbitrary-typography']);
+      if (byRule['vizlint/missing-states']) out += renderMissingStatesPreview(byRule['vizlint/missing-states']);
+      if (byRule['vizlint/no-arbitrary-colors']) out += renderColorPreview(byRule['vizlint/no-arbitrary-colors']);
+      if (byRule['vizlint/dark-mode-coverage']) out += renderDarkModePreview(byRule['vizlint/dark-mode-coverage']);
+      if (byRule['vizlint/consistent-border-radius'] || byRule['vizlint/consistent-component-spacing']) out += renderConsistencyPreview([...(byRule['vizlint/consistent-border-radius'] ?? []), ...(byRule['vizlint/consistent-component-spacing'] ?? [])]);
+      if (byRule['vizlint/responsive-required']) out += renderResponsivePreview(byRule['vizlint/responsive-required']);
+      return out;
+    })()}
+  </div>` : ''}
+
   <div class="section">
     <div class="section-head">Rules Breakdown</div>
     <table class="tbl"><thead><tr><th>Rule</th><th>Category</th><th>Violations</th><th>Files</th><th></th></tr></thead><tbody>
@@ -474,6 +999,8 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
     <div class="card"><div class="card-label">Arbitrary Colors</div><div class="card-value">${data.arbitraryColors.length}</div><div class="card-sub">unique hardcoded values</div></div>
     <div class="card"><div class="card-label">Contrast Failures</div><div class="card-value" style="color:${data.contrastViolations.length > 0 ? 'var(--fail)' : 'var(--pass)'}">${data.contrastViolations.length}</div><div class="card-sub">WCAG AA violations</div></div>
   </div>
+
+  ${buildVisualPreviews(allPatterns, 'Colors')}
 
   ${data.arbitraryColors.length > 0 ? `
   <div class="section">
@@ -512,6 +1039,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
     <div class="card"><div class="card-label">Arbitrary Spacing</div><div class="card-value">${(byCat['Spacing'] ?? []).filter(v => v.ruleId === 'vizlint/no-arbitrary-spacing').length}</div><div class="card-sub">hardcoded px/rem values</div></div>
     <div class="card"><div class="card-label">Magic Layout Numbers</div><div class="card-value">${(byCat['Spacing'] ?? []).filter(v => v.ruleId === 'vizlint/no-magic-numbers-layout').length}</div><div class="card-sub">grid/flex arbitrary values</div></div>
   </div>
+  ${buildVisualPreviews(allPatterns, 'Spacing')}
   ${buildCategoryViolations(byCat['Spacing'], 'Spacing violations')}
 </div>
 
@@ -522,6 +1050,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
     <div class="card"><div class="card-label">Arbitrary Sizes</div><div class="card-value">${cats.typography.violations}</div><div class="card-sub">font-size, weight, leading, tracking</div></div>
     <div class="card"><div class="card-label">Auto-Fixable</div><div class="card-value" style="color:var(--pass)">${cats.typography.violations}</div><div class="card-sub">All typography violations are fixable</div></div>
   </div>
+  ${buildVisualPreviews(allPatterns, 'Typography')}
   ${buildCategoryViolations(byCat['Typography'], 'Typography violations')}
 </div>
 
@@ -532,6 +1061,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
     <div class="card"><div class="card-label">Fixed Widths</div><div class="card-value">${(byCat['Responsive'] ?? []).filter(v => v.ruleId === 'vizlint/responsive-required').length}</div><div class="card-sub">missing breakpoints</div></div>
     <div class="card"><div class="card-label">Accessibility</div><div class="card-value">${(byCat['Responsive'] ?? []).filter(v => v.ruleId === 'vizlint/image-alt-text' || v.ruleId === 'vizlint/missing-states').length}</div><div class="card-sub">alt text + state handling</div></div>
   </div>
+  ${buildVisualPreviews(allPatterns, 'Responsive')}
   ${buildCategoryViolations(byCat['Responsive'], 'Responsive & accessibility violations')}
 </div>
 
@@ -542,6 +1072,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
     <div class="card"><div class="card-label">Spacing Divergence</div><div class="card-value">${(byCat['Consistency'] ?? []).filter(v => v.ruleId === 'vizlint/consistent-component-spacing').length}</div><div class="card-sub">same component, different spacing</div></div>
     <div class="card"><div class="card-label">Radius Divergence</div><div class="card-value">${(byCat['Consistency'] ?? []).filter(v => v.ruleId === 'vizlint/consistent-border-radius').length}</div><div class="card-sub">same component, different rounding</div></div>
   </div>
+  ${buildVisualPreviews(allPatterns, 'Consistency')}
   ${buildCategoryViolations(byCat['Consistency'], 'Consistency violations')}
 </div>
 

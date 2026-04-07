@@ -40,13 +40,23 @@ jobs:
       - name: Run benchmark
         run: pnpm --filter eslint-plugin-vizlint bench
 
+      - name: Publish @vizlint/shared
+        run: pnpm --filter @vizlint/shared publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Publish eslint-plugin-vizlint
         run: pnpm --filter eslint-plugin-vizlint publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish @vizlint/shared
-        run: pnpm --filter @vizlint/shared publish --no-git-checks --access public
+      - name: Publish @vizlint/cli
+        run: pnpm --filter @vizlint/cli publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @vizlint/mcp
+        run: pnpm --filter @vizlint/mcp publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
