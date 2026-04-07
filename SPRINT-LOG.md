@@ -422,3 +422,12 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 **Will do:** VIZ-029 W3C Design Tokens import
 **Blockers:** None
 
+### VIZ-029: W3C Design Tokens (DTCG) import — 2026-04-07
+
+**Did:** Shipped W3C Design Tokens Community Group parser (Moat 4 — Figma bridge / design-to-code alignment). New `packages/shared/src/tokens/w3c-parser.ts` — pure `parseW3CTokens(raw)` walks DTCG trees, honors group-level `$type` inheritance, resolves `{group.token}` aliases up to depth 10 with cycle protection, records unresolved aliases and unmapped types without crashing. Buckets `$type: color|dimension|fontFamily` into the existing `DesignSystem` shape; dimensions under `radius`/`borderRadius`/`radii` paths route to `borderRadius`, everything else to `spacing`. Heuristic fallback infers type from value shape (`#hex` → color, `Npx/rem` → dimension) so untyped Style Dictionary output still works. New `loadW3CTokensFile()` + `findW3CTokensFile()` loaders auto-discover `tokens.json`, `design-tokens.json`, `.tokens.json`, `tokens/tokens.json`, `src/tokens.json`. CLI `loadDesignSystem()` in `generate-config.ts` now auto-imports W3C tokens with merge priority Tailwind → W3C → manual `.vizlintrc.json`. 13 parser tests covering flat/nested groups, inheritance, alias chains, cycles, unresolved refs, dimension→borderRadius heuristic, fontFamily mapping, unmapped types, untyped inference, descriptions.
+
+**Safety:** Opt-in via file presence — no behavior change for projects without a `.tokens.json`. Malformed files are swallowed and fall through to Tailwind/manual sources.
+
+**Will do:** VIZ-030 Compliance report export
+**Blockers:** None
+

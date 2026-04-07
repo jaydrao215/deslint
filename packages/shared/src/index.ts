@@ -24,6 +24,9 @@ export type { GateScanSnapshot, GateResult, GateFailure, GateCategory } from './
 
 export { RULE_EFFORT_MINUTES, DEFAULT_RULE_EFFORT_MINUTES, effortForRule } from './debt-table.js';
 
+export { parseW3CTokens, loadW3CTokensFile, findW3CTokensFile } from './tokens/index.js';
+export type { W3CToken, W3CParseResult } from './tokens/index.js';
+
 export {
   parseV3Config,
   parseV4Theme,
