@@ -41,6 +41,12 @@ import {
   formatTrendText,
   formatTrendJson,
 } from './trend.js';
+import {
+  buildComplianceResult,
+  renderComplianceHtml,
+} from './compliance-report.js';
+import { formatComplianceSummary } from '@vizlint/shared';
+import { basename } from 'node:path';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -373,6 +379,66 @@ program
       if (summary.regressions.length > 0) {
         process.exitCode = 1;
       }
+    } catch (err) {
+      console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
+      process.exit(1);
+    }
+  });
+
+// ── compliance command ──────────────────────────────────────────────
+
+program
+  .command('compliance')
+  .description('Generate a WCAG 2.2 conformance report (HTML or JSON)')
+  .argument('[dir]', 'Project directory', '.')
+  .option('-f, --format <format>', 'Output format: html, json, text', 'html')
+  .option('-o, --output <path>', 'Output file path (default: .vizlint/compliance.html)')
+  .option('--profile <name>', 'Use a named severity profile from .vizlintrc.json')
+  .action(async (dir: string, opts: { format: string; output?: string; profile?: string }) => {
+    try {
+      const cwd = resolve(dir);
+      const config = loadConfig(cwd);
+      const rules = resolveRules(config, opts.profile);
+
+      const files = await discoverFiles({ cwd, ignorePatterns: config?.ignore });
+      if (files.length === 0) {
+        console.log(chalk.yellow('\n  No files found to scan.\n'));
+        process.exit(0);
+      }
+
+      const lintResult = await runLint({ files, ruleOverrides: rules, cwd });
+      const compliance = buildComplianceResult(lintResult);
+
+      if (opts.format === 'json') {
+        const out = opts.output
+          ? resolve(cwd, opts.output)
+          : resolve(cwd, '.vizlint', 'compliance.json');
+        mkdirSync(dirname(out), { recursive: true });
+        writeFileSync(out, JSON.stringify(compliance, null, 2));
+        console.log(chalk.green(`  ✓ Wrote ${out}`));
+        return;
+      }
+
+      if (opts.format === 'text') {
+        console.log(formatComplianceSummary(compliance));
+        return;
+      }
+
+      // Default: HTML
+      const html = renderComplianceHtml({
+        projectName: basename(cwd),
+        scannedAt: new Date(),
+        totalFiles: files.length,
+        lintResult,
+      });
+      const out = opts.output
+        ? resolve(cwd, opts.output)
+        : resolve(cwd, '.vizlint', 'compliance.html');
+      mkdirSync(dirname(out), { recursive: true });
+      writeFileSync(out, html);
+
+      console.log(formatComplianceSummary(compliance));
+      console.log(chalk.gray(`  Report: ${out}`));
     } catch (err) {
       console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
       process.exit(1);

@@ -431,3 +431,12 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 **Will do:** VIZ-030 Compliance report export
 **Blockers:** None
 
+### VIZ-030: WCAG 2.2 compliance report export — 2026-04-07
+
+**Did:** Closed out Phase 1 with the compliance report — the feature enterprise legal / a11y teams ask for first. New `packages/shared/src/compliance.ts` maps Vizlint rules to WCAG 2.2 Success Criteria (1.1.1 Non-text Content, 1.4.3 Contrast Minimum, 1.4.10 Reflow, 1.4.11 Non-text Contrast, 1.4.12 Text Spacing, 2.4.7 Focus Visible). Pure `evaluateCompliance()` takes a scan snapshot and returns per-criterion pass/fail/not-evaluated, the highest conformance Level reached (requires at-least-one criterion at that exact level to be evaluated — no false AAA claims), coverage %, pass rate %, and deduped total violations. `formatComplianceSummary()` for CLI/PR-comment text. New `packages/cli/src/compliance-report.ts` renders a self-contained printable HTML report (inline CSS, no JS, no external fonts — safe to email / attach to SOC2 audit / print to PDF) with conformance badges, per-SC table, and links into the WCAG 2.2 spec. New CLI command `vizlint compliance [dir] [--format html|json|text] [--output path]` writes to `.vizlint/compliance.html` by default. 10 new compliance tests, 82 shared + 102 CLI tests green, full repo build clean.
+
+**Safety:** Net-new command. Zero change to existing scan/fix/trend output. Only rules already in Vizlint's catalog are mapped — no new rules, no new violations. Docstring clarifies this is automated evidence, full conformance still requires manual audit.
+
+**Will do:** Integrate KPMG 7-moat strategy into sprint planning docs
+**Blockers:** None
+

@@ -28,6 +28,19 @@ export { parseW3CTokens, loadW3CTokensFile, findW3CTokensFile } from './tokens/i
 export type { W3CToken, W3CParseResult } from './tokens/index.js';
 
 export {
+  WCAG_CRITERIA,
+  evaluateCompliance,
+  formatComplianceSummary,
+} from './compliance.js';
+export type {
+  WcagLevel,
+  WcagCriterion,
+  CriterionResult,
+  ComplianceResult,
+  ComplianceScanSnapshot,
+} from './compliance.js';
+
+export {
   parseV3Config,
   parseV4Theme,
   parseCssVars,
