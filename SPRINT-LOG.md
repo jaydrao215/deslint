@@ -495,3 +495,48 @@ GitHub Release `v0.1.0` created automatically with the CHANGELOG entry.
 **Will do:** Swap NPM_TOKEN to the tightly-scoped granular token. Stand by for Phase 2 kickoff direction from the founder (cross-file design graph, AI code attribution, `@vizlint/core` embeddable, component library presets, +6 a11y rules, design-code alignment metric).
 **Blockers:** None.
 
+### v0.1.1 SHIPPED — package rename to @vizlint/eslint-plugin — 2026-04-07
+
+**Did:** Renamed the ESLint plugin from `eslint-plugin-vizlint` to `@vizlint/eslint-plugin` to bring it under the `@vizlint/*` workspace alongside `@vizlint/cli`, `@vizlint/mcp`, and `@vizlint/shared`. This matches the modern Pattern 2 convention used by `@typescript-eslint/eslint-plugin`, `@next/eslint-plugin-next`, `@stylistic/eslint-plugin`, `@nx/eslint-plugin`, and `@vitest/eslint-plugin`. Done now while user count is effectively zero (v0.1.0 shipped 4 hours earlier) so the migration cost is essentially nil.
+
+**Scope of change** (33 files in commit `a062e6e`):
+- `packages/eslint-plugin/package.json` — name → `@vizlint/eslint-plugin`, 0.1.0 → 0.1.1
+- `packages/eslint-plugin/src/index.ts` — plugin meta name updated to match
+- `packages/{shared,cli,mcp}/package.json` + `action/package.json` — bumped to 0.1.1 for consistent versioning across the rename release
+- `packages/cli/package.json` + `packages/mcp/package.json` + `action/package.json` — workspace dep `eslint-plugin-vizlint` → `@vizlint/eslint-plugin`
+- `packages/cli/src/lint-runner.ts`, `packages/mcp/src/tools.ts`, `action/src/scan.ts` — dynamic import paths
+- `packages/cli/src/init.ts` — all 4 framework template variants now emit `import vizlint from '@vizlint/eslint-plugin'` in the generated user `eslint.config.js`; skip-warning text updated
+- `packages/cli/src/templates/cursorrules.ts` + `tests/generate-config.test.ts` — install command in cursor rules template
+- `packages/cli/tests/cli.test.ts` + `tests/formatters.test.ts` — hardcoded `'0.1.0'` strings replaced with `pkg.version` reads via `createRequire`. These tests will never need touching on a version bump again — they always derive the expected version from package.json.
+- `packages/eslint-plugin/README.md` — title, badges, install commands, all import examples, and a new "Migration from `eslint-plugin-vizlint`" section explaining the rename + migration steps
+- `README.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `SECURITY.md`, `validation/SUMMARY.md` — current-state references updated
+- `apps/docs` landing page (Hero, HowItWorks, Footer, Cta, docs/page, docs/layout, docs/getting-started) — install commands, code examples, npm link
+- `.github/workflows/release.yml` — publish step renamed; `--filter` flag updated
+- `.github/workflows/ci.yml` — coverage + bench `--filter` flag updated
+- `.changeset/config.json` — linked package list
+- `CHANGELOG.md` — v0.1.1 entry with full migration guide
+- Historical entries in SPRINT-LOG.md, VIZLINT-EXECUTION.md (lines 52, 80), and the CHANGELOG.md v0.1.0 entry deliberately left referencing the old name — they record what was actually shipped at v0.1.0.
+
+**Validation pre-tag** (mirrored CI exactly): `pnpm install --frozen-lockfile` clean, `pnpm build` 6/6 successful, `pnpm lint` 2/2, `pnpm typecheck` 9/9, `pnpm test` 11/11 (792 tests), coverage exit 0 (86.57/75.84 vs 86/75 thresholds), bench PASS at 0.02ms/file. All 4 publish steps in the release workflow named/scoped correctly.
+
+**Release sequence:**
+1. Commit `a062e6e` pushed to main, CI green on Node 20 + Node 22 matrix
+2. Tag `v0.1.1` pushed → release workflow fires
+3. All 4 publish steps run cleanly: `@vizlint/shared@0.1.1`, `@vizlint/eslint-plugin@0.1.1` (brand new package on npm), `@vizlint/cli@0.1.1`, `@vizlint/mcp@0.1.1` — current "All packages" `NPM_TOKEN` covers the new package automatically
+4. GitHub Release `v0.1.1` auto-created from CHANGELOG entry (which contains the full migration guide)
+5. ~1 minute CDN propagation lag for `@vizlint/eslint-plugin` rollup metadata (specific-version endpoint had it immediately, package-level rollup caught up shortly after) — caused brief "where is it?" moment but resolved without intervention
+
+**Old package handling:** `eslint-plugin-vizlint@0.1.0` deprecated via npmjs.com web UI. Founder chose to leave npm's generic placeholder message ("Package no longer supported. Contact Support...") rather than re-running the CLI deprecate command with the custom migration message — pragmatic call given effectively zero users at this point. The full migration guide lives in the v0.1.1 plugin README and CHANGELOG, both of which a curious user would find before reaching the deprecated old package. Old package was NOT unpublished — kept as a deprecation tombstone per npm convention so any frozen lockfile against `eslint-plugin-vizlint@0.1.0` continues to install (with the deprecation warning) rather than hard-erroring.
+
+**Final state on npm:**
+- `@vizlint/shared@0.1.1` — live ✅
+- `@vizlint/eslint-plugin@0.1.1` — live ✅ (the rename target)
+- `@vizlint/cli@0.1.1` — live ✅
+- `@vizlint/mcp@0.1.1` — live ✅
+- `eslint-plugin-vizlint@0.1.0` — deprecated tombstone ⚠️ (left intentionally for lockfile compatibility)
+
+**KPMG Phase 1 status:** ✅ STILL COMPLETE. The rename is purely a packaging change — same 14 rules, same options, same presets, same auto-fix output, same `vizlint/*` shorthand in user config, same `.vizlintrc.json` schema. All Phase 1 features (VIZ-026 through VIZ-030) ship unchanged in v0.1.1.
+
+**Will do:** Stand by for Phase 2 kickoff direction from the founder. Outstanding cleanup item (non-blocking): swap `NPM_TOKEN` GitHub secret from the broad "All packages" granular token to the tightly-scoped granular token covering `@vizlint` org + `eslint-plugin-vizlint` (kept for deprecation maintenance). Then delete the broad token from npm. This is independent of v0.1.1 ship and can happen anytime.
+**Blockers:** None.
+
