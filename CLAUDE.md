@@ -1,10 +1,12 @@
 # CLAUDE.md — Vizlint Development Guidelines
-## IMPORTANT: Read VIZLINT-EXECUTION.md before any work
 
-VIZLINT-EXECUTION.md contains the active execution plan.
-It overrides sprint plan sequencing for all work after VIZ-025.
-The current priority is VALIDATION, not new features.
-Read it before starting any task.
+## IMPORTANT: Read ROADMAP.md FIRST, then VIZLINT-EXECUTION.md
+
+`ROADMAP.md` is the active planning document. It captures live state, the current sprint, decisions, and the prioritized backlog. **Read it before assuming anything.** It supersedes chat history, auto-memory, and (for sprint-level sequencing) VIZLINT-EXECUTION.md. Where ROADMAP.md and any other doc conflict on "what's next," ROADMAP.md wins.
+
+`VIZLINT-EXECUTION.md` is the strategic doc — stages, KPMG moats, architectural decisions, trust metrics. Read it for context about WHY things are sequenced the way they are. It's slower-moving than ROADMAP.md.
+
+**Update discipline:** Every meaningful commit updates ROADMAP.md Section 1 (live state) and Section 2 (in-flight work). Sprint completions update Section 3. Decisions get appended to Section 7. This is non-negotiable — it's how we avoid drift between conversations.
 
 ## Project Overview
 Vizlint is the design quality infrastructure layer for the AI code generation era. It validates design quality — spacing consistency, typography hierarchy, color token adherence, responsive coverage, accessibility, and dark mode — in AI-generated frontend code across any framework.
@@ -16,12 +18,14 @@ TypeScript monorepo via Turborepo + pnpm workspaces. Local-first, deterministic,
 **Positioning:** "Visual regression tools tell you the screenshot looks wrong. Vizlint tells you why — and fixes it."
 
 ## Planning documents (READ IN THIS ORDER)
-1. **VIZLINT-EXECUTION.md** — Active execution plan. READ FIRST. Overrides all other sequencing. Section 15 = authoritative KPMG 7-moat status tracker.
-2. docs/vizlint-sprint-plan.docx — Full 16-sprint plan with user stories
-3. docs/sprint-plan-v1.1-changes.md
-4. docs/vizlint-sprint-plan-v1.1-update.md — Three-mode model, fixers, Angular
-5. docs/vizlint-sprint-plan-v1.2-update.md — User control model, no-AI architecture, L3-L5 vision, strategic positioning
-6. docs/vizlint-sprint-plan-v1.3-kpmg-moats.md — KPMG 7-moat defensibility overlay (Phase 1 ✅ shipped VIZ-026→VIZ-030, Phase 2/3 scheduled)
+1. **ROADMAP.md** — Live planning surface. READ FIRST. Live state, active sprint, decisions, backlog, won't-do. Updated on every commit.
+2. **VIZLINT-EXECUTION.md** — Strategic execution plan. Stages, KPMG 7-moat tracker (Section 15), trust metrics (Section 5), architectural non-negotiables. Slower-moving than ROADMAP.md.
+3. **SPRINT-LOG.md** — Append-only history of what shipped. Skim only the most recent 3-5 entries for context; the rest is archive.
+4. docs/vizlint-sprint-plan.docx — Original 16-sprint plan with user stories (background only — superseded by ROADMAP.md + VIZLINT-EXECUTION.md for sequencing)
+5. docs/sprint-plan-v1.1-changes.md
+6. docs/vizlint-sprint-plan-v1.1-update.md — Three-mode model, fixers, Angular
+7. docs/vizlint-sprint-plan-v1.2-update.md — User control model, no-AI architecture, L3-L5 vision, strategic positioning
+8. docs/vizlint-sprint-plan-v1.3-kpmg-moats.md — KPMG 7-moat defensibility overlay (Phase 1 ✅ shipped VIZ-026→VIZ-030, Phase 2/3 scheduled)
 
 ## Architecture Rules
 - **ESLint v10+ flat config ONLY.** No legacy .eslintrc support anywhere.

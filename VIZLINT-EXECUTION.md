@@ -2,7 +2,8 @@
 
 ## Trust-First Execution Reset
 
-> **Status:** ACTIVE — this document overrides sprint plan sequencing for all work after VIZ-025.
+> **Status:** ACTIVE for STRATEGY (stages, KPMG moats, trust metrics, architectural non-negotiables).
+> **For sprint-level sequencing, see [ROADMAP.md](ROADMAP.md) — it supersedes this document on "what's in flight" and "what's next."**
 > **Effective:** April 2026
 > **Supersedes:** Expansion-first assumptions in sprint plan v1.0/v1.1/v1.2 where they conflict with trust, precision, or market validation.
 

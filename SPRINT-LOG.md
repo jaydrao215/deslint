@@ -540,3 +540,45 @@ GitHub Release `v0.1.0` created automatically with the CHANGELOG entry.
 **Will do:** Stand by for Phase 2 kickoff direction from the founder. Outstanding cleanup item (non-blocking): swap `NPM_TOKEN` GitHub secret from the broad "All packages" granular token to the tightly-scoped granular token covering `@vizlint` org + `eslint-plugin-vizlint` (kept for deprecation maintenance). Then delete the broad token from npm. This is independent of v0.1.1 ship and can happen anytime.
 **Blockers:** None.
 
+### Investigation session — codebase audit + ROADMAP creation — 2026-04-08
+
+**Did:** Founder asked two things: (a) "did you plan everything correctly without missing out on anything?" and (b) "how are we planning to get users to use our tool?" — plus a directive to stop giving statements and start grounding recommendations in what's actually built. Investigation session, no shipped code, lots of grounded findings.
+
+**Findings (full detail in `ROADMAP.md` Section 6):**
+
+1. **Rule framework support matrix is more nuanced than docs claim.** Of 14 rules:
+   - 6 are framework-agnostic via `createClassVisitor` (`dark-mode-coverage`, `no-arbitrary-colors`, `no-arbitrary-spacing`, `no-arbitrary-typography`, `no-arbitrary-zindex`, `no-magic-numbers-layout`)
+   - 2 have manual multi-framework dispatch (`a11y-color-contrast` — JSX-strongest in practice; `no-inline-styles` — JSX/Vue/Angular/Svelte)
+   - 5 are JSX-only (`consistent-border-radius`, `consistent-component-spacing`, `image-alt-text`, `missing-states`, `responsive-required`)
+   - 1 is file-level / framework-irrelevant (`max-component-lines`)
+
+   VIZLINT-EXECUTION.md:420 said "7/14 JSX-only on Angular." Closer real count is 5-6 depending on how you classify `a11y-color-contrast`. Either way, the gap is real and the 5 JSX-only rules need porting to a uniform abstraction.
+
+2. **Plain HTML support is fictional.** README claims Plain HTML support; reality (per `packages/cli/src/lint-runner.ts:179-187`) is that `.html` files are routed to `@angular-eslint/template-parser` if installed, and DROPPED ENTIRELY if it isn't. Even with the Angular parser installed, the 5 JSX-only rules see zero HTML coverage. **This is the biggest credibility gap and the audience for the ADA Title II deadline (gov / regulated-industry sites) is disproportionately plain HTML.** Fix: add `@html-eslint/parser` as optional peer dep.
+
+3. **WCAG compliance mapping is honest but small.** `packages/shared/src/compliance.ts` maps 6 WCAG 2.2 SCs to 4 Vizlint rules. The evaluator correctly refuses to claim a conformance level without at least one criterion at that exact level evaluated (no false AAA). Widening this to 12-15 SCs is a tractable sprint goal once the new a11y rules ship.
+
+4. **`apps/docs` is shippable but not deployed.** ~1100 lines of components, Next.js 15 static export, builds clean. Domain `vizlint.dev` is purchased. Just needs `vercel deploy`. **Without a live landing page, every distribution channel sends people to npm — which is availability, not distribution.**
+
+5. **Distribution surface is empty.** v0.1.0 + v0.1.1 shipped to npm with literally zero external announcement: no awesome-list submissions, no Show HN, no Product Hunt, no Twitter, no demo video, no MCP self-correction recording, no blog posts, no cold outreach, no tech press. The number of people who could discover Vizlint by searching for it on 2026-04-08 is roughly zero.
+
+**Architectural insight:** The right next move is NOT "ship 6 a11y rules in 1.5 weeks". It's:
+1. Build a `createElementVisitor` abstraction (sibling to `createClassVisitor`) so element-level rules can be framework-agnostic
+2. Add proper plain HTML parser support
+3. Port the 5 JSX-only rules to use the new abstraction
+4. THEN ship 6 new WCAG-mapped a11y rules built on the abstraction
+5. Widen the compliance report mapping
+6. Deploy the landing page
+7. Record the MCP self-correction demo (the differentiation asset)
+8. Tag v0.2.0
+9. Run a coordinated launch sequence into the ADA Title II news cycle (awesome-* PRs, Reddit, Dev.to, Twitter, Show HN, Product Hunt, ADA deadline thread)
+
+**Original "1.5 weeks for 6 rules" estimate was naive** — it ignored the framework-agnostic infrastructure prerequisite. Realistic sprint length: **2 weeks of code + 1 week of distribution = ~3 weeks total ending around 2026-04-26** which lines up with the ADA Title II news cycle.
+
+**ROADMAP.md created** as the persistent planning surface so future conversations don't drift. Captures live state, active sprint (Accessibility Foundation, sprint items S1-S9 with day-by-day timeline), backlog (KPMG Phase 2 + Phase 3 + Stage 4), explicit "won't do" list with reasons, decision log (7 decisions captured from 2026-04-07/08), codebase reality findings, and update discipline. CLAUDE.md updated to make ROADMAP.md the FIRST thing every future agent reads.
+
+**Quality bar locked in per founder directive:** "no broken rules", "perfect but useful", "we don't want to be something which was created but never used." Better to ship 4 clean a11y rules than 6 messy ones. Distribution work is a co-equal deliverable, not an afterthought.
+
+**Will do (next session, 2026-04-09):** Start sprint item S1 — `createElementVisitor` abstraction in `packages/eslint-plugin/src/utils/element-visitor.ts`. This is the foundation everything else in the sprint depends on.
+**Blockers:** None — clean handoff. ROADMAP.md Section 3 has the day-by-day plan.
+
