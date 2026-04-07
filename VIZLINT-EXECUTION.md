@@ -49,7 +49,7 @@ All VIZ-001 through VIZ-025 implementation tasks are complete. Remaining manual 
 - ~~NPM_TOKEN GitHub secret~~ Done (2026-04-06)
 - Domain purchase (vizlint.dev) — deferred
 - Docs site deployment (Vercel/Cloudflare) — deferred
-- npm publish (tag v0.1.0 to trigger release workflow) — ready
+- ~~npm publish (tag v0.1.0 to trigger release workflow)~~ **SHIPPED 2026-04-07** — all four packages live: `@vizlint/shared@0.1.0`, `eslint-plugin-vizlint@0.1.0`, `@vizlint/cli@0.1.0`, `@vizlint/mcp@0.1.0`. GitHub Release `v0.1.0` created.
 
 ---
 
