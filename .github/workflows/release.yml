@@ -40,23 +40,57 @@ jobs:
       - name: Run benchmark
         run: pnpm --filter eslint-plugin-vizlint bench
 
+      # Publish steps are idempotent: each one checks the npm registry first
+      # and skips if the exact name@version is already published. This makes
+      # any partial-publish failure (e.g. token scoped wrong, network blip)
+      # recoverable by simply re-running the workflow on the same tag — the
+      # already-published packages get skipped, the missing ones get pushed.
+
       - name: Publish @vizlint/shared
-        run: pnpm --filter @vizlint/shared publish --no-git-checks --access public
+        run: |
+          PKG="@vizlint/shared"
+          VER=$(node -p "require('./packages/shared/package.json').version")
+          if npm view "${PKG}@${VER}" version > /dev/null 2>&1; then
+            echo "✓ ${PKG}@${VER} already published, skipping"
+          else
+            pnpm --filter "${PKG}" publish --no-git-checks --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish eslint-plugin-vizlint
-        run: pnpm --filter eslint-plugin-vizlint publish --no-git-checks --access public
+        run: |
+          PKG="eslint-plugin-vizlint"
+          VER=$(node -p "require('./packages/eslint-plugin/package.json').version")
+          if npm view "${PKG}@${VER}" version > /dev/null 2>&1; then
+            echo "✓ ${PKG}@${VER} already published, skipping"
+          else
+            pnpm --filter "${PKG}" publish --no-git-checks --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @vizlint/cli
-        run: pnpm --filter @vizlint/cli publish --no-git-checks --access public
+        run: |
+          PKG="@vizlint/cli"
+          VER=$(node -p "require('./packages/cli/package.json').version")
+          if npm view "${PKG}@${VER}" version > /dev/null 2>&1; then
+            echo "✓ ${PKG}@${VER} already published, skipping"
+          else
+            pnpm --filter "${PKG}" publish --no-git-checks --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @vizlint/mcp
-        run: pnpm --filter @vizlint/mcp publish --no-git-checks --access public
+        run: |
+          PKG="@vizlint/mcp"
+          VER=$(node -p "require('./packages/mcp/package.json').version")
+          if npm view "${PKG}@${VER}" version > /dev/null 2>&1; then
+            echo "✓ ${PKG}@${VER} already published, skipping"
+          else
+            pnpm --filter "${PKG}" publish --no-git-checks --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
