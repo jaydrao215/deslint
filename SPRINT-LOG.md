@@ -440,3 +440,12 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 **Will do:** Integrate KPMG 7-moat strategy into sprint planning docs
 **Blockers:** None
 
+### PLAN-001: KPMG 7-moat strategy integrated into sprint planning — 2026-04-07
+
+**Did:** Wired the approved KPMG defensibility plan into sprint planning so nothing is lost. Added `VIZLINT-EXECUTION.md` Section 15 as the authoritative 7-moat status tracker (phase table, Phase 1 complete w/ VIZ-026→VIZ-030, Phase 2 next, Phase 3 later, non-negotiables preserved). Updated Section 6 "Explicitly Deferred" list — the five Stage 3 items pulled forward into KPMG Phase 1 are now marked ✅ with their story IDs; cross-file engine, component presets, embeddable core, and design-code alignment metric carry forward to KPMG Phase 2/3. Added a status-update note at the top of `docs/vizlint-sprint-plan-v1.2-update.md` Stage 3 section pointing at Section 15. Created `docs/vizlint-sprint-plan-v1.3-kpmg-moats.md` as a full overlay (same pattern as v1.1/v1.2) capturing the 7 moats, Phase 1 shipped table, Phase 2 backlog, Phase 3 backlog, safety model, and document hierarchy. Registered v1.3 in `CLAUDE.md` reading order so future agents pick it up.
+
+**Safety:** Zero code changes. Planning-only.
+
+**Will do:** Stand by for Phase 2 kickoff direction from the founder.
+**Blockers:** None
+
