@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.1.1] — 2026-04-07
+
+### Changed (BREAKING — package rename)
+- **`eslint-plugin-vizlint` → `@vizlint/eslint-plugin`** — the ESLint plugin has been renamed to live under the `@vizlint/*` workspace alongside `@vizlint/cli`, `@vizlint/mcp`, and `@vizlint/shared`. This brings the plugin into line with the modern Pattern 2 convention used by `@typescript-eslint/eslint-plugin`, `@next/eslint-plugin-next`, `@stylistic/eslint-plugin`, `@nx/eslint-plugin`, `@vitest/eslint-plugin`, etc.
+
+  **Migration:**
+  ```sh
+  npm uninstall eslint-plugin-vizlint
+  npm install -D @vizlint/eslint-plugin
+  ```
+
+  ```diff
+  // eslint.config.js
+  - import vizlint from 'eslint-plugin-vizlint';
+  + import vizlint from '@vizlint/eslint-plugin';
+  ```
+
+  **Nothing else changes** — all 14 rule names, options, presets, and auto-fix output are identical. The plugin shorthand stays `vizlint` (e.g. `'vizlint/no-arbitrary-colors'`). The `.vizlintrc.json` schema is unchanged. Internal `@vizlint/cli`, `@vizlint/mcp`, and `@vizlint/action` have been updated to import from the new name automatically — upgrading them is a no-op for users.
+
+  The old `eslint-plugin-vizlint@0.1.0` package on npm will be deprecated with a redirect message pointing at the new name.
+
+- All four published packages bumped from `0.1.0` to `0.1.1` for consistent versioning across the rename release.
+
 ## [0.1.0] — 2026-04-06
 
 ### Added

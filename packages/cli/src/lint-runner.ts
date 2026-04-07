@@ -73,7 +73,7 @@ export interface LintRunnerOptions {
  */
 export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
   // Dynamic import to get the plugin — it's an ESM workspace package
-  const vizlintPlugin = await import('eslint-plugin-vizlint');
+  const vizlintPlugin = await import('@vizlint/eslint-plugin');
   const plugin = vizlintPlugin.default ?? vizlintPlugin;
 
   const rules: Record<string, any> = {
@@ -113,7 +113,7 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     // Not installed — TypeScript files may fail to parse
   }
 
-  // Load framework-specific parsers (optional peer deps of eslint-plugin-vizlint)
+  // Load framework-specific parsers (optional peer deps of @vizlint/eslint-plugin)
   let angularTemplateParser: any;
   try {
     angularTemplateParser = await import('@angular-eslint/template-parser');

@@ -64,7 +64,7 @@ TypeScript monorepo via Turborepo + pnpm workspaces. Local-first, deterministic,
 ## Package Structure
 ```
 packages/
-  eslint-plugin/  — ESLint rules + configs (npm: eslint-plugin-vizlint)
+  eslint-plugin/  — ESLint rules + configs (npm: @vizlint/eslint-plugin)
   cli/            — Commander.js CLI (npm: @vizlint/cli)  
   mcp/            — MCP server for Cursor/Claude Code (npm: @vizlint/mcp)
   shared/         — Shared types and utilities

@@ -56,7 +56,7 @@ describe('generateCursorRules', () => {
     expect(output).toContain('## Typography Scale Only');
     expect(output).toContain('## Responsive Design Required');
     expect(output).toContain('## Consistent Component Spacing');
-    expect(output).toContain('npm install -D eslint-plugin-vizlint');
+    expect(output).toContain('npm install -D @vizlint/eslint-plugin');
   });
 
   it('includes custom color tokens when provided', () => {

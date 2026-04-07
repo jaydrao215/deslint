@@ -126,7 +126,7 @@ These rules correctly produce 0 violations on Angular templates — they're JSX-
 
 ## Test Coverage
 
-- **eslint-plugin-vizlint**: 551 tests (16 files)
+- **@vizlint/eslint-plugin**: 551 tests (16 files)
 - **@vizlint/cli**: 78 tests (6 files)
 - **@vizlint/shared**: 44 tests
 - **@vizlint/action**: 17 tests

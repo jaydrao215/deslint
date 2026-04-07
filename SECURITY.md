@@ -36,7 +36,7 @@ Vizlint follows these security principles by design:
 
 The following are in scope for security reports:
 
-- ESLint plugin (`eslint-plugin-vizlint`)
+- ESLint plugin (`@vizlint/eslint-plugin`)
 - CLI tool (`@vizlint/cli`)
 - MCP server (`@vizlint/mcp`)
 - Shared utilities (`@vizlint/shared`)

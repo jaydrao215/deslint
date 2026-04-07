@@ -1,6 +1,6 @@
 {
-  "name": "eslint-plugin-vizlint",
-  "version": "0.1.0",
+  "name": "@vizlint/eslint-plugin",
+  "version": "0.1.1",
   "description": "The design quality gate for AI-generated frontend code",
   "keywords": [
     "eslint",

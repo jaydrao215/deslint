@@ -19,7 +19,7 @@ const _pkg = _require('../package.json') as { version: string };
 
 const plugin = {
   meta: {
-    name: 'eslint-plugin-vizlint',
+    name: '@vizlint/eslint-plugin',
     version: _pkg.version,
   },
   rules: {

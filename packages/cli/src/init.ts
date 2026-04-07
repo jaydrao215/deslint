@@ -62,7 +62,7 @@ const PROFILES: Record<string, { description: string; rules: Record<string, Seve
 function generateEslintConfig(framework: string): string {
   if (framework === 'angular') {
     return `// @ts-check
-import vizlint from 'eslint-plugin-vizlint';
+import vizlint from '@vizlint/eslint-plugin';
 import angularTemplateParser from '@angular-eslint/template-parser';
 
 /** @type {import('eslint').Linter.Config[]} */
@@ -88,7 +88,7 @@ export default [
 
   if (framework === 'vue') {
     return `// @ts-check
-import vizlint from 'eslint-plugin-vizlint';
+import vizlint from '@vizlint/eslint-plugin';
 import vueParser from 'vue-eslint-parser';
 
 /** @type {import('eslint').Linter.Config[]} */
@@ -112,7 +112,7 @@ export default [
 
   if (framework === 'svelte') {
     return `// @ts-check
-import vizlint from 'eslint-plugin-vizlint';
+import vizlint from '@vizlint/eslint-plugin';
 import svelteParser from 'svelte-eslint-parser';
 
 /** @type {import('eslint').Linter.Config[]} */
@@ -136,7 +136,7 @@ export default [
 
   // React / Next.js / default
   return `// @ts-check
-import vizlint from 'eslint-plugin-vizlint';
+import vizlint from '@vizlint/eslint-plugin';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -295,7 +295,7 @@ export async function initWizard(options: InitOptions): Promise<void> {
       prompts.log.success(`Updated ${chalk.cyan('eslint.config.js')}`);
     } else {
       prompts.log.warn(
-        `Skipped eslint.config.js — add ${chalk.cyan("import vizlint from 'eslint-plugin-vizlint'")} manually.`,
+        `Skipped eslint.config.js — add ${chalk.cyan("import vizlint from '@vizlint/eslint-plugin'")} manually.`,
       );
     }
   } else {

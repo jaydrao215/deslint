@@ -69,7 +69,7 @@ export default function DocsIndex() {
           <span className="text-gray-500 select-none">$ </span>
           <span className="text-pass">npm</span>{' '}
           <span className="text-gray-400">install -D</span>{' '}
-          <span className="text-white">eslint-plugin-vizlint</span>
+          <span className="text-white">@vizlint/eslint-plugin</span>
         </div>
       </div>
     </div>

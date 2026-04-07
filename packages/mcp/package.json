@@ -1,6 +1,6 @@
 {
   "name": "@vizlint/mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for Vizlint — real-time design quality feedback in Cursor/Claude Code",
   "license": "MIT",
   "author": "Vizlint",
@@ -35,9 +35,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@vizlint/cli": "workspace:^",
+    "@vizlint/eslint-plugin": "workspace:^",
     "@vizlint/shared": "workspace:*",
     "eslint": "^10.0.0",
-    "eslint-plugin-vizlint": "workspace:^",
     "zod": "^3.23.0"
   },
   "devDependencies": {

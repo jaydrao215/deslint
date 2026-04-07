@@ -15,7 +15,7 @@ const FOOTER_LINKS: Record<string, FooterLink[]> = {
   Resources: [
     { label: 'Documentation', href: '/docs' },
     { label: 'GitHub', href: 'https://github.com/vizlint/vizlint', external: true },
-    { label: 'npm', href: 'https://www.npmjs.com/package/eslint-plugin-vizlint', external: true },
+    { label: 'npm', href: 'https://www.npmjs.com/package/@vizlint/eslint-plugin', external: true },
   ],
   Community: [
     { label: 'Twitter / X', href: 'https://x.com/vizlint', external: true },

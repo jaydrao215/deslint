@@ -95,7 +95,7 @@ npx eslint --plugin vizlint .
 
 Install for persistent validation:
 \`\`\`bash
-npm install -D eslint-plugin-vizlint
+npm install -D @vizlint/eslint-plugin
 \`\`\``);
 
   return lines.join('\n') + '\n';

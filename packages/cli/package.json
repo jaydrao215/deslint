@@ -1,6 +1,6 @@
 {
   "name": "@vizlint/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI for Vizlint — project-wide design quality analysis + Design Health Score",
   "license": "MIT",
   "author": "Vizlint",
@@ -33,11 +33,11 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.2.0",
+    "@vizlint/eslint-plugin": "workspace:^",
     "@vizlint/shared": "workspace:*",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
     "eslint": "^10.0.0",
-    "eslint-plugin-vizlint": "workspace:^",
     "glob": "^13.0.6"
   },
   "devDependencies": {

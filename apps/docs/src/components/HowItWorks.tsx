@@ -10,7 +10,7 @@ const STEPS: { icon: ReactNode; step: string; title: string; description: string
     step: '01',
     title: 'Install',
     description: 'Add to any existing ESLint setup. Zero config required with the recommended preset.',
-    code: `import vizlint from 'eslint-plugin-vizlint';\n\nexport default [\n  vizlint.configs.recommended,\n];`,
+    code: `import vizlint from '@vizlint/eslint-plugin';\n\nexport default [\n  vizlint.configs.recommended,\n];`,
   },
   {
     icon: <Scan className="h-5 w-5" />,

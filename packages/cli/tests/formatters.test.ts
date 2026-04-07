@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { createRequire } from 'node:module';
 import { formatJson, formatSarif } from '../src/formatters.js';
 import type { LintResult, RuleCategory } from '../src/lint-runner.js';
 import type { ScoreResult } from '../src/score.js';
+
+const _require = createRequire(import.meta.url);
+const pkg = _require('../package.json') as { version: string };
 
 function makeLintResult(overrides: Partial<LintResult> = {}): LintResult {
   return {
@@ -42,7 +46,7 @@ describe('formatJson', () => {
     const output = formatJson(makeLintResult(), makeScoreResult(), '/project');
     const parsed = JSON.parse(output);
 
-    expect(parsed.version).toBe('0.1.0');
+    expect(parsed.version).toBe(pkg.version);
     expect(parsed.timestamp).toBeDefined();
     expect(parsed.score.overall).toBe(100);
     expect(parsed.score.grade).toBe('pass');

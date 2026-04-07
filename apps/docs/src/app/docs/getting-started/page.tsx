@@ -5,13 +5,13 @@ export default function GettingStarted() {
 
       <h2>Installation</h2>
       <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
-        <code>npm install eslint-plugin-vizlint --save-dev</code>
+        <code>npm install @vizlint/eslint-plugin --save-dev</code>
       </pre>
 
       <h2>ESLint Configuration</h2>
       <p>Add Vizlint to your <code>eslint.config.js</code> (ESLint v10+ flat config):</p>
       <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
-        <code>{`import vizlint from 'eslint-plugin-vizlint';
+        <code>{`import vizlint from '@vizlint/eslint-plugin';
 
 export default [
   vizlint.configs.recommended,

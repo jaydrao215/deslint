@@ -139,7 +139,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
           <div className="mt-6 mx-4 p-4 rounded-xl bg-primary-50/50 border border-primary/10">
             <p className="text-xs font-semibold text-primary mb-1">Quick Start</p>
             <code className="text-[11px] text-primary/70 font-mono">
-              npm i -D eslint-plugin-vizlint
+              npm i -D @vizlint/eslint-plugin
             </code>
           </div>
         </aside>

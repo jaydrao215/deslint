@@ -38,7 +38,7 @@ jobs:
         run: pnpm --filter '!@vizlint/docs' test
 
       - name: Run benchmark
-        run: pnpm --filter eslint-plugin-vizlint bench
+        run: pnpm --filter @vizlint/eslint-plugin bench
 
       # Publish steps are idempotent: each one checks the npm registry first
       # and skips if the exact name@version is already published. This makes
@@ -58,9 +58,9 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish eslint-plugin-vizlint
+      - name: Publish @vizlint/eslint-plugin
         run: |
-          PKG="eslint-plugin-vizlint"
+          PKG="@vizlint/eslint-plugin"
           VER=$(node -p "require('./packages/eslint-plugin/package.json').version")
           if npm view "${PKG}@${VER}" version > /dev/null 2>&1; then
             echo "✓ ${PKG}@${VER} already published, skipping"

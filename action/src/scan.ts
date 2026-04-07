@@ -72,7 +72,7 @@ export async function runScan(
   configPath?: string,
 ): Promise<ScanResult> {
   // Load vizlint plugin
-  const vizlintPlugin = await import('eslint-plugin-vizlint');
+  const vizlintPlugin = await import('@vizlint/eslint-plugin');
   const plugin = vizlintPlugin.default ?? vizlintPlugin;
 
   // Load user config overrides

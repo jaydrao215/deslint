@@ -59,7 +59,7 @@ let _pluginCache: any = null;
 
 async function loadPlugin(): Promise<any> {
   if (_pluginCache) return _pluginCache;
-  const mod = await import('eslint-plugin-vizlint');
+  const mod = await import('@vizlint/eslint-plugin');
   _pluginCache = mod.default ?? mod;
   return _pluginCache;
 }

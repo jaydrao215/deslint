@@ -50,7 +50,7 @@ export function Cta() {
             <span>
               <span className="text-pass-light">npm</span>{' '}
               <span className="text-gray-400">install -D</span>{' '}
-              <span className="text-white">eslint-plugin-vizlint</span>
+              <span className="text-white">@vizlint/eslint-plugin</span>
             </span>
           </div>
         </motion.div>

@@ -30,7 +30,7 @@ pnpm typecheck
 
 ```
 packages/
-  eslint-plugin/  — ESLint rules + configs (npm: eslint-plugin-vizlint)
+  eslint-plugin/  — ESLint rules + configs (npm: @vizlint/eslint-plugin)
   cli/            — Commander.js CLI (npm: @vizlint/cli)
   mcp/            — MCP server for Cursor/Claude Code (npm: @vizlint/mcp)
   shared/         — Shared types, schemas, and utilities
@@ -62,8 +62,8 @@ Every rule needs: valid cases, invalid cases, autofix tests, edge case tests.
 pnpm test
 
 # Run tests for a specific package
-pnpm --filter eslint-plugin-vizlint test
+pnpm --filter @vizlint/eslint-plugin test
 
 # Watch mode
-pnpm --filter eslint-plugin-vizlint test:watch
+pnpm --filter @vizlint/eslint-plugin test:watch
 ```

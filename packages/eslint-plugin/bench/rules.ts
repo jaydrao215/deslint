@@ -1,7 +1,7 @@
 /**
  * Simple rule performance benchmark.
  * Budget: each rule must process a file in < 2ms.
- * Runs via: pnpm --filter eslint-plugin-vizlint bench
+ * Runs via: pnpm --filter @vizlint/eslint-plugin bench
  */
 
 import { ESLint } from 'eslint';

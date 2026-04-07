@@ -44,9 +44,9 @@ jobs:
         run: pnpm test
 
       - name: Test with coverage
-        run: pnpm --filter eslint-plugin-vizlint test -- --coverage
+        run: pnpm --filter @vizlint/eslint-plugin test -- --coverage
         if: matrix.node-version == 22
 
       - name: Benchmark rules
-        run: pnpm --filter eslint-plugin-vizlint bench
+        run: pnpm --filter @vizlint/eslint-plugin bench
         if: matrix.node-version == 22

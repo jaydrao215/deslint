@@ -118,7 +118,7 @@ export function Hero() {
 
 function InstallCommand() {
   const [copied, setCopied] = useState(false);
-  const command = 'npm install -D eslint-plugin-vizlint';
+  const command = 'npm install -D @vizlint/eslint-plugin';
 
   const copy = async () => {
     try {
@@ -139,7 +139,7 @@ function InstallCommand() {
       <span>
         <span className="text-pass">npm</span>{' '}
         <span className="text-gray-400">install -D</span>{' '}
-        <span className="text-white font-medium">eslint-plugin-vizlint</span>
+        <span className="text-white font-medium">@vizlint/eslint-plugin</span>
       </span>
       <span className="flex items-center gap-1.5 text-gray-500 group-hover:text-gray-300 transition-colors">
         {copied ? (

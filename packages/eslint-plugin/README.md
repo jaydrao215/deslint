@@ -1,20 +1,22 @@
-# eslint-plugin-vizlint
+# @vizlint/eslint-plugin
 
 > ESLint catches code bugs. Vizlint catches design bugs.
 
-[![npm version](https://img.shields.io/npm/v/eslint-plugin-vizlint)](https://www.npmjs.com/package/eslint-plugin-vizlint)
+[![npm version](https://img.shields.io/npm/v/@vizlint/eslint-plugin)](https://www.npmjs.com/package/@vizlint/eslint-plugin)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 14 ESLint rules that catch design quality violations in AI-generated frontend code — arbitrary colors, inconsistent spacing, missing responsive breakpoints, accessibility gaps, and more. Auto-fix support for 11 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
 
 **Validated on 7 real-world projects (4,061 files) with 0% false positive rate and 0 crashes.**
 
+> **Renamed in v0.1.1** — this package was previously published as `eslint-plugin-vizlint`. The old name is deprecated; install `@vizlint/eslint-plugin` instead. See the [migration note](#migration-from-eslint-plugin-vizlint).
+
 ## Installation
 
 ```sh
-npm install -D eslint-plugin-vizlint
+npm install -D @vizlint/eslint-plugin
 # or
-pnpm add -D eslint-plugin-vizlint
+pnpm add -D @vizlint/eslint-plugin
 ```
 
 **Requirements:** ESLint v10+, Node.js v20+
@@ -33,7 +35,7 @@ pnpm add -D svelte-eslint-parser
 
 ```js
 // eslint.config.js (flat config only — no legacy .eslintrc)
-import vizlint from 'eslint-plugin-vizlint';
+import vizlint from '@vizlint/eslint-plugin';
 
 export default [
   vizlint.configs.recommended,  // all rules at 'warn', dark-mode-coverage off
@@ -235,7 +237,7 @@ Flags components exceeding a configurable line count (default: 300). Large compo
 
 ```js
 // eslint.config.js
-import vizlint from 'eslint-plugin-vizlint';
+import vizlint from '@vizlint/eslint-plugin';
 
 export default [
   {
@@ -311,6 +313,34 @@ Tested on 7 real-world open-source projects:
 | taxonomy | Next.js 13, shadcn/ui | 94 | 71 | 0 |
 
 **Cumulative: 4,061 files, 3,395 violations, 0 false positives, 0 crashes.**
+
+## Migration from `eslint-plugin-vizlint`
+
+In v0.1.1, this package was renamed from `eslint-plugin-vizlint` to `@vizlint/eslint-plugin` to align with the rest of the `@vizlint/*` workspace (`@vizlint/cli`, `@vizlint/mcp`, `@vizlint/shared`). Same code, same rules, same config — only the package name and import specifier changed.
+
+**Migration steps:**
+
+```sh
+# 1. Uninstall the old package
+npm uninstall eslint-plugin-vizlint
+
+# 2. Install the new one
+npm install -D @vizlint/eslint-plugin
+```
+
+```js
+// 3. Update your eslint.config.js import
+- import vizlint from 'eslint-plugin-vizlint';
++ import vizlint from '@vizlint/eslint-plugin';
+```
+
+**Nothing else changes:**
+- The plugin shorthand stays `vizlint` (e.g. `'vizlint/no-arbitrary-colors'`)
+- All rule names, options, and presets are identical
+- Auto-fix output is identical
+- `.vizlintrc.json` schema is unchanged
+
+The old `eslint-plugin-vizlint@0.1.0` will be deprecated on npm with a redirect message pointing here.
 
 ## License
 

@@ -13,7 +13,7 @@ Local-first. Deterministic. Zero cloud dependency. Framework-agnostic.
 
 ```bash
 # Install
-npm install -D eslint-plugin-vizlint
+npm install -D @vizlint/eslint-plugin
 
 # Set up config, scripts, and design system
 npx vizlint init
@@ -21,7 +21,7 @@ npx vizlint init
 
 ```js
 // eslint.config.js (ESLint v10+ flat config only)
-import vizlint from 'eslint-plugin-vizlint';
+import vizlint from '@vizlint/eslint-plugin';
 
 export default [
   vizlint.configs.recommended,  // all rules at 'warn'
@@ -94,7 +94,7 @@ npx vizlint scan
 
 | Package | Description |
 |---------|-------------|
-| [`eslint-plugin-vizlint`](./packages/eslint-plugin) | ESLint rules for design quality |
+| [`@vizlint/eslint-plugin`](./packages/eslint-plugin) | ESLint rules for design quality |
 | [`@vizlint/cli`](./packages/cli) | CLI with scan, fix, init, Design Health Score |
 | [`@vizlint/mcp`](./packages/mcp) | MCP server for Cursor / Claude Code AI self-correction |
 | [`@vizlint/shared`](./packages/shared) | Shared types, config schema, Tailwind utilities |
