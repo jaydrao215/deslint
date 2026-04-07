@@ -4,6 +4,7 @@ export {
   DesignSystemSchema,
   IgnorePatternsSchema,
   ProfileSchema,
+  QualityGateSchema,
   VizlintConfigSchema,
   parseConfig,
   safeParseConfig,
@@ -14,8 +15,14 @@ export type {
   RuleConfig,
   DesignSystem,
   Profile,
+  QualityGate,
   VizlintConfig,
 } from './config-schema.js';
+
+export { evaluateQualityGate, formatGateResult } from './quality-gate.js';
+export type { GateScanSnapshot, GateResult, GateFailure, GateCategory } from './quality-gate.js';
+
+export { RULE_EFFORT_MINUTES, DEFAULT_RULE_EFFORT_MINUTES, effortForRule } from './debt-table.js';
 
 export {
   parseV3Config,

@@ -1,45 +1,10 @@
 import type { LintResult, RuleCategory } from './lint-runner.js';
 import { RULE_CATEGORY_MAP } from './lint-runner.js';
+import { RULE_EFFORT_MINUTES, effortForRule } from '@vizlint/shared';
 
-/**
- * Estimated remediation effort per violation, in minutes.
- *
- * Calibration source: vizlint auto-fix data across the 7 validated projects
- * (4,061 files, 3,395 violations). Trivial class renames are ~2 minutes
- * (1m to read, 1m to verify). Cross-file consistency decisions take longer
- * because they require choosing the canonical token. Responsive layout work
- * and a11y contrast fixes are the most expensive: they require redesign,
- * not just substitution.
- *
- * These numbers intentionally err on the conservative side — better to
- * under-promise than to inflate debt for marketing.
- */
-export const RULE_EFFORT_MINUTES: Record<string, number> = {
-  // Trivial — class rename, fully auto-fixable
-  'vizlint/no-arbitrary-spacing': 2,
-  'vizlint/no-arbitrary-colors': 2,
-  'vizlint/no-arbitrary-typography': 2,
-  'vizlint/no-arbitrary-zindex': 2,
-
-  // Small — needs minor decision but auto-fixable
-  'vizlint/no-magic-numbers-layout': 3,
-  'vizlint/consistent-border-radius': 3,
-  'vizlint/dark-mode-coverage': 3,
-  'vizlint/image-alt-text': 3,
-
-  // Medium — refactor required, not pure substitution
-  'vizlint/no-inline-styles': 5,
-  'vizlint/missing-states': 5,
-  'vizlint/consistent-component-spacing': 5,
-
-  // Large — design work or cross-cutting change
-  'vizlint/responsive-required': 10,
-  'vizlint/a11y-color-contrast': 10,
-  'vizlint/max-component-lines': 30,
-};
-
-/** Default effort for any rule not in the table (e.g. user-defined). */
-const DEFAULT_EFFORT_MINUTES = 3;
+// Re-export the calibration table for backwards compat with debt.test.ts
+// and any external tooling that imported from this module first.
+export { RULE_EFFORT_MINUTES };
 
 export interface DebtBreakdownEntry {
   /** Rule id, e.g. 'vizlint/no-arbitrary-spacing' */
@@ -84,7 +49,7 @@ export function calculateDebt(lintResult: LintResult): DebtResult {
 
   for (const [ruleId, violations] of Object.entries(lintResult.byRule)) {
     if (violations <= 0) continue;
-    const minutesPerViolation = RULE_EFFORT_MINUTES[ruleId] ?? DEFAULT_EFFORT_MINUTES;
+    const minutesPerViolation = effortForRule(ruleId);
     const ruleMinutes = violations * minutesPerViolation;
 
     breakdown.push({

@@ -14,13 +14,15 @@ import { resolve } from 'node:path';
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
 import chalk from 'chalk';
-import { safeParseConfig } from '@vizlint/shared';
-import type { VizlintConfig } from '@vizlint/shared';
+import { safeParseConfig, evaluateQualityGate, formatGateResult } from '@vizlint/shared';
+import type { VizlintConfig, GateScanSnapshot } from '@vizlint/shared';
 import { readFileSync } from 'node:fs';
 
 import { discoverFiles } from './discover.js';
 import { runLint } from './lint-runner.js';
 import { calculateScore, saveHistory } from './score.js';
+import type { HistoryEntry } from './score.js';
+import { calculateDebt } from './debt.js';
 import { format } from './formatters.js';
 import type { OutputFormat } from './formatters.js';
 import { fixAll, fixInteractive } from './fix.js';
@@ -124,9 +126,55 @@ program
 
       const lintResult = await runLint({ files, ruleOverrides: rules, cwd });
       const scoreResult = calculateScore(lintResult);
+      const debtResult = calculateDebt(lintResult);
 
       const outputFormat = opts.format as OutputFormat;
       console.log(format(outputFormat, lintResult, scoreResult, cwd));
+
+      // Quality gate evaluation (opt-in via .vizlintrc.json `qualityGate`).
+      // Reads previous score from history (if any) for regression detection
+      // BEFORE the new entry is appended.
+      let previousSnapshot: GateScanSnapshot | undefined;
+      if (config?.qualityGate) {
+        const historyPath = resolve(cwd, '.vizlint', 'history.json');
+        if (existsSync(historyPath)) {
+          try {
+            const history: HistoryEntry[] = JSON.parse(readFileSync(historyPath, 'utf-8'));
+            const last = history[history.length - 1];
+            if (last) {
+              previousSnapshot = {
+                overall: last.overall,
+                categories: last.categories,
+                totalViolations: last.totalViolations,
+                debtMinutes: 0, // pre-debt history entries lack this
+              };
+            }
+          } catch { /* ignore */ }
+        }
+      }
+
+      const gateResult = evaluateQualityGate(
+        config?.qualityGate,
+        {
+          overall: scoreResult.overall,
+          categories: {
+            colors: scoreResult.categories.colors.score,
+            spacing: scoreResult.categories.spacing.score,
+            typography: scoreResult.categories.typography.score,
+            responsive: scoreResult.categories.responsive.score,
+            consistency: scoreResult.categories.consistency.score,
+          },
+          totalViolations: lintResult.totalViolations,
+          debtMinutes: debtResult.totalMinutes,
+        },
+        previousSnapshot,
+      );
+
+      if (gateResult.conditionsChecked > 0 && outputFormat === 'text') {
+        const colorFn = gateResult.passed ? chalk.green : chalk.red;
+        console.log(colorFn(`  ${formatGateResult(gateResult)}`));
+        console.log('');
+      }
 
       // Save history (unless --no-history)
       if (opts.history && outputFormat === 'text') {
@@ -149,6 +197,12 @@ program
           );
           process.exit(1);
         }
+      }
+
+      // Quality gate enforcement — only when opt-in `enforce: true` is set.
+      // Default behavior is warn-only so v0.1.0 users see no breaking change.
+      if (gateResult.enforced && !gateResult.passed) {
+        process.exit(1);
       }
 
       // Exit with code 1 if any errors present

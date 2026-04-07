@@ -7,6 +7,7 @@
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { evaluateQualityGate, formatGateResult } from '@vizlint/shared';
 import { getChangedFiles } from './changed-files.js';
 import { runScan } from './scan.js';
 import { formatComment } from './comment.js';
@@ -55,19 +56,47 @@ async function run(): Promise<void> {
     // 2. Run vizlint scan
     const result = await runScan(changedFiles, workingDirectory, configPath);
 
-    // 3. Format and post comment
-    const commentBody = formatComment(result, minScore);
+    // 3. Evaluate quality gate (opt-in via .vizlintrc.json `qualityGate`).
+    const gateResult = evaluateQualityGate(result.qualityGate, {
+      overall: result.score,
+      categories: {
+        colors: result.categories.find((c) => c.name === 'colors')?.score ?? 100,
+        spacing: result.categories.find((c) => c.name === 'spacing')?.score ?? 100,
+        typography: result.categories.find((c) => c.name === 'typography')?.score ?? 100,
+        responsive: result.categories.find((c) => c.name === 'responsive')?.score ?? 100,
+        consistency: result.categories.find((c) => c.name === 'consistency')?.score ?? 100,
+      },
+      totalViolations: result.totalViolations,
+      debtMinutes: result.debtMinutes,
+    });
+
+    if (gateResult.conditionsChecked > 0) {
+      core.info(formatGateResult(gateResult));
+    }
+
+    // 4. Format and post comment
+    const commentBody = formatComment(result, minScore, gateResult);
     await upsertComment(octokit, owner, repo, prNumber, commentBody);
 
-    // 4. Set outputs
+    // 5. Set outputs
     core.setOutput('score', String(result.score));
     core.setOutput('total-violations', String(result.totalViolations));
-    core.setOutput('passed', String(result.score >= minScore));
+    core.setOutput('debt-minutes', String(result.debtMinutes));
+    core.setOutput('quality-gate-passed', String(gateResult.passed));
+    core.setOutput('passed', String(result.score >= minScore && gateResult.passed));
 
-    // 5. Fail check if below threshold
+    // 6. Fail check if below `min-score` input threshold (legacy behavior).
     if (minScore > 0 && result.score < minScore) {
       core.setFailed(
         `Design Health Score ${result.score} is below the minimum threshold of ${minScore}.`,
+      );
+      return;
+    }
+
+    // 7. Fail check if quality gate is enforced AND failed (opt-in).
+    if (gateResult.enforced && !gateResult.passed) {
+      core.setFailed(
+        `Quality gate failed: ${gateResult.failures.map((f) => f.condition).join(', ')}`,
       );
     }
   } catch (error) {
