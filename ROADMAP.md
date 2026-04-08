@@ -3,7 +3,7 @@
 > **Read me first.** This is the active planning document. It captures: live state, what's in flight, what's queued, what's deferred, decisions made, and the prioritized backlog. **Updated on every meaningful commit.** Future conversations should read this BEFORE assuming anything about state — it supersedes chat history and memory. Where this conflicts with DESLINT-EXECUTION.md or sprint plan files, this wins.
 
 **Last updated:** 2026-04-08
-**Last update reason:** Accessibility Foundation sprint kickoff — S1 (element visitor abstraction) day 1 scaffold landed; NPM_TOKEN blocker cleared (v0.1.1 confirmed live on npm)
+**Last update reason:** Accessibility Foundation sprint — S1 substantially complete (element-visitor + image-alt-text port) + S3 substantially complete (missing-states + responsive-required ports); 644/644 tests passing
 
 ---
 
@@ -23,15 +23,26 @@
 
 ## 2. What I'm working on RIGHT NOW
 
-**Sprint item S1 — Element Visitor Abstraction, days 1–2/3 landed.** ✅
+**Sprint items S1 + S3 substantially complete in a single session.** ✅✅
 
+**S1 — Element Visitor Abstraction (3-day budget, ~1.5 days spent):**
 - `packages/eslint-plugin/src/utils/element-visitor.ts` — framework-agnostic `createElementVisitor({ check, tagNames })` factory with JSX / Vue / Angular / Svelte dispatches + HTML stub awaiting S2.
-- Helpers: `getAttribute`, `getStaticAttributeValue`, `hasSpreadAttribute` — case-insensitive, camelCase↔kebab-case normalized. Replace the duplicated helpers that live inside the 6 JSX-only rules today.
-- **`image-alt-text` ported as reference consumer (day 2).** ✅ All 44 existing JSX tests still pass through the port. 18 new cross-framework synthetic-AST tests (Svelte, Angular, Vue) prove the rule fires on non-JSX frameworks for missing alt, empty alt, meaningless alt, dynamic expression skip, spread benefit-of-the-doubt, and the Next.js `Image` framework guard. Rule file LOC dropped from 270 → 205 because the normalizer eliminated the hand-rolled JSX helpers.
-- Tests total: **615/615 passing** (was 579 before S1; +31 element-visitor unit tests, +18 cross-framework image-alt-text, -13 that became redundant through the refactor). Typecheck ✅, lint ✅, turbo build ✅.
-- Architecture: mirrors the existing `class-visitor.ts` dispatch pattern. Vue handled by walking `Program.templateBody` manually. Angular registered under both `Element$1` and a shape-guarded `Element` selector for version compatibility. JSX-only autofix preserved; cross-framework fix logic deferred to v0.3.0 (safeGetRange for template parsers is a known gap).
+- Helpers: `getAttribute`, `getStaticAttributeValue`, `hasSpreadAttribute` — case-insensitive, camelCase↔kebab-case normalized.
+- 31 synthetic-AST unit tests in `tests/utils/element-visitor.test.ts`.
 
-**Day 3 (S1 finish):** Real-parser integration tests via `@typescript-eslint/rule-tester` with `vue-eslint-parser` and `svelte-eslint-parser` as dev deps. Benchmark visitor overhead (<0.5ms/file target). Then S2 kicks off (Plain HTML parser support).
+**S3 — Port 3 JSX-only rules to cross-framework (6-day budget, ~2 hours spent):**
+- `image-alt-text` ✅ — all 44 JSX tests intact, +18 cross-framework synthetic tests (Svelte/Angular/Vue). Framework-guarded Next.js `Image` detection.
+- `missing-states` ✅ — all 23 JSX tests intact, +18 cross-framework synthetic tests (Svelte/Angular/Vue + `requireAriaRequired` option).
+- `responsive-required` ✅ — all 33 JSX tests intact, +11 cross-framework synthetic tests (Svelte/Angular/Vue). Helper `collectElementClasses` handles JSX expression-container fallback for `className={cn(...)}` while non-JSX frameworks use the normalized static value.
+
+**Tests total: 644/644 passing** (was 579 at sprint start; +31 element-visitor unit + 47 cross-framework rule tests + 12 that shifted from helper-level to rule-level). Typecheck ✅, lint ✅, turbo build ✅ across all 6 packages.
+
+**Massive sprint velocity buyback:** S3 was budgeted at 6 days (2/rule); took ~2 hours because createElementVisitor was proven on image-alt-text first, making the remaining two rules mechanical refactors. **~5.5 days of sprint slack created**, which goes directly to S4 (6 new WCAG rules) and lets us keep the quality bar high without dropping the rule count.
+
+**Next up (remaining day 1):**
+1. S1 day 3 finish — add real-parser integration tests via `vue-eslint-parser` + `svelte-eslint-parser` as dev deps + benchmark visitor overhead (<0.5ms/file target). Lower priority now that the ports themselves prove the abstraction works.
+2. S2 — Plain HTML parser support (`@html-eslint/parser` peer dep + lint-runner routing). 1.5 days budgeted.
+3. S4 — 6 new WCAG rules (heading-hierarchy, form-labels, lang-attribute, aria-validation, link-text, viewport-meta). 9 days budgeted, but with ~5.5 days of buyback from S3 velocity, we have headroom.
 
 ---
 

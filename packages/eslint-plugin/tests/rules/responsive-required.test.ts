@@ -1,5 +1,5 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { describe, it, afterAll } from 'vitest';
+import { describe, it, afterAll, expect } from 'vitest';
 import rule from '../../src/rules/responsive-required.js';
 
 RuleTester.afterAll = afterAll;
@@ -148,4 +148,265 @@ ruleTester.run('responsive-required', rule, {
       errors: [{ messageId: 'missingResponsive' as const }],
     },
   ],
+});
+
+// ─── Cross-framework synthetic-AST tests (S3 via S1 abstraction) ───────────
+
+interface MockReport {
+  messageId?: string;
+  data?: Record<string, unknown>;
+}
+
+function makeMockContext(options: unknown[] = [{}]): {
+  context: any;
+  reports: MockReport[];
+} {
+  const reports: MockReport[] = [];
+  const context = {
+    options,
+    id: 'responsive-required',
+    settings: {},
+    parserPath: '',
+    parserServices: {},
+    getFilename: () => 'test.svelte',
+    getSourceCode: () => ({ getText: () => '' }),
+    sourceCode: { getText: () => '' },
+    report: (r: MockReport) => reports.push(r),
+  };
+  return { context, reports };
+}
+
+describe('responsive-required cross-framework (synthetic AST)', () => {
+  describe('Svelte', () => {
+    it('reports fixed width without responsive variants on <div>', () => {
+      const { context, reports } = makeMockContext();
+      const visitor = rule.create(context as any);
+
+      visitor.SvelteElement?.({
+        name: 'div',
+        startTag: {
+          attributes: [
+            {
+              type: 'SvelteAttribute',
+              name: 'class',
+              value: [{ type: 'SvelteLiteral', value: 'w-[800px]' }],
+            },
+          ],
+        },
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].messageId).toBe('missingResponsive');
+      expect(reports[0].data?.className).toBe('w-[800px]');
+    });
+
+    it('passes when responsive variants are present', () => {
+      const { context, reports } = makeMockContext();
+      const visitor = rule.create(context as any);
+
+      visitor.SvelteElement?.({
+        name: 'div',
+        startTag: {
+          attributes: [
+            {
+              type: 'SvelteAttribute',
+              name: 'class',
+              value: [
+                { type: 'SvelteLiteral', value: 'w-[800px] sm:w-full md:w-auto' },
+              ],
+            },
+          ],
+        },
+      });
+
+      expect(reports).toHaveLength(0);
+    });
+
+    it('ignores small icon/avatar widths', () => {
+      const { context, reports } = makeMockContext();
+      const visitor = rule.create(context as any);
+
+      visitor.SvelteElement?.({
+        name: 'div',
+        startTag: {
+          attributes: [
+            {
+              type: 'SvelteAttribute',
+              name: 'class',
+              value: [{ type: 'SvelteLiteral', value: 'w-[32px]' }],
+            },
+          ],
+        },
+      });
+
+      expect(reports).toHaveLength(0);
+    });
+
+    it('reports max-w-[Npx] without coverage', () => {
+      const { context, reports } = makeMockContext();
+      const visitor = rule.create(context as any);
+
+      visitor.SvelteElement?.({
+        name: 'div',
+        startTag: {
+          attributes: [
+            {
+              type: 'SvelteAttribute',
+              name: 'class',
+              value: [{ type: 'SvelteLiteral', value: 'max-w-[1240px]' }],
+            },
+          ],
+        },
+      });
+
+      expect(reports).toHaveLength(1);
+    });
+
+    it('skips when class is mustache-interpolated (dynamic)', () => {
+      const { context, reports } = makeMockContext();
+      const visitor = rule.create(context as any);
+
+      visitor.SvelteElement?.({
+        name: 'div',
+        startTag: {
+          attributes: [
+            {
+              type: 'SvelteAttribute',
+              name: 'class',
+              value: [
+                {
+                  type: 'SvelteMustacheTag',
+                  expression: { type: 'Identifier', name: 'cls' },
+                },
+              ],
+            },
+          ],
+        },
+      });
+
+      // Dynamic → value is null → collectElementClasses returns empty → no report
+      expect(reports).toHaveLength(0);
+    });
+  });
+
+  describe('Angular', () => {
+    it('reports fixed width on static class attribute', () => {
+      const { context, reports } = makeMockContext();
+      const visitor = rule.create(context as any);
+
+      visitor['Element$1']?.({
+        name: 'div',
+        attributes: [{ name: 'class', value: 'w-[900px]' }],
+        inputs: [],
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.className).toBe('w-[900px]');
+    });
+
+    it('passes when responsive variants cover required breakpoints', () => {
+      const { context, reports } = makeMockContext();
+      const visitor = rule.create(context as any);
+
+      visitor['Element$1']?.({
+        name: 'div',
+        attributes: [
+          { name: 'class', value: 'w-[800px] sm:w-full md:w-1/2' },
+        ],
+        inputs: [],
+      });
+
+      expect(reports).toHaveLength(0);
+    });
+
+    it('skips [class]="expr" bound attribute (dynamic)', () => {
+      const { context, reports } = makeMockContext();
+      const visitor = rule.create(context as any);
+
+      visitor['Element$1']?.({
+        name: 'div',
+        attributes: [],
+        inputs: [{ name: 'class' }],
+      });
+
+      expect(reports).toHaveLength(0);
+    });
+  });
+
+  describe('Vue', () => {
+    it('reports fixed width on static class attribute', () => {
+      const { context, reports } = makeMockContext();
+      const visitor = rule.create(context as any);
+
+      visitor.VElement?.({
+        type: 'VElement',
+        rawName: 'div',
+        startTag: {
+          attributes: [
+            {
+              directive: false,
+              key: { name: 'class' },
+              value: { value: 'w-[1200px]' },
+            },
+          ],
+        },
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.className).toBe('w-[1200px]');
+    });
+
+    it('passes with responsive variants', () => {
+      const { context, reports } = makeMockContext();
+      const visitor = rule.create(context as any);
+
+      visitor.VElement?.({
+        type: 'VElement',
+        rawName: 'div',
+        startTag: {
+          attributes: [
+            {
+              directive: false,
+              key: { name: 'class' },
+              value: { value: 'w-[800px] sm:w-full md:w-auto' },
+            },
+          ],
+        },
+      });
+
+      expect(reports).toHaveLength(0);
+    });
+
+    it('walks templateBody through Program handler', () => {
+      const { context, reports } = makeMockContext();
+      const visitor = rule.create(context as any);
+
+      visitor.Program?.({
+        templateBody: {
+          type: 'VElement',
+          rawName: 'template',
+          startTag: { attributes: [] },
+          children: [
+            {
+              type: 'VElement',
+              rawName: 'div',
+              startTag: {
+                attributes: [
+                  {
+                    directive: false,
+                    key: { name: 'class' },
+                    value: { value: 'min-w-[200px]' },
+                  },
+                ],
+              },
+              children: [],
+            },
+          ],
+        },
+      });
+
+      expect(reports).toHaveLength(1);
+      expect(reports[0].data?.className).toBe('min-w-[200px]');
+    });
+  });
 });

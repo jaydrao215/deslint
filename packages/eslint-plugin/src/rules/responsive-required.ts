@@ -2,6 +2,10 @@ import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { extractClassesFromString, parseClass } from '../utils/class-extractor.js';
 import { toPx } from '../utils/spacing-map.js';
 import { debugLog } from '../utils/debug.js';
+import {
+  createElementVisitor,
+  type NormalizedElement,
+} from '../utils/element-visitor.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://deslint.com/docs/rules/${name}`
@@ -29,6 +33,74 @@ const FIXED_WIDTH_ARBITRARY = /^(w|max-w|min-w)-\[(\d+(?:\.\d+)?)(px|rem)\]$/;
 /** Standard responsive breakpoints in Tailwind */
 const STANDARD_BREAKPOINTS = new Set(['sm', 'md', 'lg', 'xl', '2xl']);
 
+/**
+ * Collect all classes attached to an element's class/className attribute,
+ * across any framework.
+ *
+ * For JSX, we additionally read expression-container source text as a
+ * fallback so that `className={cn("w-[800px]", ...)}` still reports. For
+ * other frameworks, we use the normalized static attribute value; dynamic
+ * bindings (`:class="var"`, `[ngClass]="expr"`) are treated as unknown and
+ * skipped — consistent with the conservative "benefit of the doubt" posture.
+ */
+function collectElementClasses(
+  element: NormalizedElement,
+  sourceCode: { getText: (node: any) => string } | null,
+): Set<string> {
+  const result = new Set<string>();
+
+  for (const attr of element.attributes) {
+    const lower = attr.name.toLowerCase();
+    if (lower !== 'class' && lower !== 'classname') continue;
+
+    if (typeof attr.value === 'string' && attr.value.length > 0) {
+      for (const cls of extractClassesFromString(attr.value)) {
+        result.add(cls);
+      }
+      continue;
+    }
+
+    // JSX-only fallback: read raw source of the expression container
+    // (handles className={cn("bg-red-500", ...)}).
+    if (
+      attr.value === null &&
+      element.framework === 'jsx' &&
+      sourceCode
+    ) {
+      const attrNode = attr.node as TSESTree.JSXAttribute;
+      if (attrNode?.value?.type === 'JSXExpressionContainer') {
+        const expr = attrNode.value.expression;
+        if (expr.type !== 'JSXEmptyExpression') {
+          const raw = sourceCode
+            .getText(expr)
+            .replace(/^['"`]|['"`]$/g, '');
+          for (const cls of extractClassesFromString(raw)) {
+            result.add(cls);
+          }
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+function hasResponsiveCoverage(classes: Set<string>, bps: string[]): string[] {
+  const missing: string[] = [];
+  for (const bp of bps) {
+    if (!STANDARD_BREAKPOINTS.has(bp)) continue;
+    // Covered if any responsive variant of the same prefix family exists
+    // e.g. max-w-[800px] is covered by sm:max-w-full, sm:max-w-[600px], sm:w-full, etc.
+    const covered = [...classes].some(
+      (cls) =>
+        cls.startsWith(`${bp}:w-`) ||
+        cls.startsWith(`${bp}:max-w-`) ||
+        cls.startsWith(`${bp}:min-w-`),
+    );
+    if (!covered) missing.push(`${bp}:*`);
+  }
+  return missing;
+}
 
 export default createRule<Options, MessageIds>({
   name: 'responsive-required',
@@ -78,67 +150,15 @@ export default createRule<Options, MessageIds>({
     const iconThreshold = options.iconSizeThreshold ?? 64;
     const ignoredPrefixes = new Set(options.ignoredPrefixes ?? []);
 
-    /**
-     * Collect all classes in a JSX element (its own className + all children).
-     * We need sibling/child responsive classes to decide if a fixed width is covered.
-     */
-    function collectElementClasses(node: TSESTree.JSXOpeningElement): Set<string> {
-      const result = new Set<string>();
-
-      function visitJSXAttr(attr: TSESTree.JSXAttribute | TSESTree.JSXSpreadAttribute) {
-        if (attr.type !== 'JSXAttribute') return;
-        const name = attr.name.type === 'JSXIdentifier' ? attr.name.name : null;
-        if (name !== 'className' && name !== 'class') return;
-        const val = attr.value;
-        if (!val) return;
-        let raw: string | null = null;
-        if (val.type === 'Literal' && typeof val.value === 'string') {
-          raw = val.value;
-        } else if (val.type === 'JSXExpressionContainer') {
-          const expr = val.expression;
-          if (expr.type !== 'JSXEmptyExpression') {
-            raw = context.sourceCode.getText(expr).replace(/^['"`]|['"`]$/g, '');
-          }
-        }
-        if (raw) {
-          for (const cls of extractClassesFromString(raw)) {
-            result.add(cls);
-          }
-        }
-      }
-
-      for (const attr of node.attributes) {
-        visitJSXAttr(attr);
-      }
-
-      return result;
-    }
-
-    function hasResponsiveCoverage(
-      classes: Set<string>,
-      bps: string[],
-      prefix: string,
-    ): string[] {
-      const missing: string[] = [];
-      for (const bp of bps) {
-        if (!STANDARD_BREAKPOINTS.has(bp)) continue;
-        // Covered if any responsive variant of the same prefix family exists
-        // e.g. max-w-[800px] is covered by sm:max-w-full, sm:max-w-[600px], sm:w-full, etc.
-        const covered = [...classes].some(
-          (cls) =>
-            cls.startsWith(`${bp}:w-`) ||
-            cls.startsWith(`${bp}:max-w-`) ||
-            cls.startsWith(`${bp}:min-w-`),
-        );
-        if (!covered) missing.push(`${bp}:${prefix}-*`);
-      }
-      return missing;
-    }
-
-    return {
-      JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
+    return createElementVisitor({
+      check(element) {
         try {
-          const allClasses = collectElementClasses(node);
+          const allClasses = collectElementClasses(
+            element,
+            element.framework === 'jsx' ? context.sourceCode : null,
+          );
+
+          if (allClasses.size === 0) return;
 
           for (const cls of allClasses) {
             const { baseClass, variants } = parseClass(cls);
@@ -162,29 +182,29 @@ export default createRule<Options, MessageIds>({
             if (prefix === 'w' && px < iconThreshold) continue;
             if (prefix === 'min-w' && px < iconThreshold) continue;
 
-            const missing = hasResponsiveCoverage(allClasses, requiredBreakpoints, prefix);
+            const missing = hasResponsiveCoverage(allClasses, requiredBreakpoints);
             if (missing.length === 0) continue;
 
-            // Find the JSX attribute node for accurate reporting location
-            const attrNode = node.attributes.find((attr) => {
-              if (attr.type !== 'JSXAttribute') return false;
-              const name =
-                attr.name.type === 'JSXIdentifier' ? attr.name.name : null;
-              if (name !== 'className' && name !== 'class') return false;
-              const val = attr.value;
-              if (!val) return false;
-              const src = context.sourceCode.getText(val);
-              return src.includes(cls);
-            }) ?? node;
+            // Report on the element itself. For JSX, try to find the specific
+            // className attribute for a more accurate location; fall back to
+            // the element node otherwise.
+            let reportNode: unknown = element.node;
+            if (element.framework === 'jsx') {
+              const attr = element.attributes.find((a) => {
+                const lower = a.name.toLowerCase();
+                return lower === 'class' || lower === 'classname';
+              });
+              if (attr) reportNode = attr.node;
+            }
 
             context.report({
-              node: attrNode,
+              node: reportNode as TSESTree.Node,
               messageId: 'missingResponsive',
               data: {
                 className: cls,
                 prefix,
                 px: String(Math.round(px)),
-                missing: missing.join(', '),
+                missing: missing.map((m) => `${m.replace('*', `${prefix}-*`)}`).join(', '),
               },
             });
           }
@@ -193,7 +213,6 @@ export default createRule<Options, MessageIds>({
           return;
         }
       },
-    };
+    });
   },
 });
-
