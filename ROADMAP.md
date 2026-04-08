@@ -11,13 +11,13 @@
 
 | Field | Value |
 |---|---|
-| **Latest npm release** | `v0.1.1` (4 packages on npm under `@deslint/*`) |
+| **Latest npm release** | None under `@deslint/*` yet — code at v0.1.1 in repo, awaiting first `v0.1.1` git tag to fire `release.yml`. Prior history (`@vizlint/*@0.1.1` etc.) lives on the abandoned scope and is not part of the deslint launch narrative. |
 | **Latest commit** | (see `git log -1`) |
 | **Default branch** | `main` |
 | **CI** | ✅ green (Node 20 + 22 matrix on Ubuntu) |
 | **Trust metrics** | All met — 0% FP across 4,061 files, 0 crashes, 3.05s scan of 1,838 files (25× under 15s/500-file budget), 14/14 auto-fixers verified |
-| **KPMG Phase 1 (5 stories VIZ-026 → VIZ-030)** | ✅ COMPLETE — Design Debt Score, Quality Gates, Trend command, W3C tokens import, WCAG 2.2 compliance report all shipped in v0.1.0 / v0.1.1 |
-| **NPM_TOKEN scope** | Currently broad "All packages" granular token. Tightly-scoped token created and held by founder; swap is a non-blocking cleanup item |
+| **KPMG Phase 1 (5 stories VIZ-026 → VIZ-030)** | ✅ COMPLETE in repo — Design Debt Score, Quality Gates, Trend command, W3C tokens import, WCAG 2.2 compliance report all part of the v0.1.1 codebase, will land on npm with the inaugural `@deslint/*` publish |
+| **NPM_TOKEN scope** | GitHub secret must authorize the `@deslint` scope before tagging v0.1.1 — verify before pushing the tag, otherwise the `Publish` steps in `release.yml` will fail |
 | **Domain** | `deslint.com` purchased ✅ — landing page NOT yet deployed |
 
 ---
@@ -433,6 +433,11 @@ Of the 14 shipping rules:
 ## 7. Decision log
 
 Append-only. Each entry: date, decision, rationale, what we'd revisit it on.
+
+### 2026-04-08 — Clean break for the inaugural `@deslint/*` npm publish
+**Decision:** When v0.1.1 is tagged and published, present the `@deslint/*` packages as a fresh first release. Drop the "renamed from `eslint-plugin-deslint`" / "renamed from `@vizlint/*`" migration narrative from `CHANGELOG.md` and `packages/eslint-plugin/README.md`. The earlier `@vizlint/*` artifacts on npm are abandoned, not part of the deslint story.
+**Rationale:** Founder rebranded vizlint → deslint after discovering [vizlint.com](https://vizlint.com) (an unrelated product) — the rename is defensive, not evolutionary. There is no install base on `@vizlint/*` worth migrating. Pointing users at a phantom `eslint-plugin-deslint` migration (a package that never existed on npm) is actively misleading. A clean inaugural release gives the new name a clean search/SEO/social slate.
+**Wouldn't revisit unless:** A meaningful number of users surface from the abandoned `@vizlint/*` packages and ask for a migration path. Then we'd add a one-line install hint, not the full migration narrative.
 
 ### 2026-04-07 — Package rename to `@deslint/eslint-plugin`
 **Decision:** Rename `eslint-plugin-deslint` → `@deslint/eslint-plugin` as v0.1.1 immediately after v0.1.0 ship.
