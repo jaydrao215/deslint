@@ -10,28 +10,28 @@ const STEPS: { icon: ReactNode; step: string; title: string; description: string
     step: '01',
     title: 'Install',
     description: 'Add to any existing ESLint setup. Zero config required with the recommended preset.',
-    code: `import vizlint from '@vizlint/eslint-plugin';\n\nexport default [\n  vizlint.configs.recommended,\n];`,
+    code: `import deslint from '@deslint/eslint-plugin';\n\nexport default [\n  deslint.configs.recommended,\n];`,
   },
   {
     icon: <Scan className="h-5 w-5" />,
     step: '02',
     title: 'Scan',
-    description: 'Run vizlint scan to analyze your codebase and get a Design Health Score from 0-100.',
-    code: `$ npx vizlint scan\n\n  Design Health Score: 72/100\n  Colors ███████░░░ 68  warn\n  Spacing █████████░ 85  pass\n  Typography ████████░░ 76  warn`,
+    description: 'Run deslint scan to analyze your codebase and get a Design Health Score from 0-100.',
+    code: `$ npx deslint scan\n\n  Design Health Score: 72/100\n  Colors ███████░░░ 68  warn\n  Spacing █████████░ 85  pass\n  Typography ████████░░ 76  warn`,
   },
   {
     icon: <Wrench className="h-5 w-5" />,
     step: '03',
     title: 'Fix',
     description: 'Auto-fix violations instantly. Interactive mode lets you review each change.',
-    code: `$ npx vizlint fix --all\n\n  ✓ Fixed 23 violations\n  ✓ 12 colors → design tokens\n  ✓ 8 spacing → scale values\n  ✓ 3 typography → type scale`,
+    code: `$ npx deslint fix --all\n\n  ✓ Fixed 23 violations\n  ✓ 12 colors → design tokens\n  ✓ 8 spacing → scale values\n  ✓ 3 typography → type scale`,
   },
   {
     icon: <Shield className="h-5 w-5" />,
     step: '04',
     title: 'Gate',
     description: 'Add to CI/CD. Block merges when the score drops below your threshold.',
-    code: `- name: Design Quality Gate\n  run: npx vizlint scan --min-score 80\n  # Exit code 1 if score < 80`,
+    code: `- name: Design Quality Gate\n  run: npx deslint scan --min-score 80\n  # Exit code 1 if score < 80`,
   },
 ];
 

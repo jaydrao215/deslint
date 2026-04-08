@@ -1,8 +1,8 @@
 /**
- * VIZ-023: Auto-configure Vizlint MCP server for Cursor and Claude Code.
+ * VIZ-023: Auto-configure Deslint MCP server for Cursor and Claude Code.
  *
  * Detects environment (Cursor vs Claude Desktop) and injects the
- * Vizlint MCP server configuration into the appropriate settings file.
+ * Deslint MCP server configuration into the appropriate settings file.
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -18,7 +18,7 @@ interface McpConfig {
   [key: string]: unknown;
 }
 
-const VIZLINT_SERVER_KEY = 'vizlint';
+const DESLINT_SERVER_KEY = 'deslint';
 
 /**
  * Get the path to the MCP server entry point.
@@ -27,7 +27,7 @@ const VIZLINT_SERVER_KEY = 'vizlint';
 function getServerCommand(): { command: string; args: string[] } {
   return {
     command: 'npx',
-    args: ['-y', '@vizlint/mcp'],
+    args: ['-y', '@deslint/mcp'],
   };
 }
 
@@ -96,7 +96,7 @@ function writeJsonFile(path: string, data: McpConfig): void {
 }
 
 /**
- * Install Vizlint MCP server into all detected config files.
+ * Install Deslint MCP server into all detected config files.
  */
 export function install(): void {
   const configs = getConfigPaths();
@@ -110,14 +110,14 @@ export function install(): void {
       data.mcpServers = {};
     }
 
-    if (data.mcpServers[VIZLINT_SERVER_KEY]) {
+    if (data.mcpServers[DESLINT_SERVER_KEY]) {
       console.log(`  Already configured: ${cfg.name}`);
       console.log(`    ${cfg.path}`);
       installed++;
       continue;
     }
 
-    data.mcpServers[VIZLINT_SERVER_KEY] = {
+    data.mcpServers[DESLINT_SERVER_KEY] = {
       command: server.command,
       args: server.args,
     };
@@ -130,13 +130,13 @@ export function install(): void {
 
   if (installed > 0) {
     console.log('');
-    console.log('  Vizlint MCP server installed successfully.');
+    console.log('  Deslint MCP server installed successfully.');
     console.log('  Restart your editor to activate.');
   } else {
     console.log('  No supported editors detected.');
     console.log('  Manually add to your MCP config:');
     console.log('');
-    console.log(`  "vizlint": {`);
+    console.log(`  "deslint": {`);
     console.log(`    "command": "${server.command}",`);
     console.log(`    "args": ${JSON.stringify(server.args)}`);
     console.log(`  }`);
@@ -144,7 +144,7 @@ export function install(): void {
 }
 
 /**
- * Remove Vizlint MCP server from all detected config files.
+ * Remove Deslint MCP server from all detected config files.
  */
 export function uninstall(): void {
   const configs = getConfigPaths();
@@ -154,9 +154,9 @@ export function uninstall(): void {
     if (!existsSync(cfg.path)) continue;
 
     const data = readJsonFile(cfg.path);
-    if (!data.mcpServers?.[VIZLINT_SERVER_KEY]) continue;
+    if (!data.mcpServers?.[DESLINT_SERVER_KEY]) continue;
 
-    delete data.mcpServers[VIZLINT_SERVER_KEY];
+    delete data.mcpServers[DESLINT_SERVER_KEY];
 
     // Clean up empty mcpServers object
     if (Object.keys(data.mcpServers).length === 0) {
@@ -171,8 +171,8 @@ export function uninstall(): void {
 
   if (removed > 0) {
     console.log('');
-    console.log('  Vizlint MCP server uninstalled. Restart your editor.');
+    console.log('  Deslint MCP server uninstalled. Restart your editor.');
   } else {
-    console.log('  No Vizlint MCP configuration found.');
+    console.log('  No Deslint MCP configuration found.');
   }
 }

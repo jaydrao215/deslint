@@ -7,7 +7,7 @@ import {
 import { generateCursorRules } from '../src/templates/cursorrules.js';
 import { generateClaudeMd } from '../src/templates/claude-md.js';
 import { generateAgentsMd } from '../src/templates/agents-md.js';
-import type { DesignSystem } from '@vizlint/shared';
+import type { DesignSystem } from '@deslint/shared';
 
 describe('isValidTarget', () => {
   it('accepts valid targets', () => {
@@ -25,7 +25,7 @@ describe('isValidTarget', () => {
 
 describe('getOutputFilename', () => {
   it('returns correct filenames', () => {
-    expect(getOutputFilename('cursor')).toBe('.cursor/rules/vizlint-design-quality.mdc');
+    expect(getOutputFilename('cursor')).toBe('.cursor/rules/deslint-design-quality.mdc');
     expect(getOutputFilename('claude')).toBe('CLAUDE.md');
     expect(getOutputFilename('agents')).toBe('AGENTS.md');
   });
@@ -56,7 +56,7 @@ describe('generateCursorRules', () => {
     expect(output).toContain('## Typography Scale Only');
     expect(output).toContain('## Responsive Design Required');
     expect(output).toContain('## Consistent Component Spacing');
-    expect(output).toContain('npm install -D @vizlint/eslint-plugin');
+    expect(output).toContain('npm install -D @deslint/eslint-plugin');
   });
 
   it('includes custom color tokens when provided', () => {
@@ -105,7 +105,7 @@ describe('generateClaudeMd', () => {
     expect(output).toContain('### Typography Scale Only');
     expect(output).toContain('### Responsive Design Required');
     expect(output).toContain('### Consistent Component Spacing');
-    expect(output).toContain('npx eslint --plugin vizlint');
+    expect(output).toContain('npx eslint --plugin deslint');
   });
 
   it('includes project color tokens', () => {
@@ -145,7 +145,7 @@ describe('generateAgentsMd', () => {
     expect(output).toContain('### 3. No Arbitrary Typography');
     expect(output).toContain('### 4. Responsive Breakpoints Required');
     expect(output).toContain('### 5. Consistent Component Spacing');
-    expect(output).toContain('npx eslint --plugin vizlint');
+    expect(output).toContain('npx eslint --plugin deslint');
   });
 
   it('includes project color tokens', () => {
@@ -177,7 +177,7 @@ describe('generateAgentsMd', () => {
     expect(output).toContain('heading: DM Sans');
   });
 
-  it('all three templates cover all 5 Vizlint rules', () => {
+  it('all three templates cover all 5 Deslint rules', () => {
     const cursor = generateCursorRules();
     const claude = generateClaudeMd();
     const agents = generateAgentsMd();
@@ -198,7 +198,7 @@ describe('generateAgentsMd', () => {
     const agents = generateAgentsMd();
 
     for (const output of [cursor, claude, agents]) {
-      expect(output).toContain('eslint --plugin vizlint');
+      expect(output).toContain('eslint --plugin deslint');
     }
   });
 });

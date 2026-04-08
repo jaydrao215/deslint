@@ -1,4 +1,4 @@
-// ESLint v10 flat config for @vizlint/docs (Next.js 15 + React 19 + TypeScript).
+// ESLint v10 flat config for @deslint/docs (Next.js 15 + React 19 + TypeScript).
 //
 // Why a local config: the monorepo root eslint.config.js globally ignores
 // apps/docs/** because it lacks a TypeScript parser. Next.js's official

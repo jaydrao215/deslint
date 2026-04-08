@@ -77,7 +77,7 @@ export function Hero() {
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
           <a
-            href="https://github.com/vizlint/vizlint"
+            href="https://github.com/deslint/deslint"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
@@ -118,7 +118,7 @@ export function Hero() {
 
 function InstallCommand() {
   const [copied, setCopied] = useState(false);
-  const command = 'npm install -D @vizlint/eslint-plugin';
+  const command = 'npm install -D @deslint/eslint-plugin';
 
   const copy = async () => {
     try {
@@ -139,7 +139,7 @@ function InstallCommand() {
       <span>
         <span className="text-pass">npm</span>{' '}
         <span className="text-gray-400">install -D</span>{' '}
-        <span className="text-white font-medium">@vizlint/eslint-plugin</span>
+        <span className="text-white font-medium">@deslint/eslint-plugin</span>
       </span>
       <span className="flex items-center gap-1.5 text-gray-500 group-hover:text-gray-300 transition-colors">
         {copied ? (

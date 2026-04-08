@@ -1,5 +1,5 @@
 /**
- * MCP Tool implementations for Vizlint.
+ * MCP Tool implementations for Deslint.
  *
  * These functions are pure (no MCP SDK dependency) — they accept
  * parameters, run ESLint programmatically, and return structured results.
@@ -59,7 +59,7 @@ let _pluginCache: any = null;
 
 async function loadPlugin(): Promise<any> {
   if (_pluginCache) return _pluginCache;
-  const mod = await import('@vizlint/eslint-plugin');
+  const mod = await import('@deslint/eslint-plugin');
   _pluginCache = mod.default ?? mod;
   return _pluginCache;
 }
@@ -81,19 +81,19 @@ async function createEslintInstance(cwd: string, fix = false): Promise<ESLint> {
           },
         },
         plugins: {
-          vizlint: plugin,
+          deslint: plugin,
         },
         rules: {
-          'vizlint/no-arbitrary-colors': 'warn',
-          'vizlint/no-arbitrary-spacing': 'warn',
-          'vizlint/no-arbitrary-typography': 'warn',
-          'vizlint/responsive-required': 'warn',
-          'vizlint/consistent-component-spacing': 'warn',
-          'vizlint/a11y-color-contrast': 'warn',
-          'vizlint/max-component-lines': 'warn',
-          'vizlint/missing-states': 'warn',
-          'vizlint/dark-mode-coverage': 'warn',
-          'vizlint/no-arbitrary-zindex': 'warn',
+          'deslint/no-arbitrary-colors': 'warn',
+          'deslint/no-arbitrary-spacing': 'warn',
+          'deslint/no-arbitrary-typography': 'warn',
+          'deslint/responsive-required': 'warn',
+          'deslint/consistent-component-spacing': 'warn',
+          'deslint/a11y-color-contrast': 'warn',
+          'deslint/max-component-lines': 'warn',
+          'deslint/missing-states': 'warn',
+          'deslint/dark-mode-coverage': 'warn',
+          'deslint/no-arbitrary-zindex': 'warn',
         },
       },
     ] as any,
@@ -163,8 +163,8 @@ export async function analyzeProject(params: {
   const maxFiles = params.maxFiles ?? 200;
 
   // Use the CLI's discovery and scoring engine
-  const { discoverFiles } = await import('@vizlint/cli');
-  const { runLint, calculateScore } = await import('@vizlint/cli');
+  const { discoverFiles } = await import('@deslint/cli');
+  const { runLint, calculateScore } = await import('@deslint/cli');
 
   const files = await discoverFiles({ cwd: projectDir });
   const filesToScan = files.slice(0, maxFiles);

@@ -9,8 +9,8 @@ function makeScanResult(overrides: Partial<ScanResult> = {}): ScanResult {
     errors: 1,
     warnings: 4,
     topViolations: [
-      { ruleId: 'vizlint/no-arbitrary-colors', count: 3, severity: 'warning' },
-      { ruleId: 'vizlint/no-inline-styles', count: 2, severity: 'error' },
+      { ruleId: 'deslint/no-arbitrary-colors', count: 3, severity: 'warning' },
+      { ruleId: 'deslint/no-inline-styles', count: 2, severity: 'error' },
     ],
     categories: [
       { name: 'colors', violations: 3, score: 14 },
@@ -110,9 +110,9 @@ describe('formatComment', () => {
     expect(comment).toContain(':red_circle:');
   });
 
-  it('includes Vizlint branding', () => {
+  it('includes Deslint branding', () => {
     const comment = formatComment(makeScanResult(), 0);
     expect(comment).toContain('Powered by');
-    expect(comment).toContain('Vizlint');
+    expect(comment).toContain('Deslint');
   });
 });

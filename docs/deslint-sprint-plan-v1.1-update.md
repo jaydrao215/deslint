@@ -1,6 +1,6 @@
-# Vizlint Sprint Plan v1.1 — Definitive Update
+# Deslint Sprint Plan v1.1 — Definitive Update
 
-> Apply this document ON TOP of the original `vizlint-sprint-plan.txt`.  
+> Apply this document ON TOP of the original `deslint-sprint-plan.txt`.  
 > Every section below either replaces or adds to the original sprint plan.  
 > If a section is not mentioned here, the original plan stands unchanged.
 
@@ -10,11 +10,11 @@
 
 **This applies to every rule, every sprint, every deliverable.**
 
-Vizlint is NOT just a reporter. It is a design quality tool with three modes:
+Deslint is NOT just a reporter. It is a design quality tool with three modes:
 
 ### Mode 1: Scan (default, safe, CI/CD)
 ```bash
-vizlint scan
+deslint scan
 ```
 - Reports violations with Design Health Score (0–100)
 - Changes nothing in the codebase
@@ -24,27 +24,27 @@ vizlint scan
 
 ### Mode 2: Interactive Fix (the differentiator)
 ```bash
-vizlint fix --interactive
+deslint fix --interactive
 ```
 - Walks through each violation one by one
 - User decides per-violation: apply, skip, apply-all-similar, ignore-rule, quit
-- Skipped items optionally get `// vizlint-ignore -- <reason>` comment
+- Skipped items optionally get `// deslint-ignore -- <reason>` comment
 - Preserves user intent — never overwrites a deliberate design choice
 - This is the "Prettier meets human judgment" UX nobody has built
 
 ### Mode 3: Auto-Fix (power users who trust their config)
 ```bash
-vizlint fix --all
+deslint fix --all
 ```
 - Applies all safe fixes at once
-- Only recommended after configuring `.vizlintrc.json` with team design tokens
+- Only recommended after configuring `.deslintrc.json` with team design tokens
 - Generates a diff summary showing all changes made
 - Supports `--dry-run` to preview changes without applying
 
 ### Mode 4 (invisible): MCP Real-Time Loop
-- AI generates code → Vizlint MCP analyzes silently → returns fix suggestions to AI agent → AI self-corrects → user sees clean code on first pass
+- AI generates code → Deslint MCP analyzes silently → returns fix suggestions to AI agent → AI self-corrects → user sees clean code on first pass
 - User never sees the bad version
-- Vizlint teaches the AI to fix itself in real-time
+- Deslint teaches the AI to fix itself in real-time
 
 **Every rule MUST ship with `fixable: 'code'` and a working auto-fixer from day one.**
 
@@ -75,7 +75,7 @@ Add to **Definition of Done** (Section 3):
 - Performance budget: individual rule < 2ms per file on benchmark
 - False positive rate target: < 5% (tracked via community feedback)
 - `eslint-rule-benchmark` runs in CI for every rule change
-- Rules support inline suppression: `// eslint-disable-next-line vizlint/rule-name -- reason`
+- Rules support inline suppression: `// eslint-disable-next-line deslint/rule-name -- reason`
 
 ---
 
@@ -117,7 +117,7 @@ Move `typography-scale` (VIZ-004) to Sprint 3. Add Angular support here.
 #### VIZ-002B: Angular Template Parsing (5 points)
 
 **As a** Angular developer using AI tools,  
-**I want** Vizlint to parse my Angular templates,  
+**I want** Deslint to parse my Angular templates,  
 **so that** I get design quality feedback on Angular projects including Vintor.
 
 **Acceptance Criteria:**
@@ -127,7 +127,7 @@ Move `typography-scale` (VIZ-004) to Sprint 3. Add Angular support here.
 - `@angular-eslint/template-parser` integrated as optional peer dependency
 - Component `styleUrls` CSS/SCSS files parsed by CSS-level rules
 - All existing rules produce identical results across React, Vue, Svelte, Angular, HTML
-- Vizlint runs successfully against the Vintor frontend codebase
+- Deslint runs successfully against the Vintor frontend codebase
 
 **Tasks:**
 1. Add `@angular-eslint/template-parser` as optional peer dependency
@@ -137,14 +137,14 @@ Move `typography-scale` (VIZ-004) to Sprint 3. Add Angular support here.
 5. Update framework auto-detection: `@angular/core` in package.json → Angular
 6. Extend the framework-agnostic class extractor abstraction layer
 7. Write cross-framework test suite with Angular `.html` template fixtures
-8. Run Vizlint against Vintor's actual codebase — document results
+8. Run Deslint against Vintor's actual codebase — document results
 
 **Test Cases:**
 - TEST: Detects `bg-[#FF0000]` in Angular template `class="bg-[#FF0000]"`
 - TEST: Detects arbitrary color inside `[ngClass]="{'bg-[#FF0000]': true}"`
 - TEST: Does NOT flag standard Tailwind classes in Angular templates
 - TEST: Framework auto-detection identifies Angular from `@angular/core`
-- TEST: Vizlint produces a Design Health Score for Vintor's frontend
+- TEST: Deslint produces a Design Health Score for Vintor's frontend
 
 **Sprint 2 revised total:** VIZ-003 (5) + VIZ-002B (5) + VIZ-005 (3) = **13 points**
 
@@ -194,16 +194,16 @@ VIZ-007 (consistent-component-spacing) moves here from Sprint 3.
 
 #### Updated VIZ-011 — Launch Outreach
 **Add Buoy.design competitive positioning:**
-- All outreach materials include positioning: "Buoy catches token drift. Vizlint catches token drift + spacing + typography + responsive + accessibility — with auto-fix."
-- Landing page includes "How Vizlint compares" section
-- First blog post: "I built Vizlint because linting design quality shouldn't require a dashboard"
+- All outreach materials include positioning: "Buoy catches token drift. Deslint catches token drift + spacing + typography + responsive + accessibility — with auto-fix."
+- Landing page includes "How Deslint compares" section
+- First blog post: "I built Deslint because linting design quality shouldn't require a dashboard"
 
-#### VIZ-010B: Generate AI Tool Configs from .vizlintrc.json
-vizlint generate-config --target claude    # outputs CLAUDE.md design section
-vizlint generate-config --target cursor    # outputs .cursorrules design rules  
-vizlint generate-config --target agents    # outputs AGENTS.md design section
+#### VIZ-010B: Generate AI Tool Configs from .deslintrc.json
+deslint generate-config --target claude    # outputs CLAUDE.md design section
+deslint generate-config --target cursor    # outputs .cursorrules design rules  
+deslint generate-config --target agents    # outputs AGENTS.md design section
 
-- Single source of truth → feeds every AI tool → Vizlint verifies output. This makes Vizlint the hub of the design quality workflow, not just a checker at the end. Teams configure their design system once in .vizlintrc.json, and Vizlint distributes it to every tool and verifies every output.
+- Single source of truth → feeds every AI tool → Deslint verifies output. This makes Deslint the hub of the design quality workflow, not just a checker at the end. Teams configure their design system once in .deslintrc.json, and Deslint distributes it to every tool and verifies every output.
 **Sprint 4 revised total:** VIZ-007 (5) + VIZ-009 (5) + VIZ-010 (3) + VIZ-011 (2) = **15 points**
 
 ---
@@ -214,15 +214,15 @@ vizlint generate-config --target agents    # outputs AGENTS.md design section
 
 **Replace the original VIZ-012 acceptance criteria with:**
 
-- `vizlint scan` runs project-wide analysis, outputs Design Health Score, changes nothing
-- `vizlint fix --interactive` walks through violations one-by-one with user prompts
-- `vizlint fix --all` applies all auto-fixable violations at once
-- `vizlint fix --dry-run` shows what would change without modifying files
+- `deslint scan` runs project-wide analysis, outputs Design Health Score, changes nothing
+- `deslint fix --interactive` walks through violations one-by-one with user prompts
+- `deslint fix --all` applies all auto-fixable violations at once
+- `deslint fix --dry-run` shows what would change without modifying files
 - Interactive mode supports: [a]pply, [s]kip, apply [A]ll similar, [i]gnore rule, [q]uit
-- Skipped violations optionally receive inline `// vizlint-ignore` comment
+- Skipped violations optionally receive inline `// deslint-ignore` comment
 - `--format json | text | sarif` for scan output
 - Exit code 1 if below `--min-score` threshold (scan mode only)
-- Respects `.vizlintrc.json` configuration
+- Respects `.deslintrc.json` configuration
 - Performance: 500-file project scans in < 15 seconds
 - Supports `--concurrency=auto` for ESLint v10 multithreaded linting
 
@@ -231,14 +231,14 @@ vizlint generate-config --target agents    # outputs AGENTS.md design section
 2. Implement `fix --interactive` with @clack/prompts for beautiful terminal UX
 3. Implement `fix --all` wrapping ESLint's `--fix` programmatic API
 4. Implement `fix --dry-run` showing unified diff output
-5. Build `vizlint-ignore` comment injector for skipped violations
+5. Build `deslint-ignore` comment injector for skipped violations
 6. Add `--concurrency=auto` flag
 
 **Add these test cases:**
-- TEST: `vizlint scan` produces score without modifying any files
-- TEST: `vizlint fix --all` applies all fixable violations
-- TEST: `vizlint fix --dry-run` shows changes without applying them
-- TEST: `vizlint fix --all` is idempotent (running twice = same result)
+- TEST: `deslint scan` produces score without modifying any files
+- TEST: `deslint fix --all` applies all fixable violations
+- TEST: `deslint fix --dry-run` shows changes without applying them
+- TEST: `deslint fix --all` is idempotent (running twice = same result)
 - TEST: Interactive mode `[s]kip` does not modify the file
 - TEST: Interactive mode `[a]pply` modifies only the selected violation
 
@@ -290,7 +290,7 @@ The MCP server exposes 3 tools:
 - MCP `analyze_and_fix` returns corrected code block for fixable violations
 - MCP returns "not auto-fixable" status for report-only rules (with suggestion text)
 - AI agent successfully uses fix output to self-correct generated code
-- The fix output is identical to what `vizlint fix --all` would produce
+- The fix output is identical to what `deslint fix --all` would produce
 
 ---
 
@@ -334,7 +334,7 @@ Every rule in the plan with its fixability status:
 | 13 | image-alt-text | ❌ NO | Sprint 10 | Flag missing, cannot write meaningful alt |
 | 14 | no-magic-numbers-layout | ✅ YES | Sprint 10 | Replace with standard Tailwind grid/flex class |
 
-**8 of 14 rules are auto-fixable (57%).** This means `vizlint fix --all` will resolve the majority of violations automatically, while the remaining 43% are reported with actionable suggestions for human decision.
+**8 of 14 rules are auto-fixable (57%).** This means `deslint fix --all` will resolve the majority of violations automatically, while the remaining 43% are reported with actionable suggestions for human decision.
 
 ---
 
@@ -354,23 +354,23 @@ The +8 points are absorbed by the efficiency gains from ESLint v10 (no legacy co
 
 ## VINTOR DOGFOODING CHECKLIST
 
-Before end of Sprint 2, Vizlint must pass this test:
+Before end of Sprint 2, Deslint must pass this test:
 
-1. ☐ `vizlint scan` runs on Vintor's Angular frontend without errors
+1. ☐ `deslint scan` runs on Vintor's Angular frontend without errors
 2. ☐ Detects arbitrary colors in Vintor's templates (if any exist)
 3. ☐ Detects arbitrary spacing in Vintor's templates (if any exist)
 4. ☐ Produces a Design Health Score for Vintor
-5. ☐ `vizlint fix --interactive` shows fixable violations in Vintor
-6. ☐ Vintor's design system (Inter/DM Sans/JetBrains Mono, Slate Blue/Forest Green/Sage White) is encodable in `.vizlintrc.json`
+5. ☐ `deslint fix --interactive` shows fixable violations in Vintor
+6. ☐ Vintor's design system (Inter/DM Sans/JetBrains Mono, Slate Blue/Forest Green/Sage White) is encodable in `.deslintrc.json`
 7. ☐ No false positives on Vintor's intentional design choices
 
-This is the first external validation. If Vizlint can't improve its creator's own project, the product thesis fails.
+This is the first external validation. If Deslint can't improve its creator's own project, the product thesis fails.
 
 ---
 
 ## COMPETITIVE POSITIONING SUMMARY
 
-| Feature | Vizlint | Buoy.design | eslint-plugin-tailwindcss | CodeRabbit |
+| Feature | Deslint | Buoy.design | eslint-plugin-tailwindcss | CodeRabbit |
 |---------|:---:|:---:|:---:|:---:|
 | Token compliance | ✅ | ✅ | ❌ | ❌ |
 | Spacing consistency | ✅ | ❌ | ❌ | ❌ |
@@ -389,4 +389,4 @@ This is the first external validation. If Vizlint can't improve its creator's ow
 | Tailwind v3 + v4 | ✅ | Unknown | ✅ | N/A |
 | Team dashboard | ✅ (Phase 4) | ✅ | ❌ | ✅ |
 
-**Vizlint's unique positioning: The only tool that both detects AND fixes design quality issues in AI-generated code, across all major frameworks, inside the developer's existing ESLint workflow, with zero code leaving the machine.**
+**Deslint's unique positioning: The only tool that both detects AND fixes design quality issues in AI-generated code, across all major frameworks, inside the developer's existing ESLint workflow, with zero code leaving the machine.**

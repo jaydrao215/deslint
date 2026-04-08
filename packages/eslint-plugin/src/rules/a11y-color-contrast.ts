@@ -5,7 +5,7 @@ import { contrastRatio, meetsWcagAA } from '../utils/contrast.js';
 import { debugLog } from '../utils/debug.js';
 
 const createRule = ESLintUtils.RuleCreator(
-  (name) => `https://vizlint.dev/docs/rules/${name}`
+  (name) => `https://deslint.com/docs/rules/${name}`
 );
 
 export type Options = [

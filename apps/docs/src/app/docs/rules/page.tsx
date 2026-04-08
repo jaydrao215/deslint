@@ -3,7 +3,7 @@ export default function RulesReference() {
     <div>
       <h1>Rules Reference</h1>
       <p>
-        Vizlint ships with 10 rules across five categories: colors, spacing, typography,
+        Deslint ships with 10 rules across five categories: colors, spacing, typography,
         responsive, and consistency. Each rule can be set to{' '}
         <code>&quot;error&quot;</code>, <code>&quot;warn&quot;</code>, or{' '}
         <code>&quot;off&quot;</code>.
@@ -270,10 +270,10 @@ export default function RulesReference() {
       {/* ── Inline Suppression ─────────────────────────── */}
       <h2>Inline Suppression</h2>
       <p>
-        Suppress a single violation with <code>vizlint-ignore</code> and a mandatory reason:
+        Suppress a single violation with <code>deslint-ignore</code> and a mandatory reason:
       </p>
       <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
-        <code>{`{/* vizlint-ignore no-arbitrary-colors -- brand gradient requires exact hex */}
+        <code>{`{/* deslint-ignore no-arbitrary-colors -- brand gradient requires exact hex */}
 <div className="bg-[#1E3A5F]" />`}</code>
       </pre>
 
@@ -281,12 +281,12 @@ export default function RulesReference() {
       <h2>Report a False Positive</h2>
       <p>
         If a rule flags code that you believe is correct, please report it so we can improve
-        Vizlint for everyone. Include the rule name, the flagged code, and why you think
+        Deslint for everyone. Include the rule name, the flagged code, and why you think
         it&apos;s a false positive.
       </p>
       <p>
         <a
-          href="https://github.com/vizlint/vizlint/issues/new?labels=false-positive"
+          href="https://github.com/deslint/deslint/issues/new?labels=false-positive"
           target="_blank"
           rel="noopener noreferrer"
         >

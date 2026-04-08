@@ -1,22 +1,22 @@
-# @vizlint/eslint-plugin
+# @deslint/eslint-plugin
 
-> ESLint catches code bugs. Vizlint catches design bugs.
+> ESLint catches code bugs. Deslint catches design bugs.
 
-[![npm version](https://img.shields.io/npm/v/@vizlint/eslint-plugin)](https://www.npmjs.com/package/@vizlint/eslint-plugin)
+[![npm version](https://img.shields.io/npm/v/@deslint/eslint-plugin)](https://www.npmjs.com/package/@deslint/eslint-plugin)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 14 ESLint rules that catch design quality violations in AI-generated frontend code — arbitrary colors, inconsistent spacing, missing responsive breakpoints, accessibility gaps, and more. Auto-fix support for 11 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
 
 **Validated on 7 real-world projects (4,061 files) with 0% false positive rate and 0 crashes.**
 
-> **Renamed in v0.1.1** — this package was previously published as `eslint-plugin-vizlint`. The old name is deprecated; install `@vizlint/eslint-plugin` instead. See the [migration note](#migration-from-eslint-plugin-vizlint).
+> **Renamed in v0.1.1** — this package was previously published as `eslint-plugin-deslint`. The old name is deprecated; install `@deslint/eslint-plugin` instead. See the [migration note](#migration-from-eslint-plugin-deslint).
 
 ## Installation
 
 ```sh
-npm install -D @vizlint/eslint-plugin
+npm install -D @deslint/eslint-plugin
 # or
-pnpm add -D @vizlint/eslint-plugin
+pnpm add -D @deslint/eslint-plugin
 ```
 
 **Requirements:** ESLint v10+, Node.js v20+
@@ -35,12 +35,12 @@ pnpm add -D svelte-eslint-parser
 
 ```js
 // eslint.config.js (flat config only — no legacy .eslintrc)
-import vizlint from '@vizlint/eslint-plugin';
+import deslint from '@deslint/eslint-plugin';
 
 export default [
-  vizlint.configs.recommended,  // all rules at 'warn', dark-mode-coverage off
+  deslint.configs.recommended,  // all rules at 'warn', dark-mode-coverage off
   // or
-  vizlint.configs.strict,       // all rules at 'error'
+  deslint.configs.strict,       // all rules at 'error'
 ];
 ```
 
@@ -237,24 +237,24 @@ Flags components exceeding a configurable line count (default: 300). Large compo
 
 ```js
 // eslint.config.js
-import vizlint from '@vizlint/eslint-plugin';
+import deslint from '@deslint/eslint-plugin';
 
 export default [
   {
-    plugins: { vizlint },
+    plugins: { deslint },
     rules: {
-      'vizlint/no-arbitrary-colors': ['error', {
+      'deslint/no-arbitrary-colors': ['error', {
         customTokens: { '#1A5276': 'primary' },
       }],
-      'vizlint/no-arbitrary-spacing': ['warn', {
+      'deslint/no-arbitrary-spacing': ['warn', {
         allowlist: ['p-[18px]'],
       }],
-      'vizlint/no-arbitrary-typography': 'warn',
-      'vizlint/responsive-required': ['warn', {
+      'deslint/no-arbitrary-typography': 'warn',
+      'deslint/responsive-required': ['warn', {
         requiredBreakpoints: ['sm', 'md'],
       }],
-      'vizlint/dark-mode-coverage': 'warn',  // enable for dark mode projects
-      'vizlint/max-component-lines': ['warn', { maxLines: 250 }],
+      'deslint/dark-mode-coverage': 'warn',  // enable for dark mode projects
+      'deslint/max-component-lines': ['warn', { maxLines: 250 }],
     },
   },
 ];
@@ -262,7 +262,7 @@ export default [
 
 ## Design System Configuration
 
-Create `.vizlintrc.json` to define your design system tokens:
+Create `.deslintrc.json` to define your design system tokens:
 
 ```json
 {
@@ -314,33 +314,33 @@ Tested on 7 real-world open-source projects:
 
 **Cumulative: 4,061 files, 3,395 violations, 0 false positives, 0 crashes.**
 
-## Migration from `eslint-plugin-vizlint`
+## Migration from `eslint-plugin-deslint`
 
-In v0.1.1, this package was renamed from `eslint-plugin-vizlint` to `@vizlint/eslint-plugin` to align with the rest of the `@vizlint/*` workspace (`@vizlint/cli`, `@vizlint/mcp`, `@vizlint/shared`). Same code, same rules, same config — only the package name and import specifier changed.
+In v0.1.1, this package was renamed from `eslint-plugin-deslint` to `@deslint/eslint-plugin` to align with the rest of the `@deslint/*` workspace (`@deslint/cli`, `@deslint/mcp`, `@deslint/shared`). Same code, same rules, same config — only the package name and import specifier changed.
 
 **Migration steps:**
 
 ```sh
 # 1. Uninstall the old package
-npm uninstall eslint-plugin-vizlint
+npm uninstall eslint-plugin-deslint
 
 # 2. Install the new one
-npm install -D @vizlint/eslint-plugin
+npm install -D @deslint/eslint-plugin
 ```
 
 ```js
 // 3. Update your eslint.config.js import
-- import vizlint from 'eslint-plugin-vizlint';
-+ import vizlint from '@vizlint/eslint-plugin';
+- import deslint from 'eslint-plugin-deslint';
++ import deslint from '@deslint/eslint-plugin';
 ```
 
 **Nothing else changes:**
-- The plugin shorthand stays `vizlint` (e.g. `'vizlint/no-arbitrary-colors'`)
+- The plugin shorthand stays `deslint` (e.g. `'deslint/no-arbitrary-colors'`)
 - All rule names, options, and presets are identical
 - Auto-fix output is identical
-- `.vizlintrc.json` schema is unchanged
+- `.deslintrc.json` schema is unchanged
 
-The old `eslint-plugin-vizlint@0.1.0` will be deprecated on npm with a redirect message pointing here.
+The old `eslint-plugin-deslint@0.1.0` will be deprecated on npm with a redirect message pointing here.
 
 ## License
 

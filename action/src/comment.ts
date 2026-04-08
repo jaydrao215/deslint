@@ -2,7 +2,7 @@
  * Format the PR comment body for the Design Health Score report.
  */
 
-import type { GateResult } from '@vizlint/shared';
+import type { GateResult } from '@deslint/shared';
 import type { ScanResult } from './scan.js';
 
 function formatDebt(minutes: number): string {
@@ -53,7 +53,7 @@ export function formatComment(
     : '';
 
   const lines: string[] = [
-    `## ${badge} Vizlint Design Review`,
+    `## ${badge} Deslint Design Review`,
     '',
     `**Design Health Score: ${result.score}/100**${thresholdLine}`,
     '',
@@ -84,7 +84,7 @@ export function formatComment(
       }
       if (!gateResult.enforced) {
         lines.push('');
-        lines.push('> Set `"qualityGate": { "enforce": true }` in `.vizlintrc.json` to fail the check on gate failures.');
+        lines.push('> Set `"qualityGate": { "enforce": true }` in `.deslintrc.json` to fail the check on gate failures.');
       }
     }
     lines.push('');
@@ -115,7 +115,7 @@ export function formatComment(
 
     for (const v of result.topViolations) {
       const severityIcon = v.severity === 'error' ? ':red_circle:' : ':yellow_circle:';
-      const ruleName = v.ruleId.replace('vizlint/', '');
+      const ruleName = v.ruleId.replace('deslint/', '');
       lines.push(`| \`${ruleName}\` | ${v.count} | ${severityIcon} ${v.severity} |`);
     }
 
@@ -128,7 +128,7 @@ export function formatComment(
   }
 
   lines.push('---');
-  lines.push('*Powered by [Vizlint](https://vizlint.dev) — Design quality gate for AI-generated code*');
+  lines.push('*Powered by [Deslint](https://deslint.com) — Design quality gate for AI-generated code*');
 
   return lines.join('\n');
 }

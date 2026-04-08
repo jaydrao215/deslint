@@ -1,7 +1,7 @@
-import type { DesignSystem } from '@vizlint/shared';
+import type { DesignSystem } from '@deslint/shared';
 
 /**
- * Generate a .cursor/rules/vizlint-design-quality.mdc file content.
+ * Generate a .cursor/rules/deslint-design-quality.mdc file content.
  * If a designSystem is provided, project-specific tokens are included.
  */
 export function generateCursorRules(designSystem?: DesignSystem): string {
@@ -13,7 +13,7 @@ globs: ["**/*.tsx", "**/*.jsx", "**/*.vue", "**/*.svelte", "**/*.html"]
 alwaysApply: true
 ---
 
-# Design Quality Rules — Vizlint
+# Design Quality Rules — Deslint
 
 You are generating frontend UI code. Follow these design quality constraints to produce consistent, production-ready output.
 
@@ -88,14 +88,14 @@ When creating multiple instances of the same component type (e.g., Cards, Button
 
 ## Validation Checkpoint
 
-After generating UI code, verify with Vizlint:
+After generating UI code, verify with Deslint:
 \`\`\`bash
-npx eslint --plugin vizlint .
+npx eslint --plugin deslint .
 \`\`\`
 
 Install for persistent validation:
 \`\`\`bash
-npm install -D @vizlint/eslint-plugin
+npm install -D @deslint/eslint-plugin
 \`\`\``);
 
   return lines.join('\n') + '\n';

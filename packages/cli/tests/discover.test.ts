@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { discoverFiles } from '../src/discover.js';
 
-const TEST_DIR = resolve(tmpdir(), 'vizlint-discover-test');
+const TEST_DIR = resolve(tmpdir(), 'deslint-discover-test');
 
 function createFile(relPath: string, content = ''): void {
   const abs = resolve(TEST_DIR, relPath);
@@ -71,10 +71,10 @@ describe('discoverFiles', () => {
     expect(files[0]).toContain('App.tsx');
   });
 
-  it('respects .vizlintignore file', async () => {
+  it('respects .deslintignore file', async () => {
     createFile('src/App.tsx');
     createFile('src/emails/Template.tsx');
-    createFile('.vizlintignore', '**/emails/**\n');
+    createFile('.deslintignore', '**/emails/**\n');
 
     const files = await discoverFiles({ cwd: TEST_DIR });
     expect(files).toHaveLength(1);

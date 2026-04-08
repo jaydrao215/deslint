@@ -1,6 +1,6 @@
 import { VERSION, createServer } from '../src/index.js';
 
-describe('@vizlint/mcp', () => {
+describe('@deslint/mcp', () => {
   it('exports VERSION as a string', () => {
     expect(typeof VERSION).toBe('string');
   });

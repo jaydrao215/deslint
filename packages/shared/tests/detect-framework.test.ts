@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { detectFramework } from '../src/detect-framework.js';
 
 function createTmpProject(deps: Record<string, string>): string {
-  const dir = join(tmpdir(), `vizlint-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const dir = join(tmpdir(), `deslint-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'package.json'), JSON.stringify({ dependencies: deps }));
   return dir;

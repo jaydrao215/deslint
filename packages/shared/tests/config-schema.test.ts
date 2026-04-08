@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { parseConfig, safeParseConfig, VizlintConfigSchema } from '../src/config-schema.js';
+import { parseConfig, safeParseConfig, DeslintConfigSchema } from '../src/config-schema.js';
 
-describe('VizlintConfigSchema', () => {
+describe('DeslintConfigSchema', () => {
   // ── Valid configs ─────────────────────────────────────────────────
 
   it('accepts an empty config', () => {
@@ -81,7 +81,7 @@ describe('VizlintConfigSchema', () => {
 
   it('accepts $schema field for editor support', () => {
     const config = parseConfig({
-      $schema: 'https://vizlint.dev/schema/vizlintrc.json',
+      $schema: 'https://deslint.com/schema/deslintrc.json',
       rules: { 'no-arbitrary-colors': 'warn' },
     });
     expect(config.$schema).toBeDefined();

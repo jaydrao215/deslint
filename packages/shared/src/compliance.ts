@@ -1,9 +1,9 @@
 /**
  * WCAG 2.2 compliance mapping and conformance evaluation.
  *
- * Maps Vizlint rules to WCAG 2.2 Success Criteria so scan results
+ * Maps Deslint rules to WCAG 2.2 Success Criteria so scan results
  * can be converted into an audit-ready conformance report. Only a
- * subset of Vizlint rules map cleanly to WCAG — the rest are
+ * subset of Deslint rules map cleanly to WCAG — the rest are
  * "design quality" concerns and are reported separately.
  *
  * Source: https://www.w3.org/TR/WCAG22/
@@ -26,14 +26,14 @@ export interface WcagCriterion {
   level: WcagLevel;
   /** Short plain-English description. */
   description: string;
-  /** Vizlint rule IDs that contribute evidence to this criterion. */
+  /** Deslint rule IDs that contribute evidence to this criterion. */
   rules: string[];
   /** Link into the WCAG spec. */
   url: string;
 }
 
 /**
- * WCAG 2.2 criteria mapped to Vizlint rules.
+ * WCAG 2.2 criteria mapped to Deslint rules.
  *
  * We deliberately keep this list small and defensible. A rule appears
  * here only when failing it is clear evidence the criterion is not
@@ -46,7 +46,7 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     title: 'Non-text Content',
     level: 'A',
     description: 'All non-text content has a text alternative that serves the equivalent purpose.',
-    rules: ['vizlint/image-alt-text'],
+    rules: ['deslint/image-alt-text'],
     url: 'https://www.w3.org/TR/WCAG22/#non-text-content',
   },
   {
@@ -54,7 +54,7 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     title: 'Contrast (Minimum)',
     level: 'AA',
     description: 'Text and images of text have a contrast ratio of at least 4.5:1 (3:1 for large text).',
-    rules: ['vizlint/a11y-color-contrast'],
+    rules: ['deslint/a11y-color-contrast'],
     url: 'https://www.w3.org/TR/WCAG22/#contrast-minimum',
   },
   {
@@ -62,7 +62,7 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     title: 'Reflow',
     level: 'AA',
     description: 'Content can be presented without loss at 320 CSS pixels wide without horizontal scroll.',
-    rules: ['vizlint/responsive-required'],
+    rules: ['deslint/responsive-required'],
     url: 'https://www.w3.org/TR/WCAG22/#reflow',
   },
   {
@@ -70,7 +70,7 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     title: 'Non-text Contrast',
     level: 'AA',
     description: 'UI components and graphical objects have a contrast ratio of at least 3:1 against adjacent colors.',
-    rules: ['vizlint/a11y-color-contrast'],
+    rules: ['deslint/a11y-color-contrast'],
     url: 'https://www.w3.org/TR/WCAG22/#non-text-contrast',
   },
   {
@@ -78,7 +78,7 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     title: 'Text Spacing',
     level: 'AA',
     description: 'No loss of content or functionality when users override line height, paragraph spacing, letter spacing, or word spacing.',
-    rules: ['vizlint/no-inline-styles'],
+    rules: ['deslint/no-inline-styles'],
     url: 'https://www.w3.org/TR/WCAG22/#text-spacing',
   },
   {
@@ -86,7 +86,7 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     title: 'Focus Visible',
     level: 'AA',
     description: 'Any keyboard-operable user interface has a visible focus indicator.',
-    rules: ['vizlint/missing-states'],
+    rules: ['deslint/missing-states'],
     url: 'https://www.w3.org/TR/WCAG22/#focus-visible',
   },
 ];
@@ -125,7 +125,7 @@ export interface ComplianceResult {
 
 /** Minimal shape the evaluator needs from a scan run. */
 export interface ComplianceScanSnapshot {
-  /** Violation counts by full rule id (e.g. 'vizlint/a11y-color-contrast'). */
+  /** Violation counts by full rule id (e.g. 'deslint/a11y-color-contrast'). */
   byRule: Record<string, number>;
   /** Optional per-rule file counts. */
   filesByRule?: Record<string, number>;

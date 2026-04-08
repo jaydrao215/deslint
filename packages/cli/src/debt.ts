@@ -1,13 +1,13 @@
 import type { LintResult, RuleCategory } from './lint-runner.js';
 import { RULE_CATEGORY_MAP } from './lint-runner.js';
-import { RULE_EFFORT_MINUTES, effortForRule } from '@vizlint/shared';
+import { RULE_EFFORT_MINUTES, effortForRule } from '@deslint/shared';
 
 // Re-export the calibration table for backwards compat with debt.test.ts
 // and any external tooling that imported from this module first.
 export { RULE_EFFORT_MINUTES };
 
 export interface DebtBreakdownEntry {
-  /** Rule id, e.g. 'vizlint/no-arbitrary-spacing' */
+  /** Rule id, e.g. 'deslint/no-arbitrary-spacing' */
   ruleId: string;
   /** Number of violations of this rule */
   violations: number;

@@ -4,14 +4,14 @@ export default function Configuration() {
       <h1>Configuration Reference</h1>
 
       <p>
-        Vizlint uses a <code>.vizlintrc.json</code> file in your project root for configuration.
-        Run <code>npx vizlint init</code> to generate one automatically.
+        Deslint uses a <code>.deslintrc.json</code> file in your project root for configuration.
+        Run <code>npx deslint init</code> to generate one automatically.
       </p>
 
       <h2>Full Schema</h2>
       <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
         <code>{`{
-  "$schema": "https://vizlint.dev/schema.json",
+  "$schema": "https://deslint.com/schema.json",
   "rules": {
     "no-arbitrary-colors": "error",
     "no-arbitrary-spacing": "error",
@@ -72,7 +72,7 @@ export default function Configuration() {
       <h3>Level 1: Inline Ignore</h3>
       <p>Suppress a single violation with a mandatory reason:</p>
       <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
-        <code>{`{/* vizlint-ignore no-arbitrary-colors -- brand gradient requires exact hex */}
+        <code>{`{/* deslint-ignore no-arbitrary-colors -- brand gradient requires exact hex */}
 <div className="bg-[#1E3A5F]" />`}</code>
       </pre>
 
@@ -104,13 +104,13 @@ export default function Configuration() {
       <h3>Level 5: Severity Profiles</h3>
       <p>Switch strictness based on context:</p>
       <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
-        <code>{`vizlint scan --profile production
-vizlint scan --profile prototype`}</code>
+        <code>{`deslint scan --profile production
+deslint scan --profile prototype`}</code>
       </pre>
 
       <h2>Tailwind Auto-Import</h2>
       <p>
-        Vizlint automatically reads your Tailwind configuration — no manual token setup needed:
+        Deslint automatically reads your Tailwind configuration — no manual token setup needed:
       </p>
       <ul>
         <li><strong>Tailwind v3</strong>: Reads <code>tailwind.config.js</code> / <code>.ts</code></li>
@@ -118,7 +118,7 @@ vizlint scan --profile prototype`}</code>
         <li><strong>CSS fallback</strong>: Reads <code>:root</code> custom properties</li>
       </ul>
       <p>
-        Manual <code>.vizlintrc.json</code> tokens override auto-imported ones.
+        Manual <code>.deslintrc.json</code> tokens override auto-imported ones.
       </p>
     </div>
   );

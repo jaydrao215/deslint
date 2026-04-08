@@ -51,7 +51,7 @@ export function formatText(
 
   // ── Header ──
   lines.push('');
-  lines.push(chalk.bold('  Vizlint Design Health Report'));
+  lines.push(chalk.bold('  Deslint Design Health Report'));
   lines.push(chalk.gray('  ─'.repeat(24)));
   lines.push('');
 
@@ -92,7 +92,7 @@ export function formatText(
     const top = debt.breakdown.slice(0, 3);
     if (top.length > 0) {
       for (const entry of top) {
-        const ruleShort = entry.ruleId.replace(/^vizlint\//, '');
+        const ruleShort = entry.ruleId.replace(/^deslint\//, '');
         lines.push(
           chalk.gray(
             `    ${formatDebt(entry.totalMinutes).padStart(8)}  ${ruleShort} (${entry.violations}× ${entry.minutesPerViolation}m)`,
@@ -197,14 +197,14 @@ export function formatText(
     }
 
     // ── Tip for unfixable grouped violations ──
-    if (repeated.some(e => e.ruleId === 'vizlint/no-arbitrary-spacing')) {
-      lines.push(chalk.dim('  Tip: run `vizlint suggest-tokens .` to get design guidance for these custom values.'));
+    if (repeated.some(e => e.ruleId === 'deslint/no-arbitrary-spacing')) {
+      lines.push(chalk.dim('  Tip: run `deslint suggest-tokens .` to get design guidance for these custom values.'));
       lines.push('');
     }
 
     // ── False positive reporting ──
     lines.push(chalk.gray('  ─'.repeat(24)));
-    lines.push(`  ${chalk.dim('See a false positive?')} ${chalk.cyan('https://github.com/vizlint/vizlint/issues/new?labels=false-positive')}`);
+    lines.push(`  ${chalk.dim('See a false positive?')} ${chalk.cyan('https://github.com/deslint/deslint/issues/new?labels=false-positive')}`);
     lines.push('');
   }
 
@@ -344,9 +344,9 @@ export function formatSarif(
       {
         tool: {
           driver: {
-            name: 'Vizlint',
+            name: 'Deslint',
             version: _pkg.version,
-            informationUri: 'https://vizlint.dev',
+            informationUri: 'https://deslint.com',
             rules: Object.keys(lintResult.byRule).map((ruleId) => ({
               id: ruleId,
               shortDescription: { text: ruleId },

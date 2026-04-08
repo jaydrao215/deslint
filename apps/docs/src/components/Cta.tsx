@@ -50,7 +50,7 @@ export function Cta() {
             <span>
               <span className="text-pass-light">npm</span>{' '}
               <span className="text-gray-400">install -D</span>{' '}
-              <span className="text-white">@vizlint/eslint-plugin</span>
+              <span className="text-white">@deslint/eslint-plugin</span>
             </span>
           </div>
         </motion.div>
@@ -70,7 +70,7 @@ export function Cta() {
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
           <a
-            href="https://github.com/vizlint/vizlint"
+            href="https://github.com/deslint/deslint"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm font-medium text-primary-200 hover:text-white transition-colors"

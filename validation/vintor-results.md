@@ -2,13 +2,13 @@
 
 > **Date:** 2026-04-01
 > **Project:** Vintor (Angular 21 frontend — autoscore-frontend)
-> **Vizlint version:** 0.3.0 (local, via CLI programmatic scan)
+> **Deslint version:** 0.3.0 (local, via CLI programmatic scan)
 > **ESLint rules enabled:** 14 (recommended config, all at warn)
 > **Tailwind version:** v4.2 (CSS @theme tokens, no tailwind.config.js)
 
 ## Setup
 
-- [x] Vizlint CLI ran programmatically against Vintor src/
+- [x] Deslint CLI ran programmatically against Vintor src/
 - [x] Angular template parser (`@angular-eslint/template-parser`) wired into lint-runner
 - [x] Scan completed successfully — zero crashes
 - [x] All 14 rules active, all violations classified
@@ -142,7 +142,7 @@ For JSX files, auto-fix would work for:
 | Auto-fix correctness | 100% valid code | Not applicable (Angular lacks range) | PASS (no broken fixes) |
 | Performance | < 30s | 0.34s | PASS |
 
-## Remaining Work (per VIZLINT-EXECUTION.md Section 3B)
+## Remaining Work (per DESLINT-EXECUTION.md Section 3B)
 
 1. Validate on 2-3 open-source Tailwind projects (JSX/Vue/Svelte — to test auto-fix on frameworks with full node.range support)
 2. Investigate rules with 0 violations on Angular (a11y-color-contrast, missing-states, image-alt-text)

@@ -4,20 +4,20 @@ import { dirname } from 'node:path';
 /** Rule categories used for Design Health Score sub-scores */
 export type RuleCategory = 'colors' | 'spacing' | 'typography' | 'responsive' | 'consistency';
 
-/** Map Vizlint rule IDs to their score category */
+/** Map Deslint rule IDs to their score category */
 export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
-  'vizlint/no-arbitrary-colors': 'colors',
-  'vizlint/no-arbitrary-spacing': 'spacing',
-  'vizlint/no-arbitrary-typography': 'typography',
-  'vizlint/responsive-required': 'responsive',
-  'vizlint/consistent-component-spacing': 'consistency',
-  'vizlint/a11y-color-contrast': 'colors',
-  'vizlint/dark-mode-coverage': 'colors',
-  'vizlint/no-arbitrary-zindex': 'consistency',
-  'vizlint/no-inline-styles': 'consistency',
-  'vizlint/consistent-border-radius': 'consistency',
-  'vizlint/image-alt-text': 'responsive',
-  'vizlint/no-magic-numbers-layout': 'spacing',
+  'deslint/no-arbitrary-colors': 'colors',
+  'deslint/no-arbitrary-spacing': 'spacing',
+  'deslint/no-arbitrary-typography': 'typography',
+  'deslint/responsive-required': 'responsive',
+  'deslint/consistent-component-spacing': 'consistency',
+  'deslint/a11y-color-contrast': 'colors',
+  'deslint/dark-mode-coverage': 'colors',
+  'deslint/no-arbitrary-zindex': 'consistency',
+  'deslint/no-inline-styles': 'consistency',
+  'deslint/consistent-border-radius': 'consistency',
+  'deslint/image-alt-text': 'responsive',
+  'deslint/no-magic-numbers-layout': 'spacing',
 };
 
 export interface LintMessage {
@@ -59,7 +59,7 @@ export interface LintResult {
 export interface LintRunnerOptions {
   /** Files to lint */
   files: string[];
-  /** Rule overrides from .vizlintrc.json */
+  /** Rule overrides from .deslintrc.json */
   ruleOverrides?: Record<string, any>;
   /** Whether to apply fixes */
   fix?: boolean;
@@ -68,35 +68,35 @@ export interface LintRunnerOptions {
 }
 
 /**
- * Run Vizlint ESLint rules on a set of files.
+ * Run Deslint ESLint rules on a set of files.
  * Returns structured results for scoring and reporting.
  */
 export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
   // Dynamic import to get the plugin — it's an ESM workspace package
-  const vizlintPlugin = await import('@vizlint/eslint-plugin');
-  const plugin = vizlintPlugin.default ?? vizlintPlugin;
+  const deslintPlugin = await import('@deslint/eslint-plugin');
+  const plugin = deslintPlugin.default ?? deslintPlugin;
 
   const rules: Record<string, any> = {
-    'vizlint/no-arbitrary-colors': 'warn',
-    'vizlint/no-arbitrary-spacing': 'warn',
-    'vizlint/no-arbitrary-typography': 'warn',
-    'vizlint/responsive-required': 'warn',
-    'vizlint/consistent-component-spacing': 'warn',
-    'vizlint/a11y-color-contrast': 'warn',
-    'vizlint/max-component-lines': 'off',
-    'vizlint/missing-states': 'off',
-    'vizlint/dark-mode-coverage': 'off',
-    'vizlint/no-arbitrary-zindex': 'warn',
-    'vizlint/no-inline-styles': 'off',
-    'vizlint/consistent-border-radius': 'warn',
-    'vizlint/image-alt-text': 'warn',
-    'vizlint/no-magic-numbers-layout': 'warn',
+    'deslint/no-arbitrary-colors': 'warn',
+    'deslint/no-arbitrary-spacing': 'warn',
+    'deslint/no-arbitrary-typography': 'warn',
+    'deslint/responsive-required': 'warn',
+    'deslint/consistent-component-spacing': 'warn',
+    'deslint/a11y-color-contrast': 'warn',
+    'deslint/max-component-lines': 'off',
+    'deslint/missing-states': 'off',
+    'deslint/dark-mode-coverage': 'off',
+    'deslint/no-arbitrary-zindex': 'warn',
+    'deslint/no-inline-styles': 'off',
+    'deslint/consistent-border-radius': 'warn',
+    'deslint/image-alt-text': 'warn',
+    'deslint/no-magic-numbers-layout': 'warn',
   };
 
   // Apply user overrides
   if (options.ruleOverrides) {
     for (const [rule, config] of Object.entries(options.ruleOverrides)) {
-      const ruleId = rule.startsWith('vizlint/') ? rule : `vizlint/${rule}`;
+      const ruleId = rule.startsWith('deslint/') ? rule : `deslint/${rule}`;
       rules[ruleId] = config;
     }
   }
@@ -113,7 +113,7 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     // Not installed — TypeScript files may fail to parse
   }
 
-  // Load framework-specific parsers (optional peer deps of @vizlint/eslint-plugin)
+  // Load framework-specific parsers (optional peer deps of @deslint/eslint-plugin)
   let angularTemplateParser: any;
   try {
     angularTemplateParser = await import('@angular-eslint/template-parser');
@@ -136,7 +136,7 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
   }
 
   const baseConfig = {
-    plugins: { vizlint: plugin } as any,
+    plugins: { deslint: plugin } as any,
     rules,
     // Don't report eslint-disable comments for rules not in our config
     linterOptions: {
@@ -248,17 +248,17 @@ function aggregateResults(results: LintFileResult[]): LintResult {
   };
 
   for (const result of results) {
-    // Filter to only vizlint/* violations and parse errors (ruleId null = parse error)
+    // Filter to only deslint/* violations and parse errors (ruleId null = parse error)
     // This prevents third-party eslint-disable comments from leaking into our results
-    const vizlintMessages = result.messages.filter(
-      (msg) => msg.ruleId === null || msg.ruleId.startsWith('vizlint/'),
+    const deslintMessages = result.messages.filter(
+      (msg) => msg.ruleId === null || msg.ruleId.startsWith('deslint/'),
     );
 
-    if (vizlintMessages.length > 0) {
+    if (deslintMessages.length > 0) {
       filesWithViolations++;
     }
 
-    for (const msg of vizlintMessages) {
+    for (const msg of deslintMessages) {
       totalViolations++;
 
       if (msg.severity === 2) {
@@ -277,11 +277,11 @@ function aggregateResults(results: LintFileResult[]): LintResult {
     }
   }
 
-  // Return results with non-vizlint messages stripped for clean output
+  // Return results with non-deslint messages stripped for clean output
   const filteredResults = results.map((r) => ({
     ...r,
     messages: r.messages.filter(
-      (msg) => msg.ruleId === null || msg.ruleId.startsWith('vizlint/'),
+      (msg) => msg.ruleId === null || msg.ruleId.startsWith('deslint/'),
     ),
   }));
 

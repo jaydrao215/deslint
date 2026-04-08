@@ -100,7 +100,7 @@ export function saveHistory(
   lintResult: LintResult,
   scoreResult: ScoreResult,
 ): void {
-  const historyPath = resolve(projectDir, '.vizlint', 'history.json');
+  const historyPath = resolve(projectDir, '.deslint', 'history.json');
   const dir = dirname(historyPath);
 
   if (!existsSync(dir)) {

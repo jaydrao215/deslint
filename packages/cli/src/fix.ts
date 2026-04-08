@@ -137,7 +137,7 @@ export async function fixInteractive(options: FixInteractiveOptions): Promise<vo
     return;
   }
 
-  prompts.intro(chalk.bold('Vizlint Interactive Fix'));
+  prompts.intro(chalk.bold('Deslint Interactive Fix'));
 
   // Collect all fixable violations across files
   interface Violation {

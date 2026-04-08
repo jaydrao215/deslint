@@ -1,7 +1,7 @@
 /**
  * Simple rule performance benchmark.
  * Budget: each rule must process a file in < 2ms.
- * Runs via: pnpm --filter @vizlint/eslint-plugin bench
+ * Runs via: pnpm --filter @deslint/eslint-plugin bench
  */
 
 import { ESLint } from 'eslint';
@@ -36,22 +36,22 @@ async function bench() {
   const eslint = new ESLint({
     overrideConfigFile: true,
     overrideConfig: {
-      plugins: { vizlint: plugin as any },
+      plugins: { deslint: plugin as any },
       rules: {
-        'vizlint/no-arbitrary-colors': 'error',
-        'vizlint/no-arbitrary-spacing': 'error',
-        'vizlint/no-arbitrary-typography': 'error',
-        'vizlint/responsive-required': 'error',
-        'vizlint/consistent-component-spacing': 'error',
-        'vizlint/a11y-color-contrast': 'error',
-        'vizlint/max-component-lines': 'error',
-        'vizlint/missing-states': 'error',
-        'vizlint/dark-mode-coverage': 'error',
-        'vizlint/no-arbitrary-zindex': 'error',
-        'vizlint/no-inline-styles': 'error',
-        'vizlint/consistent-border-radius': 'error',
-        'vizlint/image-alt-text': 'error',
-        'vizlint/no-magic-numbers-layout': 'error',
+        'deslint/no-arbitrary-colors': 'error',
+        'deslint/no-arbitrary-spacing': 'error',
+        'deslint/no-arbitrary-typography': 'error',
+        'deslint/responsive-required': 'error',
+        'deslint/consistent-component-spacing': 'error',
+        'deslint/a11y-color-contrast': 'error',
+        'deslint/max-component-lines': 'error',
+        'deslint/missing-states': 'error',
+        'deslint/dark-mode-coverage': 'error',
+        'deslint/no-arbitrary-zindex': 'error',
+        'deslint/no-inline-styles': 'error',
+        'deslint/consistent-border-radius': 'error',
+        'deslint/image-alt-text': 'error',
+        'deslint/no-magic-numbers-layout': 'error',
       },
       languageOptions: {
         parserOptions: { ecmaFeatures: { jsx: true } },

@@ -1,4 +1,4 @@
-VIZLINT
+DESLINT
 The Design Quality Gate for AI-Generated Code
 ────────────────────────────────────────
 Sprint Execution Plan
@@ -17,7 +17,7 @@ Table of Contents
 8. Release Milestones & Revenue Targets
 
 1. Product Overview & Vision
-Vizlint is the first quality gate built for how code looks, not just how it runs. It validates design quality — spacing consistency, typography hierarchy, color token adherence, responsive coverage, and accessibility — in AI-generated frontend code across any framework.
+Deslint is the first quality gate built for how code looks, not just how it runs. It validates design quality — spacing consistency, typography hierarchy, color token adherence, responsive coverage, and accessibility — in AI-generated frontend code across any framework.
 Product Pillars
 1. Local-First: Zero code leaves the developer's machine. ESLint runs locally. MCP server uses stdio. No cloud dependency.
 2. Framework-Agnostic: Works with React, Vue, Svelte, Angular, plain HTML — any Tailwind or CSS-based output.
@@ -25,9 +25,9 @@ Product Pillars
 4. Open Core: Free OSS ESLint plugin for adoption. Paid CLI, MCP server, and dashboard for revenue.
 Tech Stack
 Language: TypeScript (everything)
-ESLint Plugin: @vizlint/eslint-plugin — AST-based rules via @typescript-eslint/utils
-CLI: @vizlint/cli — Commander.js, Chalk, project-wide analysis + Design Health Score
-MCP Server: @vizlint/mcp — @modelcontextprotocol/sdk, stdio transport, local execution
+ESLint Plugin: @deslint/eslint-plugin — AST-based rules via @typescript-eslint/utils
+CLI: @deslint/cli — Commander.js, Chalk, project-wide analysis + Design Health Score
+MCP Server: @deslint/mcp — @modelcontextprotocol/sdk, stdio transport, local execution
 Dashboard: Next.js 15 + Tailwind + shadcn/ui (Framer for marketing site)
 API: Next.js API routes + Drizzle ORM + PostgreSQL (Supabase)
 Monorepo: Turborepo with packages/ structure
@@ -94,7 +94,7 @@ Test Cases:
 	•	TEST: GitHub Actions CI completes green on main branch
 	•	TEST: Cross-package imports resolve correctly (shared → eslint-plugin)
 VIZ-002: First Rule: no-arbitrary-colors
-As a developer using AI coding tools, I want Vizlint to flag hardcoded color values in my Tailwind classes, so that I maintain consistent brand colors instead of AI-generated arbitrary hex values
+As a developer using AI coding tools, I want Deslint to flag hardcoded color values in my Tailwind classes, so that I maintain consistent brand colors instead of AI-generated arbitrary hex values
 Story Points: 8
 Acceptance Criteria:
 	•	Rule detects bg-[#hex], text-[#hex], border-[#hex], ring-[#hex] patterns in className attributes
@@ -125,11 +125,11 @@ Test Cases:
 	•	TEST: Rule respects severity configuration
 	•	TEST: Auto-fix correctly replaces arbitrary color with suggested token
 Sprint 2: Rules #2–3 & Landing Page
-Sprint Goal: no-arbitrary-spacing and typography-scale rules shipping, Framer landing page live at vizlint.dev
+Sprint Goal: no-arbitrary-spacing and typography-scale rules shipping, Framer landing page live at deslint.com
 Velocity Target: 13 story points
 ────────────────────────────────────────────────────────────────────────────────
 VIZ-003: Rule: no-arbitrary-spacing
-As a developer, I want Vizlint to flag hardcoded spacing values like p-[13px] or m-[7px], so that my UI maintains consistent spacing rhythm from the Tailwind scale
+As a developer, I want Deslint to flag hardcoded spacing values like p-[13px] or m-[7px], so that my UI maintains consistent spacing rhythm from the Tailwind scale
 Story Points: 5
 Acceptance Criteria:
 	•	Rule detects p-[Npx], m-[Npx], gap-[Npx], space-x-[Npx], space-y-[Npx] and all directional variants
@@ -149,7 +149,7 @@ Test Cases:
 	•	TEST: Does NOT flag p-4 or m-auto or gap-x-2
 	•	TEST: Custom spacing scale overrides work correctly
 VIZ-004: Rule: typography-scale
-As a developer, I want Vizlint to enforce consistent typography sizing, so that my UI uses a coherent type scale instead of random font sizes
+As a developer, I want Deslint to enforce consistent typography sizing, so that my UI uses a coherent type scale instead of random font sizes
 Story Points: 5
 Acceptance Criteria:
 	•	Rule detects text-[Npx], font-[N], leading-[Npx], tracking-[Nem] arbitrary values
@@ -168,18 +168,18 @@ Test Cases:
 	•	TEST: Detects leading-[22px] and suggests leading-normal or leading-relaxed
 	•	TEST: Does NOT flag text-sm, font-bold, leading-tight
 VIZ-005: Landing Page v1
-As a potential user, I want to understand what Vizlint does in 10 seconds on the landing page, so that I decide to try the tool immediately
+As a potential user, I want to understand what Deslint does in 10 seconds on the landing page, so that I decide to try the tool immediately
 Story Points: 3
 Acceptance Criteria:
-	•	Page loads at vizlint.dev with < 2s LCP
-	•	Hero section: clear headline, 1-line description, install command (npx vizlint)
+	•	Page loads at deslint.com with < 2s LCP
+	•	Hero section: clear headline, 1-line description, install command (npx deslint)
 	•	Before/after code comparison showing a real detection
 	•	3 feature blocks: Spacing · Typography · Colors
 	•	CTA: npm install link + GitHub star button
 	•	Footer: GitHub, Twitter/X, MIT License badge
 	•	Mobile responsive
 Tasks:
-	•	Purchase vizlint.dev domain
+	•	Purchase deslint.com domain
 	•	Set up Framer project with custom domain
 	•	Design hero section with install command snippet
 	•	Create before/after code comparison visual
@@ -192,11 +192,11 @@ Test Cases:
 	•	TEST: Mobile layout renders correctly (320px–768px)
 	•	TEST: Copy-paste of install command works
 Sprint 3: Rules #4–5 & npm Publish
-Sprint Goal: responsive-required and consistent-component-spacing rules, first npm publish of @vizlint/eslint-plugin
+Sprint Goal: responsive-required and consistent-component-spacing rules, first npm publish of @deslint/eslint-plugin
 Velocity Target: 13 story points
 ────────────────────────────────────────────────────────────────────────────────
 VIZ-006: Rule: responsive-required
-As a developer, I want Vizlint to flag layout components with fixed widths that lack responsive breakpoints, so that my AI-generated layouts don't break on mobile
+As a developer, I want Deslint to flag layout components with fixed widths that lack responsive breakpoints, so that my AI-generated layouts don't break on mobile
 Story Points: 5
 Acceptance Criteria:
 	•	Rule detects w-[Npx] without sm:/md:/lg: responsive variants in same component
@@ -215,7 +215,7 @@ Test Cases:
 	•	TEST: Does NOT flag w-8 (32px) for icon containers
 	•	TEST: Configurable breakpoint requirements work
 VIZ-007: Rule: consistent-component-spacing
-As a developer, I want Vizlint to detect when similar components use different spacing patterns, so that cards, buttons, and inputs have consistent internal spacing across my project
+As a developer, I want Deslint to detect when similar components use different spacing patterns, so that cards, buttons, and inputs have consistent internal spacing across my project
 Story Points: 5
 Acceptance Criteria:
 	•	Rule analyzes components with similar structure (e.g., all Card-like components) for spacing divergence
@@ -232,37 +232,37 @@ Test Cases:
 	•	TEST: Does NOT flag intentional size variants (CardSm vs CardLg)
 	•	TEST: Reports the dominant pattern as suggested standard
 VIZ-008: npm Publish Pipeline
-As a developer, I want to install @vizlint/eslint-plugin from npm, so that I can add Vizlint to any project in seconds
+As a developer, I want to install @deslint/eslint-plugin from npm, so that I can add Deslint to any project in seconds
 Story Points: 3
 Acceptance Criteria:
-	•	Package published as @vizlint/eslint-plugin on npm
+	•	Package published as @deslint/eslint-plugin on npm
 	•	Semantic versioning (0.1.0 initial release)
 	•	README with installation instructions, rule documentation, configuration examples
 	•	Flat config (eslint.config.js) and legacy (.eslintrc) support
 	•	GitHub Release created with changelog
 Tasks:
-	•	Set up npm organization @vizlint
+	•	Set up npm organization @deslint
 	•	Configure package.json for npm publish (files, main, types, exports)
 	•	Write comprehensive README with each rule documented
 	•	Create recommended and strict presets
 	•	Set up GitHub Actions release workflow (tag → build → publish → GitHub Release)
 	•	Test installation in a fresh Next.js + Tailwind project
 Test Cases:
-	•	TEST: npm install @vizlint/eslint-plugin installs successfully
+	•	TEST: npm install @deslint/eslint-plugin installs successfully
 	•	TEST: Recommended preset enables all 5 rules at 'warn' level
 	•	TEST: Strict preset enables all 5 rules at 'error' level
 	•	TEST: Works with ESLint flat config
 	•	TEST: Works with legacy .eslintrc config
-	•	TEST: VS Code ESLint extension shows Vizlint warnings inline
+	•	TEST: VS Code ESLint extension shows Deslint warnings inline
 Sprint 4: Service Launch & .cursorrules
 Sprint Goal: Productized service live, .cursorrules and CLAUDE.md templates published, first outreach
 Velocity Target: 10 story points
 ────────────────────────────────────────────────────────────────────────────────
 VIZ-009: Productized Service Page
-As a potential client (vibe coder / founder), I want to understand and purchase the Vizlint design review service, so that I get my AI-generated UI professionally reviewed
+As a potential client (vibe coder / founder), I want to understand and purchase the Deslint design review service, so that I get my AI-generated UI professionally reviewed
 Story Points: 5
 Acceptance Criteria:
-	•	Service page at vizlint.dev/service with clear pricing
+	•	Service page at deslint.com/service with clear pricing
 	•	Tier 1: One-off audit (€997) — single project review, Loom + written report
 	•	Tier 2: Monthly subscription (€1,497/mo) — 1 active review, 48hr turnaround
 	•	Stripe Checkout integration for payment
@@ -281,27 +281,27 @@ Test Cases:
 	•	TEST: Confirmation email delivered within 60 seconds
 	•	TEST: Service page mobile responsive
 VIZ-010: Cursor Rules & CLAUDE.md Templates
-As a developer using Cursor or Claude Code, I want pre-built design quality rules for my AI coding environment, so that AI generates better UI from the start and I discover Vizlint
+As a developer using Cursor or Claude Code, I want pre-built design quality rules for my AI coding environment, so that AI generates better UI from the start and I discover Deslint
 Story Points: 3
 Acceptance Criteria:
-	•	.cursor/rules/vizlint-design-quality.mdc published to awesome-cursorrules repo (PR submitted)
+	•	.cursor/rules/deslint-design-quality.mdc published to awesome-cursorrules repo (PR submitted)
 	•	CLAUDE.md template with design quality enforcement instructions published to GitHub
 	•	AGENTS.md template for cross-tool compatibility
-	•	Each template references @vizlint/eslint-plugin for automated validation
+	•	Each template references @deslint/eslint-plugin for automated validation
 	•	Templates cover: spacing, typography, colors, responsive, component structure
 Tasks:
 	•	Write .cursorrules file based on personal Vintor design enforcement experience
 	•	Write CLAUDE.md with checkpoint-gated design quality workflow
 	•	Write AGENTS.md for cross-tool compatibility
 	•	Submit PR to PatrickJS/awesome-cursorrules
-	•	Create standalone GitHub repo: vizlint/design-rules
+	•	Create standalone GitHub repo: deslint/design-rules
 	•	Write announcement tweet thread with before/after examples
 Test Cases:
 	•	TEST: .cursorrules loads correctly in Cursor IDE
 	•	TEST: CLAUDE.md loads at Claude Code session start
 	•	TEST: Rules produce measurably better UI output in A/B test (manual)
 VIZ-011: Launch Outreach Sprint
-As a CEO, I want to announce Vizlint to the vibe coding community, so that we get first GitHub stars, npm installs, and service leads
+As a CEO, I want to announce Deslint to the vibe coding community, so that we get first GitHub stars, npm installs, and service leads
 Story Points: 2
 Acceptance Criteria:
 	•	Twitter/X announcement thread posted (5-7 tweets with code screenshots)
@@ -324,34 +324,34 @@ Test Cases:
   Sprints 5–8 (Weeks 5–8)  |  CLI with project-wide analysis, Design Health Score, 10+ rules, service revenue growing
 
 Sprint 5: CLI Foundation & Score Engine
-Sprint Goal: vizlint CLI runs, scans project, outputs Design Health Score 0–100
+Sprint Goal: deslint CLI runs, scans project, outputs Design Health Score 0–100
 Velocity Target: 13 story points
 ────────────────────────────────────────────────────────────────────────────────
 VIZ-012: CLI: Project Scanner
-As a developer, I want to run `npx vizlint scan` and get a project-wide design quality report, so that I know the overall design health of my codebase
+As a developer, I want to run `npx deslint scan` and get a project-wide design quality report, so that I know the overall design health of my codebase
 Story Points: 8
 Acceptance Criteria:
 	•	CLI accepts project directory path (defaults to cwd)
 	•	Discovers all .tsx, .jsx, .vue, .svelte, .html files
-	•	Runs all Vizlint ESLint rules across discovered files
+	•	Runs all Deslint ESLint rules across discovered files
 	•	Outputs summary: total files, total violations, violations by rule, violations by severity
 	•	Supports --format json | text | sarif output
 	•	Exits with code 1 if any 'error' severity violations found (CI-friendly)
-	•	Respects .vizlintrc.json configuration file
+	•	Respects .deslintrc.json configuration file
 Tasks:
-	•	Initialize @vizlint/cli package with Commander.js
-	•	Build file discovery with glob patterns and .vizlintignore support
-	•	Integrate ESLint programmatic API (ESLint class with Vizlint plugin)
+	•	Initialize @deslint/cli package with Commander.js
+	•	Build file discovery with glob patterns and .deslintignore support
+	•	Integrate ESLint programmatic API (ESLint class with Deslint plugin)
 	•	Build report aggregator across all files
 	•	Implement output formatters: text (chalk-colored), JSON, SARIF
 	•	Add exit code logic based on severity thresholds
-	•	Create .vizlintrc.json schema with Zod validation
+	•	Create .deslintrc.json schema with Zod validation
 Test Cases:
 	•	TEST: CLI scans a sample Next.js project and finds known violations
 	•	TEST: JSON output is valid JSON matching defined schema
 	•	TEST: SARIF output validates against SARIF 2.1.0 schema
 	•	TEST: Exit code 1 when errors present, 0 when only warnings
-	•	TEST: .vizlintignore excludes specified patterns
+	•	TEST: .deslintignore excludes specified patterns
 	•	TEST: --format flag correctly switches output format
 VIZ-013: Design Health Score Algorithm
 As a developer, I want a single 0–100 Design Health Score for my project, so that I can quickly assess and track design quality over time
@@ -361,7 +361,7 @@ Acceptance Criteria:
 	•	Each sub-score: 100 - (violations / total_opportunities × 100), clamped to 0–100
 	•	Overall score: weighted average of sub-scores
 	•	Color-coded output: 80–100 Green, 60–79 Yellow, 0–59 Red
-	•	Score saved to .vizlint/history.json for trend tracking
+	•	Score saved to .deslint/history.json for trend tracking
 	•	Pass/fail gate configurable: --min-score 75 exits with code 1 if below
 Tasks:
 	•	Define scoring formula with sub-score calculations
@@ -373,7 +373,7 @@ Tasks:
 Test Cases:
 	•	TEST: Score is 100 for project with zero violations
 	•	TEST: Score decreases proportionally with violations
-	•	TEST: Weights are configurable in .vizlintrc.json
+	•	TEST: Weights are configurable in .deslintrc.json
 	•	TEST: --min-score 75 fails project scoring 70
 	•	TEST: History file appends new entry without overwriting
 	•	TEST: Color output matches threshold ranges
@@ -382,7 +382,7 @@ Sprint Goal: A11y contrast, Vue/Svelte support, rule count reaches 8
 Velocity Target: 13 story points
 ────────────────────────────────────────────────────────────────────────────────
 VIZ-014: Rule: a11y-color-contrast
-As a developer, I want Vizlint to flag text/background color combinations with insufficient contrast, so that my AI-generated UI meets WCAG AA accessibility standards
+As a developer, I want Deslint to flag text/background color combinations with insufficient contrast, so that my AI-generated UI meets WCAG AA accessibility standards
 Story Points: 5
 Acceptance Criteria:
 	•	Rule detects text-{color} + bg-{color} combinations on same element or parent
@@ -401,7 +401,7 @@ Test Cases:
 	•	TEST: Large text threshold correctly applied (3:1 for text-xl+)
 	•	TEST: Custom color tokens resolve correctly
 VIZ-015: Framework Agnostic: Vue & Svelte Support
-As a Vue or Svelte developer, I want Vizlint to work with my framework, not just React, so that I get the same design quality validation regardless of framework
+As a Vue or Svelte developer, I want Deslint to work with my framework, not just React, so that I get the same design quality validation regardless of framework
 Story Points: 5
 Acceptance Criteria:
 	•	Rules parse Vue SFC <template> blocks
@@ -422,7 +422,7 @@ Test Cases:
 	•	TEST: All 8 rules detect violations in plain .html files
 	•	TEST: Vue :class dynamic bindings handled correctly
 VIZ-016: Rules #7–8: Component Complexity & Missing States
-As a developer, I want Vizlint to flag over-complex components and missing UI states, so that my components are maintainable and handle edge cases
+As a developer, I want Deslint to flag over-complex components and missing UI states, so that my components are maintainable and handle edge cases
 Story Points: 3
 Acceptance Criteria:
 	•	max-component-lines: Flag single-file components exceeding configurable LOC (default: 300)
@@ -442,10 +442,10 @@ Sprint Goal: Polished CLI output, init command, docs site, npm 0.3.0 with 10 rul
 Velocity Target: 13 story points
 ────────────────────────────────────────────────────────────────────────────────
 VIZ-017: CLI: Init Command & Config Wizard
-As a developer new to Vizlint, I want to run `npx vizlint init` and get set up in 30 seconds, so that onboarding is frictionless
+As a developer new to Deslint, I want to run `npx deslint init` and get set up in 30 seconds, so that onboarding is frictionless
 Story Points: 5
 Acceptance Criteria:
-	•	`npx vizlint init` creates .vizlintrc.json with interactive prompts
+	•	`npx deslint init` creates .deslintrc.json with interactive prompts
 	•	Prompts: framework (React/Vue/Svelte/Other), CSS approach (Tailwind/CSS Modules/Other), strictness (recommended/strict/custom)
 	•	Auto-detects framework from package.json if possible
 	•	Adds ESLint plugin to eslint.config.js or .eslintrc with correct config
@@ -459,8 +459,8 @@ Tasks:
 Test Cases:
 	•	TEST: Init wizard completes in < 30 seconds for a standard Next.js project
 	•	TEST: Auto-detects React from package.json
-	•	TEST: Generated .vizlintrc.json validates against schema
-	•	TEST: ESLint config correctly modified with Vizlint plugin
+	•	TEST: Generated .deslintrc.json validates against schema
+	•	TEST: ESLint config correctly modified with Deslint plugin
 VIZ-018: Rules #9–10 & v0.3.0 Release
 As a developer, I want two more rules covering dark mode and z-index management, so that common AI-generated anti-patterns are caught
 Story Points: 5
@@ -472,27 +472,27 @@ Tasks:
 	•	Implement z-index arbitrary value detector
 	•	Update recommended and strict presets
 	•	Update documentation with all 10 rules
-	•	Publish @vizlint/eslint-plugin@0.3.0 and @vizlint/cli@0.1.0 to npm
+	•	Publish @deslint/eslint-plugin@0.3.0 and @deslint/cli@0.1.0 to npm
 Test Cases:
 	•	TEST: Flags bg-blue-500 without dark:bg-blue-700 variant
 	•	TEST: Does NOT flag bg-blue-500 when dark:bg-blue-900 present
 	•	TEST: Flags z-[999] and suggests z-50
 	•	TEST: npm publish succeeds, install works in fresh project
 VIZ-019: Documentation Site
-As a developer evaluating Vizlint, I want comprehensive docs to understand every rule and configuration option, so that I trust the tool enough to install it
+As a developer evaluating Deslint, I want comprehensive docs to understand every rule and configuration option, so that I trust the tool enough to install it
 Story Points: 3
 Acceptance Criteria:
-	•	Docs at vizlint.dev/docs (Framer subpath or separate Nextra/Fumadocs site)
+	•	Docs at deslint.com/docs (Framer subpath or separate Nextra/Fumadocs site)
 	•	Every rule documented: description, rationale, examples (good/bad), configuration
 	•	Getting started guide: install → init → scan → fix
-	•	Configuration reference: .vizlintrc.json full schema
+	•	Configuration reference: .deslintrc.json full schema
 	•	CI/CD integration guide (GitHub Actions example)
 Tasks:
 	•	Set up docs framework (Fumadocs or Nextra)
 	•	Write rule documentation for all 10 rules with code examples
 	•	Write getting started guide
 	•	Write configuration reference
-	•	Deploy to vizlint.dev/docs
+	•	Deploy to deslint.com/docs
 Test Cases:
 	•	TEST: Every rule page renders correctly
 	•	TEST: Code examples syntax highlighted
@@ -520,7 +520,7 @@ Test Cases:
 	•	TEST: All metrics sources accessible and reporting data
 	•	TEST: Business review document answers: Are we on track for revenue? Should we pivot?
 VIZ-021: Community Feedback Integration
-As a developer who filed a GitHub issue, I want my feedback to be acknowledged and addressed, so that I trust Vizlint as an actively maintained project
+As a developer who filed a GitHub issue, I want my feedback to be acknowledged and addressed, so that I trust Deslint as an actively maintained project
 Story Points: 5
 Acceptance Criteria:
 	•	All GitHub issues triaged within 48 hours
@@ -556,7 +556,7 @@ Acceptance Criteria:
 	•	Server starts in < 2 seconds
 	•	Only structured analysis results sent to LLM — never raw source code
 Tasks:
-	•	Initialize @vizlint/mcp package
+	•	Initialize @deslint/mcp package
 	•	Implement MCP server using @modelcontextprotocol/sdk StdioServerTransport
 	•	Create tool schemas for analyze_file, analyze_project, suggest_fixes
 	•	Integrate ESLint programmatic API for file analysis
@@ -571,10 +571,10 @@ Test Cases:
 	•	TEST: No file content appears in MCP responses (privacy check)
 	•	TEST: Server startup time < 2 seconds
 VIZ-023: MCP Server: Cursor & Claude Code Integration
-As a developer, I want to add Vizlint to my Cursor or Claude Code environment in one command, so that design quality feedback appears automatically during AI code generation
+As a developer, I want to add Deslint to my Cursor or Claude Code environment in one command, so that design quality feedback appears automatically during AI code generation
 Story Points: 5
 Acceptance Criteria:
-	•	npx @vizlint/mcp install auto-configures Cursor/Claude Code MCP settings
+	•	npx @deslint/mcp install auto-configures Cursor/Claude Code MCP settings
 	•	Works with both Cursor MCP and Claude Desktop config
 	•	Clear documentation with screenshots of setup process
 	•	Uninstall command to cleanly remove configuration
@@ -587,7 +587,7 @@ Tasks:
 Test Cases:
 	•	TEST: Install command correctly modifies Cursor config on macOS
 	•	TEST: Install command correctly modifies claude_desktop_config.json
-	•	TEST: Uninstall cleanly removes Vizlint from config
+	•	TEST: Uninstall cleanly removes Deslint from config
 	•	TEST: Server appears in Cursor/Claude Code MCP tool list after install
 Sprint 10: GitHub PR Integration
 Sprint Goal: Design Health comments appear on GitHub PRs via GitHub Action
@@ -597,7 +597,7 @@ VIZ-024: GitHub Action: PR Design Review
 As a team lead, I want automatic design quality reviews on every PR, so that design drift is caught before merge, not after deploy
 Story Points: 8
 Acceptance Criteria:
-	•	GitHub Action runs vizlint scan on changed files in PR
+	•	GitHub Action runs deslint scan on changed files in PR
 	•	Posts PR comment with: Design Health Score delta, top violations, inline code suggestions
 	•	Comment updates on subsequent pushes (no duplicate comments)
 	•	Configurable: fail PR check if score drops below threshold
@@ -619,7 +619,7 @@ Test Cases:
 	•	TEST: Action handles projects with zero frontend files gracefully
 	•	TEST: Action completes within 60 seconds for a 100-file project
 VIZ-025: Rule Expansion: 12–15 Rules Total
-As a developer, I want Vizlint to catch more design anti-patterns, so that comprehensive design quality coverage
+As a developer, I want Deslint to catch more design anti-patterns, so that comprehensive design quality coverage
 Story Points: 5
 Acceptance Criteria:
 	•	no-inline-styles: Flag style={{}} attributes — suggest Tailwind classes
@@ -647,16 +647,16 @@ Acceptance Criteria:
 	•	Free CLI: scan single file, 5 core rules, text output only
 	•	Pro CLI (€19/mo): scan full project, all rules, JSON/SARIF output, Design Health Score, history tracking, --min-score gate
 	•	License key validation: offline-first (JWT with expiry), online check weekly
-	•	License key set via VIZLINT_LICENSE env var or vizlint auth command
+	•	License key set via DESLINT_LICENSE env var or deslint auth command
 	•	Stripe subscription → license key delivery via email
 	•	14-day free trial (no credit card)
 Tasks:
 	•	Implement license key generation (JWT signed with RS256)
 	•	Build license validation middleware in CLI (check before Pro features)
 	•	Create Stripe subscription product with webhook for key delivery
-	•	Build vizlint auth login/logout commands
+	•	Build deslint auth login/logout commands
 	•	Implement trial logic (14 days from first use timestamp)
-	•	Create pricing page on vizlint.dev
+	•	Create pricing page on deslint.com
 Test Cases:
 	•	TEST: Free tier limits enforced (single file, 5 rules)
 	•	TEST: Valid license key unlocks all features
@@ -665,7 +665,7 @@ Test Cases:
 	•	TEST: Stripe webhook delivers license key via email
 	•	TEST: Trial expires after 14 days
 VIZ-027: Product Hunt Launch Preparation
-As a CEO, I want a polished Product Hunt launch that maximizes Day 1 traction, so that Vizlint reaches 1,000+ developers on launch day
+As a CEO, I want a polished Product Hunt launch that maximizes Day 1 traction, so that Deslint reaches 1,000+ developers on launch day
 Story Points: 5
 Acceptance Criteria:
 	•	Product Hunt listing prepared: tagline, description, 5 screenshots, maker video (< 2 min)
@@ -673,12 +673,12 @@ Acceptance Criteria:
 	•	Teaser campaign: 2 weeks of 'coming soon' posts showing design quality insights
 	•	Email list of early users/stars notified on launch day
 Tasks:
-	•	Record 2-minute demo video showing Vizlint in action
+	•	Record 2-minute demo video showing Deslint in action
 	•	Take 5 high-quality screenshots (CLI output, VS Code integration, before/after)
 	•	Write Product Hunt listing copy
 	•	Prepare HN Show HN post
 	•	Schedule launch for Tuesday (highest PH traffic day)
-	•	Build simple email list capture on vizlint.dev
+	•	Build simple email list capture on deslint.com
 Test Cases:
 	•	TEST: All launch assets reviewed and approved (CEO hat)
 	•	TEST: Demo video is compelling and under 2 minutes
@@ -688,7 +688,7 @@ Sprint Goal: Product Hunt launch, HN post, metrics assessment, Phase 4 Go/No-Go
 Velocity Target: 8 story points
 ────────────────────────────────────────────────────────────────────────────────
 VIZ-028: Product Hunt & Hacker News Launch
-As a CEO, I want to execute a coordinated launch across Product Hunt, Hacker News, and social channels, so that Vizlint gets maximum exposure to the developer community
+As a CEO, I want to execute a coordinated launch across Product Hunt, Hacker News, and social channels, so that Deslint gets maximum exposure to the developer community
 Story Points: 3
 Acceptance Criteria:
 	•	Product Hunt submitted and ranked (target: Top 5 of the day)
@@ -707,7 +707,7 @@ Test Cases:
 	•	TEST: Response time to comments < 1 hour
 	•	TEST: Metrics tracked and documented
 VIZ-029: Phase 3 Business Review
-As a McKinsey consultant, I want to evaluate Vizlint's traction and decide Phase 4 investment, so that we make a data-driven Go/No-Go decision
+As a McKinsey consultant, I want to evaluate Deslint's traction and decide Phase 4 investment, so that we make a data-driven Go/No-Go decision
 Story Points: 5
 Acceptance Criteria:
 	•	Metrics reviewed: npm downloads, GitHub stars, Pro trials, service revenue, website traffic, CAC
@@ -736,7 +736,7 @@ VIZ-030: Dashboard: Project Overview
 As a team lead, I want to see Design Health Score trends for my project in a web dashboard, so that I can track design quality improvement over time
 Story Points: 8
 Acceptance Criteria:
-	•	Dashboard at app.vizlint.dev behind auth (GitHub OAuth)
+	•	Dashboard at app.deslint.com behind auth (GitHub OAuth)
 	•	Project creation: connect GitHub repo
 	•	Design Health Score trend chart (last 30 days)
 	•	Violation breakdown by rule category (pie chart)
@@ -758,10 +758,10 @@ Test Cases:
 	•	TEST: Dashboard loads in < 3 seconds
 	•	TEST: Mobile responsive layout
 VIZ-031: CLI → Dashboard Data Pipeline
-As a developer running Vizlint in CI, I want scan results to automatically appear in the team dashboard, so that no manual data entry — CI/CD is the source of truth
+As a developer running Deslint in CI, I want scan results to automatically appear in the team dashboard, so that no manual data entry — CI/CD is the source of truth
 Story Points: 5
 Acceptance Criteria:
-	•	vizlint scan --report sends results to Vizlint API (opt-in, requires auth token)
+	•	deslint scan --report sends results to Deslint API (opt-in, requires auth token)
 	•	Only aggregated metrics sent (score, violation counts) — never source code
 	•	Data pipeline encrypted in transit (HTTPS) and at rest (Supabase encryption)
 	•	Clear privacy documentation: what is sent, what is not, how to opt out
@@ -781,12 +781,12 @@ Sprint Goal: Team subscription tier, shared rule configs, member management
 Velocity Target: 13 story points
 ────────────────────────────────────────────────────────────────────────────────
 VIZ-032: Team Subscription & Member Management
-As a team lead, I want to subscribe my team and manage member access, so that everyone on my team uses the same Vizlint configuration
+As a team lead, I want to subscribe my team and manage member access, so that everyone on my team uses the same Deslint configuration
 Story Points: 8
 Acceptance Criteria:
 	•	Team tier: €29/user/month (minimum 3 users)
 	•	Team creation with invite-by-email
-	•	Shared .vizlintrc.json synced from dashboard to all team members
+	•	Shared .deslintrc.json synced from dashboard to all team members
 	•	Team-level Design Health Score (aggregate across all team projects)
 	•	Admin/member role distinction
 Tasks:
@@ -803,20 +803,20 @@ Test Cases:
 	•	TEST: Stripe billing updates when team size changes
 	•	TEST: Admin can remove members
 VIZ-033: Custom Design System Rules
-As a design-conscious team, I want to define custom rules matching our specific design system, so that Vizlint enforces our brand guidelines, not just generic best practices
+As a design-conscious team, I want to define custom rules matching our specific design system, so that Deslint enforces our brand guidelines, not just generic best practices
 Story Points: 5
 Acceptance Criteria:
 	•	Custom color token definitions (brand-primary: #1A5276, etc.)
 	•	Custom spacing scale override
 	•	Custom typography scale override
 	•	Custom component naming conventions
-	•	Custom rules definable in .vizlintrc.json
+	•	Custom rules definable in .deslintrc.json
 Tasks:
-	•	Extend .vizlintrc.json schema with designSystem section
+	•	Extend .deslintrc.json schema with designSystem section
 	•	Implement custom color token resolution in all color rules
 	•	Implement custom spacing scale in spacing rules
 	•	Implement custom type scale in typography rules
-	•	Write guide: 'Configuring Vizlint for Your Design System'
+	•	Write guide: 'Configuring Deslint for Your Design System'
 Test Cases:
 	•	TEST: Custom brand-primary color recognized and enforced
 	•	TEST: Custom 8px spacing scale enforced instead of Tailwind default
@@ -827,16 +827,16 @@ Sprint Goal: Security audit, rate limiting, audit logging, enterprise feature fl
 Velocity Target: 10 story points
 ────────────────────────────────────────────────────────────────────────────────
 VIZ-034: Security Hardening
-As a CTO evaluating Vizlint for enterprise, I want confidence that Vizlint is secure and won't expose our code, so that I approve Vizlint for company-wide use
+As a CTO evaluating Deslint for enterprise, I want confidence that Deslint is secure and won't expose our code, so that I approve Deslint for company-wide use
 Story Points: 8
 Acceptance Criteria:
 	•	Dependency audit: no known CVEs in production dependencies
 	•	API rate limiting: 100 requests/minute per auth token
 	•	Input validation on all API endpoints (Zod schemas)
-	•	CORS configured: only app.vizlint.dev origin
+	•	CORS configured: only app.deslint.com origin
 	•	Auth tokens hashed in database (never stored plaintext)
 	•	Audit log: all API access logged with timestamp, action, user
-	•	Security page at vizlint.dev/security documenting practices
+	•	Security page at deslint.com/security documenting practices
 	•	Responsible disclosure policy published
 Tasks:
 	•	Run npm audit and fix all vulnerabilities
@@ -846,7 +846,7 @@ Tasks:
 	•	Implement auth token hashing (argon2)
 	•	Build audit log table and write middleware
 	•	Write security documentation page
-	•	Create security@vizlint.dev email for disclosures
+	•	Create security@deslint.com email for disclosures
 Test Cases:
 	•	TEST: npm audit returns 0 vulnerabilities
 	•	TEST: Rate limit triggers at 101st request in 60 seconds
@@ -855,7 +855,7 @@ Test Cases:
 	•	TEST: Auth tokens not visible in database (only hashes)
 	•	TEST: Audit log records all API access
 VIZ-035: Enterprise Feature Flags
-As a enterprise buyer, I want SSO, audit exports, and SLA guarantees, so that Vizlint meets our procurement requirements
+As a enterprise buyer, I want SSO, audit exports, and SLA guarantees, so that Deslint meets our procurement requirements
 Story Points: 2
 Acceptance Criteria:
 	•	Feature flag system for gating enterprise features
@@ -878,12 +878,12 @@ Sprint Goal: Production release, complete documentation, revenue targets, 6-mont
 Velocity Target: 8 story points
 ────────────────────────────────────────────────────────────────────────────────
 VIZ-036: V1.0 Release
-As a developer, I want to use a stable, production-ready version of Vizlint, so that I trust Vizlint for production CI/CD pipelines
+As a developer, I want to use a stable, production-ready version of Deslint, so that I trust Deslint for production CI/CD pipelines
 Story Points: 5
 Acceptance Criteria:
-	•	@vizlint/eslint-plugin@1.0.0 published with 15+ rules
-	•	@vizlint/cli@1.0.0 published with full feature set
-	•	@vizlint/mcp@1.0.0 published with Cursor + Claude Code support
+	•	@deslint/eslint-plugin@1.0.0 published with 15+ rules
+	•	@deslint/cli@1.0.0 published with full feature set
+	•	@deslint/mcp@1.0.0 published with Cursor + Claude Code support
 	•	Semantic versioning commitment: no breaking changes in 1.x
 	•	Migration guide from 0.x to 1.0
 	•	CHANGELOG documenting all changes since 0.1.0
@@ -929,7 +929,7 @@ What Ships
 Targets
 End of Sprint 3
 Week 3
-@vizlint/eslint-plugin@0.1.0
+@deslint/eslint-plugin@0.1.0
 5 rules on npm
 50 npm installs, 30 GitHub stars
 End of Sprint 4
@@ -939,7 +939,7 @@ Productized service live
 €0–2K MRR (service)
 End of Sprint 7
 Week 7
-@vizlint/eslint-plugin@0.3.0 + CLI
+@deslint/eslint-plugin@0.3.0 + CLI
 10 rules, CLI with Design Health Score
 200 npm installs, 100 stars, €2–5K MRR
 End of Sprint 11

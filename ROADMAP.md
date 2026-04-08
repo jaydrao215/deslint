@@ -1,6 +1,6 @@
-# Vizlint ROADMAP
+# Deslint ROADMAP
 
-> **Read me first.** This is the active planning document. It captures: live state, what's in flight, what's queued, what's deferred, decisions made, and the prioritized backlog. **Updated on every meaningful commit.** Future conversations should read this BEFORE assuming anything about state — it supersedes chat history and memory. Where this conflicts with VIZLINT-EXECUTION.md or sprint plan files, this wins.
+> **Read me first.** This is the active planning document. It captures: live state, what's in flight, what's queued, what's deferred, decisions made, and the prioritized backlog. **Updated on every meaningful commit.** Future conversations should read this BEFORE assuming anything about state — it supersedes chat history and memory. Where this conflicts with DESLINT-EXECUTION.md or sprint plan files, this wins.
 
 **Last updated:** 2026-04-08
 **Last update reason:** Investigation session — grounded codebase audit + Phase 1 closeout + Accessibility Foundation sprint plan
@@ -11,14 +11,14 @@
 
 | Field | Value |
 |---|---|
-| **Latest npm release** | `v0.1.1` (4 packages on npm under `@vizlint/*`) |
+| **Latest npm release** | `v0.1.1` (4 packages on npm under `@deslint/*`) |
 | **Latest commit** | (see `git log -1`) |
 | **Default branch** | `main` |
 | **CI** | ✅ green (Node 20 + 22 matrix on Ubuntu) |
 | **Trust metrics** | All met — 0% FP across 4,061 files, 0 crashes, 3.05s scan of 1,838 files (25× under 15s/500-file budget), 14/14 auto-fixers verified |
 | **KPMG Phase 1 (5 stories VIZ-026 → VIZ-030)** | ✅ COMPLETE — Design Debt Score, Quality Gates, Trend command, W3C tokens import, WCAG 2.2 compliance report all shipped in v0.1.0 / v0.1.1 |
 | **NPM_TOKEN scope** | Currently broad "All packages" granular token. Tightly-scoped token created and held by founder; swap is a non-blocking cleanup item |
-| **Domain** | `vizlint.dev` purchased ✅ — landing page NOT yet deployed |
+| **Domain** | `deslint.com` purchased ✅ — landing page NOT yet deployed |
 
 ---
 
@@ -34,7 +34,7 @@ Nothing in flight. **Last active session ended on 2026-04-08 after investigation
 
 **Why this sprint, not generic KPMG Phase 2:** Three reasons.
 1. **Time-sensitive market signal.** ADA Title II deadline is 2026-04-26. We don't expect direct gov agency adoption by then (procurement cycles are months, not days), but the deadline drives a tech-press / Twitter / Hacker News news cycle around accessibility that we want to be visible inside.
-2. **Closes the biggest existing credibility gaps in one coherent push.** This sprint folds together work that VIZLINT-EXECUTION.md splits across Stage 2A (Plain HTML fix, Angular parity, landing page), Stage 2B (MCP demo recording — distribution asset), and Stage 2C (a11y rule expansion, ADA-relevant). Doing them as one sprint is cheaper than three.
+2. **Closes the biggest existing credibility gaps in one coherent push.** This sprint folds together work that DESLINT-EXECUTION.md splits across Stage 2A (Plain HTML fix, Angular parity, landing page), Stage 2B (MCP demo recording — distribution asset), and Stage 2C (a11y rule expansion, ADA-relevant). Doing them as one sprint is cheaper than three.
 3. **Distribution-aware.** The KPMG Phase 1 work shipped to npm with zero distribution. We can't keep building features users never see. This sprint has rules + landing + demo + launch as one deliverable, not separate phases.
 
 **Sprint shape:** ~10-12 days of code work + ~3-4 days of distribution work, ending with a coordinated launch in the week of the ADA deadline.
@@ -65,7 +65,7 @@ Nothing in flight. **Last active session ended on 2026-04-08 after investigation
 **Why:** [validation/SUMMARY.md:113](validation/SUMMARY.md#L113) lists "Plain HTML: No" — the README claims support but the code routes `.html` files to `@angular-eslint/template-parser` which is an Angular-specific peer dep. Plain HTML files get zero coverage unless the user has Angular installed. **Government / regulated-industry sites — the audience the ADA deadline pressure targets — are disproportionately plain HTML, PHP/Rails/Django templates, etc.**
 
 **Acceptance criteria:**
-- `@html-eslint/parser` added as optional peer dep of `@vizlint/eslint-plugin` (with `peerDependenciesMeta.optional`)
+- `@html-eslint/parser` added as optional peer dep of `@deslint/eslint-plugin` (with `peerDependenciesMeta.optional`)
 - `packages/cli/src/lint-runner.ts` `runLint()` function loads `@html-eslint/parser` if available, AND falls back gracefully if not
 - New `**/*.html` config block routes plain HTML to `@html-eslint/parser` BEFORE the Angular parser config (so Angular users still work, plain HTML users now also work)
 - `createElementVisitor` (S1) handles HTML AST nodes correctly
@@ -149,7 +149,7 @@ Nothing in flight. **Last active session ended on 2026-04-08 after investigation
 ---
 
 #### S5 — Compliance report widening
-**Why:** [packages/shared/src/compliance.ts](packages/shared/src/compliance.ts) currently maps 6 WCAG SCs. After S3 + S4 it can honestly map 12-15 SCs across Level A and Level AA. The HTML compliance report is one of the few **shareable** artifacts Vizlint produces — non-technical buyers (legal, design ops, accessibility consultants) can understand it immediately. Widening it directly improves the asset.
+**Why:** [packages/shared/src/compliance.ts](packages/shared/src/compliance.ts) currently maps 6 WCAG SCs. After S3 + S4 it can honestly map 12-15 SCs across Level A and Level AA. The HTML compliance report is one of the few **shareable** artifacts Deslint produces — non-technical buyers (legal, design ops, accessibility consultants) can understand it immediately. Widening it directly improves the asset.
 
 **Acceptance criteria:**
 - All new rules from S4 mapped to specific WCAG SC entries
@@ -157,7 +157,7 @@ Nothing in flight. **Last active session ended on 2026-04-08 after investigation
 - HTML report renders the wider matrix cleanly
 - Add explicit "Level A criteria" + "Level AA criteria" filtered views in the HTML report (so a buyer can see "you meet Level A; here's what's missing for AA")
 - Add a "WCAG 2.1 AA equivalent" badge — 2.1 is the legal floor for ADA Title II; 2.2 is a strict superset, so we can claim 2.1 conformance from 2.2 evaluation (with a footnote)
-- Validated end-to-end: run `vizlint compliance` on a real project, open the HTML, sanity-check the rendering
+- Validated end-to-end: run `deslint compliance` on a real project, open the HTML, sanity-check the rendering
 
 **Estimate:** 2 days
 **Status:** ⏸ not started
@@ -166,11 +166,11 @@ Nothing in flight. **Last active session ended on 2026-04-08 after investigation
 ---
 
 #### S6 — Landing page deploy + content polish
-**Why:** Domain `vizlint.dev` is purchased. `apps/docs` is built (Next.js 15 static export, ~1100 lines of components — Hero, BeforeAfter, FeatureBlocks, Frameworks, HowItWorks, Cta, Footer, Navbar — and 4 docs pages). Yesterday's CI fix gave it a clean build. **It just needs deploy.** Without a live landing page, every distribution channel sends people to the npm registry (which is not a marketing surface).
+**Why:** Domain `deslint.com` is purchased. `apps/docs` is built (Next.js 15 static export, ~1100 lines of components — Hero, BeforeAfter, FeatureBlocks, Frameworks, HowItWorks, Cta, Footer, Navbar — and 4 docs pages). Yesterday's CI fix gave it a clean build. **It just needs deploy.** Without a live landing page, every distribution channel sends people to the npm registry (which is not a marketing surface).
 
 **Acceptance criteria:**
-- Deployed at vizlint.dev (or vizlint.vercel.app as fallback if domain DNS not yet configured)
-- Hero section has updated install command (`npm install -D @vizlint/eslint-plugin`)
+- Deployed at deslint.com (or deslint.vercel.app as fallback if domain DNS not yet configured)
+- Hero section has updated install command (`npm install -D @deslint/eslint-plugin`)
 - BeforeAfter section uses real before/after from one of the validation projects
 - Frameworks section reflects HONEST current support after S3 (no false claims)
 - New "Accessibility" section showcasing the new a11y rules + WCAG conformance report
@@ -186,7 +186,7 @@ Nothing in flight. **Last active session ended on 2026-04-08 after investigation
 ---
 
 #### S7 — MCP self-correction demo recording
-**Why:** [VIZLINT-EXECUTION.md:347](VIZLINT-EXECUTION.md#L347) says: "If the loop works: this becomes the #1 marketing story. If it doesn't: fix it until it does." The MCP server is on npm but has **never been tested in a real Cursor or Claude Code workflow.** Recording the loop is the strongest possible distribution asset — it's the only thing in our arsenal that competitors literally cannot copy quickly.
+**Why:** [DESLINT-EXECUTION.md:347](DESLINT-EXECUTION.md#L347) says: "If the loop works: this becomes the #1 marketing story. If it doesn't: fix it until it does." The MCP server is on npm but has **never been tested in a real Cursor or Claude Code workflow.** Recording the loop is the strongest possible distribution asset — it's the only thing in our arsenal that competitors literally cannot copy quickly.
 
 **Acceptance criteria:**
 - 90-second screen recording showing: (a) Cursor/Claude Code generates UI code with arbitrary spacing and missing alt text; (b) MCP server flags it via `analyze_file`; (c) AI applies fix via `analyze_and_fix`; (d) clean code result
@@ -232,8 +232,8 @@ Nothing in flight. **Last active session ended on 2026-04-08 after investigation
 | 9.5 | **Dev.to long-form post** ("I built a design quality gate for AI-generated code — here's why visual regression isn't enough") | 4 hours | Long-tail SEO | Day +2 |
 | 9.6 | **Twitter/X soft launch thread** with the MCP demo video, tagging Cursor/Anthropic/Vercel accounts | 2 hours | Compounds | Day +3 |
 | 9.7 | **Cold outreach to 5 enterprise design system teams** (Microsoft Fluent, IBM Carbon, Atlassian, Shopify Polaris, Salesforce Lightning) | 3 hours | Low volume / high quality | Day +3 |
-| 9.8 | **Direct Anthropic Claude Code team outreach** per VIZLINT-EXECUTION.md Section 10 | 2 hours | Strategic | Day +4 |
-| 9.9 | **Show HN: "Vizlint — design quality gate for AI-generated frontend code"** | 4 hours (post + monitor) | Variable, can be huge | Day +5, weekday Pacific morning |
+| 9.8 | **Direct Anthropic Claude Code team outreach** per DESLINT-EXECUTION.md Section 10 | 2 hours | Strategic | Day +4 |
+| 9.9 | **Show HN: "Deslint — design quality gate for AI-generated frontend code"** | 4 hours (post + monitor) | Variable, can be huge | Day +5, weekday Pacific morning |
 | 9.10 | **Product Hunt launch** | 1 day prep + launch day | High 24h spike | Day +6, Pacific midnight |
 | 9.11 | **"ADA Title II is in N days — your code probably isn't compliant"** thread + post | 2 hours | Targeted | Day +7-8, week of deadline |
 | 9.12 | **Tech press email** (TechCrunch, The Verge, The Register — accessibility angle) | 4 hours | Variable | Day +8-9 |
@@ -279,7 +279,7 @@ Resume after the Accessibility Foundation sprint ships and v0.2.0 has 2-3 weeks 
 |---|---|---|---|
 | P2-1 | **Cross-File Design Graph** — project-wide component pattern analysis ("47 Buttons across 23 files, here's how they diverge") | 1 | 3 weeks |
 | P2-2 | **AI Code Attribution** — per-tool violation rates, pattern corpus | 6 | 4 weeks |
-| P2-3 | **Embeddable `@vizlint/core`** — pure-function API for Lovable/Bolt/v0/Stitch integration | 7 | 3 weeks |
+| P2-3 | **Embeddable `@deslint/core`** — pure-function API for Lovable/Bolt/v0/Stitch integration | 7 | 3 weeks |
 | P2-4 | **Component library presets** — shadcn, MUI, Chakra, Radix | network | 2 weeks |
 | P2-6 | **Design-code alignment % metric** (completes Moat 4) | 4 | 1 week |
 
@@ -312,12 +312,12 @@ Resume only when actual revenue signal exists (≥3 teams asking to pay).
 | `focus-indicators` rule (CSS-dependent) | CSS file scanning is Stage 2D. Don't ship a JSX-only heuristic that overlaps with `missing-states` and creates FPs. | After CSS scanning lands |
 | `keyboard-navigation` rule | Runtime concern — static AST detection is too heuristic to meet quality bar | Probably never as a static rule; part of MCP self-correction loop instead |
 | Shipping more rules to hit a count target | Quality bar > count per user directive 2026-04-08. Better to ship 6 clean than 9 messy. | Never |
-| Generic a11y rules from `eslint-plugin-jsx-a11y` ports | They're React-only by design. Vizlint's differentiation is framework-agnostic. Porting them defeats the differentiation. | Never |
+| Generic a11y rules from `eslint-plugin-jsx-a11y` ports | They're React-only by design. Deslint's differentiation is framework-agnostic. Porting them defeats the differentiation. | Never |
 | Web dashboard / billing / SSO | No paying users yet. Premature. | When 3+ teams ask to pay |
 | Product Hunt launch with current state | No live landing, no demo video, no a11y story. Would underperform. | When v0.2.0 ships with all of the above |
 | Twitter / X presence with no demo asset | Cold posting from zero rarely works. Need an asset to share. | When MCP demo video exists |
 | Anthropic / Figma direct integration outreach | We need to demo the MCP self-correction loop first. Outreach without proof is weak. | After v0.2.0 + MCP demo recorded |
-| Renaming `vizlint` short alias in user config | Would break every existing v0.1.x install. The `vizlint/rule-name` shorthand stays forever. | Never |
+| Renaming `deslint` short alias in user config | Would break every existing v0.1.x install. The `deslint/rule-name` shorthand stays forever. | Never |
 | Coverage thresholds back to 95/90 | Honest baseline is 86/75 (per [packages/eslint-plugin/vitest.config.ts](packages/eslint-plugin/vitest.config.ts) comment). Ratchet up alongside Phase 2 cross-file engine work, not as a standalone gate. | Phase 2 |
 
 ---
@@ -352,7 +352,7 @@ Of the 14 shipping rules:
 **File-level / framework-irrelevant (1 rule — works on any text file):**
 - `max-component-lines`
 
-**Implication:** [VIZLINT-EXECUTION.md:420](VIZLINT-EXECUTION.md#L420) says "7/14 rules JSX-only on Angular." Closer count is 5-6 JSX-only depending on how you count `a11y-color-contrast`. The `createElementVisitor` work (sprint S1) directly closes this gap by giving the JSX-only rules a uniform abstraction to migrate to.
+**Implication:** [DESLINT-EXECUTION.md:420](DESLINT-EXECUTION.md#L420) says "7/14 rules JSX-only on Angular." Closer count is 5-6 JSX-only depending on how you count `a11y-color-contrast`. The `createElementVisitor` work (sprint S1) directly closes this gap by giving the JSX-only rules a uniform abstraction to migrate to.
 
 ### 6.2 Plain HTML parser reality
 
@@ -369,7 +369,7 @@ Of the 14 shipping rules:
 
 ### 6.3 WCAG compliance mapping (current state)
 
-[packages/shared/src/compliance.ts](packages/shared/src/compliance.ts) `WCAG_CRITERIA` maps **6 Success Criteria → 4 Vizlint rules**:
+[packages/shared/src/compliance.ts](packages/shared/src/compliance.ts) `WCAG_CRITERIA` maps **6 Success Criteria → 4 Deslint rules**:
 
 | WCAG SC | Title | Level | Mapped rule(s) |
 |---|---|---|---|
@@ -387,15 +387,15 @@ Of the 14 shipping rules:
 ### 6.4 Distribution surface (current state — as of 2026-04-08)
 
 **What exists:**
-- 4 packages on npm under `@vizlint/*` (live)
-- GitHub repo at `jaydrao215/vizlint` with README, CHANGELOG, CONTRIBUTING, SECURITY
+- 4 packages on npm under `@deslint/*` (live)
+- GitHub repo at `jaydrao215/deslint` with README, CHANGELOG, CONTRIBUTING, SECURITY
 - `apps/docs` Next.js 15 static export, ~1100 lines of components, builds clean — NOT deployed
 - v0.1.0 and v0.1.1 GitHub Releases auto-generated from CHANGELOG
 - Validation evidence in `validation/SUMMARY.md` (4,061 files, 0% FP)
-- The `eslint-plugin-vizlint@0.1.0` deprecation tombstone (with npm's generic deprecation message — sub-optimal but acceptable per [SPRINT-LOG.md](SPRINT-LOG.md))
+- The `eslint-plugin-deslint@0.1.0` deprecation tombstone (with npm's generic deprecation message — sub-optimal but acceptable per [SPRINT-LOG.md](SPRINT-LOG.md))
 
 **What does NOT exist:**
-- Live landing page at vizlint.dev (domain purchased, not deployed)
+- Live landing page at deslint.com (domain purchased, not deployed)
 - Demo video / screen recording of any kind
 - MCP self-correction loop video (the differentiation asset)
 - awesome-eslint / awesome-cursorrules / awesome-tailwindcss listings
@@ -419,11 +419,11 @@ Of the 14 shipping rules:
 
 | Package | Tests | Notes |
 |---|---|---|
-| `@vizlint/eslint-plugin` | 566 | Line coverage 86.57%, branch coverage 75.84% — enforced thresholds 86/75 (lowered from aspirational 95/90 in commit `b4e192a`) |
-| `@vizlint/cli` | 102 | |
-| `@vizlint/shared` | 82 | |
-| `@vizlint/mcp` | 25 | |
-| `@vizlint/action` | 17 | |
+| `@deslint/eslint-plugin` | 566 | Line coverage 86.57%, branch coverage 75.84% — enforced thresholds 86/75 (lowered from aspirational 95/90 in commit `b4e192a`) |
+| `@deslint/cli` | 102 | |
+| `@deslint/shared` | 82 | |
+| `@deslint/mcp` | 25 | |
+| `@deslint/action` | 17 | |
 | **Total** | **792** | All green on Node 20 + 22 |
 
 **Coverage gaps to ratchet up in Phase 2:** [packages/eslint-plugin/src/utils/safe-source.ts](packages/eslint-plugin/src/utils/safe-source.ts) at 28.57% lines is the worst offender. [packages/eslint-plugin/src/utils/class-visitor.ts](packages/eslint-plugin/src/utils/class-visitor.ts) at 74.12% is also low. These are framework-dispatch utilities that are hard to test without real AST fixtures from each framework parser.
@@ -434,13 +434,13 @@ Of the 14 shipping rules:
 
 Append-only. Each entry: date, decision, rationale, what we'd revisit it on.
 
-### 2026-04-07 — Package rename to `@vizlint/eslint-plugin`
-**Decision:** Rename `eslint-plugin-vizlint` → `@vizlint/eslint-plugin` as v0.1.1 immediately after v0.1.0 ship.
-**Rationale:** Modern Pattern 2 convention used by `@typescript-eslint/eslint-plugin`, `@next/eslint-plugin-next`, `@stylistic/eslint-plugin`, `@nx/eslint-plugin`, `@vitest/eslint-plugin`. Brings the plugin in line with our other 3 packages under `@vizlint/*`. Done while user count was effectively zero (4 hours after v0.1.0) so migration cost was nil.
+### 2026-04-07 — Package rename to `@deslint/eslint-plugin`
+**Decision:** Rename `eslint-plugin-deslint` → `@deslint/eslint-plugin` as v0.1.1 immediately after v0.1.0 ship.
+**Rationale:** Modern Pattern 2 convention used by `@typescript-eslint/eslint-plugin`, `@next/eslint-plugin-next`, `@stylistic/eslint-plugin`, `@nx/eslint-plugin`, `@vitest/eslint-plugin`. Brings the plugin in line with our other 3 packages under `@deslint/*`. Done while user count was effectively zero (4 hours after v0.1.0) so migration cost was nil.
 **Wouldn't revisit unless:** A future ESLint convention shifts the ecosystem back to unscoped names. Unlikely.
 
-### 2026-04-07 — Deprecate, don't unpublish, the old `eslint-plugin-vizlint`
-**Decision:** Leave `eslint-plugin-vizlint@0.1.0` on npm with a deprecation tombstone instead of unpublishing within the 72-hour window.
+### 2026-04-07 — Deprecate, don't unpublish, the old `eslint-plugin-deslint`
+**Decision:** Leave `eslint-plugin-deslint@0.1.0` on npm with a deprecation tombstone instead of unpublishing within the 72-hour window.
 **Rationale:** Convention. Even with effectively zero users, the cost asymmetry favors deprecate (a stranger's frozen lockfile keeps installing with a warning vs. hard-erroring with `ETARGET No matching version found`). Following npm community norms also reads as a planned migration to external aggregators (snyk, libraries.io) instead of looking like project abandonment.
 **Wouldn't revisit unless:** The deprecation tombstone causes confusion in npm search results AND we're ≥30 days post-rename. Would consider full unpublish then; window has long since closed but `npm deprecate` with a stronger redirect message is still possible.
 
@@ -451,7 +451,7 @@ Append-only. Each entry: date, decision, rationale, what we'd revisit it on.
 
 ### 2026-04-07 — Local `apps/docs/eslint.config.mjs` instead of `eslint-config-next`
 **Decision:** Build a custom flat config for `apps/docs` using `typescript-eslint` v8 instead of `eslint-config-next`.
-**Rationale:** `eslint-config-next` 16.2.2 still pulls in `eslint-plugin-react`, `eslint-plugin-import`, `eslint-plugin-jsx-a11y`, `eslint-plugin-react-hooks` capped at ESLint 9. Vizlint is "ESLint v10 flat config ONLY" per CLAUDE.md. Using `eslint-config-next` would either fail peer deps or force us to override CLAUDE.md.
+**Rationale:** `eslint-config-next` 16.2.2 still pulls in `eslint-plugin-react`, `eslint-plugin-import`, `eslint-plugin-jsx-a11y`, `eslint-plugin-react-hooks` capped at ESLint 9. Deslint is "ESLint v10 flat config ONLY" per CLAUDE.md. Using `eslint-config-next` would either fail peer deps or force us to override CLAUDE.md.
 **Wouldn't revisit unless:** Next.js / Vercel ships an updated `eslint-config-next` that supports ESLint 10. As of 2026-04-08 they haven't.
 
 ### 2026-04-08 — Build `createElementVisitor` abstraction before adding more rules
@@ -471,7 +471,7 @@ Append-only. Each entry: date, decision, rationale, what we'd revisit it on.
 
 ### 2026-04-08 — Persistent ROADMAP.md as the source of truth
 **Decision:** Create this file (`ROADMAP.md`) as the live planning document that gets updated on every meaningful commit. Future conversations should read this BEFORE assuming anything about state.
-**Rationale:** User explicitly asked for "documented in a way that we don't drift away with every new stuff every time we discuss." Chat history is ephemeral. Auto-memory is partial. CLAUDE.md is for conventions. SPRINT-LOG.md is append-only history. VIZLINT-EXECUTION.md is strategic / stages — not granular enough for sprint-level tracking. ROADMAP.md fills the missing layer.
+**Rationale:** User explicitly asked for "documented in a way that we don't drift away with every new stuff every time we discuss." Chat history is ephemeral. Auto-memory is partial. CLAUDE.md is for conventions. SPRINT-LOG.md is append-only history. DESLINT-EXECUTION.md is strategic / stages — not granular enough for sprint-level tracking. ROADMAP.md fills the missing layer.
 **Wouldn't revisit unless:** A better single-source-of-truth pattern emerges. Open to renaming or restructuring.
 
 ---
@@ -481,7 +481,7 @@ Append-only. Each entry: date, decision, rationale, what we'd revisit it on.
 **Every new conversation should:**
 1. Read this file first.
 2. Read CLAUDE.md (conventions, never changes much).
-3. Read VIZLINT-EXECUTION.md only if Section 1-3 of this file references something that's in the strategic doc.
+3. Read DESLINT-EXECUTION.md only if Section 1-3 of this file references something that's in the strategic doc.
 4. Skim SPRINT-LOG.md only for the most recent 3-5 entries to confirm what shipped recently.
 5. Skip the docs/sprint-plan-v1.x files unless investigating something specific to the original sprint plan.
 

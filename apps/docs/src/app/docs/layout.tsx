@@ -74,7 +74,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">
               V
             </div>
-            <span className="font-semibold text-gray-900 tracking-tight">Vizlint</span>
+            <span className="font-semibold text-gray-900 tracking-tight">Deslint</span>
             <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
               Docs
             </span>
@@ -103,7 +103,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
 
           <div className="ml-auto flex items-center gap-3">
             <a
-              href="https://github.com/vizlint/vizlint"
+              href="https://github.com/deslint/deslint"
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
@@ -139,7 +139,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
           <div className="mt-6 mx-4 p-4 rounded-xl bg-primary-50/50 border border-primary/10">
             <p className="text-xs font-semibold text-primary mb-1">Quick Start</p>
             <code className="text-[11px] text-primary/70 font-mono">
-              npm i -D @vizlint/eslint-plugin
+              npm i -D @deslint/eslint-plugin
             </code>
           </div>
         </aside>

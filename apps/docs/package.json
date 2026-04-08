@@ -1,7 +1,7 @@
 {
-  "name": "@vizlint/docs",
+  "name": "@deslint/docs",
   "version": "0.1.0",
-  "description": "Vizlint landing page and documentation",
+  "description": "Deslint landing page and documentation",
   "private": true,
   "scripts": {
     "dev": "next dev",

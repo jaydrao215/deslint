@@ -62,7 +62,7 @@ describe('formatJson', () => {
           filePath: '/project/src/App.tsx',
           messages: [
             {
-              ruleId: 'vizlint/no-arbitrary-colors',
+              ruleId: 'deslint/no-arbitrary-colors',
               severity: 2,
               message: 'Arbitrary color detected',
               line: 5,
@@ -73,7 +73,7 @@ describe('formatJson', () => {
       ],
       totalViolations: 1,
       bySeverity: { errors: 1, warnings: 0 },
-      byRule: { 'vizlint/no-arbitrary-colors': 1 },
+      byRule: { 'deslint/no-arbitrary-colors': 1 },
       byCategory: {
         colors: 1,
         spacing: 0,
@@ -89,7 +89,7 @@ describe('formatJson', () => {
     expect(parsed.violations).toHaveLength(1);
     expect(parsed.violations[0].file).toBe('src/App.tsx');
     expect(parsed.violations[0].severity).toBe('error');
-    expect(parsed.violations[0].ruleId).toBe('vizlint/no-arbitrary-colors');
+    expect(parsed.violations[0].ruleId).toBe('deslint/no-arbitrary-colors');
     expect(parsed.violations[0].line).toBe(5);
     expect(parsed.violations[0].column).toBe(10);
   });
@@ -114,7 +114,7 @@ describe('formatSarif', () => {
     expect(parsed.version).toBe('2.1.0');
     expect(parsed.$schema).toContain('sarif-schema-2.1.0');
     expect(parsed.runs).toHaveLength(1);
-    expect(parsed.runs[0].tool.driver.name).toBe('Vizlint');
+    expect(parsed.runs[0].tool.driver.name).toBe('Deslint');
     expect(parsed.runs[0].results).toEqual([]);
   });
 
@@ -125,7 +125,7 @@ describe('formatSarif', () => {
           filePath: '/project/src/Card.tsx',
           messages: [
             {
-              ruleId: 'vizlint/no-arbitrary-spacing',
+              ruleId: 'deslint/no-arbitrary-spacing',
               severity: 1,
               message: 'Arbitrary spacing detected',
               line: 12,
@@ -137,7 +137,7 @@ describe('formatSarif', () => {
         },
       ],
       totalViolations: 1,
-      byRule: { 'vizlint/no-arbitrary-spacing': 1 },
+      byRule: { 'deslint/no-arbitrary-spacing': 1 },
     });
 
     const output = formatSarif(lintResult, makeScoreResult(), '/project');
@@ -145,7 +145,7 @@ describe('formatSarif', () => {
 
     expect(parsed.runs[0].results).toHaveLength(1);
     const result = parsed.runs[0].results[0];
-    expect(result.ruleId).toBe('vizlint/no-arbitrary-spacing');
+    expect(result.ruleId).toBe('deslint/no-arbitrary-spacing');
     expect(result.level).toBe('warning');
     expect(result.locations[0].physicalLocation.artifactLocation.uri).toBe('src/Card.tsx');
     expect(result.locations[0].physicalLocation.region.startLine).toBe(12);
@@ -159,7 +159,7 @@ describe('formatSarif', () => {
           filePath: '/project/src/App.tsx',
           messages: [
             {
-              ruleId: 'vizlint/no-arbitrary-colors',
+              ruleId: 'deslint/no-arbitrary-colors',
               severity: 2,
               message: 'Error',
               line: 1,
@@ -168,7 +168,7 @@ describe('formatSarif', () => {
           ],
         },
       ],
-      byRule: { 'vizlint/no-arbitrary-colors': 1 },
+      byRule: { 'deslint/no-arbitrary-colors': 1 },
     });
 
     const output = formatSarif(lintResult, makeScoreResult(), '/project');
@@ -179,8 +179,8 @@ describe('formatSarif', () => {
   it('includes rule definitions in tool driver', () => {
     const lintResult = makeLintResult({
       byRule: {
-        'vizlint/no-arbitrary-colors': 3,
-        'vizlint/no-arbitrary-spacing': 2,
+        'deslint/no-arbitrary-colors': 3,
+        'deslint/no-arbitrary-spacing': 2,
       },
     });
 

@@ -1,4 +1,4 @@
-# Contributing to Vizlint
+# Contributing to Deslint
 
 ## Development Setup
 
@@ -10,8 +10,8 @@
 
 ```bash
 # Clone the repo
-git clone https://github.com/vizlint/vizlint.git
-cd vizlint
+git clone https://github.com/deslint/deslint.git
+cd deslint
 
 # Install dependencies
 pnpm install
@@ -30,9 +30,9 @@ pnpm typecheck
 
 ```
 packages/
-  eslint-plugin/  — ESLint rules + configs (npm: @vizlint/eslint-plugin)
-  cli/            — Commander.js CLI (npm: @vizlint/cli)
-  mcp/            — MCP server for Cursor/Claude Code (npm: @vizlint/mcp)
+  eslint-plugin/  — ESLint rules + configs (npm: @deslint/eslint-plugin)
+  cli/            — Commander.js CLI (npm: @deslint/cli)
+  mcp/            — MCP server for Cursor/Claude Code (npm: @deslint/mcp)
   shared/         — Shared types, schemas, and utilities
 ```
 
@@ -62,8 +62,8 @@ Every rule needs: valid cases, invalid cases, autofix tests, edge case tests.
 pnpm test
 
 # Run tests for a specific package
-pnpm --filter @vizlint/eslint-plugin test
+pnpm --filter @deslint/eslint-plugin test
 
 # Watch mode
-pnpm --filter @vizlint/eslint-plugin test:watch
+pnpm --filter @deslint/eslint-plugin test:watch
 ```

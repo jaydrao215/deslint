@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * @vizlint/mcp CLI entry point.
+ * @deslint/mcp CLI entry point.
  *
  * Usage:
- *   npx @vizlint/mcp          — Start MCP server (stdio)
- *   npx @vizlint/mcp install  — Auto-configure Cursor/Claude Code
- *   npx @vizlint/mcp uninstall — Remove configuration
+ *   npx @deslint/mcp          — Start MCP server (stdio)
+ *   npx @deslint/mcp install  — Auto-configure Cursor/Claude Code
+ *   npx @deslint/mcp uninstall — Remove configuration
  */
 
 import { startServer } from './server.js';
@@ -16,7 +16,7 @@ const command = process.argv[2];
 if (!command || command === 'serve') {
   // Default: start MCP server
   startServer().catch((err) => {
-    console.error('Failed to start Vizlint MCP server:', err);
+    console.error('Failed to start Deslint MCP server:', err);
     process.exit(1);
   });
 } else if (command === 'install') {
@@ -31,6 +31,6 @@ if (!command || command === 'serve') {
   });
 } else {
   console.error(`Unknown command: ${command}`);
-  console.error('Usage: @vizlint/mcp [serve|install|uninstall]');
+  console.error('Usage: @deslint/mcp [serve|install|uninstall]');
   process.exit(1);
 }

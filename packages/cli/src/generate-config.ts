@@ -6,8 +6,8 @@ import {
   mergeDesignSystems,
   findW3CTokensFile,
   loadW3CTokensFile,
-} from '@vizlint/shared';
-import type { DesignSystem, VizlintConfig } from '@vizlint/shared';
+} from '@deslint/shared';
+import type { DesignSystem, DeslintConfig } from '@deslint/shared';
 import { generateCursorRules } from './templates/cursorrules.js';
 import { generateClaudeMd } from './templates/claude-md.js';
 import { generateAgentsMd } from './templates/agents-md.js';
@@ -21,13 +21,13 @@ export function isValidTarget(target: string): target is Target {
 }
 
 /**
- * Load design system from .vizlintrc.json and/or Tailwind config.
+ * Load design system from .deslintrc.json and/or Tailwind config.
  * Merges both sources (manual config overrides auto-imported).
  */
 export async function loadDesignSystem(projectDir: string): Promise<DesignSystem | undefined> {
-  let config: VizlintConfig | undefined;
+  let config: DeslintConfig | undefined;
 
-  const configPath = resolve(projectDir, '.vizlintrc.json');
+  const configPath = resolve(projectDir, '.deslintrc.json');
   if (existsSync(configPath)) {
     try {
       const raw = JSON.parse(readFileSync(configPath, 'utf-8'));
@@ -61,7 +61,7 @@ export async function loadDesignSystem(projectDir: string): Promise<DesignSystem
     // Malformed tokens file — ignore, fall back to Tailwind/manual
   }
 
-  // Merge priority (lowest → highest): Tailwind → W3C tokens → manual .vizlintrc.json
+  // Merge priority (lowest → highest): Tailwind → W3C tokens → manual .deslintrc.json
   const manual = config?.designSystem;
   let merged: DesignSystem | undefined;
   if (tailwindDesignSystem) merged = tailwindDesignSystem;
@@ -94,7 +94,7 @@ export function generateConfig(target: Target, designSystem?: DesignSystem): str
 export function getOutputFilename(target: Target): string {
   switch (target) {
     case 'cursor':
-      return '.cursor/rules/vizlint-design-quality.mdc';
+      return '.cursor/rules/deslint-design-quality.mdc';
     case 'claude':
       return 'CLAUDE.md';
     case 'agents':

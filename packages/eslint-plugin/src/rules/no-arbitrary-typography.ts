@@ -17,7 +17,7 @@ import { debugLog } from '../utils/debug.js';
 import { safeGetText, safeGetRange } from '../utils/safe-source.js';
 
 const createRule = ESLintUtils.RuleCreator(
-  (name) => `https://vizlint.dev/docs/rules/${name}`
+  (name) => `https://deslint.com/docs/rules/${name}`
 );
 
 export type Options = [

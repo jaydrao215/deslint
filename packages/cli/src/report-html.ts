@@ -1,5 +1,5 @@
 /**
- * Generates a self-contained HTML report file for Vizlint scan results.
+ * Generates a self-contained HTML report file for Deslint scan results.
  * Tabbed interface — no external dependencies, all CSS/JS embedded inline.
  */
 
@@ -33,29 +33,29 @@ interface RuleSummary {
 }
 
 const RULE_CATEGORIES: Record<string, string> = {
-  'vizlint/no-arbitrary-colors': 'Colors',
-  'vizlint/a11y-color-contrast': 'Colors',
-  'vizlint/dark-mode-coverage': 'Colors',
-  'vizlint/no-arbitrary-spacing': 'Spacing',
-  'vizlint/no-magic-numbers-layout': 'Spacing',
-  'vizlint/no-arbitrary-typography': 'Typography',
-  'vizlint/responsive-required': 'Responsive',
-  'vizlint/consistent-component-spacing': 'Consistency',
-  'vizlint/consistent-border-radius': 'Consistency',
-  'vizlint/no-arbitrary-zindex': 'Consistency',
-  'vizlint/no-inline-styles': 'Consistency',
-  'vizlint/max-component-lines': 'Consistency',
-  'vizlint/missing-states': 'Responsive',
-  'vizlint/image-alt-text': 'Responsive',
+  'deslint/no-arbitrary-colors': 'Colors',
+  'deslint/a11y-color-contrast': 'Colors',
+  'deslint/dark-mode-coverage': 'Colors',
+  'deslint/no-arbitrary-spacing': 'Spacing',
+  'deslint/no-magic-numbers-layout': 'Spacing',
+  'deslint/no-arbitrary-typography': 'Typography',
+  'deslint/responsive-required': 'Responsive',
+  'deslint/consistent-component-spacing': 'Consistency',
+  'deslint/consistent-border-radius': 'Consistency',
+  'deslint/no-arbitrary-zindex': 'Consistency',
+  'deslint/no-inline-styles': 'Consistency',
+  'deslint/max-component-lines': 'Consistency',
+  'deslint/missing-states': 'Responsive',
+  'deslint/image-alt-text': 'Responsive',
 };
 
 const FIXABLE_RULES = new Set([
-  'vizlint/no-arbitrary-colors',
-  'vizlint/no-arbitrary-spacing',
-  'vizlint/no-arbitrary-typography',
-  'vizlint/dark-mode-coverage',
-  'vizlint/no-arbitrary-zindex',
-  'vizlint/no-magic-numbers-layout',
+  'deslint/no-arbitrary-colors',
+  'deslint/no-arbitrary-spacing',
+  'deslint/no-arbitrary-typography',
+  'deslint/dark-mode-coverage',
+  'deslint/no-arbitrary-zindex',
+  'deslint/no-magic-numbers-layout',
 ]);
 
 // ─── Visual Pattern Types ────────────────────────────────────────────
@@ -114,7 +114,7 @@ function extractPatterns(violations: ViolationEntry[]): VisualPattern[] {
     let key = '';
     const data: Record<string, string> = {};
 
-    if (v.ruleId === 'vizlint/a11y-color-contrast') {
+    if (v.ruleId === 'deslint/a11y-color-contrast') {
       const m = v.message.match(/Contrast ratio ([\d.]+):1 between `([^`]+)` and `([^`]+)` fails WCAG AA \(needs ([\d.]+):1\)/);
       if (m) {
         data.ratio = m[1]; data.textClass = m[2]; data.bgClass = m[3]; data.required = m[4];
@@ -122,7 +122,7 @@ function extractPatterns(violations: ViolationEntry[]): VisualPattern[] {
         if (sugM) { data.suggestedText = sugM[1]; data.suggestedBg = sugM[2]; data.suggestedRatio = sugM[3]; }
         key = `contrast:${data.textClass}|${data.bgClass}`;
       }
-    } else if (v.ruleId === 'vizlint/no-arbitrary-spacing') {
+    } else if (v.ruleId === 'deslint/no-arbitrary-spacing') {
       const m = v.message.match(/Arbitrary spacing `([^`]+)` detected/);
       if (m) {
         data.className = m[1];
@@ -130,7 +130,7 @@ function extractPatterns(violations: ViolationEntry[]): VisualPattern[] {
         if (sugM) data.suggested = sugM[1];
         key = `spacing:${data.className}→${data.suggested ?? '?'}`;
       }
-    } else if (v.ruleId === 'vizlint/no-arbitrary-typography') {
+    } else if (v.ruleId === 'deslint/no-arbitrary-typography') {
       const m = v.message.match(/Arbitrary typography `([^`]+)` detected/);
       if (m) {
         data.className = m[1];
@@ -138,7 +138,7 @@ function extractPatterns(violations: ViolationEntry[]): VisualPattern[] {
         if (sugM) data.suggested = sugM[1];
         key = `typo:${data.className}→${data.suggested ?? '?'}`;
       }
-    } else if (v.ruleId === 'vizlint/no-arbitrary-colors') {
+    } else if (v.ruleId === 'deslint/no-arbitrary-colors') {
       const m = v.message.match(/Arbitrary color `([^`]+)` detected/);
       if (m) {
         data.className = m[1];
@@ -146,49 +146,49 @@ function extractPatterns(violations: ViolationEntry[]): VisualPattern[] {
         if (sugM) data.suggested = sugM[1];
         key = `color:${data.className}→${data.suggested ?? '?'}`;
       }
-    } else if (v.ruleId === 'vizlint/dark-mode-coverage') {
+    } else if (v.ruleId === 'deslint/dark-mode-coverage') {
       const m = v.message.match(/`([^`]+)` has no `dark:` variant\. Add `([^`]+)`/);
       if (m) {
         data.className = m[1]; data.suggested = m[2];
         key = `dark:${data.className}→${data.suggested}`;
       }
-    } else if (v.ruleId === 'vizlint/consistent-border-radius') {
+    } else if (v.ruleId === 'deslint/consistent-border-radius') {
       const m = v.message.match(/`([^`]+)` uses `([^`]+)` but (\d+) of (\d+) instances use `([^`]+)`/);
       if (m) {
         data.component = m[1]; data.actual = m[2]; data.count = m[3]; data.total = m[4]; data.dominant = m[5];
         key = `radius:${data.component}:${data.actual}|${data.dominant}`;
       }
-    } else if (v.ruleId === 'vizlint/consistent-component-spacing') {
+    } else if (v.ruleId === 'deslint/consistent-component-spacing') {
       const m = v.message.match(/`([^`]+)` uses ([^ ]+) `([^`]+)` but (\d+) of (\d+) instances use `([^`]+)`/);
       if (m) {
         data.component = m[1]; data.category = m[2]; data.actual = m[3]; data.count = m[4]; data.total = m[5]; data.dominant = m[6];
         key = `cspacing:${data.component}:${data.actual}|${data.dominant}`;
       }
-    } else if (v.ruleId === 'vizlint/missing-states') {
+    } else if (v.ruleId === 'deslint/missing-states') {
       const m = v.message.match(/`<(\w+)>` is missing (disabled state|error state|required indicator)/);
       if (m) {
         data.element = m[1]; data.stateType = m[2];
         key = `states:${data.element}:${data.stateType}`;
       }
-    } else if (v.ruleId === 'vizlint/responsive-required') {
+    } else if (v.ruleId === 'deslint/responsive-required') {
       const m = v.message.match(/`([^`]+)` sets a fixed ([^ ]+) of (\d+)px/);
       if (m) {
         data.className = m[1]; data.prefix = m[2]; data.px = m[3];
         key = `responsive:${data.className}`;
       }
-    } else if (v.ruleId === 'vizlint/no-arbitrary-zindex') {
+    } else if (v.ruleId === 'deslint/no-arbitrary-zindex') {
       const m = v.message.match(/Arbitrary z-index `([^`]+)` detected\. Use scale value `([^`]+)`/);
       if (m) {
         data.className = m[1]; data.suggested = m[2];
         key = `zindex:${data.className}→${data.suggested}`;
       }
-    } else if (v.ruleId === 'vizlint/no-magic-numbers-layout') {
+    } else if (v.ruleId === 'deslint/no-magic-numbers-layout') {
       const m = v.message.match(/Arbitrary layout value `([^`]+)` detected\. Use Tailwind scale value `([^`]+)`/);
       if (m) {
         data.className = m[1]; data.suggested = m[2];
         key = `magic:${data.className}→${data.suggested}`;
       }
-    } else if (v.ruleId === 'vizlint/image-alt-text') {
+    } else if (v.ruleId === 'deslint/image-alt-text') {
       const m = v.message.match(/`<(\w+)>` (?:is missing an `alt`|has an empty `alt`|has meaningless alt text)/);
       if (m) {
         data.element = m[1];
@@ -394,7 +394,7 @@ function renderConsistencyPreview(patterns: VisualPattern[]): string {
     <div class="section-head">Consistency Issues — Visual <span class="sh-count">${patterns.length} unique, ${patterns.reduce((s, p) => s + p.count, 0)} total</span></div>
     <div class="section-desc">Same component, different values. Standardize to the dominant pattern for visual consistency.</div>
     <div class="vp-grid">${items.map(p => {
-      if (p.ruleId === 'vizlint/consistent-border-radius') {
+      if (p.ruleId === 'deslint/consistent-border-radius') {
         const actR = RADIUS_MAP[p.data.actual] ?? '8px';
         const domR = RADIUS_MAP[p.data.dominant] ?? '8px';
         return `<div class="vp-card">
@@ -460,11 +460,11 @@ function renderResponsivePreview(patterns: VisualPattern[]): string {
 /** Build visual previews for a given category tab */
 function buildVisualPreviews(allPatterns: VisualPattern[], category: string): string {
   const catRules: Record<string, string[]> = {
-    'Colors': ['vizlint/a11y-color-contrast', 'vizlint/no-arbitrary-colors', 'vizlint/dark-mode-coverage'],
-    'Spacing': ['vizlint/no-arbitrary-spacing', 'vizlint/no-magic-numbers-layout'],
-    'Typography': ['vizlint/no-arbitrary-typography'],
-    'Responsive': ['vizlint/responsive-required', 'vizlint/missing-states', 'vizlint/image-alt-text'],
-    'Consistency': ['vizlint/consistent-component-spacing', 'vizlint/consistent-border-radius', 'vizlint/no-arbitrary-zindex', 'vizlint/no-inline-styles', 'vizlint/max-component-lines'],
+    'Colors': ['deslint/a11y-color-contrast', 'deslint/no-arbitrary-colors', 'deslint/dark-mode-coverage'],
+    'Spacing': ['deslint/no-arbitrary-spacing', 'deslint/no-magic-numbers-layout'],
+    'Typography': ['deslint/no-arbitrary-typography'],
+    'Responsive': ['deslint/responsive-required', 'deslint/missing-states', 'deslint/image-alt-text'],
+    'Consistency': ['deslint/consistent-component-spacing', 'deslint/consistent-border-radius', 'deslint/no-arbitrary-zindex', 'deslint/no-inline-styles', 'deslint/max-component-lines'],
   };
   const rules = catRules[category] ?? [];
   const catPatterns = allPatterns.filter(p => rules.includes(p.ruleId));
@@ -472,18 +472,18 @@ function buildVisualPreviews(allPatterns: VisualPattern[], category: string): st
 
   let html = '';
   if (category === 'Colors') {
-    html += renderContrastPreview(catPatterns.filter(p => p.ruleId === 'vizlint/a11y-color-contrast'));
-    html += renderColorPreview(catPatterns.filter(p => p.ruleId === 'vizlint/no-arbitrary-colors'));
-    html += renderDarkModePreview(catPatterns.filter(p => p.ruleId === 'vizlint/dark-mode-coverage'));
+    html += renderContrastPreview(catPatterns.filter(p => p.ruleId === 'deslint/a11y-color-contrast'));
+    html += renderColorPreview(catPatterns.filter(p => p.ruleId === 'deslint/no-arbitrary-colors'));
+    html += renderDarkModePreview(catPatterns.filter(p => p.ruleId === 'deslint/dark-mode-coverage'));
   } else if (category === 'Spacing') {
     html += renderSpacingPreview(catPatterns);
   } else if (category === 'Typography') {
     html += renderTypographyPreview(catPatterns);
   } else if (category === 'Responsive') {
-    html += renderResponsivePreview(catPatterns.filter(p => p.ruleId === 'vizlint/responsive-required'));
-    html += renderMissingStatesPreview(catPatterns.filter(p => p.ruleId === 'vizlint/missing-states'));
+    html += renderResponsivePreview(catPatterns.filter(p => p.ruleId === 'deslint/responsive-required'));
+    html += renderMissingStatesPreview(catPatterns.filter(p => p.ruleId === 'deslint/missing-states'));
   } else if (category === 'Consistency') {
-    html += renderConsistencyPreview(catPatterns.filter(p => p.ruleId === 'vizlint/consistent-border-radius' || p.ruleId === 'vizlint/consistent-component-spacing'));
+    html += renderConsistencyPreview(catPatterns.filter(p => p.ruleId === 'deslint/consistent-border-radius' || p.ruleId === 'deslint/consistent-component-spacing'));
   }
   return html;
 }
@@ -501,14 +501,14 @@ function gradeLabel(grade: string): string {
 }
 
 /**
- * Generate and write the HTML report to .vizlint/report.html
+ * Generate and write the HTML report to .deslint/report.html
  */
 export function generateHtmlReport(
   lintResult: LintResult,
   scoreResult: ScoreResult,
   cwd: string,
 ): string {
-  const reportDir = resolve(cwd, '.vizlint');
+  const reportDir = resolve(cwd, '.deslint');
   const reportPath = resolve(reportDir, 'report.html');
 
   if (!existsSync(reportDir)) {
@@ -519,7 +519,7 @@ export function generateHtmlReport(
   const violations: ViolationEntry[] = [];
   for (const result of lintResult.results) {
     for (const msg of result.messages) {
-      if (!msg.ruleId || !msg.ruleId.startsWith('vizlint/')) continue;
+      if (!msg.ruleId || !msg.ruleId.startsWith('deslint/')) continue;
       violations.push({
         file: relative(cwd, result.filePath),
         line: msg.line,
@@ -537,7 +537,7 @@ export function generateHtmlReport(
     if (!ruleMap.has(v.ruleId)) {
       ruleMap.set(v.ruleId, {
         ruleId: v.ruleId,
-        shortName: v.ruleId.replace('vizlint/', ''),
+        shortName: v.ruleId.replace('deslint/', ''),
         count: 0,
         category: RULE_CATEGORIES[v.ruleId] ?? 'Other',
         fixable: FIXABLE_RULES.has(v.ruleId),
@@ -560,7 +560,7 @@ export function generateHtmlReport(
     .slice(0, 20);
 
   // Color analysis
-  const colorViolations = violations.filter(v => v.ruleId === 'vizlint/no-arbitrary-colors');
+  const colorViolations = violations.filter(v => v.ruleId === 'deslint/no-arbitrary-colors');
   const colorMap = new Map<string, { hex: string; suggestion: string; count: number }>();
   for (const v of colorViolations) {
     const hexMatch = v.message.match(/`(?:bg|text|border|ring|shadow|fill|stroke|accent|caret|outline|decoration|placeholder|divide)-\[([^\]]+)\]`/);
@@ -577,12 +577,12 @@ export function generateHtmlReport(
 
   // Contrast violations
   const contrastViolations = violations
-    .filter(v => v.ruleId === 'vizlint/a11y-color-contrast')
+    .filter(v => v.ruleId === 'deslint/a11y-color-contrast')
     .slice(0, 10);
 
   // Load history
   let history: HistoryEntry[] = [];
-  const historyPath = resolve(cwd, '.vizlint', 'history.json');
+  const historyPath = resolve(cwd, '.deslint', 'history.json');
   if (existsSync(historyPath)) {
     try {
       history = JSON.parse(readFileSync(historyPath, 'utf-8'));
@@ -669,7 +669,7 @@ function buildHtml(data: ReportData): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vizlint — ${esc(data.projectName)}</title>
+<title>Deslint — ${esc(data.projectName)}</title>
 <style>
 :root {
   --bg:     #09090b; --bg2:    #111113; --bg3:    #18181b; --bg4:    #27272a;
@@ -872,7 +872,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 <!-- Sidebar -->
 <aside class="sidebar">
   <div class="logo">
-    <h1><span class="diamond">&#9672;</span> Vizlint</h1>
+    <h1><span class="diamond">&#9672;</span> Deslint</h1>
     <div class="sub">${esc(data.projectName)}</div>
   </div>
 
@@ -894,7 +894,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
   </nav>
 
   <div class="sidebar-footer">
-    Vizlint v${data.version}<br>
+    Deslint v${data.version}<br>
     ${new Date(data.timestamp).toLocaleString()}
   </div>
 </aside>
@@ -929,7 +929,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
     <div class="card">
       <div class="card-label">Auto-Fixable</div>
       <div class="card-value" style="color:var(--pass)">${fixableCount}</div>
-      <div class="card-sub">Run vizlint fix --all</div>
+      <div class="card-sub">Run deslint fix --all</div>
     </div>
     <div class="card">
       <div class="card-label">Active Rules</div>
@@ -944,7 +944,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
     <div class="section-desc">Estimated time to resolve all violations, calibrated from real auto-fix data. Auto-fixable rules take 2&ndash;3 minutes; design and accessibility decisions take longer.</div>
     <table class="tbl"><thead><tr><th>Rule</th><th>Violations</th><th>Per&nbsp;violation</th><th>Total effort</th></tr></thead><tbody>
       ${data.debt.breakdown.slice(0, 10).map(b => `<tr>
-        <td><span class="mono" style="color:var(--blue)">${esc(b.ruleId.replace(/^vizlint\//, ''))}</span></td>
+        <td><span class="mono" style="color:var(--blue)">${esc(b.ruleId.replace(/^deslint\//, ''))}</span></td>
         <td style="color:var(--text3)">${b.violations}</td>
         <td style="color:var(--text3)">${b.minutesPerViolation}m</td>
         <td style="font-weight:600">${esc(formatDebt(b.totalMinutes))}</td>
@@ -966,14 +966,14 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
       const byRule: Record<string, VisualPattern[]> = {};
       for (const p of top) { if (!byRule[p.ruleId]) byRule[p.ruleId] = []; byRule[p.ruleId].push(p); }
       let out = '';
-      if (byRule['vizlint/a11y-color-contrast']) out += renderContrastPreview(byRule['vizlint/a11y-color-contrast']);
-      if (byRule['vizlint/no-arbitrary-spacing'] || byRule['vizlint/no-magic-numbers-layout']) out += renderSpacingPreview([...(byRule['vizlint/no-arbitrary-spacing'] ?? []), ...(byRule['vizlint/no-magic-numbers-layout'] ?? [])]);
-      if (byRule['vizlint/no-arbitrary-typography']) out += renderTypographyPreview(byRule['vizlint/no-arbitrary-typography']);
-      if (byRule['vizlint/missing-states']) out += renderMissingStatesPreview(byRule['vizlint/missing-states']);
-      if (byRule['vizlint/no-arbitrary-colors']) out += renderColorPreview(byRule['vizlint/no-arbitrary-colors']);
-      if (byRule['vizlint/dark-mode-coverage']) out += renderDarkModePreview(byRule['vizlint/dark-mode-coverage']);
-      if (byRule['vizlint/consistent-border-radius'] || byRule['vizlint/consistent-component-spacing']) out += renderConsistencyPreview([...(byRule['vizlint/consistent-border-radius'] ?? []), ...(byRule['vizlint/consistent-component-spacing'] ?? [])]);
-      if (byRule['vizlint/responsive-required']) out += renderResponsivePreview(byRule['vizlint/responsive-required']);
+      if (byRule['deslint/a11y-color-contrast']) out += renderContrastPreview(byRule['deslint/a11y-color-contrast']);
+      if (byRule['deslint/no-arbitrary-spacing'] || byRule['deslint/no-magic-numbers-layout']) out += renderSpacingPreview([...(byRule['deslint/no-arbitrary-spacing'] ?? []), ...(byRule['deslint/no-magic-numbers-layout'] ?? [])]);
+      if (byRule['deslint/no-arbitrary-typography']) out += renderTypographyPreview(byRule['deslint/no-arbitrary-typography']);
+      if (byRule['deslint/missing-states']) out += renderMissingStatesPreview(byRule['deslint/missing-states']);
+      if (byRule['deslint/no-arbitrary-colors']) out += renderColorPreview(byRule['deslint/no-arbitrary-colors']);
+      if (byRule['deslint/dark-mode-coverage']) out += renderDarkModePreview(byRule['deslint/dark-mode-coverage']);
+      if (byRule['deslint/consistent-border-radius'] || byRule['deslint/consistent-component-spacing']) out += renderConsistencyPreview([...(byRule['deslint/consistent-border-radius'] ?? []), ...(byRule['deslint/consistent-component-spacing'] ?? [])]);
+      if (byRule['deslint/responsive-required']) out += renderResponsivePreview(byRule['deslint/responsive-required']);
       return out;
     })()}
   </div>` : ''}
@@ -1005,7 +1005,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
   ${data.arbitraryColors.length > 0 ? `
   <div class="section">
     <div class="section-head">Hardcoded Colors <span class="sh-count">${data.arbitraryColors.length} found</span></div>
-    <div class="section-desc">These hex values should be replaced with design tokens. Run <code style="background:var(--bg4);padding:.1rem .3rem;border-radius:3px;font-family:var(--mono);font-size:.75rem">vizlint fix --all</code> to auto-fix.</div>
+    <div class="section-desc">These hex values should be replaced with design tokens. Run <code style="background:var(--bg4);padding:.1rem .3rem;border-radius:3px;font-family:var(--mono);font-size:.75rem">deslint fix --all</code> to auto-fix.</div>
     <div class="swatches">
       ${data.arbitraryColors.map(c => `<div class="swatch">
         <div class="sw-box" style="background:${esc(c.hex)}"></div>
@@ -1036,8 +1036,8 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 <div class="tab-content" id="tab-spacing">
   <div class="cards cards-3">
     <div class="card"><div class="card-label">Spacing Score</div><div class="card-value" style="color:${gradeColor(cats.spacing.score)}">${cats.spacing.score}</div><div class="bar"><div class="bar-fill" style="width:${cats.spacing.score}%;background:${gradeColor(cats.spacing.score)}"></div></div></div>
-    <div class="card"><div class="card-label">Arbitrary Spacing</div><div class="card-value">${(byCat['Spacing'] ?? []).filter(v => v.ruleId === 'vizlint/no-arbitrary-spacing').length}</div><div class="card-sub">hardcoded px/rem values</div></div>
-    <div class="card"><div class="card-label">Magic Layout Numbers</div><div class="card-value">${(byCat['Spacing'] ?? []).filter(v => v.ruleId === 'vizlint/no-magic-numbers-layout').length}</div><div class="card-sub">grid/flex arbitrary values</div></div>
+    <div class="card"><div class="card-label">Arbitrary Spacing</div><div class="card-value">${(byCat['Spacing'] ?? []).filter(v => v.ruleId === 'deslint/no-arbitrary-spacing').length}</div><div class="card-sub">hardcoded px/rem values</div></div>
+    <div class="card"><div class="card-label">Magic Layout Numbers</div><div class="card-value">${(byCat['Spacing'] ?? []).filter(v => v.ruleId === 'deslint/no-magic-numbers-layout').length}</div><div class="card-sub">grid/flex arbitrary values</div></div>
   </div>
   ${buildVisualPreviews(allPatterns, 'Spacing')}
   ${buildCategoryViolations(byCat['Spacing'], 'Spacing violations')}
@@ -1058,8 +1058,8 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 <div class="tab-content" id="tab-responsive">
   <div class="cards cards-3">
     <div class="card"><div class="card-label">Responsive Score</div><div class="card-value" style="color:${gradeColor(cats.responsive.score)}">${cats.responsive.score}</div><div class="bar"><div class="bar-fill" style="width:${cats.responsive.score}%;background:${gradeColor(cats.responsive.score)}"></div></div></div>
-    <div class="card"><div class="card-label">Fixed Widths</div><div class="card-value">${(byCat['Responsive'] ?? []).filter(v => v.ruleId === 'vizlint/responsive-required').length}</div><div class="card-sub">missing breakpoints</div></div>
-    <div class="card"><div class="card-label">Accessibility</div><div class="card-value">${(byCat['Responsive'] ?? []).filter(v => v.ruleId === 'vizlint/image-alt-text' || v.ruleId === 'vizlint/missing-states').length}</div><div class="card-sub">alt text + state handling</div></div>
+    <div class="card"><div class="card-label">Fixed Widths</div><div class="card-value">${(byCat['Responsive'] ?? []).filter(v => v.ruleId === 'deslint/responsive-required').length}</div><div class="card-sub">missing breakpoints</div></div>
+    <div class="card"><div class="card-label">Accessibility</div><div class="card-value">${(byCat['Responsive'] ?? []).filter(v => v.ruleId === 'deslint/image-alt-text' || v.ruleId === 'deslint/missing-states').length}</div><div class="card-sub">alt text + state handling</div></div>
   </div>
   ${buildVisualPreviews(allPatterns, 'Responsive')}
   ${buildCategoryViolations(byCat['Responsive'], 'Responsive & accessibility violations')}
@@ -1069,8 +1069,8 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 <div class="tab-content" id="tab-consistency">
   <div class="cards cards-3">
     <div class="card"><div class="card-label">Consistency Score</div><div class="card-value" style="color:${gradeColor(cats.consistency.score)}">${cats.consistency.score}</div><div class="bar"><div class="bar-fill" style="width:${cats.consistency.score}%;background:${gradeColor(cats.consistency.score)}"></div></div></div>
-    <div class="card"><div class="card-label">Spacing Divergence</div><div class="card-value">${(byCat['Consistency'] ?? []).filter(v => v.ruleId === 'vizlint/consistent-component-spacing').length}</div><div class="card-sub">same component, different spacing</div></div>
-    <div class="card"><div class="card-label">Radius Divergence</div><div class="card-value">${(byCat['Consistency'] ?? []).filter(v => v.ruleId === 'vizlint/consistent-border-radius').length}</div><div class="card-sub">same component, different rounding</div></div>
+    <div class="card"><div class="card-label">Spacing Divergence</div><div class="card-value">${(byCat['Consistency'] ?? []).filter(v => v.ruleId === 'deslint/consistent-component-spacing').length}</div><div class="card-sub">same component, different spacing</div></div>
+    <div class="card"><div class="card-label">Radius Divergence</div><div class="card-value">${(byCat['Consistency'] ?? []).filter(v => v.ruleId === 'deslint/consistent-border-radius').length}</div><div class="card-sub">same component, different rounding</div></div>
   </div>
   ${buildVisualPreviews(allPatterns, 'Consistency')}
   ${buildCategoryViolations(byCat['Consistency'], 'Consistency violations')}
@@ -1098,13 +1098,13 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
     <div class="section-head">All Violations <span class="sh-count">${data.summary.totalViolations}${data.summary.totalViolations > 500 ? ' (showing first 500)' : ''}</span></div>
     <div class="v-filters">
       <button class="on" data-f="all">All</button>
-      ${[...new Set(data.violations.map(v => v.ruleId.replace('vizlint/', '')))].map(r =>
+      ${[...new Set(data.violations.map(v => v.ruleId.replace('deslint/', '')))].map(r =>
         `<button data-f="${esc(r)}">${esc(r)}</button>`
       ).join('')}
     </div>
     <div id="v-list">
-      ${data.violations.slice(0, 80).map((v, i) => `<div class="v-item sev-${v.severity}" data-r="${esc(v.ruleId.replace('vizlint/', ''))}" data-i="${i}">
-        <div class="v-file">${esc(v.file)}:${v.line}<span class="v-rule">${esc(v.ruleId.replace('vizlint/', ''))}</span></div>
+      ${data.violations.slice(0, 80).map((v, i) => `<div class="v-item sev-${v.severity}" data-r="${esc(v.ruleId.replace('deslint/', ''))}" data-i="${i}">
+        <div class="v-file">${esc(v.file)}:${v.line}<span class="v-rule">${esc(v.ruleId.replace('deslint/', ''))}</span></div>
         <div class="v-msg">${esc(v.message)}</div>
       </div>`).join('')}
     </div>
@@ -1152,8 +1152,8 @@ if (moreBtn) {
     for (const v of batch) {
       const d = document.createElement('div');
       d.className = 'v-item sev-' + v.severity;
-      d.dataset.r = v.ruleId.replace('vizlint/', '');
-      d.innerHTML = '<div class="v-file">' + esc(v.file) + ':' + v.line + '<span class="v-rule">' + esc(v.ruleId.replace('vizlint/', '')) + '</span></div><div class="v-msg">' + esc(v.message) + '</div>';
+      d.dataset.r = v.ruleId.replace('deslint/', '');
+      d.innerHTML = '<div class="v-file">' + esc(v.file) + ':' + v.line + '<span class="v-rule">' + esc(v.ruleId.replace('deslint/', '')) + '</span></div><div class="v-msg">' + esc(v.message) + '</div>';
       list.appendChild(d);
     }
     shown += batch.length;
@@ -1176,7 +1176,7 @@ function buildCategoryViolations(violations: ViolationEntry[] | undefined, title
   return `<div class="section">
     <div class="section-head">${title} <span class="sh-count">${violations.length} total</span></div>
     ${shown.map(v => `<div class="v-item sev-${v.severity}">
-      <div class="v-file">${esc(v.file)}:${v.line}<span class="v-rule">${esc(v.ruleId.replace('vizlint/', ''))}</span></div>
+      <div class="v-file">${esc(v.file)}:${v.line}<span class="v-rule">${esc(v.ruleId.replace('deslint/', ''))}</span></div>
       <div class="v-msg">${esc(v.message)}</div>
     </div>`).join('')}
     ${violations.length > 30 ? `<div style="text-align:center;padding:.75rem;color:var(--text4);font-size:.78rem">+ ${violations.length - 30} more — see All Violations tab</div>` : ''}

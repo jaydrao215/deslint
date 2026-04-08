@@ -151,7 +151,7 @@ describe('parseCssVars', () => {
 // ── Merge Logic ─────────────────────────────────────────────────────
 
 describe('mergeDesignSystems', () => {
-  it('manual .vizlintrc.json colors override auto-imported colors', () => {
+  it('manual .deslintrc.json colors override auto-imported colors', () => {
     const auto = { colors: { brand: '#1E3A5F', accent: '#27AE60' } };
     const manual = { colors: { brand: '#FF0000' } };
     const merged = mergeDesignSystems(auto, manual);

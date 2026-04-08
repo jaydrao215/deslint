@@ -1,5 +1,5 @@
 {
-  "name": "@vizlint/eslint-plugin",
+  "name": "@deslint/eslint-plugin",
   "version": "0.1.1",
   "description": "The design quality gate for AI-generated frontend code",
   "keywords": [
@@ -15,7 +15,7 @@
     "ai"
   ],
   "license": "MIT",
-  "author": "Vizlint",
+  "author": "Deslint",
   "engines": {
     "node": ">=20.19.0"
   },

@@ -2,13 +2,13 @@
 
 > **Date:** 2026-04-01
 > **Projects:** nextjs/saas-starter (Next.js official), shadcn-ui/taxonomy (canonical shadcn/ui app)
-> **Vizlint version:** 0.3.0 (local, via CLI scan)
+> **Deslint version:** 0.3.0 (local, via CLI scan)
 > **ESLint rules enabled:** 14 (recommended config, all at warn)
 > **Parser:** @typescript-eslint/parser for .tsx/.ts, Espree for .jsx/.js
 
 ## Purpose
 
-Validate Vizlint on real-world open-source Next.js + shadcn/ui projects to:
+Validate Deslint on real-world open-source Next.js + shadcn/ui projects to:
 1. Confirm zero crashes on TypeScript/JSX files
 2. Measure false positive rate on "stranger's code"
 3. Test auto-fix correctness on real codebase (node.range present in JSX parser)
@@ -114,7 +114,7 @@ All violations are genuine design quality issues in this project. 1 dark-mode-co
 
 No false positives detected. 3 noise violations: 2 responsive-required on intentional fixed-width UI elements (sidebar nav at w-[200px], form field at w-[400px]).
 
-Note: `app/api/og/route.tsx` has 3 static inline styles — these ARE accurate violations (real inline styles in a React file). However, Next.js OG image routes using `satori` REQUIRE inline styles (satori doesn't process Tailwind). Users should add `// eslint-disable-next-line vizlint/no-inline-styles` in OG routes. This is a known limitation.
+Note: `app/api/og/route.tsx` has 3 static inline styles — these ARE accurate violations (real inline styles in a React file). However, Next.js OG image routes using `satori` REQUIRE inline styles (satori doesn't process Tailwind). Users should add `// eslint-disable-next-line deslint/no-inline-styles` in OG routes. This is a known limitation.
 
 ### Top True Positives
 
@@ -143,7 +143,7 @@ The `scan` CLI command computed `cwd = resolve(dir)` correctly but called `runLi
 
 When scanning projects with `// eslint-disable-next-line @next/next/no-img-element` comments, ESLint reported "Definition for rule '@next/next/no-img-element' was not found." with severity error. This inflated error counts and confused users with violations from other tools' rules.
 
-**Fix:** `aggregateResults()` in lint-runner now filters results to only include `vizlint/*` violations and parse errors (`ruleId === null`). Third-party rule violations are silently dropped.
+**Fix:** `aggregateResults()` in lint-runner now filters results to only include `deslint/*` violations and parse errors (`ruleId === null`). Third-party rule violations are silently dropped.
 
 ### Bug 11: no-magic-numbers-layout flags `grid-cols-[1fr_300px]` (P1)
 

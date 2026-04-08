@@ -1,5 +1,5 @@
 /**
- * @vizlint/mcp — MCP server for real-time design quality feedback.
+ * @deslint/mcp — MCP server for real-time design quality feedback.
  *
  * Exposes 3 tools via Model Context Protocol (stdio transport):
  *   - analyze_file: Lint a single file, return violations + sub-score

@@ -19,7 +19,7 @@ const _pkg = _require('../package.json') as { version: string };
 
 const plugin = {
   meta: {
-    name: '@vizlint/eslint-plugin',
+    name: '@deslint/eslint-plugin',
     version: _pkg.version,
   },
   rules: {
@@ -43,42 +43,42 @@ const plugin = {
 
 // Flat config presets (ESLint v10+ only)
 plugin.configs.recommended = {
-  plugins: { vizlint: plugin },
+  plugins: { deslint: plugin },
   rules: {
-    'vizlint/no-arbitrary-colors': 'warn',
-    'vizlint/no-arbitrary-spacing': 'warn',
-    'vizlint/no-arbitrary-typography': 'warn',
-    'vizlint/responsive-required': 'warn',
-    'vizlint/consistent-component-spacing': 'warn',
-    'vizlint/a11y-color-contrast': 'warn',
-    'vizlint/max-component-lines': 'off',
-    'vizlint/missing-states': 'off',
-    'vizlint/dark-mode-coverage': 'off',
-    'vizlint/no-arbitrary-zindex': 'warn',
-    'vizlint/no-inline-styles': 'off',
-    'vizlint/consistent-border-radius': 'warn',
-    'vizlint/image-alt-text': 'warn',
-    'vizlint/no-magic-numbers-layout': 'warn',
+    'deslint/no-arbitrary-colors': 'warn',
+    'deslint/no-arbitrary-spacing': 'warn',
+    'deslint/no-arbitrary-typography': 'warn',
+    'deslint/responsive-required': 'warn',
+    'deslint/consistent-component-spacing': 'warn',
+    'deslint/a11y-color-contrast': 'warn',
+    'deslint/max-component-lines': 'off',
+    'deslint/missing-states': 'off',
+    'deslint/dark-mode-coverage': 'off',
+    'deslint/no-arbitrary-zindex': 'warn',
+    'deslint/no-inline-styles': 'off',
+    'deslint/consistent-border-radius': 'warn',
+    'deslint/image-alt-text': 'warn',
+    'deslint/no-magic-numbers-layout': 'warn',
   },
 };
 
 plugin.configs.strict = {
-  plugins: { vizlint: plugin },
+  plugins: { deslint: plugin },
   rules: {
-    'vizlint/no-arbitrary-colors': 'error',
-    'vizlint/no-arbitrary-spacing': 'error',
-    'vizlint/no-arbitrary-typography': 'error',
-    'vizlint/responsive-required': 'error',
-    'vizlint/consistent-component-spacing': 'error',
-    'vizlint/a11y-color-contrast': 'error',
-    'vizlint/max-component-lines': 'error',
-    'vizlint/missing-states': 'error',
-    'vizlint/dark-mode-coverage': 'error',
-    'vizlint/no-arbitrary-zindex': 'error',
-    'vizlint/no-inline-styles': 'error',
-    'vizlint/consistent-border-radius': 'error',
-    'vizlint/image-alt-text': 'error',
-    'vizlint/no-magic-numbers-layout': 'error',
+    'deslint/no-arbitrary-colors': 'error',
+    'deslint/no-arbitrary-spacing': 'error',
+    'deslint/no-arbitrary-typography': 'error',
+    'deslint/responsive-required': 'error',
+    'deslint/consistent-component-spacing': 'error',
+    'deslint/a11y-color-contrast': 'error',
+    'deslint/max-component-lines': 'error',
+    'deslint/missing-states': 'error',
+    'deslint/dark-mode-coverage': 'error',
+    'deslint/no-arbitrary-zindex': 'error',
+    'deslint/no-inline-styles': 'error',
+    'deslint/consistent-border-radius': 'error',
+    'deslint/image-alt-text': 'error',
+    'deslint/no-magic-numbers-layout': 'error',
   },
 };
 

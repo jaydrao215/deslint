@@ -41,10 +41,10 @@ importers:
       '@actions/github':
         specifier: ^6.0.0
         version: 6.0.1
-      '@vizlint/eslint-plugin':
+      '@deslint/eslint-plugin':
         specifier: workspace:*
         version: link:../packages/eslint-plugin
-      '@vizlint/shared':
+      '@deslint/shared':
         specifier: workspace:*
         version: link:../packages/shared
       eslint:
@@ -130,10 +130,10 @@ importers:
       '@clack/prompts':
         specifier: ^1.2.0
         version: 1.2.0
-      '@vizlint/eslint-plugin':
+      '@deslint/eslint-plugin':
         specifier: workspace:^
         version: link:../eslint-plugin
-      '@vizlint/shared':
+      '@deslint/shared':
         specifier: workspace:*
         version: link:../shared
       chalk:
@@ -210,13 +210,13 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@3.25.76)
-      '@vizlint/cli':
+      '@deslint/cli':
         specifier: workspace:^
         version: link:../cli
-      '@vizlint/eslint-plugin':
+      '@deslint/eslint-plugin':
         specifier: workspace:^
         version: link:../eslint-plugin
-      '@vizlint/shared':
+      '@deslint/shared':
         specifier: workspace:*
         version: link:../shared
       eslint:

@@ -13,7 +13,7 @@ describe('evaluateCompliance', () => {
 
   it('marks a criterion as failing when its mapped rule has violations', () => {
     const result = evaluateCompliance({
-      byRule: { 'vizlint/a11y-color-contrast': 3 },
+      byRule: { 'deslint/a11y-color-contrast': 3 },
     });
     const contrast = result.criteria.find((c) => c.criterion.id === '1.4.3');
     expect(contrast?.status).toBe('fail');
@@ -24,22 +24,22 @@ describe('evaluateCompliance', () => {
   it('downgrades level reached when a failing criterion drops conformance', () => {
     // A-level criterion failing — cannot claim any level.
     const result = evaluateCompliance({
-      byRule: { 'vizlint/image-alt-text': 1 },
+      byRule: { 'deslint/image-alt-text': 1 },
     });
     expect(result.levelReached).toBe('none');
   });
 
   it('still reaches Level A when only an AA criterion fails', () => {
     const result = evaluateCompliance({
-      byRule: { 'vizlint/responsive-required': 1 }, // 1.4.10 is AA
+      byRule: { 'deslint/responsive-required': 1 }, // 1.4.10 is AA
     });
     expect(result.levelReached).toBe('A');
   });
 
   it('counts affected files when filesByRule is provided', () => {
     const result = evaluateCompliance({
-      byRule: { 'vizlint/a11y-color-contrast': 5 },
-      filesByRule: { 'vizlint/a11y-color-contrast': 2 },
+      byRule: { 'deslint/a11y-color-contrast': 5 },
+      filesByRule: { 'deslint/a11y-color-contrast': 2 },
     });
     const contrast = result.criteria.find((c) => c.criterion.id === '1.4.3');
     expect(contrast?.filesAffected).toBe(2);
@@ -48,7 +48,7 @@ describe('evaluateCompliance', () => {
   it('marks criteria as not-evaluated when none of their rules are enabled', () => {
     const result = evaluateCompliance({
       byRule: {},
-      enabledRules: new Set(['vizlint/no-arbitrary-colors']),
+      enabledRules: new Set(['deslint/no-arbitrary-colors']),
     });
     // None of the WCAG-mapped rules are in the enabled set, so every
     // criterion is not-evaluated.
@@ -65,10 +65,10 @@ describe('evaluateCompliance', () => {
   it('sums total violations across all mapped rules', () => {
     const result = evaluateCompliance({
       byRule: {
-        'vizlint/a11y-color-contrast': 4,
-        'vizlint/image-alt-text': 2,
-        'vizlint/responsive-required': 1,
-        'vizlint/no-arbitrary-colors': 99, // not WCAG-mapped, should be ignored
+        'deslint/a11y-color-contrast': 4,
+        'deslint/image-alt-text': 2,
+        'deslint/responsive-required': 1,
+        'deslint/no-arbitrary-colors': 99, // not WCAG-mapped, should be ignored
       },
     });
     expect(result.totalViolations).toBe(7);
@@ -85,7 +85,7 @@ describe('formatComplianceSummary', () => {
 
   it('reports Not Met when any A criterion fails', () => {
     const result = evaluateCompliance({
-      byRule: { 'vizlint/image-alt-text': 1 },
+      byRule: { 'deslint/image-alt-text': 1 },
     });
     const text = formatComplianceSummary(result);
     expect(text).toContain('Not Met');

@@ -1,5 +1,5 @@
 /**
- * MCP Server — wires Vizlint tools to the Model Context Protocol.
+ * MCP Server — wires Deslint tools to the Model Context Protocol.
  *
  * Transport: stdio (JSON-RPC 2.0), zero network calls.
  * Tools: analyze_file, analyze_project, analyze_and_fix
@@ -12,11 +12,11 @@ import { VERSION } from './index.js';
 import { analyzeFile, analyzeProject, analyzeAndFix } from './tools.js';
 
 /**
- * Create an MCP server with all Vizlint tools registered.
+ * Create an MCP server with all Deslint tools registered.
  */
 export function createServer(): McpServer {
   const server = new McpServer({
-    name: 'vizlint',
+    name: 'deslint',
     version: VERSION,
   });
 
@@ -154,7 +154,7 @@ export function createServer(): McpServer {
 
 /**
  * Start the MCP server using stdio transport.
- * This is the entry point when running as `npx @vizlint/mcp`.
+ * This is the entry point when running as `npx @deslint/mcp`.
  */
 export async function startServer(): Promise<void> {
   const server = createServer();

@@ -93,8 +93,8 @@ export const QualityGateSchema = z
 
 export type QualityGate = z.infer<typeof QualityGateSchema>;
 
-// ── Root .vizlintrc.json Schema ──────────────────────────────────────
-export const VizlintConfigSchema = z
+// ── Root .deslintrc.json Schema ──────────────────────────────────────
+export const DeslintConfigSchema = z
   .object({
     $schema: z.string().optional().describe('JSON Schema URL for editor support'),
     rules: z
@@ -113,19 +113,19 @@ export const VizlintConfigSchema = z
   })
   .strict();
 
-export type VizlintConfig = z.infer<typeof VizlintConfigSchema>;
+export type DeslintConfig = z.infer<typeof DeslintConfigSchema>;
 
 /**
- * Validate a raw JSON object against the .vizlintrc.json schema.
+ * Validate a raw JSON object against the .deslintrc.json schema.
  * Returns the parsed config on success or a ZodError on failure.
  */
-export function parseConfig(raw: unknown): VizlintConfig {
-  return VizlintConfigSchema.parse(raw);
+export function parseConfig(raw: unknown): DeslintConfig {
+  return DeslintConfigSchema.parse(raw);
 }
 
 /**
  * Safe version — returns `{ success, data, error }` instead of throwing.
  */
 export function safeParseConfig(raw: unknown) {
-  return VizlintConfigSchema.safeParse(raw);
+  return DeslintConfigSchema.safeParse(raw);
 }

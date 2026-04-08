@@ -1,70 +1,70 @@
-# @vizlint/cli
+# @deslint/cli
 
 > Design quality CLI with scan, fix, and Design Health Score.
 
 ## Installation
 
 ```bash
-npm install -g @vizlint/cli
+npm install -g @deslint/cli
 # or use directly
-npx vizlint scan
+npx deslint scan
 ```
 
 **Requirements:** Node.js v20+
 
 ## Commands
 
-### `vizlint scan [dir]`
+### `deslint scan [dir]`
 
 Scan a project and report the Design Health Score.
 
 ```bash
-vizlint scan                     # scan current directory
-vizlint scan ./src               # scan specific directory
-vizlint scan --output json       # JSON output
-vizlint scan --output sarif      # SARIF format (for CI integration)
-vizlint scan --profile strict    # use strict profile
+deslint scan                     # scan current directory
+deslint scan ./src               # scan specific directory
+deslint scan --output json       # JSON output
+deslint scan --output sarif      # SARIF format (for CI integration)
+deslint scan --profile strict    # use strict profile
 ```
 
 **Output:** Design Health Score (0-100), per-category breakdown, violation list.
 
-### `vizlint fix [dir]`
+### `deslint fix [dir]`
 
 Auto-fix design quality violations.
 
 ```bash
-vizlint fix --all                # fix all auto-fixable violations
-vizlint fix --interactive        # review each fix before applying
-vizlint fix --dry-run            # show what would be fixed
+deslint fix --all                # fix all auto-fixable violations
+deslint fix --interactive        # review each fix before applying
+deslint fix --dry-run            # show what would be fixed
 ```
 
-### `vizlint init`
+### `deslint init`
 
-Interactive setup wizard. Generates `eslint.config.js`, `.vizlintrc.json`, and adds npm scripts.
+Interactive setup wizard. Generates `eslint.config.js`, `.deslintrc.json`, and adds npm scripts.
 
 ```bash
-npx vizlint init
+npx deslint init
 # Detects framework (React/Vue/Svelte/Angular)
 # Generates config with correct parser
-# Adds `vizlint` and `vizlint:fix` scripts to package.json
+# Adds `deslint` and `deslint:fix` scripts to package.json
 ```
 
-### `vizlint generate-config <target>`
+### `deslint generate-config <target>`
 
 Generate configuration for AI coding tools.
 
 ```bash
-vizlint generate-config cursor   # .cursorrules
-vizlint generate-config claude   # CLAUDE.md instructions
-vizlint generate-config agents   # AGENTS.md configuration
+deslint generate-config cursor   # .cursorrules
+deslint generate-config claude   # CLAUDE.md instructions
+deslint generate-config agents   # AGENTS.md configuration
 ```
 
-### `vizlint suggest-tokens`
+### `deslint suggest-tokens`
 
 Analyze arbitrary values and suggest design token replacements.
 
 ```bash
-vizlint suggest-tokens
+deslint suggest-tokens
 # Near-miss: max-w-[800px] → closest: max-w-3xl (32px difference)
 # Repeated custom: w-[480px] — appears in 2 files, consider naming
 # One-off: max-w-[120px] — review intent
@@ -81,7 +81,7 @@ vizlint suggest-tokens
 
 ## Configuration
 
-The CLI reads `.vizlintrc.json` from the project root:
+The CLI reads `.deslintrc.json` from the project root:
 
 ```json
 {
