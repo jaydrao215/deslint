@@ -1,5 +1,11 @@
 import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { debugLog } from '../utils/debug.js';
+import {
+  createElementVisitor,
+  getAttribute,
+  getStaticAttributeValue,
+  type NormalizedElement,
+} from '../utils/element-visitor.js';
 
 const createRule = ESLintUtils.RuleCreator(
   (name) => `https://deslint.com/docs/rules/${name}`
@@ -27,102 +33,18 @@ const DEFAULT_MEANINGLESS_PATTERNS = [
   'img',
 ];
 
-/** Tag names that represent image elements */
-const IMG_TAGS = new Set(['img']);
-const NEXT_IMAGE_TAGS = new Set(['Image']);
-
 /**
- * Get the tag name from a JSX opening element.
+ * Check if the element is decorative (role="presentation"/"none" or
+ * aria-hidden). Works across all frameworks via NormalizedElement.
  */
-function getTagName(node: TSESTree.JSXOpeningElement): string | null {
-  if (node.name.type === 'JSXIdentifier') {
-    return node.name.name;
-  }
-  return null;
-}
+function isDecorativeImage(element: NormalizedElement): boolean {
+  const role = getStaticAttributeValue(element, 'role');
+  if (role === 'presentation' || role === 'none') return true;
 
-/**
- * Check if the element is an image tag we should inspect.
- */
-function isImageElement(
-  tagName: string,
-  checkNextImage: boolean,
-): boolean {
-  if (IMG_TAGS.has(tagName)) return true;
-  if (checkNextImage && NEXT_IMAGE_TAGS.has(tagName)) return true;
-  return false;
-}
-
-/**
- * Check if the element has a JSX spread attribute ({...props}).
- */
-function hasSpreadAttribute(node: TSESTree.JSXOpeningElement): boolean {
-  for (const attr of node.attributes) {
-    if (attr.type === 'JSXSpreadAttribute') return true;
-  }
-  return false;
-}
-
-/**
- * Find a JSX attribute by name on a JSX opening element.
- */
-function findAttribute(
-  node: TSESTree.JSXOpeningElement,
-  attrName: string,
-): TSESTree.JSXAttribute | null {
-  for (const attr of node.attributes) {
-    if (attr.type !== 'JSXAttribute') continue;
-    const name =
-      attr.name.type === 'JSXIdentifier'
-        ? attr.name.name
-        : attr.name.type === 'JSXNamespacedName'
-          ? `${attr.name.namespace.name}:${attr.name.name.name}`
-          : null;
-    if (name === attrName) return attr;
-  }
-  return null;
-}
-
-/**
- * Get the static string value of a JSX attribute, or null if it's dynamic.
- */
-function getStaticAttributeValue(attr: TSESTree.JSXAttribute): string | null {
-  // <img alt="text" /> — string literal
-  if (attr.value === null) {
-    // <img alt /> — attribute with no value, treat as empty string
-    return '';
-  }
-  if (attr.value.type === 'Literal' && typeof attr.value.value === 'string') {
-    return attr.value.value;
-  }
-  // JSXExpressionContainer with a string literal: alt={"text"}
-  if (
-    attr.value.type === 'JSXExpressionContainer' &&
-    attr.value.expression.type === 'Literal' &&
-    typeof attr.value.expression.value === 'string'
-  ) {
-    return attr.value.expression.value;
-  }
-  // Dynamic expression — can't evaluate statically
-  return null;
-}
-
-/**
- * Check if the element has role="presentation" or aria-hidden="true".
- */
-function isDecorativeImage(node: TSESTree.JSXOpeningElement): boolean {
-  const roleAttr = findAttribute(node, 'role');
-  if (roleAttr) {
-    const roleValue = getStaticAttributeValue(roleAttr);
-    if (roleValue === 'presentation' || roleValue === 'none') return true;
-  }
-
-  const ariaHiddenAttr = findAttribute(node, 'aria-hidden');
-  if (ariaHiddenAttr) {
-    const ariaHiddenValue = getStaticAttributeValue(ariaHiddenAttr);
-    if (ariaHiddenValue === 'true') return true;
-    // <img aria-hidden /> — boolean attribute, treat as true
-    if (ariaHiddenAttr.value === null) return true;
+  const ariaHidden = getAttribute(element, 'aria-hidden');
+  if (ariaHidden) {
+    // "true", or value-less boolean attribute (normalized to empty string)
+    if (ariaHidden.value === 'true' || ariaHidden.value === '') return true;
   }
 
   return false;
@@ -184,70 +106,56 @@ export default createRule<Options, MessageIds>({
     const meaninglessPatterns =
       options.meaninglessPatterns ?? DEFAULT_MEANINGLESS_PATTERNS;
 
-    return {
-      JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
+    // Tag filter: always check <img>, optionally Next.js <Image>.
+    // Note: element-visitor compares case-insensitively, but Next.js
+    // <Image> is a JSX component, so it arrives as 'Image' on the element.
+    const tagNames = checkNextImage ? ['img', 'Image'] : ['img'];
+
+    return createElementVisitor({
+      tagNames,
+      check(element) {
         try {
-          const tagName = getTagName(node);
-          if (!tagName) return;
-          if (!isImageElement(tagName, checkNextImage)) return;
+          // Spread attributes — give benefit of the doubt (could contain alt)
+          if (element.hasSpread) return;
 
-          // Spread attributes — give benefit of the doubt
-          if (hasSpreadAttribute(node)) return;
+          // Next.js <Image> filter: the case-insensitive tag filter would
+          // accept a lowercase 'image' in HTML/Vue/Angular templates too,
+          // but those don't have a Next.js Image component. Guard with a
+          // framework check so we only treat `Image` as Next.js in JSX.
+          if (
+            element.tagName === 'Image' &&
+            element.framework !== 'jsx'
+          ) {
+            return;
+          }
 
-          const altAttr = findAttribute(node, 'alt');
+          const altAttr = getAttribute(element, 'alt');
 
-          // Missing alt attribute entirely
+          // Missing alt attribute entirely → report
           if (!altAttr) {
             context.report({
-              node,
+              node: element.node as TSESTree.Node,
               messageId: 'missingAlt',
-              data: { element: tagName },
-              suggest: [
-                {
-                  messageId: 'emptyAlt',
-                  data: { element: tagName },
-                  fix(fixer) {
-                    // Insert alt="" right after the tag name
-                    const tagEnd = node.name.range[1];
-                    return fixer.insertTextAfterRange(
-                      [tagEnd, tagEnd],
-                      ' alt=""',
-                    );
-                  },
-                },
-              ],
+              data: { element: element.tagName },
+              suggest: buildAddAltSuggestion(element),
             });
             return;
           }
 
-          // Get the static value of alt
-          const altValue = getStaticAttributeValue(altAttr);
+          // Dynamic expression — can't evaluate statically, skip
+          if (altAttr.value === null) return;
 
-          // Dynamic expression — can't evaluate, skip
-          if (altValue === null) return;
+          const altValue = altAttr.value;
 
           // Empty or whitespace-only alt
           if (altValue.trim() === '') {
-            if (isDecorativeImage(node)) return;
+            if (isDecorativeImage(element)) return;
 
             context.report({
-              node,
+              node: element.node as TSESTree.Node,
               messageId: 'emptyAlt',
-              data: { element: tagName },
-              suggest: [
-                {
-                  messageId: 'emptyAlt',
-                  data: { element: tagName },
-                  fix(fixer) {
-                    // Suggest adding role="presentation"
-                    const tagEnd = node.name.range[1];
-                    return fixer.insertTextAfterRange(
-                      [tagEnd, tagEnd],
-                      ' role="presentation"',
-                    );
-                  },
-                },
-              ],
+              data: { element: element.tagName },
+              suggest: buildAddRoleSuggestion(element),
             });
             return;
           }
@@ -255,9 +163,9 @@ export default createRule<Options, MessageIds>({
           // Meaningless alt text
           if (isMeaninglessAlt(altValue, meaninglessPatterns)) {
             context.report({
-              node,
+              node: element.node as TSESTree.Node,
               messageId: 'meaninglessAlt',
-              data: { element: tagName, alt: altValue },
+              data: { element: element.tagName, alt: altValue },
             });
           }
         } catch (err) {
@@ -265,6 +173,50 @@ export default createRule<Options, MessageIds>({
           return;
         }
       },
-    };
+    });
   },
 });
+
+/**
+ * Build the "add alt=''" suggestion. Only JSX has a range-based autofix
+ * today — Vue/Svelte/Angular/HTML autofixes are deferred to v0.3.0
+ * (safeGetRange for template parsers is a known gap, see ROADMAP.md).
+ */
+function buildAddAltSuggestion(element: NormalizedElement) {
+  if (element.framework !== 'jsx') return [];
+  const jsxNode = element.node as TSESTree.JSXOpeningElement;
+
+  return [
+    {
+      messageId: 'emptyAlt' as const,
+      data: { element: element.tagName },
+      fix(fixer: any) {
+        const tagEnd = jsxNode.name.range[1];
+        return fixer.insertTextAfterRange([tagEnd, tagEnd], ' alt=""');
+      },
+    },
+  ];
+}
+
+/**
+ * Build the "add role='presentation'" suggestion for empty-alt elements.
+ * JSX-only for the same reason as above.
+ */
+function buildAddRoleSuggestion(element: NormalizedElement) {
+  if (element.framework !== 'jsx') return [];
+  const jsxNode = element.node as TSESTree.JSXOpeningElement;
+
+  return [
+    {
+      messageId: 'emptyAlt' as const,
+      data: { element: element.tagName },
+      fix(fixer: any) {
+        const tagEnd = jsxNode.name.range[1];
+        return fixer.insertTextAfterRange(
+          [tagEnd, tagEnd],
+          ' role="presentation"',
+        );
+      },
+    },
+  ];
+}

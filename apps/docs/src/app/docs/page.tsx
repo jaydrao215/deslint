@@ -49,10 +49,10 @@ export default function DocsIndex() {
             <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border ${card.color} mb-4`}>
               <card.icon className="h-5 w-5" />
             </div>
-            <h3 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
+            <h2 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
               {card.title}
               <ArrowRight className="h-3.5 w-3.5 text-gray-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-            </h3>
+            </h2>
             <p className="text-sm text-gray-500 leading-relaxed">
               {card.description}
             </p>

@@ -3,7 +3,7 @@
 > **Read me first.** This is the active planning document. It captures: live state, what's in flight, what's queued, what's deferred, decisions made, and the prioritized backlog. **Updated on every meaningful commit.** Future conversations should read this BEFORE assuming anything about state — it supersedes chat history and memory. Where this conflicts with DESLINT-EXECUTION.md or sprint plan files, this wins.
 
 **Last updated:** 2026-04-08
-**Last update reason:** Investigation session — grounded codebase audit + Phase 1 closeout + Accessibility Foundation sprint plan
+**Last update reason:** Accessibility Foundation sprint — **S4 COMPLETE** (6/6 rules shipped in day 2). All 6 WCAG-mapped a11y rules: lang-attribute, viewport-meta, heading-hierarchy, link-text, form-labels, aria-validation. 842/842 plugin tests, 6 real production WCAG bugs caught, 0 FPs across 731 file-rule combinations. ~8 days of sprint slack created.
 
 ---
 
@@ -11,20 +11,38 @@
 
 | Field | Value |
 |---|---|
-| **Latest npm release** | None under `@deslint/*` yet — code at v0.1.1 in repo, awaiting first `v0.1.1` git tag to fire `release.yml`. Prior history (`@vizlint/*@0.1.1` etc.) lives on the abandoned scope and is not part of the deslint launch narrative. |
+| **Latest npm release** | `@deslint/*@0.1.1` — **live on npm** ✅ with KPMG Phase 1 (VIZ-026 → VIZ-030). Inaugural publish complete. Next release: v0.2.0 after Accessibility Foundation sprint. |
 | **Latest commit** | (see `git log -1`) |
 | **Default branch** | `main` |
 | **CI** | ✅ green (Node 20 + 22 matrix on Ubuntu) |
 | **Trust metrics** | All met — 0% FP across 4,061 files, 0 crashes, 3.05s scan of 1,838 files (25× under 15s/500-file budget), 14/14 auto-fixers verified |
-| **KPMG Phase 1 (5 stories VIZ-026 → VIZ-030)** | ✅ COMPLETE in repo — Design Debt Score, Quality Gates, Trend command, W3C tokens import, WCAG 2.2 compliance report all part of the v0.1.1 codebase, will land on npm with the inaugural `@deslint/*` publish |
-| **NPM_TOKEN scope** | GitHub secret must authorize the `@deslint` scope before tagging v0.1.1 — verify before pushing the tag, otherwise the `Publish` steps in `release.yml` will fail |
-| **Domain** | `deslint.com` purchased ✅ — landing page NOT yet deployed |
+| **KPMG Phase 1 (5 stories VIZ-026 → VIZ-030)** | ✅ SHIPPED to npm in v0.1.1 — Design Debt Score, Quality Gates, Trend command, W3C tokens import, WCAG 2.2 compliance report |
+| **Domain** | `deslint.com` purchased ✅ — landing page NOT yet deployed (S6 task) |
 
 ---
 
 ## 2. What I'm working on RIGHT NOW
 
-Nothing in flight. **Last active session ended on 2026-04-08 after investigation. Resume here next session.**
+**Sprint items S1 + S3 substantially complete in a single session.** ✅✅
+
+**S1 — Element Visitor Abstraction (3-day budget, ~1.5 days spent):**
+- `packages/eslint-plugin/src/utils/element-visitor.ts` — framework-agnostic `createElementVisitor({ check, tagNames })` factory with JSX / Vue / Angular / Svelte dispatches + HTML stub awaiting S2.
+- Helpers: `getAttribute`, `getStaticAttributeValue`, `hasSpreadAttribute` — case-insensitive, camelCase↔kebab-case normalized.
+- 31 synthetic-AST unit tests in `tests/utils/element-visitor.test.ts`.
+
+**S3 — Port 3 JSX-only rules to cross-framework (6-day budget, ~2 hours spent):**
+- `image-alt-text` ✅ — all 44 JSX tests intact, +18 cross-framework synthetic tests (Svelte/Angular/Vue). Framework-guarded Next.js `Image` detection.
+- `missing-states` ✅ — all 23 JSX tests intact, +18 cross-framework synthetic tests (Svelte/Angular/Vue + `requireAriaRequired` option).
+- `responsive-required` ✅ — all 33 JSX tests intact, +11 cross-framework synthetic tests (Svelte/Angular/Vue). Helper `collectElementClasses` handles JSX expression-container fallback for `className={cn(...)}` while non-JSX frameworks use the normalized static value.
+
+**Tests total: 644/644 passing** (was 579 at sprint start; +31 element-visitor unit + 47 cross-framework rule tests + 12 that shifted from helper-level to rule-level). Typecheck ✅, lint ✅, turbo build ✅ across all 6 packages.
+
+**Massive sprint velocity buyback:** S3 was budgeted at 6 days (2/rule); took ~2 hours because createElementVisitor was proven on image-alt-text first, making the remaining two rules mechanical refactors. **~5.5 days of sprint slack created**, which goes directly to S4 (6 new WCAG rules) and lets us keep the quality bar high without dropping the rule count.
+
+**Next up (remaining day 1):**
+1. S1 day 3 finish — add real-parser integration tests via `vue-eslint-parser` + `svelte-eslint-parser` as dev deps + benchmark visitor overhead (<0.5ms/file target). Lower priority now that the ports themselves prove the abstraction works.
+2. S2 — Plain HTML parser support (`@html-eslint/parser` peer dep + lint-runner routing). 1.5 days budgeted.
+3. S4 — 6 new WCAG rules (heading-hierarchy, form-labels, lang-attribute, aria-validation, link-text, viewport-meta). 9 days budgeted, but with ~5.5 days of buyback from S3 velocity, we have headroom.
 
 ---
 
@@ -143,8 +161,16 @@ Nothing in flight. **Last active session ended on 2026-04-08 after investigation
 - Honest doc note about heuristic limits where applicable
 
 **Estimate:** 1.5 days per rule = 9 days for 6 rules
-**Status:** ⏸ not started
+**Status:** ✅ **COMPLETE — 6/6 shipped on Apr 8**
+- `lang-attribute` ✅ Apr 8 — 36 tests, WCAG 3.1.1, JSX autofix + cross-framework
+- `viewport-meta` ✅ Apr 8 — 24 tests, WCAG 1.4.4 (F77), cross-framework, dogfooded end-to-end via CLI on 3 real OSS projects + positive-control fixture (0 FPs / 169 files, 4/4 TPs). Found and fixed P1 bug: CLI rule list was hard-coded and skipped both new rules until lint-runner.ts was patched.
+- `heading-hierarchy` ✅ Apr 8 — 21 tests, WCAG 1.3.1 + 2.4.6, cross-framework via new `onComplete` hook on createElementVisitor. **Caught 4 real production WCAG bugs in dogfood**: 1 in our own apps/docs/src/app/docs/page.tsx (h1→h3 — fixed in this commit), 1 in leerob/next-saas-starter, 2 in built HTML output. 0 FPs across 143 files. First rule to use cross-element collect-then-evaluate pattern.
+- `link-text` ✅ Apr 8 — 41 tests, WCAG 2.4.4 (Link Purpose), cross-framework. Per-element rule with custom-component support: `linkComponents` option (default `['Link','NextLink']`) catches Next.js anchor abstractions, not just raw `<a>`. **Caught 2 real WCAG bugs in shadcn-ui/taxonomy** (sr-only "View" labels with no destination context — same anti-pattern in mdx-card.tsx and guides/page.tsx). 0 FPs across 140 files. **First rule whose final shape was driven by dogfood**: initial v1 only checked raw `<a>`, returned 0 hits across all 3 cohort projects because they all use Next `<Link>`. Re-scoped after dogfood.
+- `form-labels` ✅ Apr 8 — 41 tests, WCAG 1.3.1 + 3.3.2, cross-framework. Cross-element rule using `onComplete` hook to match `<label htmlFor>` to `<input id>` plus wrapping `<label>` ancestor walk. JSX is matched case-sensitively (lowercase `<input>` only) — PascalCase `<Input>`/`<TextField>` are treated as opaque design-system components. Dogfood caught a FP from PascalCase case-collision before commit; fixed and added regression test. 7/7 TPs on positive control, 0 FPs across 140 cohort files.
+- `aria-validation` ✅ Apr 8 — 35 tests, WCAG 4.1.2 (Name, Role, Value), cross-framework. Detects invalid roles, hallucinated `aria-*` attributes, and **common LLM typos** (`aria-labelby` → `aria-labelledby`, `aira-label` → `aria-label`, `aria-pressd` → `aria-pressed`, etc.) with did-you-mean suggestions. The COMMON_ARIA_TYPOS table is data-only and grows with field observations. 8/8 TPs on positive control, 0 FPs across 140 cohort files (Radix-based projects don't typo aria — confirms no over-firing).
 **Depends on:** S1, S2
+**Validation log:** [validation/s4-day1-results.md](validation/s4-day1-results.md), [validation/s4-day2-results.md](validation/s4-day2-results.md)
+**Sprint impact:** Budget was 9 days; shipped in 1. ~8 days slack created. 6 real production bugs caught. 0 FPs. 731 file-rule combinations evaluated.
 
 ---
 

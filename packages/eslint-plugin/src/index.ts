@@ -12,6 +12,12 @@ import noInlineStyles from './rules/no-inline-styles.js';
 import consistentBorderRadius from './rules/consistent-border-radius.js';
 import imageAltText from './rules/image-alt-text.js';
 import noMagicNumbersLayout from './rules/no-magic-numbers-layout.js';
+import langAttribute from './rules/lang-attribute.js';
+import viewportMeta from './rules/viewport-meta.js';
+import headingHierarchy from './rules/heading-hierarchy.js';
+import linkText from './rules/link-text.js';
+import formLabels from './rules/form-labels.js';
+import ariaValidation from './rules/aria-validation.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -37,6 +43,12 @@ const plugin = {
     'consistent-border-radius': consistentBorderRadius,
     'image-alt-text': imageAltText,
     'no-magic-numbers-layout': noMagicNumbersLayout,
+    'lang-attribute': langAttribute,
+    'viewport-meta': viewportMeta,
+    'heading-hierarchy': headingHierarchy,
+    'link-text': linkText,
+    'form-labels': formLabels,
+    'aria-validation': ariaValidation,
   },
   configs: {} as Record<string, any>,
 };
@@ -59,6 +71,12 @@ plugin.configs.recommended = {
     'deslint/consistent-border-radius': 'warn',
     'deslint/image-alt-text': 'warn',
     'deslint/no-magic-numbers-layout': 'warn',
+    'deslint/lang-attribute': 'warn',
+    'deslint/viewport-meta': 'error',
+    'deslint/heading-hierarchy': 'warn',
+    'deslint/link-text': 'warn',
+    'deslint/form-labels': 'warn',
+    'deslint/aria-validation': 'error',
   },
 };
 
@@ -79,6 +97,12 @@ plugin.configs.strict = {
     'deslint/consistent-border-radius': 'error',
     'deslint/image-alt-text': 'error',
     'deslint/no-magic-numbers-layout': 'error',
+    'deslint/lang-attribute': 'error',
+    'deslint/viewport-meta': 'error',
+    'deslint/heading-hierarchy': 'error',
+    'deslint/link-text': 'error',
+    'deslint/form-labels': 'error',
+    'deslint/aria-validation': 'error',
   },
 };
 
