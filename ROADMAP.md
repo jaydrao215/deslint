@@ -23,14 +23,15 @@
 
 ## 2. What I'm working on RIGHT NOW
 
-**Sprint item S1 — Element Visitor Abstraction, day 1/3 landed.** ✅
+**Sprint item S1 — Element Visitor Abstraction, days 1–2/3 landed.** ✅
 
-- New file: `packages/eslint-plugin/src/utils/element-visitor.ts` — framework-agnostic `createElementVisitor({ check, tagNames })` factory with full JSX / Vue / Angular / Svelte dispatches and an HTML stub awaiting S2's `@html-eslint/parser` peer dep.
-- Helpers exported: `getAttribute`, `getStaticAttributeValue`, `hasSpreadAttribute` — these replace the duplicated helpers currently living inside each of the 6 JSX-only rules.
-- Tests: `packages/eslint-plugin/tests/utils/element-visitor.test.ts` — 31 synthetic-AST tests covering all 5 frameworks + helpers + crash-safety. Full repo suite: **597/597 passing**, typecheck green, lint green, turbo build green across all 6 packages.
-- Architecture: mirrors the existing `class-visitor.ts` dispatch pattern. Vue handled by walking `Program.templateBody` manually (same trick class-visitor uses because ESLint doesn't traverse templateBody). Angular registered under both `Element$1` and a shape-guarded `Element` selector for version compatibility.
+- `packages/eslint-plugin/src/utils/element-visitor.ts` — framework-agnostic `createElementVisitor({ check, tagNames })` factory with JSX / Vue / Angular / Svelte dispatches + HTML stub awaiting S2.
+- Helpers: `getAttribute`, `getStaticAttributeValue`, `hasSpreadAttribute` — case-insensitive, camelCase↔kebab-case normalized. Replace the duplicated helpers that live inside the 6 JSX-only rules today.
+- **`image-alt-text` ported as reference consumer (day 2).** ✅ All 44 existing JSX tests still pass through the port. 18 new cross-framework synthetic-AST tests (Svelte, Angular, Vue) prove the rule fires on non-JSX frameworks for missing alt, empty alt, meaningless alt, dynamic expression skip, spread benefit-of-the-doubt, and the Next.js `Image` framework guard. Rule file LOC dropped from 270 → 205 because the normalizer eliminated the hand-rolled JSX helpers.
+- Tests total: **615/615 passing** (was 579 before S1; +31 element-visitor unit tests, +18 cross-framework image-alt-text, -13 that became redundant through the refactor). Typecheck ✅, lint ✅, turbo build ✅.
+- Architecture: mirrors the existing `class-visitor.ts` dispatch pattern. Vue handled by walking `Program.templateBody` manually. Angular registered under both `Element$1` and a shape-guarded `Element` selector for version compatibility. JSX-only autofix preserved; cross-framework fix logic deferred to v0.3.0 (safeGetRange for template parsers is a known gap).
 
-**Day 2–3 (S1 finish):** Wire `element-visitor.ts` into `image-alt-text` as the reference consumer (proves the API on a real rule before S3 ports the other two), land real-parser integration tests via `@typescript-eslint/rule-tester` with vue/svelte/angular fixtures, benchmark visitor overhead (<0.5ms/file target).
+**Day 3 (S1 finish):** Real-parser integration tests via `@typescript-eslint/rule-tester` with `vue-eslint-parser` and `svelte-eslint-parser` as dev deps. Benchmark visitor overhead (<0.5ms/file target). Then S2 kicks off (Plain HTML parser support).
 
 ---
 
