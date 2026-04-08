@@ -4,7 +4,7 @@
 > Every section below either replaces or adds to the original sprint plan.  
 > If a section is not mentioned here, the original plan stands unchanged.
 
----
+--- 
 
 ## GLOBAL CHANGE: Product Model — Three Execution Modes
 
