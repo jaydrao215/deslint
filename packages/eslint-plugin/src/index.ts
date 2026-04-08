@@ -13,6 +13,7 @@ import consistentBorderRadius from './rules/consistent-border-radius.js';
 import imageAltText from './rules/image-alt-text.js';
 import noMagicNumbersLayout from './rules/no-magic-numbers-layout.js';
 import langAttribute from './rules/lang-attribute.js';
+import viewportMeta from './rules/viewport-meta.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -39,6 +40,7 @@ const plugin = {
     'image-alt-text': imageAltText,
     'no-magic-numbers-layout': noMagicNumbersLayout,
     'lang-attribute': langAttribute,
+    'viewport-meta': viewportMeta,
   },
   configs: {} as Record<string, any>,
 };
@@ -62,6 +64,7 @@ plugin.configs.recommended = {
     'deslint/image-alt-text': 'warn',
     'deslint/no-magic-numbers-layout': 'warn',
     'deslint/lang-attribute': 'warn',
+    'deslint/viewport-meta': 'error',
   },
 };
 
@@ -83,6 +86,7 @@ plugin.configs.strict = {
     'deslint/image-alt-text': 'error',
     'deslint/no-magic-numbers-layout': 'error',
     'deslint/lang-attribute': 'error',
+    'deslint/viewport-meta': 'error',
   },
 };
 

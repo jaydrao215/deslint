@@ -97,6 +97,14 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     rules: ['deslint/lang-attribute'],
     url: 'https://www.w3.org/TR/WCAG22/#language-of-page',
   },
+  {
+    id: '1.4.4',
+    title: 'Resize Text',
+    level: 'AA',
+    description: 'Text can be resized up to 200% without loss of content or functionality. Disabling user scaling on the viewport meta tag is failure technique F77.',
+    rules: ['deslint/viewport-meta'],
+    url: 'https://www.w3.org/TR/WCAG22/#resize-text',
+  },
 ];
 
 /** Per-criterion evaluation result. */

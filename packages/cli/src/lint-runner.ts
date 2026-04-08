@@ -18,6 +18,8 @@ export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'deslint/consistent-border-radius': 'consistency',
   'deslint/image-alt-text': 'responsive',
   'deslint/no-magic-numbers-layout': 'spacing',
+  'deslint/lang-attribute': 'consistency',
+  'deslint/viewport-meta': 'consistency',
 };
 
 export interface LintMessage {
@@ -91,6 +93,8 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     'deslint/consistent-border-radius': 'warn',
     'deslint/image-alt-text': 'warn',
     'deslint/no-magic-numbers-layout': 'warn',
+    'deslint/lang-attribute': 'warn',
+    'deslint/viewport-meta': 'error',
   };
 
   // Apply user overrides

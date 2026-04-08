@@ -161,8 +161,11 @@
 - Honest doc note about heuristic limits where applicable
 
 **Estimate:** 1.5 days per rule = 9 days for 6 rules
-**Status:** 🔵 in progress — 1/6 shipped (`lang-attribute` ✅ Apr 8 — 36 tests green, WCAG 3.1.1 mapped, JSX autofix + cross-framework detection)
+**Status:** 🔵 in progress — 2/6 shipped
+- `lang-attribute` ✅ Apr 8 — 36 tests, WCAG 3.1.1, JSX autofix + cross-framework
+- `viewport-meta` ✅ Apr 8 — 24 tests, WCAG 1.4.4 (F77), cross-framework, dogfooded end-to-end via CLI on 3 real OSS projects + positive-control fixture (0 FPs / 169 files, 4/4 TPs). Found and fixed P1 bug: CLI rule list was hard-coded and skipped both new rules until lint-runner.ts was patched.
 **Depends on:** S1, S2
+**Validation log:** [validation/s4-day1-results.md](validation/s4-day1-results.md)
 
 ---
 
