@@ -18,7 +18,7 @@ const BEFORE_LINES = [
 ];
 
 const AFTER_LINES = [
-  { num: 1, text: '// After vizlint fix — clean design tokens', dim: true },
+  { num: 1, text: '// After deslint fix — clean design tokens', dim: true },
   { num: 2, text: 'const Card = () => (' },
   { num: 3, text: '  <div className="', after: 'bg-primary p-3', afterGood: true, end: '">' },
   { num: 4, text: '    <h2 className="', after: 'text-white text-lg', afterGood: true, end: '">' },
@@ -52,7 +52,7 @@ export function BeforeAfter() {
             From arbitrary values to design tokens
           </h2>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-            Vizlint detects design drift in AI-generated code and auto-fixes it
+            Deslint detects design drift in AI-generated code and auto-fixes it
             to match your design system.
           </p>
         </FadeIn>
@@ -142,7 +142,7 @@ export function BeforeAfter() {
                     <span className="text-pass">Design Health Score: 100/100</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-gray-500">
-                    <span>vizlint fix --all</span>
+                    <span>deslint fix --all</span>
                     <ArrowRight className="h-3 w-3" />
                   </div>
                 </div>

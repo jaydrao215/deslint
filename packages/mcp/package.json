@@ -1,9 +1,9 @@
 {
-  "name": "@vizlint/mcp",
+  "name": "@deslint/mcp",
   "version": "0.1.1",
-  "description": "MCP server for Vizlint — real-time design quality feedback in Cursor/Claude Code",
+  "description": "MCP server for Deslint — real-time design quality feedback in Cursor/Claude Code",
   "license": "MIT",
-  "author": "Vizlint",
+  "author": "Deslint",
   "engines": {
     "node": ">=20.19.0"
   },
@@ -11,8 +11,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "@vizlint/mcp": "./dist/cli.js",
-    "vizlint-mcp": "./dist/cli.js"
+    "@deslint/mcp": "./dist/cli.js",
+    "deslint-mcp": "./dist/cli.js"
   },
   "exports": {
     ".": {
@@ -34,9 +34,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@vizlint/cli": "workspace:^",
-    "@vizlint/eslint-plugin": "workspace:^",
-    "@vizlint/shared": "workspace:*",
+    "@deslint/cli": "workspace:^",
+    "@deslint/eslint-plugin": "workspace:^",
+    "@deslint/shared": "workspace:*",
     "eslint": "^10.0.0",
     "zod": "^3.23.0"
   },

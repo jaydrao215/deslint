@@ -13,7 +13,7 @@ const CARDS = [
     href: '/docs/configuration',
     icon: Settings,
     title: 'Configuration',
-    description: '.vizlintrc.json schema, profiles, design system tokens, and ignore patterns.',
+    description: '.deslintrc.json schema, profiles, design system tokens, and ignore patterns.',
     color: 'text-primary bg-primary/10 border-primary/20',
   },
   {
@@ -30,7 +30,7 @@ export default function DocsIndex() {
     <div className="not-prose">
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-3">
-          Vizlint Documentation
+          Deslint Documentation
         </h1>
         <p className="text-lg text-gray-500 leading-relaxed">
           The design quality gate for AI-generated frontend code.
@@ -69,7 +69,7 @@ export default function DocsIndex() {
           <span className="text-gray-500 select-none">$ </span>
           <span className="text-pass">npm</span>{' '}
           <span className="text-gray-400">install -D</span>{' '}
-          <span className="text-white">@vizlint/eslint-plugin</span>
+          <span className="text-white">@deslint/eslint-plugin</span>
         </div>
       </div>
     </div>

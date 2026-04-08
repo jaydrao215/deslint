@@ -8,11 +8,11 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in Vizlint, please report it responsibly.
+If you discover a security vulnerability in Deslint, please report it responsibly.
 
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
-Instead, please email security@vizlint.dev with:
+Instead, please email security@deslint.com with:
 
 1. A description of the vulnerability
 2. Steps to reproduce
@@ -23,22 +23,22 @@ We will acknowledge receipt within 48 hours and provide a detailed response with
 
 ## Security Design Principles
 
-Vizlint follows these security principles by design:
+Deslint follows these security principles by design:
 
 - **Local-first**: All analysis runs locally. Zero code leaves the user's machine.
 - **No network calls**: The ESLint plugin, CLI, and MCP server make no outbound network requests.
 - **No AI/LLM APIs**: Pure deterministic static analysis only.
-- **No code execution**: Vizlint reads and analyzes code — it never evaluates or executes user code.
+- **No code execution**: Deslint reads and analyzes code — it never evaluates or executes user code.
 - **Minimal dependencies**: We keep the dependency tree small to reduce supply chain risk.
-- **No secrets handling**: Vizlint does not process, store, or transmit credentials or secrets.
+- **No secrets handling**: Deslint does not process, store, or transmit credentials or secrets.
 
 ## Scope
 
 The following are in scope for security reports:
 
-- ESLint plugin (`@vizlint/eslint-plugin`)
-- CLI tool (`@vizlint/cli`)
-- MCP server (`@vizlint/mcp`)
-- Shared utilities (`@vizlint/shared`)
+- ESLint plugin (`@deslint/eslint-plugin`)
+- CLI tool (`@deslint/cli`)
+- MCP server (`@deslint/mcp`)
+- Shared utilities (`@deslint/shared`)
 
-The documentation site (`@vizlint/docs`) is out of scope unless the vulnerability affects end users.
+The documentation site (`@deslint/docs`) is out of scope unless the vulnerability affects end users.

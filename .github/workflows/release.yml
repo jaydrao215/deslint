@@ -35,10 +35,10 @@ jobs:
         run: pnpm build
 
       - name: Run tests
-        run: pnpm --filter '!@vizlint/docs' test
+        run: pnpm --filter '!@deslint/docs' test
 
       - name: Run benchmark
-        run: pnpm --filter @vizlint/eslint-plugin bench
+        run: pnpm --filter @deslint/eslint-plugin bench
 
       # Publish steps are idempotent: each one checks the npm registry first
       # and skips if the exact name@version is already published. This makes
@@ -46,9 +46,9 @@ jobs:
       # recoverable by simply re-running the workflow on the same tag — the
       # already-published packages get skipped, the missing ones get pushed.
 
-      - name: Publish @vizlint/shared
+      - name: Publish @deslint/shared
         run: |
-          PKG="@vizlint/shared"
+          PKG="@deslint/shared"
           VER=$(node -p "require('./packages/shared/package.json').version")
           if npm view "${PKG}@${VER}" version > /dev/null 2>&1; then
             echo "✓ ${PKG}@${VER} already published, skipping"
@@ -58,9 +58,9 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish @vizlint/eslint-plugin
+      - name: Publish @deslint/eslint-plugin
         run: |
-          PKG="@vizlint/eslint-plugin"
+          PKG="@deslint/eslint-plugin"
           VER=$(node -p "require('./packages/eslint-plugin/package.json').version")
           if npm view "${PKG}@${VER}" version > /dev/null 2>&1; then
             echo "✓ ${PKG}@${VER} already published, skipping"
@@ -70,9 +70,9 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish @vizlint/cli
+      - name: Publish @deslint/cli
         run: |
-          PKG="@vizlint/cli"
+          PKG="@deslint/cli"
           VER=$(node -p "require('./packages/cli/package.json').version")
           if npm view "${PKG}@${VER}" version > /dev/null 2>&1; then
             echo "✓ ${PKG}@${VER} already published, skipping"
@@ -82,9 +82,9 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish @vizlint/mcp
+      - name: Publish @deslint/mcp
         run: |
-          PKG="@vizlint/mcp"
+          PKG="@deslint/mcp"
           VER=$(node -p "require('./packages/mcp/package.json').version")
           if npm view "${PKG}@${VER}" version > /dev/null 2>&1; then
             echo "✓ ${PKG}@${VER} already published, skipping"

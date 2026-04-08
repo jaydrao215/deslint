@@ -1,15 +1,15 @@
 {
-  "name": "@vizlint/cli",
+  "name": "@deslint/cli",
   "version": "0.1.1",
-  "description": "CLI for Vizlint — project-wide design quality analysis + Design Health Score",
+  "description": "CLI for Deslint — project-wide design quality analysis + Design Health Score",
   "license": "MIT",
-  "author": "Vizlint",
+  "author": "Deslint",
   "engines": {
     "node": ">=20.19.0"
   },
   "type": "module",
   "bin": {
-    "vizlint": "./dist/index.js"
+    "deslint": "./dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -33,8 +33,8 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.2.0",
-    "@vizlint/eslint-plugin": "workspace:^",
-    "@vizlint/shared": "workspace:*",
+    "@deslint/eslint-plugin": "workspace:^",
+    "@deslint/shared": "workspace:*",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
     "eslint": "^10.0.0",

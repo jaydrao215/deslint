@@ -1,4 +1,4 @@
-# @vizlint/mcp
+# @deslint/mcp
 
 > MCP server for AI self-correction of design quality violations.
 
@@ -8,16 +8,16 @@ Enables Cursor, Claude Code, and other MCP-compatible AI tools to analyze and fi
 
 ```bash
 # Auto-configure for Cursor
-npx vizlint-mcp install cursor
+npx deslint-mcp install cursor
 
 # Auto-configure for Claude Code
-npx vizlint-mcp install claude
+npx deslint-mcp install claude
 ```
 
 Or run the server directly:
 
 ```bash
-npx vizlint-mcp serve
+npx deslint-mcp serve
 ```
 
 **Requirements:** Node.js v20+
@@ -73,9 +73,9 @@ If auto-install doesn't work, add to your MCP config:
 ```json
 {
   "mcpServers": {
-    "vizlint": {
+    "deslint": {
       "command": "npx",
-      "args": ["vizlint-mcp", "serve"]
+      "args": ["deslint-mcp", "serve"]
     }
   }
 }
@@ -85,9 +85,9 @@ If auto-install doesn't work, add to your MCP config:
 ```json
 {
   "mcpServers": {
-    "vizlint": {
+    "deslint": {
       "command": "npx",
-      "args": ["vizlint-mcp", "serve"]
+      "args": ["deslint-mcp", "serve"]
     }
   }
 }

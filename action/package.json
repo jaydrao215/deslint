@@ -1,8 +1,8 @@
 {
-  "name": "@vizlint/action",
+  "name": "@deslint/action",
   "version": "0.1.1",
   "private": true,
-  "description": "GitHub Action for Vizlint PR design reviews",
+  "description": "GitHub Action for Deslint PR design reviews",
   "type": "module",
   "engines": {
     "node": ">=20.19.0"
@@ -16,8 +16,8 @@
   "dependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
-    "@vizlint/eslint-plugin": "workspace:*",
-    "@vizlint/shared": "workspace:*",
+    "@deslint/eslint-plugin": "workspace:*",
+    "@deslint/shared": "workspace:*",
     "eslint": "^9.27.0",
     "minimatch": "^10.0.1"
   },

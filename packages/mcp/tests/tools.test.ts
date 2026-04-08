@@ -6,7 +6,7 @@ import { analyzeFile, analyzeAndFix } from '../src/tools.js';
 let tmpDir: string;
 
 beforeEach(async () => {
-  tmpDir = await mkdtemp(join(tmpdir(), 'vizlint-mcp-test-'));
+  tmpDir = await mkdtemp(join(tmpdir(), 'deslint-mcp-test-'));
 });
 
 afterEach(async () => {
@@ -27,7 +27,7 @@ describe('analyzeFile', () => {
     expect(result.score).toBeLessThan(100);
 
     const ruleIds = result.violations.map((v) => v.ruleId);
-    expect(ruleIds.some((id) => id.includes('vizlint/'))).toBe(true);
+    expect(ruleIds.some((id) => id.includes('deslint/'))).toBe(true);
   });
 
   it('returns correct violation metadata (ruleId, severity, line/column)', async () => {
@@ -38,7 +38,7 @@ describe('analyzeFile', () => {
     const result = await analyzeFile({ filePath, projectDir: tmpDir });
 
     for (const v of result.violations) {
-      expect(v.ruleId).toMatch(/^vizlint\//);
+      expect(v.ruleId).toMatch(/^deslint\//);
       expect(['error', 'warning']).toContain(v.severity);
       expect(v.line).toBeGreaterThanOrEqual(1);
       expect(v.column).toBeGreaterThanOrEqual(1);
@@ -95,7 +95,7 @@ describe('analyzeFile', () => {
 
   it('throws Error for an absolute non-existent path', async () => {
     await expect(
-      analyzeFile({ filePath: '/tmp/nonexistent-vizlint-test-file-xyz.tsx' }),
+      analyzeFile({ filePath: '/tmp/nonexistent-deslint-test-file-xyz.tsx' }),
     ).rejects.toThrow('File not found');
   });
 
@@ -167,7 +167,7 @@ describe('analyzeAndFix', () => {
 
     // Remaining violations should still have proper structure
     for (const v of result.remainingViolations) {
-      expect(v.ruleId).toMatch(/^vizlint\//);
+      expect(v.ruleId).toMatch(/^deslint\//);
       expect(['error', 'warning']).toContain(v.severity);
       expect(v.line).toBeGreaterThanOrEqual(1);
       expect(v.column).toBeGreaterThanOrEqual(1);

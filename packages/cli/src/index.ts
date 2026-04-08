@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * @vizlint/cli — Design quality analysis CLI.
+ * @deslint/cli — Design quality analysis CLI.
  *
  * Commands:
- *   vizlint scan [dir]              — Scan project, report Design Health Score
- *   vizlint fix [dir]               — Fix violations (--all, --interactive, --dry-run)
- *   vizlint generate-config <target> — Generate AI tool config (cursor, claude, agents)
+ *   deslint scan [dir]              — Scan project, report Design Health Score
+ *   deslint fix [dir]               — Fix violations (--all, --interactive, --dry-run)
+ *   deslint generate-config <target> — Generate AI tool config (cursor, claude, agents)
  */
 
 import { Command } from 'commander';
@@ -14,8 +14,8 @@ import { resolve } from 'node:path';
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
 import chalk from 'chalk';
-import { safeParseConfig, evaluateQualityGate, formatGateResult } from '@vizlint/shared';
-import type { VizlintConfig, GateScanSnapshot } from '@vizlint/shared';
+import { safeParseConfig, evaluateQualityGate, formatGateResult } from '@deslint/shared';
+import type { DeslintConfig, GateScanSnapshot } from '@deslint/shared';
 import { readFileSync } from 'node:fs';
 
 import { discoverFiles } from './discover.js';
@@ -45,7 +45,7 @@ import {
   buildComplianceResult,
   renderComplianceHtml,
 } from './compliance-report.js';
-import { formatComplianceSummary } from '@vizlint/shared';
+import { formatComplianceSummary } from '@deslint/shared';
 import { basename } from 'node:path';
 
 import { createRequire } from 'node:module';
@@ -67,19 +67,19 @@ export { runLint } from './lint-runner.js';
 export type { LintResult, RuleCategory } from './lint-runner.js';
 
 /**
- * Load .vizlintrc.json from project directory.
+ * Load .deslintrc.json from project directory.
  */
-function loadConfig(projectDir: string): VizlintConfig | undefined {
-  const configPath = resolve(projectDir, '.vizlintrc.json');
+function loadConfig(projectDir: string): DeslintConfig | undefined {
+  const configPath = resolve(projectDir, '.deslintrc.json');
   if (!existsSync(configPath)) return undefined;
 
   try {
     const raw = JSON.parse(readFileSync(configPath, 'utf-8'));
     const result = safeParseConfig(raw);
     if (result.success) return result.data;
-    console.error(chalk.red(`  Invalid .vizlintrc.json: ${result.error.message}`));
+    console.error(chalk.red(`  Invalid .deslintrc.json: ${result.error.message}`));
   } catch {
-    console.error(chalk.red('  Failed to read .vizlintrc.json'));
+    console.error(chalk.red('  Failed to read .deslintrc.json'));
   }
   return undefined;
 }
@@ -88,7 +88,7 @@ function loadConfig(projectDir: string): VizlintConfig | undefined {
  * Resolve rule overrides from config, applying profile if specified.
  */
 function resolveRules(
-  config: VizlintConfig | undefined,
+  config: DeslintConfig | undefined,
   profile?: string,
 ): Record<string, any> | undefined {
   if (!config) return undefined;
@@ -106,7 +106,7 @@ function resolveRules(
 const program = new Command();
 
 program
-  .name('vizlint')
+  .name('deslint')
   .description('Design quality gate for AI-generated frontend code')
   .version(VERSION);
 
@@ -118,7 +118,7 @@ program
   .argument('[dir]', 'Project directory to scan', '.')
   .option('-f, --format <format>', 'Output format: text, json, sarif', 'text')
   .option('--min-score <score>', 'Fail if score is below this threshold')
-  .option('--profile <name>', 'Use a named severity profile from .vizlintrc.json')
+  .option('--profile <name>', 'Use a named severity profile from .deslintrc.json')
   .option('--no-history', 'Do not save score to history file')
   .action(async (dir: string, opts: { format: string; minScore?: string; profile?: string; history: boolean }) => {
     try {
@@ -143,12 +143,12 @@ program
       const outputFormat = opts.format as OutputFormat;
       console.log(format(outputFormat, lintResult, scoreResult, cwd));
 
-      // Quality gate evaluation (opt-in via .vizlintrc.json `qualityGate`).
+      // Quality gate evaluation (opt-in via .deslintrc.json `qualityGate`).
       // Reads previous score from history (if any) for regression detection
       // BEFORE the new entry is appended.
       let previousSnapshot: GateScanSnapshot | undefined;
       if (config?.qualityGate) {
-        const historyPath = resolve(cwd, '.vizlint', 'history.json');
+        const historyPath = resolve(cwd, '.deslint', 'history.json');
         if (existsSync(historyPath)) {
           try {
             const history: HistoryEntry[] = JSON.parse(readFileSync(historyPath, 'utf-8'));
@@ -196,7 +196,7 @@ program
       // Always generate HTML report (unless JSON/SARIF output — piping mode)
       if (outputFormat === 'text') {
         generateHtmlReport(lintResult, scoreResult, cwd);
-        console.log(chalk.gray(`  Full report: .vizlint/report.html`));
+        console.log(chalk.gray(`  Full report: .deslint/report.html`));
         console.log('');
       }
 
@@ -308,7 +308,7 @@ program
 
 program
   .command('init')
-  .description('Set up Vizlint in your project with an interactive wizard')
+  .description('Set up Deslint in your project with an interactive wizard')
   .action(async () => {
     try {
       await initWizard({ cwd: process.cwd() });
@@ -324,7 +324,7 @@ program
   .command('suggest-tokens')
   .description('Group unfixable arbitrary values and generate a ready-to-paste @theme CSS block')
   .argument('[dir]', 'Project directory to scan', '.')
-  .option('--profile <name>', 'Use a named severity profile from .vizlintrc.json')
+  .option('--profile <name>', 'Use a named severity profile from .deslintrc.json')
   .action(async (dir: string, opts: { profile?: string }) => {
     try {
       const cwd = resolve(dir);
@@ -355,7 +355,7 @@ program
 
 program
   .command('trend')
-  .description('Show Design Health Score trend over time from .vizlint/history.json')
+  .description('Show Design Health Score trend over time from .deslint/history.json')
   .argument('[dir]', 'Project directory', '.')
   .option('-l, --limit <n>', 'Number of recent entries to include', '10')
   .option('-f, --format <format>', 'Output format: text, json', 'text')
@@ -392,8 +392,8 @@ program
   .description('Generate a WCAG 2.2 conformance report (HTML or JSON)')
   .argument('[dir]', 'Project directory', '.')
   .option('-f, --format <format>', 'Output format: html, json, text', 'html')
-  .option('-o, --output <path>', 'Output file path (default: .vizlint/compliance.html)')
-  .option('--profile <name>', 'Use a named severity profile from .vizlintrc.json')
+  .option('-o, --output <path>', 'Output file path (default: .deslint/compliance.html)')
+  .option('--profile <name>', 'Use a named severity profile from .deslintrc.json')
   .action(async (dir: string, opts: { format: string; output?: string; profile?: string }) => {
     try {
       const cwd = resolve(dir);
@@ -412,7 +412,7 @@ program
       if (opts.format === 'json') {
         const out = opts.output
           ? resolve(cwd, opts.output)
-          : resolve(cwd, '.vizlint', 'compliance.json');
+          : resolve(cwd, '.deslint', 'compliance.json');
         mkdirSync(dirname(out), { recursive: true });
         writeFileSync(out, JSON.stringify(compliance, null, 2));
         console.log(chalk.green(`  ✓ Wrote ${out}`));
@@ -433,7 +433,7 @@ program
       });
       const out = opts.output
         ? resolve(cwd, opts.output)
-        : resolve(cwd, '.vizlint', 'compliance.html');
+        : resolve(cwd, '.deslint', 'compliance.html');
       mkdirSync(dirname(out), { recursive: true });
       writeFileSync(out, html);
 
@@ -453,10 +453,10 @@ program
   .argument('[dir]', 'Project directory', '.')
   .action(async (dir: string) => {
     const cwd = resolve(dir);
-    const reportPath = resolve(cwd, '.vizlint', 'report.html');
+    const reportPath = resolve(cwd, '.deslint', 'report.html');
 
     if (!existsSync(reportPath)) {
-      console.log(chalk.yellow('\n  No report found. Run `vizlint scan` first.\n'));
+      console.log(chalk.yellow('\n  No report found. Run `deslint scan` first.\n'));
       process.exit(1);
     }
 
@@ -476,11 +476,11 @@ program
 // ── Parse and run ────────────────────────────────────────────────────
 
 // Only parse args when running as CLI binary (not when imported as library)
-// Check if we're being run directly via the vizlint bin entry
+// Check if we're being run directly via the deslint bin entry
 const runningAsCli =
   process.argv[1]?.endsWith('/dist/index.js') ||
   process.argv[1]?.endsWith('/cli/dist/index.js') ||
-  process.argv[1]?.endsWith('vizlint');
+  process.argv[1]?.endsWith('deslint');
 
 if (runningAsCli) {
   program.parse();

@@ -1,9 +1,9 @@
 {
-  "name": "@vizlint/shared",
+  "name": "@deslint/shared",
   "version": "0.1.1",
-  "description": "Shared types, schemas, and utilities for Vizlint",
+  "description": "Shared types, schemas, and utilities for Deslint",
   "license": "MIT",
-  "author": "Vizlint",
+  "author": "Deslint",
   "engines": {
     "node": ">=20.19.0"
   },

@@ -1,8 +1,8 @@
 /**
- * `vizlint trend` — analyzes the .vizlint/history.json log to show score
+ * `deslint trend` — analyzes the .deslint/history.json log to show score
  * changes over time, per-category deltas, and regression alerts.
  *
- * History is already saved on every `vizlint scan` run via saveHistory()
+ * History is already saved on every `deslint scan` run via saveHistory()
  * in score.ts. This command is a read-only view over that data.
  */
 
@@ -61,7 +61,7 @@ const CATEGORIES: RuleCategory[] = [
 
 /** Read history.json from a project directory. Returns [] on missing/invalid. */
 export function loadHistory(projectDir: string): HistoryEntry[] {
-  const historyPath = resolve(projectDir, '.vizlint', 'history.json');
+  const historyPath = resolve(projectDir, '.deslint', 'history.json');
   if (!existsSync(historyPath)) return [];
   try {
     const raw = JSON.parse(readFileSync(historyPath, 'utf-8'));
@@ -192,12 +192,12 @@ export function formatTrendText(
   const limit = options.limit ?? 10;
 
   lines.push('');
-  lines.push(chalk.bold('  Vizlint Design Health Trend'));
+  lines.push(chalk.bold('  Deslint Design Health Trend'));
   lines.push(chalk.gray('  ─'.repeat(24)));
   lines.push('');
 
   if (summary.windowEntries === 0) {
-    lines.push(chalk.yellow('  No history yet. Run `vizlint scan` at least once to record a score.'));
+    lines.push(chalk.yellow('  No history yet. Run `deslint scan` at least once to record a score.'));
     lines.push('');
     return lines.join('\n');
   }

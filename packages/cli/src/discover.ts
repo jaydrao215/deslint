@@ -2,7 +2,7 @@ import { glob } from 'glob';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-/** Default file extensions Vizlint scans */
+/** Default file extensions Deslint scans */
 const DEFAULT_EXTENSIONS = ['tsx', 'jsx', 'vue', 'svelte', 'html'];
 
 /** Default ignore patterns */
@@ -21,13 +21,13 @@ export interface DiscoverOptions {
   cwd: string;
   /** File extensions to scan (default: tsx, jsx, vue, svelte, html) */
   extensions?: string[];
-  /** Additional ignore patterns from .vizlintrc.json */
+  /** Additional ignore patterns from .deslintrc.json */
   ignorePatterns?: string[];
 }
 
 /**
- * Discover all frontend files in a project that Vizlint should scan.
- * Respects ignore patterns from config and .vizlintignore.
+ * Discover all frontend files in a project that Deslint should scan.
+ * Respects ignore patterns from config and .deslintignore.
  */
 export async function discoverFiles(options: DiscoverOptions): Promise<string[]> {
   const extensions = options.extensions ?? DEFAULT_EXTENSIONS;
@@ -43,8 +43,8 @@ export async function discoverFiles(options: DiscoverOptions): Promise<string[]>
     ignore.push(...options.ignorePatterns);
   }
 
-  // Add .vizlintignore file patterns
-  const ignorePath = resolve(options.cwd, '.vizlintignore');
+  // Add .deslintignore file patterns
+  const ignorePath = resolve(options.cwd, '.deslintignore');
   if (existsSync(ignorePath)) {
     const lines = readFileSync(ignorePath, 'utf-8')
       .split('\n')

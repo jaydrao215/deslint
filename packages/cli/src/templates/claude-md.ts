@@ -1,4 +1,4 @@
-import type { DesignSystem } from '@vizlint/shared';
+import type { DesignSystem } from '@deslint/shared';
 
 /**
  * Generate a CLAUDE.md design quality section.
@@ -8,22 +8,22 @@ import type { DesignSystem } from '@vizlint/shared';
 export function generateClaudeMd(designSystem?: DesignSystem): string {
   const lines: string[] = [];
 
-  lines.push(`# Design Quality Rules — Vizlint
+  lines.push(`# Design Quality Rules — Deslint
 
 ## Design System Enforcement
 
-When generating or modifying UI code, follow these constraints. After each code generation step, run \`npx eslint --plugin vizlint .\` to validate.
+When generating or modifying UI code, follow these constraints. After each code generation step, run \`npx eslint --plugin deslint .\` to validate.
 
 ### Checkpoint-Gated Workflow
 1. Generate UI code following the rules below
-2. Run \`npx eslint --plugin vizlint .\` to check for violations
+2. Run \`npx eslint --plugin deslint .\` to check for violations
 3. Fix any violations before proceeding
 4. Repeat for each component or page
 
 ### Color Tokens Only
 - NEVER use arbitrary hex colors: \`bg-[#FF0000]\`, \`text-[#333]\`
 - ALWAYS use Tailwind design tokens: \`bg-red-500\`, \`text-gray-700\`
-- If custom tokens exist in \`.vizlintrc.json\` or \`tailwind.config.js\`, prefer those`);
+- If custom tokens exist in \`.deslintrc.json\` or \`tailwind.config.js\`, prefer those`);
 
   if (designSystem?.colors && Object.keys(designSystem.colors).length > 0) {
     lines.push('');
@@ -74,7 +74,7 @@ When generating or modifying UI code, follow these constraints. After each code 
 ### Validation
 After generating code, always verify:
 \`\`\`bash
-npx eslint --plugin vizlint .
+npx eslint --plugin deslint .
 \`\`\``);
 
   return lines.join('\n') + '\n';

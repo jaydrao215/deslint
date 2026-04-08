@@ -1,18 +1,18 @@
 /**
- * Vizlint GitHub Action: PR Design Review
+ * Deslint GitHub Action: PR Design Review
  *
- * Runs vizlint scan on changed files in a PR and posts a comment
+ * Runs deslint scan on changed files in a PR and posts a comment
  * with the Design Health Score, violations, and suggestions.
  */
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { evaluateQualityGate, formatGateResult } from '@vizlint/shared';
+import { evaluateQualityGate, formatGateResult } from '@deslint/shared';
 import { getChangedFiles } from './changed-files.js';
 import { runScan } from './scan.js';
 import { formatComment } from './comment.js';
 
-const COMMENT_MARKER = '<!-- vizlint-design-review -->';
+const COMMENT_MARKER = '<!-- deslint-design-review -->';
 
 async function run(): Promise<void> {
   try {
@@ -30,7 +30,7 @@ async function run(): Promise<void> {
 
     // This action only works on pull_request events
     if (!context.payload.pull_request) {
-      core.info('Not a pull request event — skipping Vizlint design review.');
+      core.info('Not a pull request event — skipping Deslint design review.');
       return;
     }
 
@@ -53,10 +53,10 @@ async function run(): Promise<void> {
 
     core.info(`Scanning ${changedFiles.length} changed file(s)...`);
 
-    // 2. Run vizlint scan
+    // 2. Run deslint scan
     const result = await runScan(changedFiles, workingDirectory, configPath);
 
-    // 3. Evaluate quality gate (opt-in via .vizlintrc.json `qualityGate`).
+    // 3. Evaluate quality gate (opt-in via .deslintrc.json `qualityGate`).
     const gateResult = evaluateQualityGate(result.qualityGate, {
       overall: result.score,
       categories: {
@@ -101,12 +101,12 @@ async function run(): Promise<void> {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    core.setFailed(`Vizlint action failed: ${message}`);
+    core.setFailed(`Deslint action failed: ${message}`);
   }
 }
 
 /**
- * Find and update existing Vizlint comment, or create a new one.
+ * Find and update existing Deslint comment, or create a new one.
  * Prevents duplicate comments on subsequent pushes.
  */
 async function upsertComment(
@@ -131,7 +131,7 @@ async function upsertComment(
   );
 
   if (existing) {
-    core.info('Updating existing Vizlint comment...');
+    core.info('Updating existing Deslint comment...');
     await octokit.rest.issues.updateComment({
       owner,
       repo,
@@ -139,7 +139,7 @@ async function upsertComment(
       body: fullBody,
     });
   } else {
-    core.info('Creating new Vizlint comment...');
+    core.info('Creating new Deslint comment...');
     await octokit.rest.issues.createComment({
       owner,
       repo,
@@ -151,12 +151,12 @@ async function upsertComment(
 
 function formatNoFilesComment(): string {
   return [
-    '## Vizlint Design Review',
+    '## Deslint Design Review',
     '',
     'No frontend files were changed in this PR. Design review skipped.',
     '',
     '---',
-    '*Powered by [Vizlint](https://vizlint.dev)*',
+    '*Powered by [Deslint](https://deslint.com)*',
   ].join('\n');
 }
 

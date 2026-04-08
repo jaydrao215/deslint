@@ -3,30 +3,30 @@
 ## [0.1.1] — 2026-04-07
 
 ### Changed (BREAKING — package rename)
-- **`eslint-plugin-vizlint` → `@vizlint/eslint-plugin`** — the ESLint plugin has been renamed to live under the `@vizlint/*` workspace alongside `@vizlint/cli`, `@vizlint/mcp`, and `@vizlint/shared`. This brings the plugin into line with the modern Pattern 2 convention used by `@typescript-eslint/eslint-plugin`, `@next/eslint-plugin-next`, `@stylistic/eslint-plugin`, `@nx/eslint-plugin`, `@vitest/eslint-plugin`, etc.
+- **`eslint-plugin-deslint` → `@deslint/eslint-plugin`** — the ESLint plugin has been renamed to live under the `@deslint/*` workspace alongside `@deslint/cli`, `@deslint/mcp`, and `@deslint/shared`. This brings the plugin into line with the modern Pattern 2 convention used by `@typescript-eslint/eslint-plugin`, `@next/eslint-plugin-next`, `@stylistic/eslint-plugin`, `@nx/eslint-plugin`, `@vitest/eslint-plugin`, etc.
 
   **Migration:**
   ```sh
-  npm uninstall eslint-plugin-vizlint
-  npm install -D @vizlint/eslint-plugin
+  npm uninstall eslint-plugin-deslint
+  npm install -D @deslint/eslint-plugin
   ```
 
   ```diff
   // eslint.config.js
-  - import vizlint from 'eslint-plugin-vizlint';
-  + import vizlint from '@vizlint/eslint-plugin';
+  - import deslint from 'eslint-plugin-deslint';
+  + import deslint from '@deslint/eslint-plugin';
   ```
 
-  **Nothing else changes** — all 14 rule names, options, presets, and auto-fix output are identical. The plugin shorthand stays `vizlint` (e.g. `'vizlint/no-arbitrary-colors'`). The `.vizlintrc.json` schema is unchanged. Internal `@vizlint/cli`, `@vizlint/mcp`, and `@vizlint/action` have been updated to import from the new name automatically — upgrading them is a no-op for users.
+  **Nothing else changes** — all 14 rule names, options, presets, and auto-fix output are identical. The plugin shorthand stays `deslint` (e.g. `'deslint/no-arbitrary-colors'`). The `.deslintrc.json` schema is unchanged. Internal `@deslint/cli`, `@deslint/mcp`, and `@deslint/action` have been updated to import from the new name automatically — upgrading them is a no-op for users.
 
-  The old `eslint-plugin-vizlint@0.1.0` package on npm will be deprecated with a redirect message pointing at the new name.
+  The old `eslint-plugin-deslint@0.1.0` package on npm will be deprecated with a redirect message pointing at the new name.
 
 - All four published packages bumped from `0.1.0` to `0.1.1` for consistent versioning across the rename release.
 
 ## [0.1.0] — 2026-04-06
 
 ### Added
-- **eslint-plugin-vizlint** — 14 ESLint rules for design quality
+- **eslint-plugin-deslint** — 14 ESLint rules for design quality
   - `no-arbitrary-colors`: detects hex/rgb/rgba/hsl/hsla arbitrary colors with auto-fix
   - `no-arbitrary-spacing`: detects arbitrary spacing values with auto-fix
   - `no-arbitrary-typography`: detects arbitrary font size, weight, leading, tracking with auto-fix
@@ -44,27 +44,27 @@
   - Framework support: React, Vue, Svelte, Angular, HTML via shared `createClassVisitor()`
   - Tailwind v3 + v4 support with 40+ class name mappings
   - `recommended` and `strict` config presets
-- **@vizlint/shared**
-  - `.vizlintrc.json` Zod schema covering 5 user control levels
+- **@deslint/shared**
+  - `.deslintrc.json` Zod schema covering 5 user control levels
   - Tailwind v3 config reader (`tailwind.config.js/ts`)
   - Tailwind v4 `@theme` CSS parser
   - CSS `:root` custom property parser
   - Design system merge logic (manual overrides auto-imported)
   - `importTailwindConfig()` auto-detection utility
-- **@vizlint/cli**
-  - `vizlint scan` — scan with Design Health Score (0-100)
-  - `vizlint fix --all` / `vizlint fix --interactive` — auto-fix modes
-  - `vizlint init` — interactive setup wizard
-  - `vizlint generate-config` — generate Cursor/Claude/Agents configs
-  - `vizlint suggest-tokens` — analyze arbitrary values and suggest replacements
+- **@deslint/cli**
+  - `deslint scan` — scan with Design Health Score (0-100)
+  - `deslint fix --all` / `deslint fix --interactive` — auto-fix modes
+  - `deslint init` — interactive setup wizard
+  - `deslint generate-config` — generate Cursor/Claude/Agents configs
+  - `deslint suggest-tokens` — analyze arbitrary values and suggest replacements
   - Output formats: text, JSON, SARIF, HTML
   - Grouped violation formatter (deduplicates repeated patterns)
-- **@vizlint/mcp** — MCP server for AI self-correction
+- **@deslint/mcp** — MCP server for AI self-correction
   - `analyze_file` — lint single file, return violations + score
   - `analyze_project` — scan project, return score + top violations
   - `analyze_and_fix` — analyze and apply fixes in one step
   - Auto-install for Cursor and Claude Code
-- **@vizlint/action** — GitHub Action for PR design reviews
+- **@deslint/action** — GitHub Action for PR design reviews
   - Posts Design Health Score comment on PRs with category breakdown
   - Comment deduplication (find-and-update pattern)
   - Configurable `min-score` threshold for pass/fail check status
@@ -89,7 +89,7 @@
 - Vue parser not loaded in CLI — all .vue files failed with parse errors (P0)
 - `no-arbitrary-colors` flagging legitimate CSS variable references — added `allowCssVariables` option (P1)
 - `dark-mode-coverage` too broad on semantic tokens, gradients, opacity — added family whitelist + function filters (P1)
-- Third-party ESLint rule violations leaking into Vizlint results — filter to vizlint/* rules only (P1)
+- Third-party ESLint rule violations leaking into Deslint results — filter to deslint/* rules only (P1)
 - `no-magic-numbers-layout` regex boundary issue — fr_ pattern not matched (P1)
 - `consistent-component-spacing` comparing different margin axes — split into axis-specific categories (P1)
 - `no-inline-styles` flagging dynamic template literals — added `allowDynamic: true` default (P1)

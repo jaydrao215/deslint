@@ -1,7 +1,7 @@
-# Vizlint Validation Summary
+# Deslint Validation Summary
 
 > **Date:** 2026-04-01
-> **Stage:** Validation Sprint (VIZLINT-EXECUTION.md Stage 1)
+> **Stage:** Validation Sprint (DESLINT-EXECUTION.md Stage 1)
 
 ## Validated Projects
 
@@ -40,7 +40,7 @@
 |---|-----|----------|
 | 3 | no-arbitrary-colors: CSS var() references flagged as arbitrary | no-arbitrary-colors.ts |
 | 4 | dark-mode-coverage: semantic tokens, gradients, custom families flagged | dark-mode-coverage.ts |
-| 10 | Third-party rule violations leaking into Vizlint results | lint-runner.ts |
+| 10 | Third-party rule violations leaking into Deslint results | lint-runner.ts |
 | 11 | no-magic-numbers-layout: fr_ regex (fr\b doesn't match fr_) | no-magic-numbers-layout.ts |
 | 12 | consistent-component-spacing: cross-axis margin comparison FP | consistent-component-spacing.ts |
 | 13 | no-inline-styles: dynamic template literals flagged | no-inline-styles.ts |
@@ -116,9 +116,9 @@ These rules correctly produce 0 violations on Angular templates — they're JSX-
 
 1. **Angular auto-fix**: Angular template parser nodes lack `range` property. All 6 fixable rules skip auto-fix on Angular templates. Violations are still correctly reported.
 
-2. **OG image routes (satori)**: `app/api/og/route.tsx` files using Next.js satori for image generation require inline styles (satori doesn't process Tailwind). `no-inline-styles` will flag these. Users should add `// eslint-disable-next-line vizlint/no-inline-styles` in OG route files.
+2. **OG image routes (satori)**: `app/api/og/route.tsx` files using Next.js satori for image generation require inline styles (satori doesn't process Tailwind). `no-inline-styles` will flag these. Users should add `// eslint-disable-next-line deslint/no-inline-styles` in OG route files.
 
-3. **dark-mode-coverage noise on non-dark-mode projects**: Projects without dark mode (like Vintor, saas-starter) will see many `dark-mode-coverage` warnings. Disable with `"vizlint/dark-mode-coverage": "off"` in `.vizlintrc.json`.
+3. **dark-mode-coverage noise on non-dark-mode projects**: Projects without dark mode (like Vintor, saas-starter) will see many `dark-mode-coverage` warnings. Disable with `"deslint/dark-mode-coverage": "off"` in `.deslintrc.json`.
 
 4. **no-arbitrary-typography noise on custom type scales**: Custom design systems (e.g., 15px = `text-display`) generate violations for valid custom sizes. Configure `customScale.fontSize` in the rule options.
 
@@ -126,16 +126,16 @@ These rules correctly produce 0 violations on Angular templates — they're JSX-
 
 ## Test Coverage
 
-- **@vizlint/eslint-plugin**: 551 tests (16 files)
-- **@vizlint/cli**: 78 tests (6 files)
-- **@vizlint/shared**: 44 tests
-- **@vizlint/action**: 17 tests
-- **@vizlint/mcp**: 25 tests
+- **@deslint/eslint-plugin**: 551 tests (16 files)
+- **@deslint/cli**: 78 tests (6 files)
+- **@deslint/shared**: 44 tests
+- **@deslint/action**: 17 tests
+- **@deslint/mcp**: 25 tests
 - **Total**: 715 tests passing
 
 ## Stage 1 Validation: COMPLETE ✓
 
-All Stage 1 criteria from VIZLINT-EXECUTION.md met:
+All Stage 1 criteria from DESLINT-EXECUTION.md met:
 - [x] FP rate < 5% (actual: 0%)
 - [x] Crash rate 0%
 - [x] Performance < 15s/500 files (actual: ~2s/500 files extrapolated)
@@ -202,7 +202,7 @@ Vintor reduced from 116 true positives (round 1, with dark-mode-coverage on) to 
 
 ### Elk (Vue/Nuxt) — Parser Fix Validated
 
-The Vue parser fix resolved all 193 parse errors from round 1. Elk uses UnoCSS with attributify mode (classes as HTML attributes, not in `class=""`), so 0 Vizlint violations is correct — Vizlint targets `class`/`className`/`:class`/`[ngClass]` attribute values. UnoCSS attributify is out of scope.
+The Vue parser fix resolved all 193 parse errors from round 1. Elk uses UnoCSS with attributify mode (classes as HTML attributes, not in `class=""`), so 0 Deslint violations is correct — Deslint targets `class`/`className`/`:class`/`[ngClass]` attribute values. UnoCSS attributify is out of scope.
 
 ### Cumulative Validation (All Rounds)
 

@@ -5,7 +5,7 @@ import { VERSION, program } from '../src/index.js';
 const _require = createRequire(import.meta.url);
 const pkg = _require('../package.json') as { version: string };
 
-describe('@vizlint/cli exports', () => {
+describe('@deslint/cli exports', () => {
   it('exports VERSION matching package.json', () => {
     expect(VERSION).toBe(pkg.version);
   });
@@ -18,7 +18,7 @@ describe('@vizlint/cli exports', () => {
 
   it('exports Commander program', () => {
     expect(program).toBeDefined();
-    expect(program.name()).toBe('vizlint');
+    expect(program.name()).toBe('deslint');
   });
 });
 

@@ -1,4 +1,4 @@
-# VIZLINT-EXECUTION.md
+# DESLINT-EXECUTION.md
 
 ## Trust-First Execution Reset
 
@@ -19,7 +19,7 @@ All work through Sprint 10 / VIZ-025 lives on the feature/development branch. Te
 - ESLint v10 flat config support (no legacy .eslintrc)
 - TypeScript strict mode across all packages
 - GitHub Actions CI pipeline
-- `.vizlintrc.json` config schema with Zod validation
+- `.deslintrc.json` config schema with Zod validation
 - Tailwind v3/v4 class extraction and detection
 - Framework-agnostic class parsing (React, Vue, Svelte, Angular, HTML)
 - Design system configuration (custom colors, spacing, fonts, border-radius)
@@ -48,9 +48,9 @@ All work through Sprint 10 / VIZ-025 lives on the feature/development branch. Te
 All VIZ-001 through VIZ-025 implementation tasks are complete. Remaining manual tasks:
 - ~~npm org creation~~ Done (2026-04-06)
 - ~~NPM_TOKEN GitHub secret~~ Done (2026-04-06)
-- Domain purchase (vizlint.dev) — deferred
+- Domain purchase (deslint.com) — deferred
 - Docs site deployment (Vercel/Cloudflare) — deferred
-- ~~npm publish (tag v0.1.0 to trigger release workflow)~~ **SHIPPED 2026-04-07** — all four packages live: `@vizlint/shared@0.1.0`, `eslint-plugin-vizlint@0.1.0`, `@vizlint/cli@0.1.0`, `@vizlint/mcp@0.1.0`. GitHub Release `v0.1.0` created.
+- ~~npm publish (tag v0.1.0 to trigger release workflow)~~ **SHIPPED 2026-04-07** — all four packages live: `@deslint/shared@0.1.0`, `eslint-plugin-deslint@0.1.0`, `@deslint/cli@0.1.0`, `@deslint/mcp@0.1.0`. GitHub Release `v0.1.0` created.
 
 ---
 
@@ -58,7 +58,7 @@ All VIZ-001 through VIZ-025 implementation tasks are complete. Remaining manual 
 
 **Do not build any new features. Validate what exists.**
 
-The highest risk to Vizlint is not missing features. It is:
+The highest risk to Deslint is not missing features. It is:
 
 1. Rules that produce false positives and annoy developers into uninstalling
 2. Auto-fixers that break working code
@@ -74,18 +74,18 @@ Every hour spent building new surfaces (dashboard, licensing, paid CLI, team fea
 
 ### 3A. Validate on Vintor (founder's own Angular project)
 
-This is the most important single task. Run every Vizlint rule against the Vintor frontend codebase.
+This is the most important single task. Run every Deslint rule against the Vintor frontend codebase.
 
 **Steps:**
 
-1. Install eslint-plugin-vizlint in the Vintor project (local link via pnpm)
-2. Configure eslint.config.js with vizlint.configs.recommended
-3. Create a .vizlintrc.json with Vintor's actual design system:
+1. Install eslint-plugin-deslint in the Vintor project (local link via pnpm)
+2. Configure eslint.config.js with deslint.configs.recommended
+3. Create a .deslintrc.json with Vintor's actual design system:
    - Colors: Slate Blue (#1A5276-ish), Forest Green, Sage White (get exact values from Vintor's codebase)
    - Fonts: Inter (body), DM Sans (headings), JetBrains Mono (code)
    - Spacing: whatever Vintor uses
    - Border radius: 8px (Vintor's strict rule)
-4. Run `vizlint scan` (or eslint with vizlint plugin) on the entire frontend
+4. Run `deslint scan` (or eslint with deslint plugin) on the entire frontend
 5. For EVERY violation reported, classify it:
    - TRUE POSITIVE: real design quality issue → keep the rule as-is
    - FALSE POSITIVE: legitimate design choice flagged incorrectly → fix the rule or add to known limitations
@@ -110,7 +110,7 @@ Pick real projects from GitHub. Suggested targets:
 For each project:
 
 1. Clone the repo
-2. Install and configure Vizlint with default recommended rules
+2. Install and configure Deslint with default recommended rules
 3. Run scan
 4. Classify every violation (same categories as Vintor)
 5. Record results in `validation/{project-name}-results.md`
@@ -193,7 +193,7 @@ When these are met, record the date in this document and proceed to Stage 2.
 - Auto-fix correctness: 14/14 verified (target: 100%)
 - Vintor dogfood: active since 2026-04-02, 0 new FP types found
 
-**Vintor dogfood started:** 2026-04-02 — plugin linked, eslint.config.js + .vizlintrc.json in place, `npm run vizlint` working. Dogfood completed early on 2026-04-07 (founder call: enough signal gathered, 0 new FP types).
+**Vintor dogfood started:** 2026-04-02 — plugin linked, eslint.config.js + .deslintrc.json in place, `npm run deslint` working. Dogfood completed early on 2026-04-07 (founder call: enough signal gathered, 0 new FP types).
 
 ---
 
@@ -226,7 +226,7 @@ Claude Code must NOT build or work on any of the following until trust metrics a
 - ✅ Quality gates (opt-in CI enforcement) — **shipped VIZ-027 (2026-04-07)**
 
 **Deferred until Stage 4 (post-revenue signal):**
-- ❌ Web dashboard (app.vizlint.dev)
+- ❌ Web dashboard (app.deslint.com)
 - ❌ Paid CLI tier / license key system
 - ❌ Stripe integration / billing
 - ❌ Team subscriptions / member management
@@ -253,7 +253,7 @@ These architectural decisions and completed work are correct and should not be c
 - ✅ Auto-fix with user control (never blind auto-fix)
 - ✅ Open-core model (free plugin, paid team features later)
 - ✅ TypeScript monorepo with Turborepo
-- ✅ The competitive positioning (Vizlint validates output, AI generates input)
+- ✅ The competitive positioning (Deslint validates output, AI generates input)
 - ✅ All code built through VIZ-025
 
 ---
@@ -280,7 +280,7 @@ A story is NOT done because it shipped. It is done when a user could trust it.
 
 ## 9. Product Vision Hierarchy
 
-Vizlint is not just a linter. It is the **design quality infrastructure layer for the AI code generation era.** Every tool in the ecosystem handles one piece — Figma handles design intent, AI tools handle code generation, visual regression tools handle screenshot comparison, ESLint handles code correctness. **Nobody handles: "Does the generated code actually implement the design system correctly, at the code level, deterministically, across every framework, in real-time?"**
+Deslint is not just a linter. It is the **design quality infrastructure layer for the AI code generation era.** Every tool in the ecosystem handles one piece — Figma handles design intent, AI tools handle code generation, visual regression tools handle screenshot comparison, ESLint handles code correctness. **Nobody handles: "Does the generated code actually implement the design system correctly, at the code level, deterministically, across every framework, in real-time?"**
 
 The product operates at five levels:
 
@@ -292,11 +292,11 @@ The product operates at five levels:
 | **L4: Design System Compliance Engine** | Token import (Figma/W3C/Tailwind) + cross-file analysis + design debt scoring + compliance reports | Enterprise design system teams | **Very High** (acquisition-worthy) |
 | **L5: Embeddable Design Quality API** | Core engine as a library that Lovable/Bolt/v0/Stitch integrate into their product | AI code generation platforms | **Strategic** (platform play) |
 
-L1-L2 are built. L3-L5 are the path to making Vizlint indispensable.
+L1-L2 are built. L3-L5 are the path to making Deslint indispensable.
 
 ### The one-line positioning:
 
-> "Visual regression tools tell you the screenshot looks wrong. Vizlint tells you why — and fixes it."
+> "Visual regression tools tell you the screenshot looks wrong. Deslint tells you why — and fixes it."
 
 ---
 
@@ -304,22 +304,22 @@ L1-L2 are built. L3-L5 are the path to making Vizlint indispensable.
 
 ### For Anthropic / Claude Code
 - **Their gap:** Code Review (March 2026) explicitly ignores style/design quality. The `frontend-design` skill is guidance-only — no enforcement. IBM research they cite says LLM review + deterministic static analysis = optimal.
-- **What Vizlint is for them:** The deterministic design quality enforcement layer in the agent loop. Hook-integrated (auto-lint after every file edit). MCP Apps UI (live score in chat). "Skills + Enforcement" pair: guidance before generation, validation after.
+- **What Deslint is for them:** The deterministic design quality enforcement layer in the agent loop. Hook-integrated (auto-lint after every file edit). MCP Apps UI (live score in chat). "Skills + Enforcement" pair: guidance before generation, validation after.
 - **Build:** Claude Code hooks config, MCP Apps UI, fix-loop protocol, first-class Claude Code workflow docs.
 
 ### For Figma
 - **Their gap:** MCP server provides tokens TO code generation but has zero validation on the output side. Code Connect maps components but doesn't validate usage. No "enforcement" story. Two sources of truth (Figma variables + code) drift apart with no detection.
-- **What Vizlint is for them:** The verification layer that completes their pipeline. Figma MCP → AI generates → Vizlint validates. "Design-code alignment" metric: what % of code uses design tokens vs. hardcoded values. This is design system adoption measured from code.
+- **What Deslint is for them:** The verification layer that completes their pipeline. Figma MCP → AI generates → Deslint validates. "Design-code alignment" metric: what % of code uses design tokens vs. hardcoded values. This is design system adoption measured from code.
 - **Build:** Figma Variables API import, W3C Design Tokens import, CSS file scanning, design-code alignment metric.
 
 ### For Lovable / Bolt.new / v0 / Google Stitch
 - **Their gap:** Users burn credits in debugging loops because AI generates code with design quality problems. Lovable: 1.5-star Trustpilot, security incidents. Bolt: 31% success rate on enterprise features. v0: quality declining. Stitch: "falls apart once you drop it into an existing design system."
-- **What Vizlint is for them:** A built-in quality gate that reduces credit waste. AI self-corrects before user sees the bad version. Design Quality Score on every generated output as a product feature. Trust metric these platforms can claim.
+- **What Deslint is for them:** A built-in quality gate that reduces credit waste. AI self-corrects before user sees the bad version. Design Quality Score on every generated output as a product feature. Trust metric these platforms can claim.
 - **Build:** Embeddable core engine (`analyze(code, config) → violations[]`), score badge/widget, API surface for integration partners.
 
 ### For Enterprise Design System Teams (Microsoft, Atlassian, Salesforce scale)
 - **Their gap:** Every enterprise builds bespoke ESLint rules from scratch. Design debt is measured via manual audits. Component usage is tracked (Omlet) but component quality is not. No "design quality DORA metric."
-- **What Vizlint is for them:** General-purpose design system compliance linter replacing bespoke internal tools. Design debt as a trackable number. Component quality analytics. WCAG compliance artifact generation. The design equivalent of DORA metrics.
+- **What Deslint is for them:** General-purpose design system compliance linter replacing bespoke internal tools. Design debt as a trackable number. Component quality analytics. WCAG compliance artifact generation. The design equivalent of DORA metrics.
 - **Build:** Trend API, design debt scoring, component quality analysis, WCAG report mapping, PDF/HTML export.
 
 ---
@@ -327,7 +327,7 @@ L1-L2 are built. L3-L5 are the path to making Vizlint indispensable.
 ## 11. Execution Stages Going Forward
 
 ### Stage 1: Validation (NOW — ends when dogfood week completes)
-Run Vizlint on real codebases. Measure false positives, crashes, performance. Fix everything found. Update docs honestly. Dogfood on Vintor for 1 week minimum.
+Run Deslint on real codebases. Measure false positives, crashes, performance. Fix everything found. Update docs honestly. Dogfood on Vintor for 1 week minimum.
 
 **Exit criteria:** Trust metrics in Section 5 all met.
 
@@ -341,7 +341,7 @@ Publish to npm as v0.1.0. Fix the credibility gaps. Validate the differentiation
 - Basic landing page (what it does, install command, rule list)
 
 **2B — Validate the MCP story (the killer differentiator):**
-- Test MCP server in live Cursor workflow: record AI generates → Vizlint flags → AI self-corrects
+- Test MCP server in live Cursor workflow: record AI generates → Deslint flags → AI self-corrects
 - Test MCP server in live Claude Code workflow: same loop
 - Test GitHub Action on a real PR with the Action installed
 - Document latency, token usage, failure modes, before/after quality scores
@@ -366,7 +366,7 @@ Publish to npm as v0.1.0. Fix the credibility gaps. Validate the differentiation
 **Exit criteria:** 5+ developers have used it on real projects. MCP self-correction loop demonstrated and documented. Accessibility rules cover the automatable WCAG 2.1 AA criteria AI code gets wrong. W3C Design Tokens import working.
 
 ### Stage 3: Growth + Platform Integration (LATER)
-Make Vizlint indispensable for AI tool workflows and enterprise teams.
+Make Deslint indispensable for AI tool workflows and enterprise teams.
 
 **3A — AI tool integration depth:**
 - Claude Code hooks integration (auto-lint after every file edit via lifecycle hooks)
@@ -437,7 +437,7 @@ These gaps were identified during strategic review (April 2026) and must be addr
 
 ## 13. Instructions for Claude Code
 
-When working on Vizlint, follow these rules in order of priority:
+When working on Deslint, follow these rules in order of priority:
 
 1. **Read this document first.** It overrides sprint plan sequencing.
 2. **Do not build new features** unless explicitly asked by the user.
@@ -456,8 +456,8 @@ When working on Vizlint, follow these rules in order of priority:
 
 Before proceeding with validation, the user should identify and resolve any manual tasks from VIZ-001 through VIZ-025 that were skipped during Claude Code implementation. Common examples include:
 
-- Domain purchase (vizlint.dev)
-- npm organization setup (@vizlint)
+- Domain purchase (deslint.com)
+- npm organization setup (@deslint)
 - GitHub repository creation
 - Stripe account setup (deferred per this document)
 - Framer landing page (deferred per this document)
@@ -489,11 +489,11 @@ sizing, and KPMG objection rebuttal.
 | 4 | Design-to-Code Alignment (Figma bridge) | Partnership | 🟡 Phase 1 partial — W3C parser shipped VIZ-029; alignment metric pending |
 | 5 | Trend Intelligence & Regression Detection | Historical moat | ✅ **Phase 1 — shipped VIZ-028** |
 | 6 | AI Code Attribution | Data flywheel | ❌ Phase 2 |
-| 7 | Platform Embedding (`@vizlint/core`) | Strategic endgame | ❌ Phase 2 |
+| 7 | Platform Embedding (`@deslint/core`) | Strategic endgame | ❌ Phase 2 |
 
 ### Phase 1 — Enterprise Foundation (status: ✅ COMPLETE 2026-04-07)
 
-Exit criteria met: a team can install Vizlint, set a quality gate, track
+Exit criteria met: a team can install Deslint, set a quality gate, track
 trends over 2 sprints, import W3C design tokens, and export a WCAG
 compliance report. This is the enterprise sales story.
 
@@ -501,7 +501,7 @@ compliance report. This is the enterprise sales story.
 |-------|---------|------|--------|
 | VIZ-026 | Design Debt Scoring (hours per violation) | 2 | ✅ 2026-04-07 |
 | VIZ-027 | Quality Gates (opt-in CI enforcement) | 3 | ✅ 2026-04-07 |
-| VIZ-028 | `vizlint trend` command | 5 | ✅ 2026-04-07 |
+| VIZ-028 | `deslint trend` command | 5 | ✅ 2026-04-07 |
 | VIZ-029 | W3C Design Tokens (DTCG) import | 4 | ✅ 2026-04-07 |
 | VIZ-030 | WCAG 2.2 compliance report export | 2/5 | ✅ 2026-04-07 |
 
@@ -518,12 +518,12 @@ Goal: make CodeRabbit nervous. Capabilities they can't replicate.
 |---|---------|------|--------|
 | P2-1 | Cross-File Design Graph (project-wide component pattern analysis) | 1 | 3 weeks |
 | P2-2 | AI Code Attribution (per-tool violation rates, pattern corpus) | 6 | 4 weeks |
-| P2-3 | Embeddable `@vizlint/core` pure-function API | 7 | 3 weeks |
+| P2-3 | Embeddable `@deslint/core` pure-function API | 7 | 3 weeks |
 | P2-4 | Design System Marketplace (shadcn, MUI, Chakra, Radix presets) | network | 2 weeks |
 | P2-5 | 6+ new WCAG 2.2 a11y rules (focus-visible, heading-order, aria-labels, form labels, keyboard nav, skip-links) | depth | 3 weeks |
 | P2-6 | Design-code alignment % metric (completes Moat 4) | 4 | 1 week |
 
-Exit criteria: Vizlint can analyze a 2,000-file project, detect cross-file
+Exit criteria: Deslint can analyze a 2,000-file project, detect cross-file
 inconsistencies, attribute violations to AI generation, and produce a
 report that enterprise design teams act on.
 
@@ -567,9 +567,9 @@ stay consistent.
 Add this block to the top of CLAUDE.md:
 
 ```markdown
-## IMPORTANT: Read VIZLINT-EXECUTION.md before any work
+## IMPORTANT: Read DESLINT-EXECUTION.md before any work
 
-VIZLINT-EXECUTION.md contains the active execution plan.
+DESLINT-EXECUTION.md contains the active execution plan.
 It overrides sprint plan sequencing for all work after VIZ-025.
 The current priority is VALIDATION, not new features.
 Read it before starting any task.

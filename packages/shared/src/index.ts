@@ -5,7 +5,7 @@ export {
   IgnorePatternsSchema,
   ProfileSchema,
   QualityGateSchema,
-  VizlintConfigSchema,
+  DeslintConfigSchema,
   parseConfig,
   safeParseConfig,
 } from './config-schema.js';
@@ -16,7 +16,7 @@ export type {
   DesignSystem,
   Profile,
   QualityGate,
-  VizlintConfig,
+  DeslintConfig,
 } from './config-schema.js';
 
 export { evaluateQualityGate, formatGateResult } from './quality-gate.js';

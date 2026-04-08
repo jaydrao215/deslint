@@ -7,15 +7,15 @@ import { runLint, RULE_CATEGORY_MAP } from '../src/lint-runner.js';
 // ── RULE_CATEGORY_MAP unit tests ────────────────────────────────────
 
 describe('RULE_CATEGORY_MAP', () => {
-  it('maps all known Vizlint rules to categories', () => {
-    expect(RULE_CATEGORY_MAP['vizlint/no-arbitrary-colors']).toBe('colors');
-    expect(RULE_CATEGORY_MAP['vizlint/no-arbitrary-spacing']).toBe('spacing');
-    expect(RULE_CATEGORY_MAP['vizlint/no-arbitrary-typography']).toBe('typography');
-    expect(RULE_CATEGORY_MAP['vizlint/responsive-required']).toBe('responsive');
-    expect(RULE_CATEGORY_MAP['vizlint/consistent-component-spacing']).toBe('consistency');
-    expect(RULE_CATEGORY_MAP['vizlint/a11y-color-contrast']).toBe('colors');
-    expect(RULE_CATEGORY_MAP['vizlint/dark-mode-coverage']).toBe('colors');
-    expect(RULE_CATEGORY_MAP['vizlint/no-arbitrary-zindex']).toBe('consistency');
+  it('maps all known Deslint rules to categories', () => {
+    expect(RULE_CATEGORY_MAP['deslint/no-arbitrary-colors']).toBe('colors');
+    expect(RULE_CATEGORY_MAP['deslint/no-arbitrary-spacing']).toBe('spacing');
+    expect(RULE_CATEGORY_MAP['deslint/no-arbitrary-typography']).toBe('typography');
+    expect(RULE_CATEGORY_MAP['deslint/responsive-required']).toBe('responsive');
+    expect(RULE_CATEGORY_MAP['deslint/consistent-component-spacing']).toBe('consistency');
+    expect(RULE_CATEGORY_MAP['deslint/a11y-color-contrast']).toBe('colors');
+    expect(RULE_CATEGORY_MAP['deslint/dark-mode-coverage']).toBe('colors');
+    expect(RULE_CATEGORY_MAP['deslint/no-arbitrary-zindex']).toBe('consistency');
   });
 
   it('covers all 5 score categories', () => {
@@ -35,7 +35,7 @@ describe('runLint', () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await mkdtemp(join(tmpdir(), 'vizlint-test-'));
+    tmpDir = await mkdtemp(join(tmpdir(), 'deslint-test-'));
   });
 
   afterEach(async () => {
@@ -63,9 +63,9 @@ describe('runLint', () => {
     expect(result.filesWithViolations).toBe(1);
 
     // Should detect arbitrary color (bg-[#FF0000])
-    expect(result.byRule['vizlint/no-arbitrary-colors']).toBeGreaterThanOrEqual(1);
+    expect(result.byRule['deslint/no-arbitrary-colors']).toBeGreaterThanOrEqual(1);
     // Should detect arbitrary spacing (p-[13px])
-    expect(result.byRule['vizlint/no-arbitrary-spacing']).toBeGreaterThanOrEqual(1);
+    expect(result.byRule['deslint/no-arbitrary-spacing']).toBeGreaterThanOrEqual(1);
     // dark-mode-coverage skips arbitrary bg-[...] values (they're not standard color patterns)
   });
 
@@ -136,11 +136,11 @@ describe('runLint', () => {
 
     const result = await runLint({
       files: [filePath],
-      ruleOverrides: { 'vizlint/no-arbitrary-colors': 'off' },
+      ruleOverrides: { 'deslint/no-arbitrary-colors': 'off' },
     });
 
     // The disabled rule should not appear in byRule
-    expect(result.byRule['vizlint/no-arbitrary-colors']).toBeUndefined();
+    expect(result.byRule['deslint/no-arbitrary-colors']).toBeUndefined();
   });
 
   it('respects ruleOverrides to escalate a rule to error', async () => {
@@ -151,14 +151,14 @@ describe('runLint', () => {
 
     const result = await runLint({
       files: [filePath],
-      ruleOverrides: { 'vizlint/no-arbitrary-colors': 'error' },
+      ruleOverrides: { 'deslint/no-arbitrary-colors': 'error' },
     });
 
     // no-arbitrary-colors should now be reported as an error (severity 2)
     expect(result.bySeverity.errors).toBeGreaterThanOrEqual(1);
   });
 
-  it('handles ruleOverrides without vizlint/ prefix', async () => {
+  it('handles ruleOverrides without deslint/ prefix', async () => {
     const filePath = await writeTsx(
       'ShortPrefix.tsx',
       `const ShortPrefix = () => <div className="bg-[#FF0000]">test</div>;\nexport default ShortPrefix;\n`,
@@ -169,7 +169,7 @@ describe('runLint', () => {
       ruleOverrides: { 'no-arbitrary-colors': 'off' },
     });
 
-    expect(result.byRule['vizlint/no-arbitrary-colors']).toBeUndefined();
+    expect(result.byRule['deslint/no-arbitrary-colors']).toBeUndefined();
   });
 
   it('disabling multiple rules removes all their violations', async () => {
@@ -181,15 +181,15 @@ describe('runLint', () => {
     const result = await runLint({
       files: [filePath],
       ruleOverrides: {
-        'vizlint/no-arbitrary-colors': 'off',
-        'vizlint/no-arbitrary-spacing': 'off',
-        'vizlint/dark-mode-coverage': 'off',
+        'deslint/no-arbitrary-colors': 'off',
+        'deslint/no-arbitrary-spacing': 'off',
+        'deslint/dark-mode-coverage': 'off',
       },
     });
 
-    expect(result.byRule['vizlint/no-arbitrary-colors']).toBeUndefined();
-    expect(result.byRule['vizlint/no-arbitrary-spacing']).toBeUndefined();
-    expect(result.byRule['vizlint/dark-mode-coverage']).toBeUndefined();
+    expect(result.byRule['deslint/no-arbitrary-colors']).toBeUndefined();
+    expect(result.byRule['deslint/no-arbitrary-spacing']).toBeUndefined();
+    expect(result.byRule['deslint/dark-mode-coverage']).toBeUndefined();
   });
 
   // ── Multi-file aggregation ──
@@ -271,7 +271,7 @@ describe('runLint', () => {
 
     expect(result.totalFiles).toBe(1);
     expect(result.totalViolations).toBeGreaterThan(0);
-    expect(result.byRule['vizlint/no-arbitrary-colors']).toBeGreaterThanOrEqual(1);
+    expect(result.byRule['deslint/no-arbitrary-colors']).toBeGreaterThanOrEqual(1);
   });
 
   it('handles a single-violation file with only spacing issues', async () => {
@@ -282,9 +282,9 @@ describe('runLint', () => {
 
     const result = await runLint({ files: [filePath] });
 
-    expect(result.byRule['vizlint/no-arbitrary-spacing']).toBeGreaterThanOrEqual(1);
+    expect(result.byRule['deslint/no-arbitrary-spacing']).toBeGreaterThanOrEqual(1);
     // No color rules should fire (no bg or text color classes)
-    expect(result.byRule['vizlint/no-arbitrary-colors']).toBeUndefined();
+    expect(result.byRule['deslint/no-arbitrary-colors']).toBeUndefined();
     expect(result.byCategory.spacing).toBeGreaterThanOrEqual(1);
   });
 });

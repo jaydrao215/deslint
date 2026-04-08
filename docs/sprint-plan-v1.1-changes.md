@@ -1,6 +1,6 @@
-# Vizlint Sprint Plan v1.1 — Critical Changes from Validation
+# Deslint Sprint Plan v1.1 — Critical Changes from Validation
 
-> Apply this document ON TOP of the original `vizlint-sprint-plan.txt`.  
+> Apply this document ON TOP of the original `deslint-sprint-plan.txt`.  
 > Every section below either replaces or adds to the original sprint plan.  
 > If a section is not mentioned here, the original plan stands unchanged.
 
@@ -36,7 +36,7 @@
 
 ### VIZ-002B: Angular Template Parsing
 
-**As a** Angular developer using AI tools, **I want** Vizlint to parse my Angular templates, **so that** I get design quality feedback on Angular projects.
+**As a** Angular developer using AI tools, **I want** Deslint to parse my Angular templates, **so that** I get design quality feedback on Angular projects.
 
 **Acceptance Criteria:**
 - Rules parse Angular template `class` attributes
@@ -60,7 +60,7 @@
 - TEST: Detects arbitrary color inside `[ngClass]` object
 - TEST: Does NOT flag standard Tailwind classes in Angular templates
 - TEST: Framework auto-detection identifies Angular project correctly
-- TEST: Vizlint runs successfully against Vintor's frontend codebase
+- TEST: Deslint runs successfully against Vintor's frontend codebase
 
 **Story Points:** 5
 
@@ -71,7 +71,7 @@
 - Example: flags `color: var(--some-random-thing)` when it should be `color: var(--color-primary)`
 
 **Add to Sprint 4 (VIZ-011) outreach:**
-- Position against Buoy explicitly: "Buoy catches token drift. Vizlint catches token drift + spacing + typography + responsive + accessibility — inside your ESLint workflow."
+- Position against Buoy explicitly: "Buoy catches token drift. Deslint catches token drift + spacing + typography + responsive + accessibility — inside your ESLint workflow."
 - Add Buoy comparison section to landing page
 
 ## Change 5: Sprint Rebalancing

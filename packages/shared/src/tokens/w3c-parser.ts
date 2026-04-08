@@ -12,7 +12,7 @@
  *   1. Walks the tree, collecting every token with its dotted path.
  *   2. Resolves `{...}` aliases (iteratively, up to MAX_DEPTH hops).
  *   3. Groups tokens by `$type` into the flat DesignSystem shape that
- *      the rest of Vizlint understands (colors, spacing, fonts,
+ *      the rest of Deslint understands (colors, spacing, fonts,
  *      borderRadius).
  *
  * Design decision: we DO NOT try to round-trip every DTCG type. Only
@@ -40,7 +40,7 @@ export interface W3CToken {
 export interface W3CParseResult {
   /** All resolved tokens, in insertion order. */
   tokens: W3CToken[];
-  /** DesignSystem shape ready to merge into a Vizlint config. */
+  /** DesignSystem shape ready to merge into a Deslint config. */
   designSystem: DesignSystem;
   /** Token paths whose `$type` wasn't recognized by the mapper. */
   unmapped: string[];
@@ -157,7 +157,7 @@ function stringifyValue(value: unknown): string {
   return JSON.stringify(value);
 }
 
-/** Bucket resolved tokens into the Vizlint DesignSystem shape. */
+/** Bucket resolved tokens into the Deslint DesignSystem shape. */
 function toDesignSystem(tokens: W3CToken[]): {
   designSystem: DesignSystem;
   unmapped: string[];
@@ -193,7 +193,7 @@ function toDesignSystem(tokens: W3CToken[]): {
                type === 'cubicbezier' || type === 'strokestyle' || type === 'border' ||
                type === 'transition' || type === 'shadow' || type === 'gradient' ||
                type === 'typography') {
-      // Known DTCG types we don't currently map to a Vizlint rule input.
+      // Known DTCG types we don't currently map to a Deslint rule input.
       unmapped.push(token.path);
     } else if (type === undefined) {
       // Untyped token — try a path-based heuristic so Style Dictionary

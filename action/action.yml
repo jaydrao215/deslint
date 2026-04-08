@@ -1,6 +1,6 @@
-name: 'Vizlint Design Review'
-description: 'Run Vizlint design quality checks on pull requests and post a Design Health Score comment.'
-author: 'Vizlint'
+name: 'Deslint Design Review'
+description: 'Run Deslint design quality checks on pull requests and post a Design Health Score comment.'
+author: 'Deslint'
 
 branding:
   icon: 'check-circle'
@@ -16,7 +16,7 @@ inputs:
     required: false
     default: '0'
   config-path:
-    description: 'Path to .vizlintrc.json config file.'
+    description: 'Path to .deslintrc.json config file.'
     required: false
     default: ''
   working-directory:

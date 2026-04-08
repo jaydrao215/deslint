@@ -151,7 +151,7 @@ export function formatGateResult(result: GateResult): string {
     lines.push(`  - ${f.message}`);
   }
   if (!result.enforced) {
-    lines.push('  (gate is in warn-only mode; set "qualityGate.enforce": true in .vizlintrc.json to fail builds)');
+    lines.push('  (gate is in warn-only mode; set "qualityGate.enforce": true in .deslintrc.json to fail builds)');
   }
   return lines.join('\n');
 }

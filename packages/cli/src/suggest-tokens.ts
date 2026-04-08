@@ -1,5 +1,5 @@
 /**
- * `vizlint suggest-tokens` command
+ * `deslint suggest-tokens` command
  *
  * Scans the project, finds all violations with no auto-fix, then classifies them:
  *
@@ -189,7 +189,7 @@ export function buildTokenSuggestions(
   for (const result of lintResult.results) {
     const file = relative(cwd, result.filePath);
     for (const msg of result.messages as LintMessage[]) {
-      if (msg.ruleId !== 'vizlint/no-arbitrary-spacing') continue;
+      if (msg.ruleId !== 'deslint/no-arbitrary-spacing') continue;
 
       const cls = extractClassName(msg.message);
       if (!cls) continue;
@@ -257,7 +257,7 @@ export function formatSuggestTokens(
   const lines: string[] = [];
 
   lines.push('');
-  lines.push(chalk.bold('  Vizlint — Design Analysis'));
+  lines.push(chalk.bold('  Deslint — Design Analysis'));
   lines.push(chalk.gray('  ─'.repeat(24)));
   lines.push('');
 
@@ -268,7 +268,7 @@ export function formatSuggestTokens(
   // ── Tier 0: Auto-fixable ──
   if (fixable.length > 0) {
     lines.push(chalk.bold.green('  ✓ Auto-fixable (exact Tailwind scale match)'));
-    lines.push(chalk.gray('    Run `vizlint fix [dir] --all` to apply these automatically.'));
+    lines.push(chalk.gray('    Run `deslint fix [dir] --all` to apply these automatically.'));
     lines.push('');
     for (const f of fixable) {
       const files = groupByFile(f.locations);
@@ -406,7 +406,7 @@ export function formatSuggestTokens(
       lines.push(`  ${chalk.gray(s.cls.padEnd(22))} →  ${chalk.green(s.replacement)}`);
     }
     lines.push('');
-    lines.push(chalk.dim('  After replacing, re-run `vizlint scan .` to confirm 0 violations.'));
+    lines.push(chalk.dim('  After replacing, re-run `deslint scan .` to confirm 0 violations.'));
     lines.push('');
   }
 

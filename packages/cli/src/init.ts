@@ -1,26 +1,26 @@
 /**
  * VIZ-017: Init Command & Config Wizard
  *
- * `npx vizlint init` — zero-friction setup that:
+ * `npx deslint init` — zero-friction setup that:
  * 1. Auto-detects framework from package.json
  * 2. Imports Tailwind design tokens
  * 3. Asks for strictness profile
- * 4. Writes .vizlintrc.json
+ * 4. Writes .deslintrc.json
  * 5. Writes eslint.config.js (framework-aware)
- * 6. Adds npm scripts (vizlint / vizlint:fix) to package.json
+ * 6. Adds npm scripts (deslint / deslint:fix) to package.json
  * 7. Runs a quick-scan preview
  *
  * After init, the user only needs two commands:
- *   npm run vizlint       — see violations
- *   npm run vizlint:fix   — auto-fix everything fixable
+ *   npm run deslint       — see violations
+ *   npm run deslint:fix   — auto-fix everything fixable
  */
 
 import { existsSync, writeFileSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import chalk from 'chalk';
 import * as prompts from '@clack/prompts';
-import { detectFramework, importTailwindConfig } from '@vizlint/shared';
-import type { VizlintConfig, DesignSystem, Severity } from '@vizlint/shared';
+import { detectFramework, importTailwindConfig } from '@deslint/shared';
+import type { DeslintConfig, DesignSystem, Severity } from '@deslint/shared';
 
 /** Default severity profiles per v1.2 spec */
 const PROFILES: Record<string, { description: string; rules: Record<string, Severity> }> = {
@@ -62,7 +62,7 @@ const PROFILES: Record<string, { description: string; rules: Record<string, Seve
 function generateEslintConfig(framework: string): string {
   if (framework === 'angular') {
     return `// @ts-check
-import vizlint from '@vizlint/eslint-plugin';
+import deslint from '@deslint/eslint-plugin';
 import angularTemplateParser from '@angular-eslint/template-parser';
 
 /** @type {import('eslint').Linter.Config[]} */
@@ -70,14 +70,14 @@ export default [
   // TypeScript component files
   {
     files: ['**/*.ts'],
-    ...vizlint.configs.recommended,
+    ...deslint.configs.recommended,
   },
   // Angular HTML templates
   {
     files: ['**/*.html'],
-    plugins: { vizlint },
+    plugins: { deslint },
     languageOptions: { parser: angularTemplateParser },
-    rules: vizlint.configs.recommended.rules,
+    rules: deslint.configs.recommended.rules,
   },
   {
     ignores: ['dist/**', 'node_modules/**', '.angular/**', 'e2e/**'],
@@ -88,20 +88,20 @@ export default [
 
   if (framework === 'vue') {
     return `// @ts-check
-import vizlint from '@vizlint/eslint-plugin';
+import deslint from '@deslint/eslint-plugin';
 import vueParser from 'vue-eslint-parser';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
     files: ['**/*.vue'],
-    plugins: { vizlint },
+    plugins: { deslint },
     languageOptions: { parser: vueParser },
-    rules: vizlint.configs.recommended.rules,
+    rules: deslint.configs.recommended.rules,
   },
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
-    ...vizlint.configs.recommended,
+    ...deslint.configs.recommended,
   },
   {
     ignores: ['dist/**', 'node_modules/**'],
@@ -112,20 +112,20 @@ export default [
 
   if (framework === 'svelte') {
     return `// @ts-check
-import vizlint from '@vizlint/eslint-plugin';
+import deslint from '@deslint/eslint-plugin';
 import svelteParser from 'svelte-eslint-parser';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
     files: ['**/*.svelte'],
-    plugins: { vizlint },
+    plugins: { deslint },
     languageOptions: { parser: svelteParser },
-    rules: vizlint.configs.recommended.rules,
+    rules: deslint.configs.recommended.rules,
   },
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
-    ...vizlint.configs.recommended,
+    ...deslint.configs.recommended,
   },
   {
     ignores: ['dist/**', 'node_modules/**', '.svelte-kit/**'],
@@ -136,11 +136,11 @@ export default [
 
   // React / Next.js / default
   return `// @ts-check
-import vizlint from '@vizlint/eslint-plugin';
+import deslint from '@deslint/eslint-plugin';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
-  vizlint.configs.recommended,
+  deslint.configs.recommended,
   {
     ignores: ['dist/**', 'node_modules/**', '.next/**', 'build/**'],
   },
@@ -149,7 +149,7 @@ export default [
 }
 
 /**
- * Add vizlint scripts to package.json without touching existing scripts.
+ * Add deslint scripts to package.json without touching existing scripts.
  */
 function addNpmScripts(cwd: string): boolean {
   const pkgPath = resolve(cwd, 'package.json');
@@ -160,16 +160,16 @@ function addNpmScripts(cwd: string): boolean {
     if (!pkg.scripts) pkg.scripts = {};
 
     let changed = false;
-    if (!pkg.scripts['vizlint']) {
-      pkg.scripts['vizlint'] = 'vizlint scan .';
+    if (!pkg.scripts['deslint']) {
+      pkg.scripts['deslint'] = 'deslint scan .';
       changed = true;
     }
-    if (!pkg.scripts['vizlint:fix']) {
-      pkg.scripts['vizlint:fix'] = 'vizlint fix . --all';
+    if (!pkg.scripts['deslint:fix']) {
+      pkg.scripts['deslint:fix'] = 'deslint fix . --all';
       changed = true;
     }
-    if (!pkg.scripts['vizlint:tokens']) {
-      pkg.scripts['vizlint:tokens'] = 'vizlint suggest-tokens .';
+    if (!pkg.scripts['deslint:tokens']) {
+      pkg.scripts['deslint:tokens'] = 'deslint suggest-tokens .';
       changed = true;
     }
 
@@ -192,13 +192,13 @@ export interface InitOptions {
 export async function initWizard(options: InitOptions): Promise<void> {
   const { cwd } = options;
 
-  prompts.intro(chalk.bold.cyan('Vizlint') + chalk.bold(' — Design quality gate'));
+  prompts.intro(chalk.bold.cyan('Deslint') + chalk.bold(' — Design quality gate'));
 
   // ── Step 1: Check for existing config ──
-  const configPath = resolve(cwd, '.vizlintrc.json');
+  const configPath = resolve(cwd, '.deslintrc.json');
   if (existsSync(configPath)) {
     const overwrite = await prompts.confirm({
-      message: '.vizlintrc.json already exists. Overwrite?',
+      message: '.deslintrc.json already exists. Overwrite?',
     });
     if (prompts.isCancel(overwrite) || !overwrite) {
       prompts.outro('Setup cancelled.');
@@ -235,7 +235,7 @@ export async function initWizard(options: InitOptions): Promise<void> {
 
   // ── Step 4: Profile selection ──
   const profileChoice = await prompts.select({
-    message: 'How strict should Vizlint be?',
+    message: 'How strict should Deslint be?',
     options: [
       {
         value: 'prototype',
@@ -255,10 +255,10 @@ export async function initWizard(options: InitOptions): Promise<void> {
     return;
   }
 
-  // ── Step 5: Build and write .vizlintrc.json ──
+  // ── Step 5: Build and write .deslintrc.json ──
   const selectedProfile = PROFILES[profileChoice as string];
-  const config: VizlintConfig = {
-    $schema: 'https://vizlint.dev/schema.json',
+  const config: DeslintConfig = {
+    $schema: 'https://deslint.com/schema.json',
     rules: { ...selectedProfile.rules },
     ignore: [
       'node_modules/**',
@@ -279,7 +279,7 @@ export async function initWizard(options: InitOptions): Promise<void> {
   }
 
   writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
-  prompts.log.success(`Created ${chalk.cyan('.vizlintrc.json')}`);
+  prompts.log.success(`Created ${chalk.cyan('.deslintrc.json')}`);
 
   // ── Step 6: Write eslint.config.js ──
   const eslintConfigPath = resolve(cwd, 'eslint.config.js');
@@ -287,7 +287,7 @@ export async function initWizard(options: InitOptions): Promise<void> {
 
   if (eslintExists) {
     const overwriteEslint = await prompts.confirm({
-      message: 'eslint.config.js already exists. Overwrite with Vizlint config?',
+      message: 'eslint.config.js already exists. Overwrite with Deslint config?',
       initialValue: false,
     });
     if (!prompts.isCancel(overwriteEslint) && overwriteEslint) {
@@ -295,7 +295,7 @@ export async function initWizard(options: InitOptions): Promise<void> {
       prompts.log.success(`Updated ${chalk.cyan('eslint.config.js')}`);
     } else {
       prompts.log.warn(
-        `Skipped eslint.config.js — add ${chalk.cyan("import vizlint from '@vizlint/eslint-plugin'")} manually.`,
+        `Skipped eslint.config.js — add ${chalk.cyan("import deslint from '@deslint/eslint-plugin'")} manually.`,
       );
     }
   } else {
@@ -307,7 +307,7 @@ export async function initWizard(options: InitOptions): Promise<void> {
   const scriptsAdded = addNpmScripts(cwd);
   if (scriptsAdded) {
     prompts.log.success(
-      `Added scripts to ${chalk.cyan('package.json')}: ${chalk.dim('vizlint')}, ${chalk.dim('vizlint:fix')}`,
+      `Added scripts to ${chalk.cyan('package.json')}: ${chalk.dim('deslint')}, ${chalk.dim('deslint:fix')}`,
     );
   } else {
     prompts.log.info(
@@ -344,12 +344,12 @@ export async function initWizard(options: InitOptions): Promise<void> {
 
         if (result.totalViolations > 0) {
           prompts.log.info(
-            `${chalk.yellow(String(result.totalViolations))} violations found — run ${chalk.cyan('npm run vizlint:fix')} to auto-fix the easy ones.`,
+            `${chalk.yellow(String(result.totalViolations))} violations found — run ${chalk.cyan('npm run deslint:fix')} to auto-fix the easy ones.`,
           );
         }
       }
     } catch {
-      prompts.log.warn('Preview scan failed — run npm run vizlint manually.');
+      prompts.log.warn('Preview scan failed — run npm run deslint manually.');
     }
   }
 
@@ -358,9 +358,9 @@ export async function initWizard(options: InitOptions): Promise<void> {
     [
       chalk.bold('All set! Three commands to know:'),
       '',
-      `  ${chalk.cyan('npm run vizlint')}        — see all violations`,
-      `  ${chalk.cyan('npm run vizlint:fix')}    — auto-fix everything fixable`,
-      `  ${chalk.cyan('npm run vizlint:tokens')} — design guidance for custom values`,
+      `  ${chalk.cyan('npm run deslint')}        — see all violations`,
+      `  ${chalk.cyan('npm run deslint:fix')}    — auto-fix everything fixable`,
+      `  ${chalk.cyan('npm run deslint:tokens')} — design guidance for custom values`,
     ].join('\n'),
   );
 }

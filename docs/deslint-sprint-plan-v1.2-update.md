@@ -1,13 +1,13 @@
-# Vizlint Sprint Plan v1.2 — Final Update
+# Deslint Sprint Plan v1.2 — Final Update
 
-> Apply ON TOP of v1.0 (vizlint-sprint-plan.txt) + v1.1 (vizlint-sprint-plan-v1.1-update.md).
+> Apply ON TOP of v1.0 (deslint-sprint-plan.txt) + v1.1 (deslint-sprint-plan-v1.1-update.md).
 > This is the last overlay before Sprint 1 begins.
 
 ---
 
 ## NEW SECTION: Product Architecture — No AI Model Required
 
-**Vizlint does NOT use any AI/LLM API.** All analysis is deterministic static analysis:
+**Deslint does NOT use any AI/LLM API.** All analysis is deterministic static analysis:
 
 - ESLint AST parsing for class extraction
 - Regex pattern matching for arbitrary value detection
@@ -22,30 +22,30 @@ This means:
 - No API key management for users
 - Works in air-gapped / classified environments
 
-**Vizlint complements AI, it doesn't compete with it.** Claude/GPT generates code. Vizlint validates the output. The MCP integration creates a feedback loop where the AI self-corrects using Vizlint's deterministic analysis.
+**Deslint complements AI, it doesn't compete with it.** Claude/GPT generates code. Deslint validates the output. The MCP integration creates a feedback loop where the AI self-corrects using Deslint's deterministic analysis.
 
 ---
 
 ## NEW SECTION: Five-Level User Control Model
 
-Vizlint never overrides user intent. Users control exactly what gets flagged through five levels of granularity, from single-line exceptions to full team profiles.
+Deslint never overrides user intent. Users control exactly what gets flagged through five levels of granularity, from single-line exceptions to full team profiles.
 
 ### Level 1: Inline Ignore (per-instance)
 
 ```tsx
-{/* vizlint-ignore no-arbitrary-colors -- brand gradient requires exact hex */}
+{/* deslint-ignore no-arbitrary-colors -- brand gradient requires exact hex */}
 <div className="bg-[#1E3A5F]" />
 ```
 
 - Suppresses one violation on one line
-- The `-- reason` comment is MANDATORY (enforced by Vizlint itself)
+- The `-- reason` comment is MANDATORY (enforced by Deslint itself)
 - Creates an audit trail of intentional exceptions
 - Familiar pattern: identical to `eslint-disable-next-line`
 
 ### Level 2: Rule Configuration (per-project)
 
 ```json
-// .vizlintrc.json → rules section
+// .deslintrc.json → rules section
 {
   "rules": {
     "no-arbitrary-colors": ["warn", { "allowlist": ["#1E3A5F", "#FFD700"] }],
@@ -63,7 +63,7 @@ Vizlint never overrides user intent. Users control exactly what gets flagged thr
 ### Level 3: Design System Definition (team-wide)
 
 ```json
-// .vizlintrc.json → designSystem section
+// .deslintrc.json → designSystem section
 {
   "designSystem": {
     "colors": {
@@ -98,7 +98,7 @@ Vizlint never overrides user intent. Users control exactly what gets flagged thr
 ### Level 4: File/Folder Ignore Patterns
 
 ```json
-// .vizlintrc.json → ignore section
+// .deslintrc.json → ignore section
 {
   "ignore": [
     "src/legacy/**",
@@ -117,7 +117,7 @@ Vizlint never overrides user intent. Users control exactly what gets flagged thr
 ### Level 5: Severity Profiles
 
 ```json
-// .vizlintrc.json → profiles section
+// .deslintrc.json → profiles section
 {
   "profiles": {
     "prototype": {
@@ -157,7 +157,7 @@ Vizlint never overrides user intent. Users control exactly what gets flagged thr
 }
 ```
 
-- Activate via CLI: `vizlint scan --profile production`
+- Activate via CLI: `deslint scan --profile production`
 - Same project, different strictness based on context
 - Teams define custom profiles matching their workflow stages
 - CI/CD uses `production` profile, local dev uses `prototype`
@@ -166,13 +166,13 @@ Vizlint never overrides user intent. Users control exactly what gets flagged thr
 
 ## NEW SECTION: Tailwind Config Auto-Import
 
-Vizlint automatically reads the user's existing Tailwind configuration to eliminate manual `.vizlintrc.json` setup.
+Deslint automatically reads the user's existing Tailwind configuration to eliminate manual `.deslintrc.json` setup.
 
 ### How it works
 
 **Tailwind v3:** Reads `tailwind.config.js` or `tailwind.config.ts`
 ```js
-// tailwind.config.js — Vizlint extracts:
+// tailwind.config.js — Deslint extracts:
 module.exports = {
   theme: {
     extend: {
@@ -194,7 +194,7 @@ module.exports = {
 
 **Tailwind v4:** Reads `@theme` block in main CSS file
 ```css
-/* app.css — Vizlint extracts: */
+/* app.css — Deslint extracts: */
 @theme {
   --color-brand-navy: #1E3A5F;     /* → designSystem.colors.brand-navy */
   --color-brand-gold: #FFD700;     /* → designSystem.colors.brand-gold */
@@ -214,7 +214,7 @@ module.exports = {
 ### The init experience
 
 ```
-$ npx vizlint init
+$ npx deslint init
 
   ✓ Detected Tailwind v4 with @theme config in src/app.css
   ✓ Found 12 custom colors
@@ -222,10 +222,10 @@ $ npx vizlint init
   ✓ Found font families: Inter, DM Sans, JetBrains Mono
   ✓ Detected framework: Angular (from @angular/core)
 
-  Generated .vizlintrc.json with your design system tokens.
-  Your design system is now the source of truth for Vizlint rules.
+  Generated .deslintrc.json with your design system tokens.
+  Your design system is now the source of truth for Deslint rules.
 
-  Run vizlint scan to see your Design Health Score.
+  Run deslint scan to see your Design Health Score.
 ```
 
 Zero manual configuration for projects with existing Tailwind setup.
@@ -238,15 +238,15 @@ Zero manual configuration for projects with existing Tailwind setup.
 
 **Add these tasks to VIZ-001 (Monorepo & CI/CD Setup):**
 
-8. Define `.vizlintrc.json` JSON Schema with Zod validation covering all 5 control levels
+8. Define `.deslintrc.json` JSON Schema with Zod validation covering all 5 control levels
 9. Schema includes: rules (severity + options), designSystem (colors, fonts, spacing, borderRadius), ignore (glob patterns), profiles (named rule sets)
-10. Create `@vizlint/shared` package with schema types exported for cross-package use
+10. Create `@deslint/shared` package with schema types exported for cross-package use
 11. Write schema validation tests including invalid config error messages
 
 **Add these acceptance criteria:**
-- `.vizlintrc.json` validates against Zod schema with clear error messages for invalid config
+- `.deslintrc.json` validates against Zod schema with clear error messages for invalid config
 - Schema supports all 5 control levels documented above
-- Shared types importable from `@vizlint/shared` in all packages
+- Shared types importable from `@deslint/shared` in all packages
 
 **Story points impact:** +2 (from 5 to 7)
 
@@ -257,7 +257,7 @@ Zero manual configuration for projects with existing Tailwind setup.
 #### VIZ-001B: Tailwind Config Auto-Import Utility (5 points)
 
 **As a** developer with an existing Tailwind project,
-**I want** Vizlint to automatically read my Tailwind config and know my design system,
+**I want** Deslint to automatically read my Tailwind config and know my design system,
 **so that** I get accurate suggestions without any manual configuration.
 
 **Acceptance Criteria:**
@@ -266,7 +266,7 @@ Zero manual configuration for projects with existing Tailwind setup.
 - Reads `:root` CSS custom properties as fallback
 - Extracts: custom colors, spacing scale, font families, border radius
 - Auto-detection: looks for tailwind config in standard locations
-- Produces valid `.vizlintrc.json` designSystem section
+- Produces valid `.deslintrc.json` designSystem section
 - Merged with any manually defined config (manual overrides auto-imported)
 
 **Tasks:**
@@ -276,13 +276,13 @@ Zero manual configuration for projects with existing Tailwind setup.
 4. Build merge logic: auto-imported tokens + manual overrides
 5. Create auto-detection: search for tailwind config files in project root
 6. Write tests against real Tailwind v3 and v4 project fixtures
-7. Export `importTailwindConfig()` from `@vizlint/shared` for use in init wizard and rules
+7. Export `importTailwindConfig()` from `@deslint/shared` for use in init wizard and rules
 
 **Test Cases:**
 - TEST: Reads custom colors from `tailwind.config.js` `theme.extend.colors`
 - TEST: Reads custom colors from `@theme { --color-brand: #1E3A5F }` in CSS
 - TEST: Reads CSS custom properties from `:root` block
-- TEST: Manual `.vizlintrc.json` colors override auto-imported colors
+- TEST: Manual `.deslintrc.json` colors override auto-imported colors
 - TEST: Returns empty designSystem gracefully if no Tailwind config found
 - TEST: Handles `tailwind.config.ts` (TypeScript config) correctly
 
@@ -305,11 +305,11 @@ This is aggressive for Week 1. If VIZ-001B slips, it moves to Sprint 2 without b
 
 **Add to VIZ-017 acceptance criteria:**
 
-- Init wizard asks "How strict should Vizlint be?" with three options:
+- Init wizard asks "How strict should Deslint be?" with three options:
   - Prototype (relaxed — ideal for vibe coding and rapid iteration)
   - Production (strict — for shipping to real users)
   - Custom (configure each rule individually)
-- Selected profile written to `.vizlintrc.json` as active profile
+- Selected profile written to `.deslintrc.json` as active profile
 - Init wizard runs Tailwind auto-import and shows discovered tokens
 - Init wizard shows estimated Design Health Score preview: "Based on a quick scan, your project scores ~72/100"
 
@@ -320,7 +320,7 @@ This is aggressive for Week 1. If VIZ-001B slips, it moves to Sprint 2 without b
 
 ---
 
-## NEW SECTION: Why Vizlint Survives AI Model Improvement
+## NEW SECTION: Why Deslint Survives AI Model Improvement
 
 This section documents the strategic positioning for investor/advisor conversations and the landing page.
 
@@ -331,39 +331,39 @@ This section documents the strategic positioning for investor/advisor conversati
 
 ### What AI models CANNOT do (structural limitations):
 
-1. **Know your design system permanently.** Every prompt starts fresh. Vizlint's `.vizlintrc.json` persists across every developer, every tool, every CI run.
+1. **Know your design system permanently.** Every prompt starts fresh. Deslint's `.deslintrc.json` persists across every developer, every tool, every CI run.
 
-2. **Enforce consistency across a team.** Developer A uses Claude, Developer B uses Cursor, Developer C uses Copilot. Each gets different output. Vizlint is the single source of truth that normalizes all of them.
+2. **Enforce consistency across a team.** Developer A uses Claude, Developer B uses Cursor, Developer C uses Copilot. Each gets different output. Deslint is the single source of truth that normalizes all of them.
 
-3. **Run deterministically in CI/CD.** You can't put "ask Claude if this PR looks good" in a GitHub Action. Vizlint is a binary pass/fail gate — reproducible, no API costs, no rate limits.
+3. **Run deterministically in CI/CD.** You can't put "ask Claude if this PR looks good" in a GitHub Action. Deslint is a binary pass/fail gate — reproducible, no API costs, no rate limits.
 
-4. **Prevent drift over time.** After 50 prompts, AI-generated code drifts from the original design system. Vizlint catches drift on every commit.
+4. **Prevent drift over time.** After 50 prompts, AI-generated code drifts from the original design system. Deslint catches drift on every commit.
 
-5. **Provide an audit trail.** Regulated industries need evidence that design standards were checked. Vizlint produces SARIF reports, Design Health Score history, and inline ignore comments with mandatory reasons.
+5. **Provide an audit trail.** Regulated industries need evidence that design standards were checked. Deslint produces SARIF reports, Design Health Score history, and inline ignore comments with mandatory reasons.
 
 ### The positioning:
 
 ```
 AI models improve generation quality (input side)
-Vizlint ensures output quality (output side)
+Deslint ensures output quality (output side)
 
 Better AI = better first drafts
-Vizlint = guarantee that the final output meets YOUR standards
+Deslint = guarantee that the final output meets YOUR standards
 
-They are complementary. Better AI doesn't eliminate Vizlint —
-it makes Vizlint's job easier (fewer violations to catch)
+They are complementary. Better AI doesn't eliminate Deslint —
+it makes Deslint's job easier (fewer violations to catch)
 while the need for enforcement remains permanent.
 ```
 
 ### Analogy for the landing page:
 
-"TypeScript didn't kill the need for unit tests. Better code generators don't kill the need for quality gates. Vizlint is the design quality gate that ensures every component — whether written by a human, Claude, Cursor, or Copilot — meets your team's standards."
+"TypeScript didn't kill the need for unit tests. Better code generators don't kill the need for quality gates. Deslint is the design quality gate that ensures every component — whether written by a human, Claude, Cursor, or Copilot — meets your team's standards."
 
 ---
 
 ## REVISED COMPETITIVE POSITIONING TABLE
 
-| Capability | Vizlint | Claude/GPT | Buoy.design | eslint-plugin-tailwindcss | CodeRabbit |
+| Capability | Deslint | Claude/GPT | Buoy.design | eslint-plugin-tailwindcss | CodeRabbit |
 |------------|:---:|:---:|:---:|:---:|:---:|
 | Knows YOUR design system | ✅ (config) | ❌ (per-prompt) | ✅ (config) | ❌ | ❌ |
 | Deterministic (same result every time) | ✅ | ❌ | ✅ | ✅ | ❌ |
@@ -390,8 +390,8 @@ while the need for enforcement remains permanent.
 ## NEW SECTION: Product Vision — Beyond a Linter (v1.2 Strategic Expansion)
 
 > Added April 2026 based on market research and strategic analysis.
-> This section expands Vizlint's scope from "ESLint plugin" to "design quality infrastructure."
-> See VIZLINT-EXECUTION.md for implementation staging and gating criteria.
+> This section expands Deslint's scope from "ESLint plugin" to "design quality infrastructure."
+> See DESLINT-EXECUTION.md for implementation staging and gating criteria.
 
 ### The Market Opportunity (April 2026)
 
@@ -418,23 +418,23 @@ L1-L2 are built. L3-L5 are the path from "nice linter" to "acquisition-worthy in
 
 **Anthropic / Claude Code:**
 - Code Review (March 2026) explicitly ignores style. `frontend-design` skill is guidance-only. IBM research says LLM review + deterministic static analysis = optimal.
-- Vizlint = the deterministic design quality enforcement layer. Hook-integrated (auto-lint after edits). MCP Apps UI (live score in chat). "Skills + Enforcement" pair.
+- Deslint = the deterministic design quality enforcement layer. Hook-integrated (auto-lint after edits). MCP Apps UI (live score in chat). "Skills + Enforcement" pair.
 
 **Figma:**
 - MCP server provides tokens TO code generation but has zero output validation. No "enforcement" story. Design-code drift is undetected.
-- Vizlint = the verification layer completing their pipeline. Figma MCP → AI generates → Vizlint validates. Design-code alignment metric.
+- Deslint = the verification layer completing their pipeline. Figma MCP → AI generates → Deslint validates. Design-code alignment metric.
 
 **Lovable / Bolt / v0 / Google Stitch:**
 - Users burn credits in debugging loops from design quality problems. Lovable: security incidents. Bolt: 31% enterprise success rate. Stitch: "falls apart in existing design systems."
-- Vizlint = built-in quality gate reducing credit waste. AI self-corrects before user sees bad version. Design Quality Score as a product feature.
+- Deslint = built-in quality gate reducing credit waste. AI self-corrects before user sees bad version. Design Quality Score as a product feature.
 
 **Enterprise Design System Teams:**
 - Every enterprise builds bespoke ESLint rules. Design debt measured via manual audits. Component usage tracked but quality is not.
-- Vizlint = general-purpose compliance linter. Design debt as a number. Component quality analytics. DORA-equivalent metrics for design.
+- Deslint = general-purpose compliance linter. Design debt as a number. Component quality analytics. DORA-equivalent metrics for design.
 
 ### Positioning
 
-> "Visual regression tools tell you the screenshot looks wrong. Vizlint tells you why — and fixes it."
+> "Visual regression tools tell you the screenshot looks wrong. Deslint tells you why — and fixes it."
 
 Screenshot diffing (Applitools, Percy, Chromatic) is a $500M+ category that operates at the pixel level.
 Code-level design quality enforcement is a **zero-player category** — no one owns it yet.
@@ -443,7 +443,7 @@ Code-level design quality enforcement is a **zero-player category** — no one o
 
 ## NEW SECTION: Expanded Capability Roadmap
 
-These capabilities are staged per VIZLINT-EXECUTION.md Stages 2-4. They do NOT override the trust-first validation approach.
+These capabilities are staged per DESLINT-EXECUTION.md Stages 2-4. They do NOT override the trust-first validation approach.
 
 ### Stage 2 Capabilities (Post-Validation)
 
@@ -491,7 +491,7 @@ Per-file linting is commodity. Project-wide analysis is the differentiator:
 > Quality Gates (VIZ-027), Trend Command (VIZ-028), W3C Design Tokens
 > import (VIZ-029), WCAG 2.2 Compliance Report (VIZ-030). All were
 > shipped opt-in / additive — zero breaking changes for v0.1.0 users.
-> See `VIZLINT-EXECUTION.md` Section 15 for the full 7-moat plan and
+> See `DESLINT-EXECUTION.md` Section 15 for the full 7-moat plan and
 > Phase 2/3 scheduling.
 
 
@@ -502,7 +502,7 @@ Per-file linting is commodity. Project-wide analysis is the differentiator:
   "hooks": {
     "PostToolUse": [{
       "matcher": "Edit|Write",
-      "command": "npx vizlint scan --format json --quiet"
+      "command": "npx deslint scan --format json --quiet"
     }]
   }
 }
@@ -514,7 +514,7 @@ Render a live Design Health Score dashboard inside Claude Code / Cursor chat win
 
 #### Embeddable Core Engine
 ```typescript
-import { analyze } from '@vizlint/core';
+import { analyze } from '@deslint/core';
 
 const result = analyze(sourceCode, {
   framework: 'react',
@@ -527,9 +527,9 @@ Pure function API for platforms (Lovable, Bolt, v0, Stitch) to integrate into th
 
 #### Component Library Presets
 ```json
-// .vizlintrc.json
+// .deslintrc.json
 {
-  "extends": ["vizlint:shadcn-ui"]
+  "extends": ["deslint:shadcn-ui"]
 }
 ```
 Reduces false positives by knowing which classes come from the library vs. custom code. Presets for: shadcn/ui, MUI, Chakra, Radix, Ant Design.
@@ -551,7 +551,7 @@ Trend: ↑ 21% over 4 weeks — design system adoption is declining
 
 ## UPDATED COMPETITIVE POSITIONING TABLE (April 2026)
 
-| Capability | Vizlint | jsx-a11y (123M/mo) | tailwindcss plugin (5.9M/mo) | CodeRabbit ($88M) | Qodo ($70M) | Applitools/Percy |
+| Capability | Deslint | jsx-a11y (123M/mo) | tailwindcss plugin (5.9M/mo) | CodeRabbit ($88M) | Qodo ($70M) | Applitools/Percy |
 |------------|:---:|:---:|:---:|:---:|:---:|:---:|
 | Design token enforcement | ✅ | ❌ | Partial | ❌ | ❌ | ❌ |
 | Accessibility (WCAG) | ✅ (expanding) | ✅ (React only) | ❌ | ❌ | ❌ | ❌ |
@@ -581,7 +581,7 @@ Trend: ↑ 21% over 4 weeks — design system adoption is declining
 | Phase 1 (Sprints 1–4) | 49 | 54 | 61 | Foundation — COMPLETE |
 | Phase 2 (Sprints 5–8) | 47 | 50 | 50 | CLI & Score — COMPLETE |
 | Phase 3 (Sprints 9–12) | 47 | 47 | 47 | MCP & CI/CD — COMPLETE |
-| Phase 4 (Sprints 13–16) | 44 | 44 | 44 | Deferred per VIZLINT-EXECUTION.md |
+| Phase 4 (Sprints 13–16) | 44 | 44 | 44 | Deferred per DESLINT-EXECUTION.md |
 | **Stage 2 new work** | — | — | ~65 | A11y + tokens + cross-file + MCP validation |
 | **Stage 3 new work** | — | — | ~80 | Hooks + embeddable + reports + VS Code |
 | **Total built** | — | — | **202** | Sprints 1-12 complete |
@@ -593,9 +593,9 @@ Trend: ↑ 21% over 4 weeks — design system adoption is declining
 
 Your complete implementation reference is these documents read in order:
 
-1. **VIZLINT-EXECUTION.md** — **READ FIRST.** Active execution plan. Overrides all sprint plan sequencing. Contains product vision, staging, gating criteria.
-2. **vizlint-sprint-plan.docx** — Original 16-sprint plan with all user stories (Sprints 1-12 complete)
-3. **vizlint-sprint-plan-v1.1-update.md** — Three-mode model, ESLint v10, Tailwind v4, Angular, fixability matrix
-4. **vizlint-sprint-plan-v1.2-update.md** (this document) — Five-level user control, no-AI architecture, Tailwind auto-import, L3-L5 product vision, strategic positioning, expanded roadmap
+1. **DESLINT-EXECUTION.md** — **READ FIRST.** Active execution plan. Overrides all sprint plan sequencing. Contains product vision, staging, gating criteria.
+2. **deslint-sprint-plan.docx** — Original 16-sprint plan with all user stories (Sprints 1-12 complete)
+3. **deslint-sprint-plan-v1.1-update.md** — Three-mode model, ESLint v10, Tailwind v4, Angular, fixability matrix
+4. **deslint-sprint-plan-v1.2-update.md** (this document) — Five-level user control, no-AI architecture, Tailwind auto-import, L3-L5 product vision, strategic positioning, expanded roadmap
 
-The trust-first approach remains: validate first, expand second. But the expansion now has a clear destination — L3-L5 capabilities that make Vizlint acquisition-worthy.
+The trust-first approach remains: validate first, expand second. But the expansion now has a clear destination — L3-L5 capabilities that make Deslint acquisition-worthy.

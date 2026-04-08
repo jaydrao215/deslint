@@ -4,13 +4,13 @@
 
 ### VIZ-001: Monorepo & CI/CD Setup + Config Schema
 
-**Did:** Fixed eslint-plugin build errors (exported 3 unused constants), fixed 2 broken test assertions (missing suggestions/output properties), added .gitignore, confirmed pnpm install/build/test all work cleanly. Created @vizlint/shared package with .vizlintrc.json Zod schema covering all 5 user control levels (rules, designSystem, ignore, profiles, $schema). 15 schema validation tests passing. Added GitHub Actions CI workflow (Node 20+22, build/typecheck/test). 28/28 tests green across 2 packages.
+**Did:** Fixed eslint-plugin build errors (exported 3 unused constants), fixed 2 broken test assertions (missing suggestions/output properties), added .gitignore, confirmed pnpm install/build/test all work cleanly. Created @deslint/shared package with .deslintrc.json Zod schema covering all 5 user control levels (rules, designSystem, ignore, profiles, $schema). 15 schema validation tests passing. Added GitHub Actions CI workflow (Node 20+22, build/typecheck/test). 28/28 tests green across 2 packages.
 **Will do:** VIZ-001B Tailwind config auto-import utility
 **Blockers:** None
 
 ### VIZ-001B: Tailwind Config Auto-Import Utility
 
-**Did:** Built Tailwind v3 config reader (parses theme.extend for colors, fonts, spacing, borderRadius with nested color flattening). Built Tailwind v4 @theme CSS parser (extracts --color-*, --font-*, --spacing-*, --radius-* tokens). Built CSS :root custom property parser as fallback. Merge logic ensures manual .vizlintrc.json overrides auto-imported tokens. Auto-detection searches standard config file locations (tailwind.config.ts/js/mjs/cjs + common CSS entry points). Exported importTailwindConfig() from @vizlint/shared. 21 new tests against real v3/v4 fixtures. 49/49 tests green across monorepo.
+**Did:** Built Tailwind v3 config reader (parses theme.extend for colors, fonts, spacing, borderRadius with nested color flattening). Built Tailwind v4 @theme CSS parser (extracts --color-*, --font-*, --spacing-*, --radius-* tokens). Built CSS :root custom property parser as fallback. Merge logic ensures manual .deslintrc.json overrides auto-imported tokens. Auto-detection searches standard config file locations (tailwind.config.ts/js/mjs/cjs + common CSS entry points). Exported importTailwindConfig() from @deslint/shared. 21 new tests against real v3/v4 fixtures. 49/49 tests green across monorepo.
 **Will do:** VIZ-002 first rule: no-arbitrary-colors with full v4 support and auto-fix
 **Blockers:** None
 
@@ -36,15 +36,15 @@
 
 ### Gap Audit Fix — Cross-Sprint
 
-**Did:** Full audit against base .docx + v1.1 + v1.2 revealed 13 gaps. Fixed all critical ones: added @vizlint/cli and @vizlint/mcp package scaffolds (VIZ-001 base requirement). Added .nvmrc, LICENSE (MIT), CONTRIBUTING.md, CHANGELOG.md (VIZ-001 base + DoD). Added CSS custom property detection `bg-[var(--random)]` for Buoy competitive parity (VIZ-002 v1.1 requirement). Added customScale option to no-arbitrary-spacing (VIZ-003 base requirement). Added detectFramework() utility with 8 tests — detects Angular/React/Vue/Svelte from package.json (VIZ-002B v1.1 requirement). Added eslint.config.js for self-dogfooding + lint step in CI (DoD requirement). Added rule benchmark script with 2ms budget in CI (v1.1 DoD requirement). Converted .docx to .txt for future reference. 176/176 tests green across 4 packages.
+**Did:** Full audit against base .docx + v1.1 + v1.2 revealed 13 gaps. Fixed all critical ones: added @deslint/cli and @deslint/mcp package scaffolds (VIZ-001 base requirement). Added .nvmrc, LICENSE (MIT), CONTRIBUTING.md, CHANGELOG.md (VIZ-001 base + DoD). Added CSS custom property detection `bg-[var(--random)]` for Buoy competitive parity (VIZ-002 v1.1 requirement). Added customScale option to no-arbitrary-spacing (VIZ-003 base requirement). Added detectFramework() utility with 8 tests — detects Angular/React/Vue/Svelte from package.json (VIZ-002B v1.1 requirement). Added eslint.config.js for self-dogfooding + lint step in CI (DoD requirement). Added rule benchmark script with 2ms budget in CI (v1.1 DoD requirement). Converted .docx to .txt for future reference. 176/176 tests green across 4 packages.
 **Will do:** Sprint 3: VIZ-004, VIZ-006, VIZ-008
 **Blockers:** None
 
 ### VIZ-005: Landing Page v1
 
-**Did:** Scaffolded `apps/docs` as a Next.js 15 static export landing page with full Tailwind CSS and the Vizlint design system (Inter/JetBrains Mono, #1A5276 primary, pass/fail/warn accents). Built all acceptance-criteria sections: Hero with `npx vizlint` install command; Before/After code comparison showing real rule detections with 6 violations and auto-fix output; 3 Feature Blocks (Spacing · Typography · Colors) with examples; CTA section with npm install command; Footer with GitHub, Twitter/X links and MIT badge. Mobile-responsive via Tailwind breakpoints. Static export (`output: 'export'`) for CDN/Framer custom domain hosting. Fixed turbo.json outputs to include `.next/**` and `out/**`. Typecheck clean. 176/176 tests green.
+**Did:** Scaffolded `apps/docs` as a Next.js 15 static export landing page with full Tailwind CSS and the Deslint design system (Inter/JetBrains Mono, #1A5276 primary, pass/fail/warn accents). Built all acceptance-criteria sections: Hero with `npx deslint` install command; Before/After code comparison showing real rule detections with 6 violations and auto-fix output; 3 Feature Blocks (Spacing · Typography · Colors) with examples; CTA section with npm install command; Footer with GitHub, Twitter/X links and MIT badge. Mobile-responsive via Tailwind breakpoints. Static export (`output: 'export'`) for CDN/Framer custom domain hosting. Fixed turbo.json outputs to include `.next/**` and `out/**`. Typecheck clean. 176/176 tests green.
 **Will do:** VIZ-006 responsive-required rule
-**Blockers:** Domain purchase (vizlint.dev) and Framer/CDN hosting setup are external tasks
+**Blockers:** Domain purchase (deslint.com) and Framer/CDN hosting setup are external tasks
 
 ## Sprint 3 — 2026-04-01
 
@@ -62,9 +62,9 @@
 
 ### VIZ-008: npm Publish Pipeline
 
-**Did:** Wrote comprehensive README for `eslint-plugin-vizlint` with all 4 rules documented (description, detect patterns, before/after examples, full options reference, framework support matrix). Created `.github/workflows/release.yml`: tag push (`v*.*.*`) → frozen install → build → test → benchmark → publish `eslint-plugin-vizlint` + `@vizlint/shared` to npm → create GitHub Release from CHANGELOG entry. Follows flat-config-only requirement (v1.1: no legacy .eslintrc mention). 191/191 tests green across all packages.
+**Did:** Wrote comprehensive README for `eslint-plugin-deslint` with all 4 rules documented (description, detect patterns, before/after examples, full options reference, framework support matrix). Created `.github/workflows/release.yml`: tag push (`v*.*.*`) → frozen install → build → test → benchmark → publish `eslint-plugin-deslint` + `@deslint/shared` to npm → create GitHub Release from CHANGELOG entry. Follows flat-config-only requirement (v1.1: no legacy .eslintrc mention). 191/191 tests green across all packages.
 **Will do:** Sprint 4: VIZ-007 consistent-component-spacing
-**Blockers:** npm org @vizlint must be created and NPM_TOKEN secret added to GitHub repo before first publish
+**Blockers:** npm org @deslint must be created and NPM_TOKEN secret added to GitHub repo before first publish
 
 ## Sprint 4 — 2026-04-01
 
@@ -76,7 +76,7 @@
 
 ### VIZ-010 + VIZ-010B: Cursor Rules, CLAUDE.md, AGENTS.md Templates + generate-config
 
-**Did:** Built three template generators in `packages/cli/src/templates/`: `generateCursorRules()` produces `.cursor/rules/vizlint-design-quality.mdc` with MDC frontmatter (description, globs, alwaysApply); `generateClaudeMd()` produces CLAUDE.md with checkpoint-gated workflow; `generateAgentsMd()` produces cross-tool AGENTS.md. All three templates cover all 5 Vizlint rules and include project-specific design tokens (colors, spacing, fonts) when a DesignSystem is provided. Implemented `generate-config` command module (VIZ-010B): `loadDesignSystem()` merges .vizlintrc.json + Tailwind auto-import; `generateConfig(target, ds)` dispatches to correct template; `getOutputFilename(target)` returns default paths. 20 tests covering all three generators with/without design systems, cross-template validation. 231/231 tests green.
+**Did:** Built three template generators in `packages/cli/src/templates/`: `generateCursorRules()` produces `.cursor/rules/deslint-design-quality.mdc` with MDC frontmatter (description, globs, alwaysApply); `generateClaudeMd()` produces CLAUDE.md with checkpoint-gated workflow; `generateAgentsMd()` produces cross-tool AGENTS.md. All three templates cover all 5 Deslint rules and include project-specific design tokens (colors, spacing, fonts) when a DesignSystem is provided. Implemented `generate-config` command module (VIZ-010B): `loadDesignSystem()` merges .deslintrc.json + Tailwind auto-import; `generateConfig(target, ds)` dispatches to correct template; `getOutputFilename(target)` returns default paths. 20 tests covering all three generators with/without design systems, cross-template validation. 231/231 tests green.
 **Will do:** Sprint 5: VIZ-012 CLI + VIZ-013 Design Health Score + VIZ-014 a11y-color-contrast
 **Blockers:** VIZ-009 (Stripe service page) and VIZ-011 (outreach) are external marketing tasks requiring Stripe account, domain hosting, and social media
 
@@ -86,21 +86,21 @@
 
 **Did:** Full CLI implementation with Commander.js. Three execution modes per v1.1 spec:
 
-**Scan mode** (`vizlint scan [dir]`): file discovery with glob patterns, `.vizlintignore` support, and config ignore patterns. ESLint programmatic integration running all 6 Vizlint rules via overrideConfig. Three output formatters: text (chalk color-coded with score bars), JSON (structured report schema), and SARIF 2.1.0. `--min-score` threshold for CI/CD pass/fail gating. `--profile` support for severity profiles from .vizlintrc.json. Score history saved to `.vizlint/history.json`. Exit code 1 on errors or score below threshold.
+**Scan mode** (`deslint scan [dir]`): file discovery with glob patterns, `.deslintignore` support, and config ignore patterns. ESLint programmatic integration running all 6 Deslint rules via overrideConfig. Three output formatters: text (chalk color-coded with score bars), JSON (structured report schema), and SARIF 2.1.0. `--min-score` threshold for CI/CD pass/fail gating. `--profile` support for severity profiles from .deslintrc.json. Score history saved to `.deslint/history.json`. Exit code 1 on errors or score below threshold.
 
-**Fix --all** (`vizlint fix --all`): applies all auto-fixable violations at once via ESLint's fix API. `--dry-run` shows unified diff without modifying files.
+**Fix --all** (`deslint fix --all`): applies all auto-fixable violations at once via ESLint's fix API. `--dry-run` shows unified diff without modifying files.
 
-**Fix --interactive** (`vizlint fix --interactive`): walks through violations one by one using @clack/prompts. Per-violation actions: apply, skip, apply-all-similar, ignore-rule, quit. Shows category and file location for each violation.
+**Fix --interactive** (`deslint fix --interactive`): walks through violations one by one using @clack/prompts. Per-violation actions: apply, skip, apply-all-similar, ignore-rule, quit. Shows category and file location for each violation.
 
-**Generate-config** (`vizlint generate-config <target>`): wired up as CLI command with `--output` and `--stdout` options.
+**Generate-config** (`deslint generate-config <target>`): wired up as CLI command with `--output` and `--stdout` options.
 
-Dependencies added: commander, chalk, @clack/prompts, eslint, glob, eslint-plugin-vizlint (workspace). 54 CLI tests covering discovery (9), score algorithm (12), formatters (7), CLI commands (5), generate-config (19), lint-runner (2). All passing.
+Dependencies added: commander, chalk, @clack/prompts, eslint, glob, eslint-plugin-deslint (workspace). 54 CLI tests covering discovery (9), score algorithm (12), formatters (7), CLI commands (5), generate-config (19), lint-runner (2). All passing.
 **Will do:** VIZ-013 Design Health Score
 **Blockers:** None
 
 ### VIZ-013: Design Health Score Algorithm
 
-**Did:** Implemented scoring engine in `packages/cli/src/score.ts`. Formula: 5 equal-weighted categories (colors, spacing, typography, responsive, consistency) at 20% each. Per-category score: `max(0, 100 - (violations/files * 50))` — so ~1 violation per file yields ~50% category score. Overall = weighted average of category scores, rounded. Grades: pass (≥80), warn (60-79), fail (<60). Custom weights supported. Score history appended to `.vizlint/history.json` as JSON array with timestamp, scores, file/violation counts. 12 tests covering zero violations (100), proportional decrease, clamping to 0, grading thresholds, custom weights, edge cases (zero files, single file).
+**Did:** Implemented scoring engine in `packages/cli/src/score.ts`. Formula: 5 equal-weighted categories (colors, spacing, typography, responsive, consistency) at 20% each. Per-category score: `max(0, 100 - (violations/files * 50))` — so ~1 violation per file yields ~50% category score. Overall = weighted average of category scores, rounded. Grades: pass (≥80), warn (60-79), fail (<60). Custom weights supported. Score history appended to `.deslint/history.json` as JSON array with timestamp, scores, file/violation counts. 12 tests covering zero violations (100), proportional decrease, clamping to 0, grading thresholds, custom weights, edge cases (zero files, single file).
 **Will do:** VIZ-014 a11y-color-contrast
 **Blockers:** None
 
@@ -146,17 +146,17 @@ Both rules registered in plugin index.ts with recommended (warn) and strict (err
 
 ### VIZ-017: CLI Init Command & Config Wizard
 
-**Did:** Implemented `npx vizlint init` interactive setup wizard using @clack/prompts. Steps: (1) check for existing .vizlintrc.json with overwrite confirmation, (2) auto-detect framework via `detectFramework()`, (3) Tailwind config auto-import showing token counts, (4) profile selection (prototype/production/custom) with all 10 rules pre-configured, (5) build and write .vizlintrc.json with design system tokens and default ignore patterns, (6) show ESLint flat config instructions, (7) optional quick-scan preview (first 20 files) with Design Health Score. Default ignore patterns: node_modules, dist, build, .next, test/story files. Wired into CLI as `vizlint init` command.
+**Did:** Implemented `npx deslint init` interactive setup wizard using @clack/prompts. Steps: (1) check for existing .deslintrc.json with overwrite confirmation, (2) auto-detect framework via `detectFramework()`, (3) Tailwind config auto-import showing token counts, (4) profile selection (prototype/production/custom) with all 10 rules pre-configured, (5) build and write .deslintrc.json with design system tokens and default ignore patterns, (6) show ESLint flat config instructions, (7) optional quick-scan preview (first 20 files) with Design Health Score. Default ignore patterns: node_modules, dist, build, .next, test/story files. Wired into CLI as `deslint init` command.
 **Will do:** VIZ-019 documentation site
 **Blockers:** None
 
 ### VIZ-019: Documentation Site
 
 **Did:** Built documentation pages under `apps/docs/src/app/docs/`:
-- **Layout** (`layout.tsx`): Header with nav links (Getting Started, Configuration, Rules Reference, GitHub), prose-styled content area with Vizlint design system colors.
+- **Layout** (`layout.tsx`): Header with nav links (Getting Started, Configuration, Rules Reference, GitHub), prose-styled content area with Deslint design system colors.
 - **Index** (`page.tsx`): Card grid linking to 3 sub-pages.
 - **Getting Started** (`getting-started/page.tsx`): Installation, ESLint flat config setup, init wizard, first scan, fix commands (interactive/all/dry-run), CI/CD GitHub Actions integration, framework support matrix, Tailwind v3+v4 support.
-- **Configuration** (`configuration/page.tsx`): Full .vizlintrc.json schema example, five levels of control (inline ignore, rule config, design system definition, ignore patterns, severity profiles), Tailwind auto-import documentation.
+- **Configuration** (`configuration/page.tsx`): Full .deslintrc.json schema example, five levels of control (inline ignore, rule config, design system definition, ignore patterns, severity profiles), Tailwind auto-import documentation.
 - **Rules Reference** (`rules/page.tsx`): All 10 rules documented with descriptions, fixable/suggestions status, options schema, and before/after examples. Organized by category: colors (3), spacing (1), typography (1), responsive (1), consistency (4).
 
 Docs build generates 8 static pages (6 routes). All 9 monorepo tasks pass (332 plugin tests + 44 shared + 1 mcp + docs build).
@@ -173,20 +173,20 @@ Docs build generates 8 static pages (6 routes). All 9 monorepo tasks pass (332 p
 
 ## Future TODO (Pre-Launch Checklist)
 
-- [ ] Create `vizlint` GitHub organization
-- [ ] Transfer repo from `jaydrao215/vizlint` to `vizlint/vizlint` (public)
-- [ ] Create `vizlint/vizlint.dev` private repo for marketing site
-- [ ] Extract `apps/docs` marketing pages (hero, CTA, pricing) into `vizlint.dev`
+- [ ] Create `deslint` GitHub organization
+- [ ] Transfer repo from `jaydrao215/deslint` to `deslint/deslint` (public)
+- [ ] Create `deslint/deslint.com` private repo for marketing site
+- [ ] Extract `apps/docs` marketing pages (hero, CTA, pricing) into `deslint.com`
 - [ ] Keep developer docs (rules, config, getting-started) in main repo
-- [ ] Set up npm org `@vizlint` and add NPM_TOKEN to GitHub secrets
-- [ ] Configure Vercel/Netlify deploy for `vizlint.dev`
-- [ ] Purchase `vizlint.dev` domain
+- [ ] Set up npm org `@deslint` and add NPM_TOKEN to GitHub secrets
+- [ ] Configure Vercel/Netlify deploy for `deslint.com`
+- [ ] Purchase `deslint.com` domain
 
 ## Sprint 8 — 2026-04-01
 
 ### VIZ-020 + VIZ-021: Phase 2 Wrap (Code Portions)
 
-**Did:** Implemented the code-deliverable portion of Sprint 8 per v1.1 spec: added "Report False Positive" link (`https://github.com/vizlint/vizlint/issues/new?labels=false-positive`) to CLI text formatter output — appears after violation listing with a separator line. Added matching "Report a False Positive" section to the docs rules reference page with description and GitHub link. Remaining Sprint 8 items (metrics dashboard, community setup, business review) are operational tasks outside the codebase.
+**Did:** Implemented the code-deliverable portion of Sprint 8 per v1.1 spec: added "Report False Positive" link (`https://github.com/deslint/deslint/issues/new?labels=false-positive`) to CLI text formatter output — appears after violation listing with a separator line. Added matching "Report a False Positive" section to the docs rules reference page with description and GitHub link. Remaining Sprint 8 items (metrics dashboard, community setup, business review) are operational tasks outside the codebase.
 **Will do:** Sprint 9 MCP server
 **Blockers:** Metrics dashboard (VIZ-020) and community setup (VIZ-021) require GitHub org, npm publish, and external tooling
 
@@ -194,9 +194,9 @@ Docs build generates 8 static pages (6 routes). All 9 monorepo tasks pass (332 p
 
 ### VIZ-022: MCP Server Core Architecture
 
-**Did:** Built full MCP server implementation in `@vizlint/mcp` using `@modelcontextprotocol/sdk` with stdio transport (JSON-RPC 2.0). Three tools exposed:
+**Did:** Built full MCP server implementation in `@deslint/mcp` using `@modelcontextprotocol/sdk` with stdio transport (JSON-RPC 2.0). Three tools exposed:
 
-**`analyze_file`**: Accepts file path, runs ESLint programmatically with all 10 Vizlint rules, returns violations with line numbers, severity, rule IDs, fix data, and a file-level score (0-100). Never sends source code externally.
+**`analyze_file`**: Accepts file path, runs ESLint programmatically with all 10 Deslint rules, returns violations with line numbers, severity, rule IDs, fix data, and a file-level score (0-100). Never sends source code externally.
 
 **`analyze_project`**: Scans entire project using CLI's `discoverFiles()` + `runLint()` + `calculateScore()` pipeline. Returns Design Health Score with per-category breakdowns (colors, spacing, typography, responsive, consistency), grade, and top 10 violations. Configurable `maxFiles` limit (default 200).
 
@@ -208,7 +208,7 @@ Server architecture: `McpServer` from SDK with zod schema validation on all tool
 
 ### VIZ-023: MCP Install CLI for Cursor & Claude Code
 
-**Did:** Built `npx @vizlint/mcp install` and `npx @vizlint/mcp uninstall` commands. Platform-aware config path detection: Claude Desktop (macOS: ~/Library/Application Support/Claude/, Windows: AppData/Roaming/Claude/, Linux: ~/.config/Claude/) and Cursor (~/.cursor/mcp.json). Install injects `vizlint` server entry into `mcpServers` in the appropriate JSON config file, preserving existing entries. Uninstall cleanly removes it. Falls back to manual instructions if no editor detected. CLI entry point at `src/cli.ts` with bin entry in package.json (`vizlint-mcp`). 3 install/config tests. 10/10 MCP tests green. All 9 monorepo tasks pass.
+**Did:** Built `npx @deslint/mcp install` and `npx @deslint/mcp uninstall` commands. Platform-aware config path detection: Claude Desktop (macOS: ~/Library/Application Support/Claude/, Windows: AppData/Roaming/Claude/, Linux: ~/.config/Claude/) and Cursor (~/.cursor/mcp.json). Install injects `deslint` server entry into `mcpServers` in the appropriate JSON config file, preserving existing entries. Uninstall cleanly removes it. Falls back to manual instructions if no editor detected. CLI entry point at `src/cli.ts` with bin entry in package.json (`deslint-mcp`). 3 install/config tests. 10/10 MCP tests green. All 9 monorepo tasks pass.
 **Will do:** Sprint 10 planning
 **Blockers:** None
 
@@ -237,7 +237,7 @@ All 4 rules registered in plugin index, recommended/strict configs, lint-runner 
 **Did:** Built composite Node.js 20 GitHub Action in `action/` directory:
 
 - **Changed file detection**: Fetches PR diff via GitHub API with pagination, filters by configurable frontend file patterns (`**/*.tsx`, `**/*.jsx`, `**/*.vue`, `**/*.svelte`, `**/*.html`)
-- **Scan engine**: Runs all 14 Vizlint rules via ESLint programmatic API, computes Design Health Score with 5 category breakdowns (20% each)
+- **Scan engine**: Runs all 14 Deslint rules via ESLint programmatic API, computes Design Health Score with 5 category breakdowns (20% each)
 - **PR comment**: Markdown-formatted report with score badge, metrics table, category breakdown, top violations. Comment deduplication via HTML marker — updates existing comment on subsequent pushes
 - **Check status**: Configurable `min-score` threshold; fails PR check if score drops below
 - **Inputs**: `github-token`, `min-score`, `config-path`, `working-directory`, `file-patterns`
@@ -253,7 +253,7 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 
 ### Vintor Real-World Validation (Stage 1)
 
-**Did:** First real-world validation of all 14 Vizlint rules against the Vintor Angular 21 frontend (73 files, Tailwind v4.2).
+**Did:** First real-world validation of all 14 Deslint rules against the Vintor Angular 21 frontend (73 files, Tailwind v4.2).
 
 **Initial scan:** 187 violations, 82% false positive rate — unacceptable. Found and fixed 7 bugs:
 
@@ -274,11 +274,11 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 
 ### OSS Validation (Stage 2) — nextjs/saas-starter + shadcn-ui/taxonomy
 
-**Did:** Validated Vizlint on 2 real open-source Next.js + shadcn/ui projects. Found and fixed 6 additional bugs (total: 13 bugs fixed across validation sprint):
+**Did:** Validated Deslint on 2 real open-source Next.js + shadcn/ui projects. Found and fixed 6 additional bugs (total: 13 bugs fixed across validation sprint):
 
 8. **TypeScript parser missing** (P0) — All `.tsx`/`.ts` files failed to parse with "Unexpected token" errors. The lint-runner used Espree for ALL files including TypeScript. Added `@typescript-eslint/parser` for `.tsx`/`.ts` files.
 9. **scan command not passing cwd** (P0) — `scan` CLI command computed correct `cwd` but didn't pass it to `runLint()`. ESLint defaulted to a subdirectory and reported all other files as "outside base path". Fixed: pass `cwd` in the `runLint` call.
-10. **Third-party rule leakage** (P1) — `eslint-disable-next-line @next/next/no-img-element` comments caused ESLint to report "rule not found" violations. Fixed: `aggregateResults()` now filters to `vizlint/*` rules only.
+10. **Third-party rule leakage** (P1) — `eslint-disable-next-line @next/next/no-img-element` comments caused ESLint to report "rule not found" violations. Fixed: `aggregateResults()` now filters to `deslint/*` rules only.
 11. **no-magic-numbers-layout fr_ FP** (P1) — `grid-cols-[1fr_300px]` flagged as magic number. `fr\b` regex doesn't match `fr_` (underscore is `\w`). Fixed: `fr(?:[^a-z]|$)`.
 12. **consistent-component-spacing cross-axis comparison** (P1) — All margin classes (`my-`, `mr-`, `ml-`) grouped as one "margin" category. `my-1` vs `-mr-3` compared as the same type → FP. Fixed: split into axis-specific sub-categories (`margin-y`, `margin-r`, etc.).
 13. **no-inline-styles flags dynamic template literals** (P1) — `style={{ transform: \`translateX(-${val}%)\` }}` (progress bar) was flagged even though dynamic values can't be Tailwind classes. Changed `allowDynamic` default to `true`. Added `hasDynamicValues()` check within ObjectExpression.
@@ -296,17 +296,17 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 
 ### Vintor Dogfood Setup — 2026-04-02
 
-**Did:** Configured Vizlint for active daily development use in Vintor:
-- `npm link`'d eslint-plugin-vizlint (local build) into autoscore-frontend
+**Did:** Configured Deslint for active daily development use in Vintor:
+- `npm link`'d eslint-plugin-deslint (local build) into autoscore-frontend
 - Created `eslint.config.js` with flat config: TypeScript parser for .ts files, Angular template parser for .html files
-- Created `.vizlintrc.json` tuned for Vintor's design system: dark-mode-coverage OFF (CSS variable theming, not dark: prefix), no-arbitrary-typography OFF (custom 15px base type scale), all other 12 rules at warn
-- Added `npm run vizlint` and `npm run vizlint:json` scripts to package.json
+- Created `.deslintrc.json` tuned for Vintor's design system: dark-mode-coverage OFF (CSS variable theming, not dark: prefix), no-arbitrary-typography OFF (custom 15px base type scale), all other 12 rules at warn
+- Added `npm run deslint` and `npm run deslint:json` scripts to package.json
 - First dogfood scan: **74 files, 71 violations, 0 FPs, 0 crashes, 0.39s**
   - no-arbitrary-spacing: 64 (max-w-[800px], h-[64px], py-[1px], etc.)
   - no-arbitrary-zindex: 4 (z-[1], z-[70], z-[200])
   - no-magic-numbers-layout: 3 (gap-[0.625rem] → gap-2.5)
 
-**Will do:** Run vizlint daily during development for 1 week. If new FP types appear, fix the rule and add test coverage. Dogfood ends 2026-04-09 → fill in trust metrics date in VIZLINT-EXECUTION.md → Stage 2 begins.
+**Will do:** Run deslint daily during development for 1 week. If new FP types appear, fix the rule and add test coverage. Dogfood ends 2026-04-09 → fill in trust metrics date in DESLINT-EXECUTION.md → Stage 2 begins.
 **Blockers:** None
 
 ### Angular Auto-Fix + responsive-required Extension — 2026-04-02
@@ -319,22 +319,22 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 - Built `safeGetRange()` in `safe-source.ts`: computes character offsets from `loc.line/column` by summing line lengths
 - Switched all 6 fixable rules (`no-arbitrary-spacing`, `no-arbitrary-colors`, `no-arbitrary-zindex`, `no-arbitrary-typography`, `no-magic-numbers-layout`, `dark-mode-coverage`) to `fixer.replaceTextRange()` 
 - Deprecated `nodeSupportsAutofix()` (now always returns true)
-- Verified: `npm run vizlint:fix` on Vintor → h-[64px] → h-16 confirmed in Angular HTML. 71 → 28 violations.
+- Verified: `npm run deslint:fix` on Vintor → h-[64px] → h-16 confirmed in Angular HTML. 71 → 28 violations.
 
 **`responsive-required` extended to `max-w` and `min-w`:**
 - Old rule only caught `w-[Npx]`. Extended regex to `/^(w|max-w|min-w)-\[(\d+(?:\.\d+)?)(px|rem)\]$/`
 - `max-w` always flagged regardless of iconSizeThreshold (any fixed max-w can break mobile)
 - Added valid/invalid test cases for max-w and min-w patterns (8 new test cases)
 
-**`vizlint init` wizard:**
+**`deslint init` wizard:**
 - Generates framework-specific `eslint.config.js` (Angular, Vue, Svelte, React/Next.js)
-- Adds `vizlint` and `vizlint:fix` npm scripts to package.json without touching existing
-- New user workflow: `npx vizlint init` → answer 2 questions → `npm run vizlint` / `npm run vizlint:fix`
+- Adds `deslint` and `deslint:fix` npm scripts to package.json without touching existing
+- New user workflow: `npx deslint init` → answer 2 questions → `npm run deslint` / `npm run deslint:fix`
 
 **Will do:** Continue dogfood week. Build suggest-tokens command.
 **Blockers:** None
 
-### `vizlint suggest-tokens` Command + Grouped Formatter — 2026-04-02
+### `deslint suggest-tokens` Command + Grouped Formatter — 2026-04-02
 
 **Did:** Built two major developer experience improvements:
 
@@ -343,7 +343,7 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 - Singletons shown per-file in traditional view below the grouped section
 - Tip appended when unfixable spacing violations are present
 
-**`vizlint suggest-tokens` command** (new CLI command at `packages/cli/src/suggest-tokens.ts`):
+**`deslint suggest-tokens` command** (new CLI command at `packages/cli/src/suggest-tokens.ts`):
 - Classifies each arbitrary value into 3 tiers:
   - **Near-miss**: within 15% of a Tailwind semantic class → "is the 32px difference intentional? consider max-w-3xl"
   - **Repeated custom** (2+ occurrences, no close Tailwind match) → design decision worth naming — generates semantic CSS block
@@ -389,21 +389,21 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 **Did:** Comprehensive documentation update for v0.1.0 release readiness.
 
 **README updates:**
-- Root README.md: updated from 4 rules to all 14, added badges, performance table, MCP section, GitHub Action section, "Why Vizlint?" section, sharpened tagline to "ESLint catches code bugs. Vizlint catches design bugs."
+- Root README.md: updated from 4 rules to all 14, added badges, performance table, MCP section, GitHub Action section, "Why Deslint?" section, sharpened tagline to "ESLint catches code bugs. Deslint catches design bugs."
 - Plugin README: full documentation for all 14 rules with examples, options, framework support matrix, validation results table (7 projects, 4,061 files, 0% FP)
 - CLI README: created — documents scan, fix, init, generate-config, suggest-tokens commands with output format table
 - MCP README: created — documents 3 tools, installation for Cursor/Claude Code, manual config examples
 
 **Planning document alignment:**
-- VIZLINT-EXECUTION.md: filled trust metrics date (2026-04-06), updated "What has been validated" section with Round 1 + Round 2 results, marked all VIZ-001-VIZ-025 tasks complete
+- DESLINT-EXECUTION.md: filled trust metrics date (2026-04-06), updated "What has been validated" section with Round 1 + Round 2 results, marked all VIZ-001-VIZ-025 tasks complete
 - CHANGELOG.md: consolidated all work into proper v0.1.0 release section with 14 rules, 15 bug fixes, validation results
 - SPRINT-LOG.md: added dogfood progress entry and this launch preparation entry
 - validation/SUMMARY.md: confirmed complete with all 7 projects and cumulative metrics
 
-**npm org:** `@vizlint` created on npmjs.com. NPM_TOKEN configured in GitHub secrets.
+**npm org:** `@deslint` created on npmjs.com. NPM_TOKEN configured in GitHub secrets.
 
 **Will do:** Complete dogfood week (ends 2026-04-09). Tag v0.1.0 and publish to npm. Deploy docs site. Begin traction strategy.
-**Blockers:** Domain purchase (vizlint.dev) and docs deployment (Vercel/Cloudflare) are external tasks.
+**Blockers:** Domain purchase (deslint.com) and docs deployment (Vercel/Cloudflare) are external tasks.
 
 ## Sprint 11 — Stage 2 Enterprise Foundation (KPMG Phase 1)
 
@@ -417,22 +417,22 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 
 ### VIZ-027: Quality Gates (opt-in CI enforcement) — 2026-04-07
 
-**Did:** Shipped CI enforcement layer — SonarQube-style quality gates applied to design metrics (Moat 3). `.vizlintrc.json` now accepts a `qualityGate` block with `enforce` (default false), `minOverallScore`, `minCategoryScores`, `maxViolations`, `maxDebtMinutes`, `maxScoreRegression`. Pure `evaluateQualityGate()` function in `@vizlint/shared` — no I/O, fully testable. CLI scan reads gate + previous score from history (for regression checks), prints pass/fail with reasons, exits 1 ONLY when `enforce: true` and any condition fails. GitHub Action evaluates gate, shows it in PR comment with warn-only hint, fails check only when enforced. New Action outputs: `debt-minutes`, `quality-gate-passed`. `RULE_EFFORT_MINUTES` table moved to `@vizlint/shared/debt-table.ts` so CLI + Action share one source of truth. 15 new gate tests, 757 tests green repo-wide.
+**Did:** Shipped CI enforcement layer — SonarQube-style quality gates applied to design metrics (Moat 3). `.deslintrc.json` now accepts a `qualityGate` block with `enforce` (default false), `minOverallScore`, `minCategoryScores`, `maxViolations`, `maxDebtMinutes`, `maxScoreRegression`. Pure `evaluateQualityGate()` function in `@deslint/shared` — no I/O, fully testable. CLI scan reads gate + previous score from history (for regression checks), prints pass/fail with reasons, exits 1 ONLY when `enforce: true` and any condition fails. GitHub Action evaluates gate, shows it in PR comment with warn-only hint, fails check only when enforced. New Action outputs: `debt-minutes`, `quality-gate-passed`. `RULE_EFFORT_MINUTES` table moved to `@deslint/shared/debt-table.ts` so CLI + Action share one source of truth. 15 new gate tests, 757 tests green repo-wide.
 
 **Safety:** `enforce` defaults to false. v0.1.0 users upgrading see no behavior change — gate failures are warn-only by default, surface in output but don't break CI.
 
 **Will do:** VIZ-028 Trend command
 **Blockers:** None
 
-### VIZ-028: `vizlint trend` command — 2026-04-07
+### VIZ-028: `deslint trend` command — 2026-04-07
 
-**Did:** Shipped read-only trend analytics over existing `.vizlint/history.json` (Moat 4 — historical context). New `packages/cli/src/trend.ts` with `loadHistory()`, pure `analyzeTrend()` (window limit, score delta first→latest, high/low/avg, per-category deltas, regression detection by alert threshold), `sparkline()` ASCII chart helper, and text/JSON formatters. Registered `vizlint trend [dir] [--limit N] [--format text|json] [--alert-threshold N]` in CLI. Non-zero exit code when regressions detected (informational — users opt into CI blocking). 12 new unit tests, 102/102 CLI tests green. Zero changes to data on disk — uses history written by existing `saveHistory()` calls. Backwards compatible.
+**Did:** Shipped read-only trend analytics over existing `.deslint/history.json` (Moat 4 — historical context). New `packages/cli/src/trend.ts` with `loadHistory()`, pure `analyzeTrend()` (window limit, score delta first→latest, high/low/avg, per-category deltas, regression detection by alert threshold), `sparkline()` ASCII chart helper, and text/JSON formatters. Registered `deslint trend [dir] [--limit N] [--format text|json] [--alert-threshold N]` in CLI. Non-zero exit code when regressions detected (informational — users opt into CI blocking). 12 new unit tests, 102/102 CLI tests green. Zero changes to data on disk — uses history written by existing `saveHistory()` calls. Backwards compatible.
 **Will do:** VIZ-029 W3C Design Tokens import
 **Blockers:** None
 
 ### VIZ-029: W3C Design Tokens (DTCG) import — 2026-04-07
 
-**Did:** Shipped W3C Design Tokens Community Group parser (Moat 4 — Figma bridge / design-to-code alignment). New `packages/shared/src/tokens/w3c-parser.ts` — pure `parseW3CTokens(raw)` walks DTCG trees, honors group-level `$type` inheritance, resolves `{group.token}` aliases up to depth 10 with cycle protection, records unresolved aliases and unmapped types without crashing. Buckets `$type: color|dimension|fontFamily` into the existing `DesignSystem` shape; dimensions under `radius`/`borderRadius`/`radii` paths route to `borderRadius`, everything else to `spacing`. Heuristic fallback infers type from value shape (`#hex` → color, `Npx/rem` → dimension) so untyped Style Dictionary output still works. New `loadW3CTokensFile()` + `findW3CTokensFile()` loaders auto-discover `tokens.json`, `design-tokens.json`, `.tokens.json`, `tokens/tokens.json`, `src/tokens.json`. CLI `loadDesignSystem()` in `generate-config.ts` now auto-imports W3C tokens with merge priority Tailwind → W3C → manual `.vizlintrc.json`. 13 parser tests covering flat/nested groups, inheritance, alias chains, cycles, unresolved refs, dimension→borderRadius heuristic, fontFamily mapping, unmapped types, untyped inference, descriptions.
+**Did:** Shipped W3C Design Tokens Community Group parser (Moat 4 — Figma bridge / design-to-code alignment). New `packages/shared/src/tokens/w3c-parser.ts` — pure `parseW3CTokens(raw)` walks DTCG trees, honors group-level `$type` inheritance, resolves `{group.token}` aliases up to depth 10 with cycle protection, records unresolved aliases and unmapped types without crashing. Buckets `$type: color|dimension|fontFamily` into the existing `DesignSystem` shape; dimensions under `radius`/`borderRadius`/`radii` paths route to `borderRadius`, everything else to `spacing`. Heuristic fallback infers type from value shape (`#hex` → color, `Npx/rem` → dimension) so untyped Style Dictionary output still works. New `loadW3CTokensFile()` + `findW3CTokensFile()` loaders auto-discover `tokens.json`, `design-tokens.json`, `.tokens.json`, `tokens/tokens.json`, `src/tokens.json`. CLI `loadDesignSystem()` in `generate-config.ts` now auto-imports W3C tokens with merge priority Tailwind → W3C → manual `.deslintrc.json`. 13 parser tests covering flat/nested groups, inheritance, alias chains, cycles, unresolved refs, dimension→borderRadius heuristic, fontFamily mapping, unmapped types, untyped inference, descriptions.
 
 **Safety:** Opt-in via file presence — no behavior change for projects without a `.tokens.json`. Malformed files are swallowed and fall through to Tailwind/manual sources.
 
@@ -441,16 +441,16 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 
 ### VIZ-030: WCAG 2.2 compliance report export — 2026-04-07
 
-**Did:** Closed out Phase 1 with the compliance report — the feature enterprise legal / a11y teams ask for first. New `packages/shared/src/compliance.ts` maps Vizlint rules to WCAG 2.2 Success Criteria (1.1.1 Non-text Content, 1.4.3 Contrast Minimum, 1.4.10 Reflow, 1.4.11 Non-text Contrast, 1.4.12 Text Spacing, 2.4.7 Focus Visible). Pure `evaluateCompliance()` takes a scan snapshot and returns per-criterion pass/fail/not-evaluated, the highest conformance Level reached (requires at-least-one criterion at that exact level to be evaluated — no false AAA claims), coverage %, pass rate %, and deduped total violations. `formatComplianceSummary()` for CLI/PR-comment text. New `packages/cli/src/compliance-report.ts` renders a self-contained printable HTML report (inline CSS, no JS, no external fonts — safe to email / attach to SOC2 audit / print to PDF) with conformance badges, per-SC table, and links into the WCAG 2.2 spec. New CLI command `vizlint compliance [dir] [--format html|json|text] [--output path]` writes to `.vizlint/compliance.html` by default. 10 new compliance tests, 82 shared + 102 CLI tests green, full repo build clean.
+**Did:** Closed out Phase 1 with the compliance report — the feature enterprise legal / a11y teams ask for first. New `packages/shared/src/compliance.ts` maps Deslint rules to WCAG 2.2 Success Criteria (1.1.1 Non-text Content, 1.4.3 Contrast Minimum, 1.4.10 Reflow, 1.4.11 Non-text Contrast, 1.4.12 Text Spacing, 2.4.7 Focus Visible). Pure `evaluateCompliance()` takes a scan snapshot and returns per-criterion pass/fail/not-evaluated, the highest conformance Level reached (requires at-least-one criterion at that exact level to be evaluated — no false AAA claims), coverage %, pass rate %, and deduped total violations. `formatComplianceSummary()` for CLI/PR-comment text. New `packages/cli/src/compliance-report.ts` renders a self-contained printable HTML report (inline CSS, no JS, no external fonts — safe to email / attach to SOC2 audit / print to PDF) with conformance badges, per-SC table, and links into the WCAG 2.2 spec. New CLI command `deslint compliance [dir] [--format html|json|text] [--output path]` writes to `.deslint/compliance.html` by default. 10 new compliance tests, 82 shared + 102 CLI tests green, full repo build clean.
 
-**Safety:** Net-new command. Zero change to existing scan/fix/trend output. Only rules already in Vizlint's catalog are mapped — no new rules, no new violations. Docstring clarifies this is automated evidence, full conformance still requires manual audit.
+**Safety:** Net-new command. Zero change to existing scan/fix/trend output. Only rules already in Deslint's catalog are mapped — no new rules, no new violations. Docstring clarifies this is automated evidence, full conformance still requires manual audit.
 
 **Will do:** Integrate KPMG 7-moat strategy into sprint planning docs
 **Blockers:** None
 
 ### PLAN-001: KPMG 7-moat strategy integrated into sprint planning — 2026-04-07
 
-**Did:** Wired the approved KPMG defensibility plan into sprint planning so nothing is lost. Added `VIZLINT-EXECUTION.md` Section 15 as the authoritative 7-moat status tracker (phase table, Phase 1 complete w/ VIZ-026→VIZ-030, Phase 2 next, Phase 3 later, non-negotiables preserved). Updated Section 6 "Explicitly Deferred" list — the five Stage 3 items pulled forward into KPMG Phase 1 are now marked ✅ with their story IDs; cross-file engine, component presets, embeddable core, and design-code alignment metric carry forward to KPMG Phase 2/3. Added a status-update note at the top of `docs/vizlint-sprint-plan-v1.2-update.md` Stage 3 section pointing at Section 15. Created `docs/vizlint-sprint-plan-v1.3-kpmg-moats.md` as a full overlay (same pattern as v1.1/v1.2) capturing the 7 moats, Phase 1 shipped table, Phase 2 backlog, Phase 3 backlog, safety model, and document hierarchy. Registered v1.3 in `CLAUDE.md` reading order so future agents pick it up.
+**Did:** Wired the approved KPMG defensibility plan into sprint planning so nothing is lost. Added `DESLINT-EXECUTION.md` Section 15 as the authoritative 7-moat status tracker (phase table, Phase 1 complete w/ VIZ-026→VIZ-030, Phase 2 next, Phase 3 later, non-negotiables preserved). Updated Section 6 "Explicitly Deferred" list — the five Stage 3 items pulled forward into KPMG Phase 1 are now marked ✅ with their story IDs; cross-file engine, component presets, embeddable core, and design-code alignment metric carry forward to KPMG Phase 2/3. Added a status-update note at the top of `docs/deslint-sprint-plan-v1.2-update.md` Stage 3 section pointing at Section 15. Created `docs/deslint-sprint-plan-v1.3-kpmg-moats.md` as a full overlay (same pattern as v1.1/v1.2) capturing the 7 moats, Phase 1 shipped table, Phase 2 backlog, Phase 3 backlog, safety model, and document hierarchy. Registered v1.3 in `CLAUDE.md` reading order so future agents pick it up.
 
 **Safety:** Zero code changes. Planning-only.
 
@@ -459,85 +459,85 @@ Added `action/` to pnpm workspace. 676 tests passing (512 eslint-plugin + 78 cli
 
 ### RELEASE-PREP: v0.1.0 ship readiness — 2026-04-07
 
-**Did:** Closed the gap between the planning docs and the actual release pipeline ahead of the v0.1.0 tag. Founder confirmed early dogfood completion (Vintor: 0 new FP types found over the dogfood window, plugin stayed enabled in daily development — trust metrics from VIZLINT-EXECUTION.md Section 5 all hold). Inspected `.github/workflows/release.yml` and found it only published `eslint-plugin-vizlint` and `@vizlint/shared` — `@vizlint/cli` and `@vizlint/mcp` were missing despite being primary v0.1.0 deliverables (they ship `vizlint scan`, `vizlint trend`, `vizlint compliance`, `vizlint fix`, and the MCP server — the entire KPMG Phase 1 user-facing surface). Added publish steps for both, reordered to dependency order (shared → eslint-plugin → cli → mcp) so pnpm rewrites `workspace:^`/`workspace:*` deps to real semver on publish. Folded in the staged 531-line visual preview system in `packages/cli/src/report-html.ts` (pattern grouping, Tailwind palette → hex lookup, contrast/spacing/typography/dark-mode/states/responsive/radius visual proofs — verified on Dub.co's 1,838-file scan). Cleaned a duplicate "Visual Report Previews" entry from this log. Mirrored the release workflow locally end-to-end: `pnpm install --frozen-lockfile` clean, `pnpm build` 6/6 tasks successful, full test suite 792 tests green (82 shared + 566 eslint-plugin + 102 cli + 25 mcp + 17 action), `pnpm --filter eslint-plugin-vizlint bench` PASS at 0.02ms/file (100× under the 2ms/file budget).
+**Did:** Closed the gap between the planning docs and the actual release pipeline ahead of the v0.1.0 tag. Founder confirmed early dogfood completion (Vintor: 0 new FP types found over the dogfood window, plugin stayed enabled in daily development — trust metrics from DESLINT-EXECUTION.md Section 5 all hold). Inspected `.github/workflows/release.yml` and found it only published `eslint-plugin-deslint` and `@deslint/shared` — `@deslint/cli` and `@deslint/mcp` were missing despite being primary v0.1.0 deliverables (they ship `deslint scan`, `deslint trend`, `deslint compliance`, `deslint fix`, and the MCP server — the entire KPMG Phase 1 user-facing surface). Added publish steps for both, reordered to dependency order (shared → eslint-plugin → cli → mcp) so pnpm rewrites `workspace:^`/`workspace:*` deps to real semver on publish. Folded in the staged 531-line visual preview system in `packages/cli/src/report-html.ts` (pattern grouping, Tailwind palette → hex lookup, contrast/spacing/typography/dark-mode/states/responsive/radius visual proofs — verified on Dub.co's 1,838-file scan). Cleaned a duplicate "Visual Report Previews" entry from this log. Mirrored the release workflow locally end-to-end: `pnpm install --frozen-lockfile` clean, `pnpm build` 6/6 tasks successful, full test suite 792 tests green (82 shared + 566 eslint-plugin + 102 cli + 25 mcp + 17 action), `pnpm --filter eslint-plugin-deslint bench` PASS at 0.02ms/file (100× under the 2ms/file budget).
 
 **Safety:** Workflow change is additive (more publish steps, no removals). Reordering shared first is safer because pnpm resolves workspace deps at publish time. Visual report change is net-new code in `report-html.ts` only — no rule logic touched, no existing test broken.
 
-**Will do:** Tag v0.1.0 and push to trigger release workflow. Monitor the four publish steps in GitHub Actions. Verify all four packages land on npmjs.com under `@vizlint`. Then stand by for Phase 2 kickoff.
+**Will do:** Tag v0.1.0 and push to trigger release workflow. Monitor the four publish steps in GitHub Actions. Verify all four packages land on npmjs.com under `@deslint`. Then stand by for Phase 2 kickoff.
 **Blockers:** None — all gates green.
 
 ### v0.1.0 SHIPPED — 2026-04-07
 
-**Did:** Vizlint v0.1.0 is live on npm. Four packages published from tag `v0.1.0` (commit `88102a8`):
+**Did:** Deslint v0.1.0 is live on npm. Four packages published from tag `v0.1.0` (commit `88102a8`):
 
-- `@vizlint/shared@0.1.0`
-- `eslint-plugin-vizlint@0.1.0`
-- `@vizlint/cli@0.1.0`
-- `@vizlint/mcp@0.1.0`
+- `@deslint/shared@0.1.0`
+- `eslint-plugin-deslint@0.1.0`
+- `@deslint/cli@0.1.0`
+- `@deslint/mcp@0.1.0`
 
 GitHub Release `v0.1.0` created automatically with the CHANGELOG entry.
 
 **Path to ship was non-trivial.** Six commits between "ready to tag" and "live on npm":
 
 1. `748818b` chore(release): prep v0.1.0 — add cli/mcp publish steps, ship visual report system, fold in dogfood completion
-2. `3e44f7d` fix(ci): repair pnpm lint across the workspace — root flat config had no TS parser; @vizlint/docs had no local config and was being ignored by the global root ignore. Both lint failures had been latent on main; turbo only surfaced one at a time.
+2. `3e44f7d` fix(ci): repair pnpm lint across the workspace — root flat config had no TS parser; @deslint/docs had no local config and was being ignored by the global root ignore. Both lint failures had been latent on main; turbo only surfaced one at a time.
 3. `cfcc814` fix(ci): remove pnpm version pin from action-setup — action errored with ERR_PNPM_BAD_PM_VERSION when both `version:` and packageManager were set
 4. `b4e192a` fix(ci): install @vitest/coverage-v8 and set honest v0.1.0 coverage baseline — 95/90 thresholds in CLAUDE.md were aspirational and never enforced (the dep was never installed). Lowered to 86/75 (current actuals) so the gate is real and can ratchet upward.
-5. `88102a8` fix(release): make publish steps idempotent — first tag attempt published @vizlint/shared then failed at eslint-plugin-vizlint due to a token scope issue; without idempotency we couldn't re-fire the workflow.
+5. `88102a8` fix(release): make publish steps idempotent — first tag attempt published @deslint/shared then failed at eslint-plugin-deslint due to a token scope issue; without idempotency we couldn't re-fire the workflow.
 6. Tag retry sequence: v0.1.0 tagged on `b4e192a` first, partial-published shared, deleted + re-tagged on `88102a8` after token fix and idempotent workflow ship.
 
-**npm token saga:** Initial NPM_TOKEN was a classic automation token; npm rejected it because the founder's account has 2FA in "auth-and-writes" mode (granular token with bypass-2fa required). Founder created a granular token scoped to `@vizlint` org → first re-fire failed at `eslint-plugin-vizlint` because that package is unscoped, not under `@vizlint/`, and granular tokens can only allowlist *existing* packages (chicken-and-egg for first publish). Founder created second granular token with "All packages" scope → re-fire succeeded. Founder then created a third tightly-scoped token covering both `@vizlint` org and `eslint-plugin-vizlint` (now that the package exists in npm's picker) — to be swapped into the GitHub secret post-ship for tighter long-term security.
+**npm token saga:** Initial NPM_TOKEN was a classic automation token; npm rejected it because the founder's account has 2FA in "auth-and-writes" mode (granular token with bypass-2fa required). Founder created a granular token scoped to `@deslint` org → first re-fire failed at `eslint-plugin-deslint` because that package is unscoped, not under `@deslint/`, and granular tokens can only allowlist *existing* packages (chicken-and-egg for first publish). Founder created second granular token with "All packages" scope → re-fire succeeded. Founder then created a third tightly-scoped token covering both `@deslint` org and `eslint-plugin-deslint` (now that the package exists in npm's picker) — to be swapped into the GitHub secret post-ship for tighter long-term security.
 
 **Trust evidence (unchanged from validation):** 0% FP across 4,061 real-world files, 0 crashes, 14/14 auto-fixers manually verified, 3.05s scan of 1,838-file project (25× under budget), Vintor dogfood clean.
 
-**KPMG Phase 1 status:** ✅ COMPLETE and shipped to users. The five Phase 1 stories (VIZ-026 Design Debt, VIZ-027 Quality Gates, VIZ-028 Trend, VIZ-029 W3C Tokens, VIZ-030 WCAG Compliance Report) are all live in `@vizlint/cli` v0.1.0.
+**KPMG Phase 1 status:** ✅ COMPLETE and shipped to users. The five Phase 1 stories (VIZ-026 Design Debt, VIZ-027 Quality Gates, VIZ-028 Trend, VIZ-029 W3C Tokens, VIZ-030 WCAG Compliance Report) are all live in `@deslint/cli` v0.1.0.
 
-**Will do:** Swap NPM_TOKEN to the tightly-scoped granular token. Stand by for Phase 2 kickoff direction from the founder (cross-file design graph, AI code attribution, `@vizlint/core` embeddable, component library presets, +6 a11y rules, design-code alignment metric).
+**Will do:** Swap NPM_TOKEN to the tightly-scoped granular token. Stand by for Phase 2 kickoff direction from the founder (cross-file design graph, AI code attribution, `@deslint/core` embeddable, component library presets, +6 a11y rules, design-code alignment metric).
 **Blockers:** None.
 
-### v0.1.1 SHIPPED — package rename to @vizlint/eslint-plugin — 2026-04-07
+### v0.1.1 SHIPPED — package rename to @deslint/eslint-plugin — 2026-04-07
 
-**Did:** Renamed the ESLint plugin from `eslint-plugin-vizlint` to `@vizlint/eslint-plugin` to bring it under the `@vizlint/*` workspace alongside `@vizlint/cli`, `@vizlint/mcp`, and `@vizlint/shared`. This matches the modern Pattern 2 convention used by `@typescript-eslint/eslint-plugin`, `@next/eslint-plugin-next`, `@stylistic/eslint-plugin`, `@nx/eslint-plugin`, and `@vitest/eslint-plugin`. Done now while user count is effectively zero (v0.1.0 shipped 4 hours earlier) so the migration cost is essentially nil.
+**Did:** Renamed the ESLint plugin from `eslint-plugin-deslint` to `@deslint/eslint-plugin` to bring it under the `@deslint/*` workspace alongside `@deslint/cli`, `@deslint/mcp`, and `@deslint/shared`. This matches the modern Pattern 2 convention used by `@typescript-eslint/eslint-plugin`, `@next/eslint-plugin-next`, `@stylistic/eslint-plugin`, `@nx/eslint-plugin`, and `@vitest/eslint-plugin`. Done now while user count is effectively zero (v0.1.0 shipped 4 hours earlier) so the migration cost is essentially nil.
 
 **Scope of change** (33 files in commit `a062e6e`):
-- `packages/eslint-plugin/package.json` — name → `@vizlint/eslint-plugin`, 0.1.0 → 0.1.1
+- `packages/eslint-plugin/package.json` — name → `@deslint/eslint-plugin`, 0.1.0 → 0.1.1
 - `packages/eslint-plugin/src/index.ts` — plugin meta name updated to match
 - `packages/{shared,cli,mcp}/package.json` + `action/package.json` — bumped to 0.1.1 for consistent versioning across the rename release
-- `packages/cli/package.json` + `packages/mcp/package.json` + `action/package.json` — workspace dep `eslint-plugin-vizlint` → `@vizlint/eslint-plugin`
+- `packages/cli/package.json` + `packages/mcp/package.json` + `action/package.json` — workspace dep `eslint-plugin-deslint` → `@deslint/eslint-plugin`
 - `packages/cli/src/lint-runner.ts`, `packages/mcp/src/tools.ts`, `action/src/scan.ts` — dynamic import paths
-- `packages/cli/src/init.ts` — all 4 framework template variants now emit `import vizlint from '@vizlint/eslint-plugin'` in the generated user `eslint.config.js`; skip-warning text updated
+- `packages/cli/src/init.ts` — all 4 framework template variants now emit `import deslint from '@deslint/eslint-plugin'` in the generated user `eslint.config.js`; skip-warning text updated
 - `packages/cli/src/templates/cursorrules.ts` + `tests/generate-config.test.ts` — install command in cursor rules template
 - `packages/cli/tests/cli.test.ts` + `tests/formatters.test.ts` — hardcoded `'0.1.0'` strings replaced with `pkg.version` reads via `createRequire`. These tests will never need touching on a version bump again — they always derive the expected version from package.json.
-- `packages/eslint-plugin/README.md` — title, badges, install commands, all import examples, and a new "Migration from `eslint-plugin-vizlint`" section explaining the rename + migration steps
+- `packages/eslint-plugin/README.md` — title, badges, install commands, all import examples, and a new "Migration from `eslint-plugin-deslint`" section explaining the rename + migration steps
 - `README.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `SECURITY.md`, `validation/SUMMARY.md` — current-state references updated
 - `apps/docs` landing page (Hero, HowItWorks, Footer, Cta, docs/page, docs/layout, docs/getting-started) — install commands, code examples, npm link
 - `.github/workflows/release.yml` — publish step renamed; `--filter` flag updated
 - `.github/workflows/ci.yml` — coverage + bench `--filter` flag updated
 - `.changeset/config.json` — linked package list
 - `CHANGELOG.md` — v0.1.1 entry with full migration guide
-- Historical entries in SPRINT-LOG.md, VIZLINT-EXECUTION.md (lines 52, 80), and the CHANGELOG.md v0.1.0 entry deliberately left referencing the old name — they record what was actually shipped at v0.1.0.
+- Historical entries in SPRINT-LOG.md, DESLINT-EXECUTION.md (lines 52, 80), and the CHANGELOG.md v0.1.0 entry deliberately left referencing the old name — they record what was actually shipped at v0.1.0.
 
 **Validation pre-tag** (mirrored CI exactly): `pnpm install --frozen-lockfile` clean, `pnpm build` 6/6 successful, `pnpm lint` 2/2, `pnpm typecheck` 9/9, `pnpm test` 11/11 (792 tests), coverage exit 0 (86.57/75.84 vs 86/75 thresholds), bench PASS at 0.02ms/file. All 4 publish steps in the release workflow named/scoped correctly.
 
 **Release sequence:**
 1. Commit `a062e6e` pushed to main, CI green on Node 20 + Node 22 matrix
 2. Tag `v0.1.1` pushed → release workflow fires
-3. All 4 publish steps run cleanly: `@vizlint/shared@0.1.1`, `@vizlint/eslint-plugin@0.1.1` (brand new package on npm), `@vizlint/cli@0.1.1`, `@vizlint/mcp@0.1.1` — current "All packages" `NPM_TOKEN` covers the new package automatically
+3. All 4 publish steps run cleanly: `@deslint/shared@0.1.1`, `@deslint/eslint-plugin@0.1.1` (brand new package on npm), `@deslint/cli@0.1.1`, `@deslint/mcp@0.1.1` — current "All packages" `NPM_TOKEN` covers the new package automatically
 4. GitHub Release `v0.1.1` auto-created from CHANGELOG entry (which contains the full migration guide)
-5. ~1 minute CDN propagation lag for `@vizlint/eslint-plugin` rollup metadata (specific-version endpoint had it immediately, package-level rollup caught up shortly after) — caused brief "where is it?" moment but resolved without intervention
+5. ~1 minute CDN propagation lag for `@deslint/eslint-plugin` rollup metadata (specific-version endpoint had it immediately, package-level rollup caught up shortly after) — caused brief "where is it?" moment but resolved without intervention
 
-**Old package handling:** `eslint-plugin-vizlint@0.1.0` deprecated via npmjs.com web UI. Founder chose to leave npm's generic placeholder message ("Package no longer supported. Contact Support...") rather than re-running the CLI deprecate command with the custom migration message — pragmatic call given effectively zero users at this point. The full migration guide lives in the v0.1.1 plugin README and CHANGELOG, both of which a curious user would find before reaching the deprecated old package. Old package was NOT unpublished — kept as a deprecation tombstone per npm convention so any frozen lockfile against `eslint-plugin-vizlint@0.1.0` continues to install (with the deprecation warning) rather than hard-erroring.
+**Old package handling:** `eslint-plugin-deslint@0.1.0` deprecated via npmjs.com web UI. Founder chose to leave npm's generic placeholder message ("Package no longer supported. Contact Support...") rather than re-running the CLI deprecate command with the custom migration message — pragmatic call given effectively zero users at this point. The full migration guide lives in the v0.1.1 plugin README and CHANGELOG, both of which a curious user would find before reaching the deprecated old package. Old package was NOT unpublished — kept as a deprecation tombstone per npm convention so any frozen lockfile against `eslint-plugin-deslint@0.1.0` continues to install (with the deprecation warning) rather than hard-erroring.
 
 **Final state on npm:**
-- `@vizlint/shared@0.1.1` — live ✅
-- `@vizlint/eslint-plugin@0.1.1` — live ✅ (the rename target)
-- `@vizlint/cli@0.1.1` — live ✅
-- `@vizlint/mcp@0.1.1` — live ✅
-- `eslint-plugin-vizlint@0.1.0` — deprecated tombstone ⚠️ (left intentionally for lockfile compatibility)
+- `@deslint/shared@0.1.1` — live ✅
+- `@deslint/eslint-plugin@0.1.1` — live ✅ (the rename target)
+- `@deslint/cli@0.1.1` — live ✅
+- `@deslint/mcp@0.1.1` — live ✅
+- `eslint-plugin-deslint@0.1.0` — deprecated tombstone ⚠️ (left intentionally for lockfile compatibility)
 
-**KPMG Phase 1 status:** ✅ STILL COMPLETE. The rename is purely a packaging change — same 14 rules, same options, same presets, same auto-fix output, same `vizlint/*` shorthand in user config, same `.vizlintrc.json` schema. All Phase 1 features (VIZ-026 through VIZ-030) ship unchanged in v0.1.1.
+**KPMG Phase 1 status:** ✅ STILL COMPLETE. The rename is purely a packaging change — same 14 rules, same options, same presets, same auto-fix output, same `deslint/*` shorthand in user config, same `.deslintrc.json` schema. All Phase 1 features (VIZ-026 through VIZ-030) ship unchanged in v0.1.1.
 
-**Will do:** Stand by for Phase 2 kickoff direction from the founder. Outstanding cleanup item (non-blocking): swap `NPM_TOKEN` GitHub secret from the broad "All packages" granular token to the tightly-scoped granular token covering `@vizlint` org + `eslint-plugin-vizlint` (kept for deprecation maintenance). Then delete the broad token from npm. This is independent of v0.1.1 ship and can happen anytime.
+**Will do:** Stand by for Phase 2 kickoff direction from the founder. Outstanding cleanup item (non-blocking): swap `NPM_TOKEN` GitHub secret from the broad "All packages" granular token to the tightly-scoped granular token covering `@deslint` org + `eslint-plugin-deslint` (kept for deprecation maintenance). Then delete the broad token from npm. This is independent of v0.1.1 ship and can happen anytime.
 **Blockers:** None.
 
 ### Investigation session — codebase audit + ROADMAP creation — 2026-04-08
@@ -552,15 +552,15 @@ GitHub Release `v0.1.0` created automatically with the CHANGELOG entry.
    - 5 are JSX-only (`consistent-border-radius`, `consistent-component-spacing`, `image-alt-text`, `missing-states`, `responsive-required`)
    - 1 is file-level / framework-irrelevant (`max-component-lines`)
 
-   VIZLINT-EXECUTION.md:420 said "7/14 JSX-only on Angular." Closer real count is 5-6 depending on how you classify `a11y-color-contrast`. Either way, the gap is real and the 5 JSX-only rules need porting to a uniform abstraction.
+   DESLINT-EXECUTION.md:420 said "7/14 JSX-only on Angular." Closer real count is 5-6 depending on how you classify `a11y-color-contrast`. Either way, the gap is real and the 5 JSX-only rules need porting to a uniform abstraction.
 
 2. **Plain HTML support is fictional.** README claims Plain HTML support; reality (per `packages/cli/src/lint-runner.ts:179-187`) is that `.html` files are routed to `@angular-eslint/template-parser` if installed, and DROPPED ENTIRELY if it isn't. Even with the Angular parser installed, the 5 JSX-only rules see zero HTML coverage. **This is the biggest credibility gap and the audience for the ADA Title II deadline (gov / regulated-industry sites) is disproportionately plain HTML.** Fix: add `@html-eslint/parser` as optional peer dep.
 
-3. **WCAG compliance mapping is honest but small.** `packages/shared/src/compliance.ts` maps 6 WCAG 2.2 SCs to 4 Vizlint rules. The evaluator correctly refuses to claim a conformance level without at least one criterion at that exact level evaluated (no false AAA). Widening this to 12-15 SCs is a tractable sprint goal once the new a11y rules ship.
+3. **WCAG compliance mapping is honest but small.** `packages/shared/src/compliance.ts` maps 6 WCAG 2.2 SCs to 4 Deslint rules. The evaluator correctly refuses to claim a conformance level without at least one criterion at that exact level evaluated (no false AAA). Widening this to 12-15 SCs is a tractable sprint goal once the new a11y rules ship.
 
-4. **`apps/docs` is shippable but not deployed.** ~1100 lines of components, Next.js 15 static export, builds clean. Domain `vizlint.dev` is purchased. Just needs `vercel deploy`. **Without a live landing page, every distribution channel sends people to npm — which is availability, not distribution.**
+4. **`apps/docs` is shippable but not deployed.** ~1100 lines of components, Next.js 15 static export, builds clean. Domain `deslint.com` is purchased. Just needs `vercel deploy`. **Without a live landing page, every distribution channel sends people to npm — which is availability, not distribution.**
 
-5. **Distribution surface is empty.** v0.1.0 + v0.1.1 shipped to npm with literally zero external announcement: no awesome-list submissions, no Show HN, no Product Hunt, no Twitter, no demo video, no MCP self-correction recording, no blog posts, no cold outreach, no tech press. The number of people who could discover Vizlint by searching for it on 2026-04-08 is roughly zero.
+5. **Distribution surface is empty.** v0.1.0 + v0.1.1 shipped to npm with literally zero external announcement: no awesome-list submissions, no Show HN, no Product Hunt, no Twitter, no demo video, no MCP self-correction recording, no blog posts, no cold outreach, no tech press. The number of people who could discover Deslint by searching for it on 2026-04-08 is roughly zero.
 
 **Architectural insight:** The right next move is NOT "ship 6 a11y rules in 1.5 weeks". It's:
 1. Build a `createElementVisitor` abstraction (sibling to `createClassVisitor`) so element-level rules can be framework-agnostic

@@ -1,4 +1,4 @@
-import type { DesignSystem } from '@vizlint/shared';
+import type { DesignSystem } from '@deslint/shared';
 
 /**
  * Generate an AGENTS.md design quality section.
@@ -8,7 +8,7 @@ import type { DesignSystem } from '@vizlint/shared';
 export function generateAgentsMd(designSystem?: DesignSystem): string {
   const lines: string[] = [];
 
-  lines.push(`# Design Quality Agent Rules — Vizlint
+  lines.push(`# Design Quality Agent Rules — Deslint
 
 ## Purpose
 These rules ensure AI-generated frontend code meets the project's design system standards. All agents modifying UI code MUST follow these constraints.
@@ -74,7 +74,7 @@ Same-type components must use identical spacing patterns within a file.
 
 After modifying UI code, run:
 \`\`\`bash
-npx eslint --plugin vizlint .
+npx eslint --plugin deslint .
 \`\`\`
 
 Fix all violations before considering the task complete.`);
