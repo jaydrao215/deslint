@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runLint, RULE_CATEGORY_MAP } from '../src/lint-runner.js';
 
-// ── RULE_CATEGORY_MAP unit tests ────────────────────────────────────
+// ── RULE_CATEGORY_MAP unit tests ───────────────────────────────
 
 describe('RULE_CATEGORY_MAP', () => {
   it('maps all known Deslint rules to categories', () => {
@@ -29,7 +29,7 @@ describe('RULE_CATEGORY_MAP', () => {
   });
 });
 
-// ── runLint functional tests ────────────────────────────────────────
+// ── runLint functional tests ──────────────────────────────────
 
 describe('runLint', () => {
   let tmpDir: string;
@@ -286,5 +286,174 @@ describe('runLint', () => {
     // No color rules should fire (no bg or text color classes)
     expect(result.byRule['deslint/no-arbitrary-colors']).toBeUndefined();
     expect(result.byCategory.spacing).toBeGreaterThanOrEqual(1);
+  });
+
+  // ── Plain HTML parser (S2) ────────────────────────────────────
+  //
+  // These tests exercise the FULL stack: file on disk → runLint → dynamic
+  // parser resolution → flat config block routing → @html-eslint/parser →
+  // visitor dispatch → rule execution → aggregated report. If any step in
+  // that chain breaks for a user installing @deslint/eslint-plugin + the
+  // optional @html-eslint/parser peer dep, these tests catch it.
+  describe('plain HTML support', () => {
+    async function writeFile_(filename: string, content: string): Promise<string> {
+      const filePath = join(tmpDir, filename);
+      await writeFile(filePath, content);
+      return filePath;
+    }
+
+    it('lints a plain HTML file and flags arbitrary colors via class attribute', async () => {
+      const filePath = await writeFile_(
+        'index.html',
+        `<!DOCTYPE html><html lang="en"><body><div class="bg-[#FF0000] p-4">hi</div></body></html>\n`,
+      );
+
+      const result = await runLint({ files: [filePath] });
+
+      expect(result.totalFiles).toBe(1);
+      expect(result.byRule['deslint/no-arbitrary-colors']).toBeGreaterThanOrEqual(1);
+    });
+
+    it('flags a missing alt on <img> in plain HTML (image-alt-text)', async () => {
+      const filePath = await writeFile_(
+        'page.html',
+        `<!DOCTYPE html><html lang="en"><body><img src="x.png"></body></html>\n`,
+      );
+
+      const result = await runLint({ files: [filePath] });
+
+      expect(result.byRule['deslint/image-alt-text']).toBeGreaterThanOrEqual(1);
+    });
+
+    it('flags missing lang on <html> (lang-attribute, WCAG 3.1.1)', async () => {
+      const filePath = await writeFile_(
+        'no-lang.html',
+        `<!DOCTYPE html><html><body><p>hi</p></body></html>\n`,
+      );
+
+      const result = await runLint({ files: [filePath] });
+
+      expect(result.byRule['deslint/lang-attribute']).toBeGreaterThanOrEqual(1);
+    });
+
+    it('flags viewport meta with user-scalable=no (viewport-meta, WCAG 1.4.4)', async () => {
+      const filePath = await writeFile_(
+        'zoom-blocked.html',
+        `<!DOCTYPE html><html lang="en"><head><meta name="viewport" content="width=device-width, user-scalable=no"></head><body></body></html>\n`,
+      );
+
+      const result = await runLint({ files: [filePath] });
+
+      expect(result.byRule['deslint/viewport-meta']).toBeGreaterThanOrEqual(1);
+    });
+
+    it('flags skipped heading levels in plain HTML (heading-hierarchy)', async () => {
+      const filePath = await writeFile_(
+        'skipped-heading.html',
+        `<!DOCTYPE html><html lang="en"><body><h1>Title</h1><h3>Skips h2</h3></body></html>\n`,
+      );
+
+      const result = await runLint({ files: [filePath] });
+
+      expect(result.byRule['deslint/heading-hierarchy']).toBeGreaterThanOrEqual(1);
+    });
+
+    it('flags generic "click here" link text in plain HTML (link-text, WCAG 2.4.4)', async () => {
+      const filePath = await writeFile_(
+        'click-here.html',
+        `<!DOCTYPE html><html lang="en"><body><a href="/foo">click here</a></body></html>\n`,
+      );
+
+      const result = await runLint({ files: [filePath] });
+
+      expect(result.byRule['deslint/link-text']).toBeGreaterThanOrEqual(1);
+    });
+
+    it('flags unlabeled form control in plain HTML (form-labels)', async () => {
+      const filePath = await writeFile_(
+        'unlabeled-form.html',
+        `<!DOCTYPE html><html lang="en"><body><form><input type="text"></form></body></html>\n`,
+      );
+
+      const result = await runLint({ files: [filePath] });
+
+      expect(result.byRule['deslint/form-labels']).toBeGreaterThanOrEqual(1);
+    });
+
+    it('flags aria-labelby typo in plain HTML (aria-validation)', async () => {
+      const filePath = await writeFile_(
+        'aria-typo.html',
+        `<!DOCTYPE html><html lang="en"><body><button aria-labelby="x">click</button></body></html>\n`,
+      );
+
+      const result = await runLint({ files: [filePath] });
+
+      expect(result.byRule['deslint/aria-validation']).toBeGreaterThanOrEqual(1);
+    });
+
+    it('passes a clean plain HTML file with zero violations', async () => {
+      const filePath = await writeFile_(
+        'clean.html',
+        `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Clean</title>
+  </head>
+  <body>
+    <h1>Welcome</h1>
+    <p>This page is accessible.</p>
+    <img src="photo.jpg" alt="A golden retriever playing fetch">
+    <form>
+      <label for="email">Email</label>
+      <input id="email" type="email" aria-invalid="false">
+      <button type="submit">Subscribe to the newsletter</button>
+    </form>
+  </body>
+</html>
+`,
+      );
+
+      const result = await runLint({ files: [filePath] });
+
+      expect(result.totalFiles).toBe(1);
+      // The goal: a hand-audited clean file produces zero deslint violations.
+      // This is the single best smoke test that nothing in S2's plumbing is
+      // over-firing against real HTML.
+      expect(result.totalViolations).toBe(0);
+    });
+
+    it('aggregates violations across multiple HTML files correctly', async () => {
+      const good = await writeFile_(
+        'good.html',
+        `<!DOCTYPE html><html lang="en"><body><h1>Good</h1><img src="x.png" alt="descriptive alt text"></body></html>\n`,
+      );
+      const bad = await writeFile_(
+        'bad.html',
+        `<!DOCTYPE html><html><body><img src="y.png"></body></html>\n`,
+      );
+
+      const result = await runLint({ files: [good, bad] });
+
+      expect(result.totalFiles).toBe(2);
+      expect(result.filesWithViolations).toBe(1);
+      // bad.html should have BOTH lang-attribute AND image-alt-text violations
+      expect(result.byRule['deslint/lang-attribute']).toBeGreaterThanOrEqual(1);
+      expect(result.byRule['deslint/image-alt-text']).toBeGreaterThanOrEqual(1);
+    });
+
+    it('handles malformed HTML without crashing the linter', async () => {
+      const filePath = await writeFile_(
+        'malformed.html',
+        `<div><p>unclosed<span>oops\n`,
+      );
+
+      // Linter must not throw. It's fine for the parser to emit syntax
+      // messages; we only require that the runner returns a structured
+      // result and does not crash.
+      const result = await runLint({ files: [filePath] });
+      expect(result.totalFiles).toBe(1);
+    });
   });
 });
