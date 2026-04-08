@@ -3,7 +3,7 @@
 > **Read me first.** This is the active planning document. It captures: live state, what's in flight, what's queued, what's deferred, decisions made, and the prioritized backlog. **Updated on every meaningful commit.** Future conversations should read this BEFORE assuming anything about state — it supersedes chat history and memory. Where this conflicts with DESLINT-EXECUTION.md or sprint plan files, this wins.
 
 **Last updated:** 2026-04-08
-**Last update reason:** Investigation session — grounded codebase audit + Phase 1 closeout + Accessibility Foundation sprint plan
+**Last update reason:** Accessibility Foundation sprint kickoff — S1 (element visitor abstraction) day 1 scaffold landed; NPM_TOKEN blocker cleared (v0.1.1 confirmed live on npm)
 
 ---
 
@@ -11,20 +11,26 @@
 
 | Field | Value |
 |---|---|
-| **Latest npm release** | None under `@deslint/*` yet — code at v0.1.1 in repo, awaiting first `v0.1.1` git tag to fire `release.yml`. Prior history (`@vizlint/*@0.1.1` etc.) lives on the abandoned scope and is not part of the deslint launch narrative. |
+| **Latest npm release** | `@deslint/*@0.1.1` — **live on npm** ✅ with KPMG Phase 1 (VIZ-026 → VIZ-030). Inaugural publish complete. Next release: v0.2.0 after Accessibility Foundation sprint. |
 | **Latest commit** | (see `git log -1`) |
 | **Default branch** | `main` |
 | **CI** | ✅ green (Node 20 + 22 matrix on Ubuntu) |
 | **Trust metrics** | All met — 0% FP across 4,061 files, 0 crashes, 3.05s scan of 1,838 files (25× under 15s/500-file budget), 14/14 auto-fixers verified |
-| **KPMG Phase 1 (5 stories VIZ-026 → VIZ-030)** | ✅ COMPLETE in repo — Design Debt Score, Quality Gates, Trend command, W3C tokens import, WCAG 2.2 compliance report all part of the v0.1.1 codebase, will land on npm with the inaugural `@deslint/*` publish |
-| **NPM_TOKEN scope** | GitHub secret must authorize the `@deslint` scope before tagging v0.1.1 — verify before pushing the tag, otherwise the `Publish` steps in `release.yml` will fail |
-| **Domain** | `deslint.com` purchased ✅ — landing page NOT yet deployed |
+| **KPMG Phase 1 (5 stories VIZ-026 → VIZ-030)** | ✅ SHIPPED to npm in v0.1.1 — Design Debt Score, Quality Gates, Trend command, W3C tokens import, WCAG 2.2 compliance report |
+| **Domain** | `deslint.com` purchased ✅ — landing page NOT yet deployed (S6 task) |
 
 ---
 
 ## 2. What I'm working on RIGHT NOW
 
-Nothing in flight. **Last active session ended on 2026-04-08 after investigation. Resume here next session.**
+**Sprint item S1 — Element Visitor Abstraction, day 1/3 landed.** ✅
+
+- New file: `packages/eslint-plugin/src/utils/element-visitor.ts` — framework-agnostic `createElementVisitor({ check, tagNames })` factory with full JSX / Vue / Angular / Svelte dispatches and an HTML stub awaiting S2's `@html-eslint/parser` peer dep.
+- Helpers exported: `getAttribute`, `getStaticAttributeValue`, `hasSpreadAttribute` — these replace the duplicated helpers currently living inside each of the 6 JSX-only rules.
+- Tests: `packages/eslint-plugin/tests/utils/element-visitor.test.ts` — 31 synthetic-AST tests covering all 5 frameworks + helpers + crash-safety. Full repo suite: **597/597 passing**, typecheck green, lint green, turbo build green across all 6 packages.
+- Architecture: mirrors the existing `class-visitor.ts` dispatch pattern. Vue handled by walking `Program.templateBody` manually (same trick class-visitor uses because ESLint doesn't traverse templateBody). Angular registered under both `Element$1` and a shape-guarded `Element` selector for version compatibility.
+
+**Day 2–3 (S1 finish):** Wire `element-visitor.ts` into `image-alt-text` as the reference consumer (proves the API on a real rule before S3 ports the other two), land real-parser integration tests via `@typescript-eslint/rule-tester` with vue/svelte/angular fixtures, benchmark visitor overhead (<0.5ms/file target).
 
 ---
 
