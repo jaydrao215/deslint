@@ -16,6 +16,8 @@ import langAttribute from './rules/lang-attribute.js';
 import viewportMeta from './rules/viewport-meta.js';
 import headingHierarchy from './rules/heading-hierarchy.js';
 import linkText from './rules/link-text.js';
+import formLabels from './rules/form-labels.js';
+import ariaValidation from './rules/aria-validation.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -45,6 +47,8 @@ const plugin = {
     'viewport-meta': viewportMeta,
     'heading-hierarchy': headingHierarchy,
     'link-text': linkText,
+    'form-labels': formLabels,
+    'aria-validation': ariaValidation,
   },
   configs: {} as Record<string, any>,
 };
@@ -71,6 +75,8 @@ plugin.configs.recommended = {
     'deslint/viewport-meta': 'error',
     'deslint/heading-hierarchy': 'warn',
     'deslint/link-text': 'warn',
+    'deslint/form-labels': 'warn',
+    'deslint/aria-validation': 'error',
   },
 };
 
@@ -95,6 +101,8 @@ plugin.configs.strict = {
     'deslint/viewport-meta': 'error',
     'deslint/heading-hierarchy': 'error',
     'deslint/link-text': 'error',
+    'deslint/form-labels': 'error',
+    'deslint/aria-validation': 'error',
   },
 };
 

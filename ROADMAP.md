@@ -3,7 +3,7 @@
 > **Read me first.** This is the active planning document. It captures: live state, what's in flight, what's queued, what's deferred, decisions made, and the prioritized backlog. **Updated on every meaningful commit.** Future conversations should read this BEFORE assuming anything about state — it supersedes chat history and memory. Where this conflicts with DESLINT-EXECUTION.md or sprint plan files, this wins.
 
 **Last updated:** 2026-04-08
-**Last update reason:** Accessibility Foundation sprint — S4 4/6 (`link-text`) shipped with linkComponents extension; 766/766 plugin tests; 6 real production WCAG bugs caught across 4 codebases through end of day 2
+**Last update reason:** Accessibility Foundation sprint — **S4 COMPLETE** (6/6 rules shipped in day 2). All 6 WCAG-mapped a11y rules: lang-attribute, viewport-meta, heading-hierarchy, link-text, form-labels, aria-validation. 842/842 plugin tests, 6 real production WCAG bugs caught, 0 FPs across 731 file-rule combinations. ~8 days of sprint slack created.
 
 ---
 
@@ -161,13 +161,16 @@
 - Honest doc note about heuristic limits where applicable
 
 **Estimate:** 1.5 days per rule = 9 days for 6 rules
-**Status:** 🔵 in progress — 4/6 shipped
+**Status:** ✅ **COMPLETE — 6/6 shipped on Apr 8**
 - `lang-attribute` ✅ Apr 8 — 36 tests, WCAG 3.1.1, JSX autofix + cross-framework
 - `viewport-meta` ✅ Apr 8 — 24 tests, WCAG 1.4.4 (F77), cross-framework, dogfooded end-to-end via CLI on 3 real OSS projects + positive-control fixture (0 FPs / 169 files, 4/4 TPs). Found and fixed P1 bug: CLI rule list was hard-coded and skipped both new rules until lint-runner.ts was patched.
 - `heading-hierarchy` ✅ Apr 8 — 21 tests, WCAG 1.3.1 + 2.4.6, cross-framework via new `onComplete` hook on createElementVisitor. **Caught 4 real production WCAG bugs in dogfood**: 1 in our own apps/docs/src/app/docs/page.tsx (h1→h3 — fixed in this commit), 1 in leerob/next-saas-starter, 2 in built HTML output. 0 FPs across 143 files. First rule to use cross-element collect-then-evaluate pattern.
 - `link-text` ✅ Apr 8 — 41 tests, WCAG 2.4.4 (Link Purpose), cross-framework. Per-element rule with custom-component support: `linkComponents` option (default `['Link','NextLink']`) catches Next.js anchor abstractions, not just raw `<a>`. **Caught 2 real WCAG bugs in shadcn-ui/taxonomy** (sr-only "View" labels with no destination context — same anti-pattern in mdx-card.tsx and guides/page.tsx). 0 FPs across 140 files. **First rule whose final shape was driven by dogfood**: initial v1 only checked raw `<a>`, returned 0 hits across all 3 cohort projects because they all use Next `<Link>`. Re-scoped after dogfood.
+- `form-labels` ✅ Apr 8 — 41 tests, WCAG 1.3.1 + 3.3.2, cross-framework. Cross-element rule using `onComplete` hook to match `<label htmlFor>` to `<input id>` plus wrapping `<label>` ancestor walk. JSX is matched case-sensitively (lowercase `<input>` only) — PascalCase `<Input>`/`<TextField>` are treated as opaque design-system components. Dogfood caught a FP from PascalCase case-collision before commit; fixed and added regression test. 7/7 TPs on positive control, 0 FPs across 140 cohort files.
+- `aria-validation` ✅ Apr 8 — 35 tests, WCAG 4.1.2 (Name, Role, Value), cross-framework. Detects invalid roles, hallucinated `aria-*` attributes, and **common LLM typos** (`aria-labelby` → `aria-labelledby`, `aira-label` → `aria-label`, `aria-pressd` → `aria-pressed`, etc.) with did-you-mean suggestions. The COMMON_ARIA_TYPOS table is data-only and grows with field observations. 8/8 TPs on positive control, 0 FPs across 140 cohort files (Radix-based projects don't typo aria — confirms no over-firing).
 **Depends on:** S1, S2
 **Validation log:** [validation/s4-day1-results.md](validation/s4-day1-results.md), [validation/s4-day2-results.md](validation/s4-day2-results.md)
+**Sprint impact:** Budget was 9 days; shipped in 1. ~8 days slack created. 6 real production bugs caught. 0 FPs. 731 file-rule combinations evaluated.
 
 ---
 

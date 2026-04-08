@@ -109,8 +109,8 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     id: '1.3.1',
     title: 'Info and Relationships',
     level: 'A',
-    description: 'Information, structure, and relationships conveyed through presentation can be programmatically determined. Skipped heading levels break the implied document outline.',
-    rules: ['deslint/heading-hierarchy'],
+    description: 'Information, structure, and relationships conveyed through presentation can be programmatically determined. Skipped heading levels break the implied document outline; unlabeled form controls break the form-control-to-label relationship.',
+    rules: ['deslint/heading-hierarchy', 'deslint/form-labels'],
     url: 'https://www.w3.org/TR/WCAG22/#info-and-relationships',
   },
   {
@@ -128,6 +128,22 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     description: 'The purpose of each link can be determined from the link text alone, or from the link text together with its programmatically determined link context. Empty anchors and generic phrases like "click here" or "read more" violate this criterion.',
     rules: ['deslint/link-text'],
     url: 'https://www.w3.org/TR/WCAG22/#link-purpose-in-context',
+  },
+  {
+    id: '3.3.2',
+    title: 'Labels or Instructions',
+    level: 'A',
+    description: 'Labels or instructions are provided when content requires user input. Every form control needs an associated label so users know what to enter.',
+    rules: ['deslint/form-labels'],
+    url: 'https://www.w3.org/TR/WCAG22/#labels-or-instructions',
+  },
+  {
+    id: '4.1.2',
+    title: 'Name, Role, Value',
+    level: 'A',
+    description: 'For all UI components, the name, role, state, and value can be programmatically determined. Invalid ARIA roles and unknown aria-* attributes are silently ignored by assistive tech, leaving the component without a usable accessible name or role.',
+    rules: ['deslint/aria-validation'],
+    url: 'https://www.w3.org/TR/WCAG22/#name-role-value',
   },
 ];
 

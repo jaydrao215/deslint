@@ -25,6 +25,8 @@ export const RULE_EFFORT_MINUTES: Record<string, number> = {
   'deslint/viewport-meta': 2,
   'deslint/heading-hierarchy': 5,
   'deslint/link-text': 3,
+  'deslint/form-labels': 3,
+  'deslint/aria-validation': 2,
 
   // Medium — refactor required
   'deslint/no-inline-styles': 5,
