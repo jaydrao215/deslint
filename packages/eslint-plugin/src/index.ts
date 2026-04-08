@@ -12,6 +12,7 @@ import noInlineStyles from './rules/no-inline-styles.js';
 import consistentBorderRadius from './rules/consistent-border-radius.js';
 import imageAltText from './rules/image-alt-text.js';
 import noMagicNumbersLayout from './rules/no-magic-numbers-layout.js';
+import langAttribute from './rules/lang-attribute.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -37,6 +38,7 @@ const plugin = {
     'consistent-border-radius': consistentBorderRadius,
     'image-alt-text': imageAltText,
     'no-magic-numbers-layout': noMagicNumbersLayout,
+    'lang-attribute': langAttribute,
   },
   configs: {} as Record<string, any>,
 };
@@ -59,6 +61,7 @@ plugin.configs.recommended = {
     'deslint/consistent-border-radius': 'warn',
     'deslint/image-alt-text': 'warn',
     'deslint/no-magic-numbers-layout': 'warn',
+    'deslint/lang-attribute': 'warn',
   },
 };
 
@@ -79,6 +82,7 @@ plugin.configs.strict = {
     'deslint/consistent-border-radius': 'error',
     'deslint/image-alt-text': 'error',
     'deslint/no-magic-numbers-layout': 'error',
+    'deslint/lang-attribute': 'error',
   },
 };
 

@@ -161,7 +161,7 @@
 - Honest doc note about heuristic limits where applicable
 
 **Estimate:** 1.5 days per rule = 9 days for 6 rules
-**Status:** ⏸ not started
+**Status:** 🔵 in progress — 1/6 shipped (`lang-attribute` ✅ Apr 8 — 36 tests green, WCAG 3.1.1 mapped, JSX autofix + cross-framework detection)
 **Depends on:** S1, S2
 
 ---

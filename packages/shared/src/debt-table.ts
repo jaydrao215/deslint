@@ -21,6 +21,7 @@ export const RULE_EFFORT_MINUTES: Record<string, number> = {
   'deslint/consistent-border-radius': 3,
   'deslint/dark-mode-coverage': 3,
   'deslint/image-alt-text': 3,
+  'deslint/lang-attribute': 2,
 
   // Medium — refactor required
   'deslint/no-inline-styles': 5,

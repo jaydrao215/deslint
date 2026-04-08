@@ -89,6 +89,14 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     rules: ['deslint/missing-states'],
     url: 'https://www.w3.org/TR/WCAG22/#focus-visible',
   },
+  {
+    id: '3.1.1',
+    title: 'Language of Page',
+    level: 'A',
+    description: 'The default human language of each page can be programmatically determined.',
+    rules: ['deslint/lang-attribute'],
+    url: 'https://www.w3.org/TR/WCAG22/#language-of-page',
+  },
 ];
 
 /** Per-criterion evaluation result. */
