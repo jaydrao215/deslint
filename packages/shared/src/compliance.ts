@@ -121,6 +121,14 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     rules: ['deslint/heading-hierarchy'],
     url: 'https://www.w3.org/TR/WCAG22/#headings-and-labels',
   },
+  {
+    id: '2.4.4',
+    title: 'Link Purpose (In Context)',
+    level: 'A',
+    description: 'The purpose of each link can be determined from the link text alone, or from the link text together with its programmatically determined link context. Empty anchors and generic phrases like "click here" or "read more" violate this criterion.',
+    rules: ['deslint/link-text'],
+    url: 'https://www.w3.org/TR/WCAG22/#link-purpose-in-context',
+  },
 ];
 
 /** Per-criterion evaluation result. */

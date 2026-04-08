@@ -160,4 +160,156 @@ unblocks future rules that need similar collect-then-evaluate semantics
 - S4 1/6 (`lang-attribute`) — ✅ shipped, dogfooded
 - S4 2/6 (`viewport-meta`) — ✅ shipped, dogfooded
 - S4 3/6 (`heading-hierarchy`) — ✅ shipped, dogfooded, **caught 4 real production bugs**
-- Next: S4 4/6 = `link-text` (empty/generic anchor text — WCAG 2.4.4)
+- S4 4/6 (`link-text`) — ✅ shipped, dogfooded, **caught 2 real production bugs** (see below)
+- Next: S4 5/6 = `form-labels` (every input needs an associated label — WCAG 1.3.1 + 3.3.2)
+
+---
+
+# S4 4/6 — `link-text` (WCAG 2.4.4 Link Purpose, A)
+
+> **Same date — same dogfood pass — different rule.**
+
+## Why this rule matters
+
+"Click here" / "Read more" / "Learn more" are the most common
+LLM-generated link texts because they're short, generic, and feel
+"polite." Every one of them is a WCAG 2.4.4 violation: a screen-reader
+user who Tab-jumps from link to link hears just "click here, click here,
+read more" with no destination context. This is also one of the most
+visible issues in OSS sites because card-overlay patterns
+(`<Link><span class="sr-only">View</span></Link>`) put a generic word in
+the accessible name without realizing it.
+
+## What this rule reports
+
+| MessageId | Trigger | WCAG |
+|---|---|---|
+| `genericLinkText` | Anchor's accessible name normalizes to a known generic phrase ("click here", "read more", "view", "more", "details", etc.) | 2.4.4 (A) |
+| `emptyLink` | Anchor has no text and no aria-label/aria-labelledby/title | 2.4.4 (A) |
+
+The accessible-name resolution order matches WCAG ACCNAME 1.2:
+`aria-labelledby` → `aria-label` (non-empty) → element text content →
+`title`. If any of those is dynamic (an expression we can't statically
+evaluate) we give the link the benefit of the doubt and skip.
+
+## Component coverage — the dogfood discovery that almost shipped a blind rule
+
+Initial v1 only checked raw `<a>`. First dogfood pass returned **0 hits
+across all 3 cohort projects (139 files)** — not because they were
+clean, but because all three are Next.js apps and use `<Link>` from
+`next/link`, not raw `<a>`. Without the user's "I don't want to blindly
+build things that doesn't work" directive, this rule would have shipped
+useless on the dominant React framework.
+
+**Fix:** added `linkComponents: string[]` option, defaulting to
+`['Link', 'NextLink']`. Case-sensitive match (so PascalCase `<Link>`
+doesn't collide with the lowercase `<link rel="stylesheet">` HTML head
+tag — verified by a test fixture). Re-scanned and found real bugs.
+
+## Real-world cohort scan (after linkComponents was added)
+
+| Project | Source | Files | Total violations | link-text hits | FPs | TPs |
+|---|---|---:|---:|---:|---:|---:|
+| Deslint docs (apps/docs) | dogfood | 22 | 70 | 0 | 0 | — |
+| shadcn-ui/taxonomy | github | 94 | 46 | **2** | 0 | **2** |
+| leerob/next-saas-starter | github | 23 | 12 | 0 | 0 | — |
+| `/tmp/deslint-real-test/src/BadLinks.tsx` (positive control) | hand-crafted | 1 | 11 | **11** | 0 | **11** |
+| **Cumulative (link-text)** | | **140** | **139** | **13** | **0** | **13** |
+
+## Real bugs found in production OSS
+
+### Bug 5 — shadcn-ui/taxonomy `components/mdx-card.tsx`
+
+**Lines:** 32–34
+
+```jsx
+{href && (
+  <Link href={disabled ? "#" : href} className="absolute inset-0">
+    <span className="sr-only">View</span>
+  </Link>
+)}
+```
+
+The card uses an absolute-positioned `<Link>` overlaying its visible
+content as a click target, with only a screen-reader-only label "View".
+For SR users, **the link's accessible name is literally "View"** —
+no destination, no context. WCAG 2.4.4 fail.
+
+Fix: `<span className="sr-only">View {title}</span>` or similar. The
+visible card content is fine; the SR label is the problem.
+
+### Bug 6 — shadcn-ui/taxonomy `app/(docs)/guides/page.tsx`
+
+**Lines:** 54–56
+
+```jsx
+<Link href={guide.slug} className="absolute inset-0">
+  <span className="sr-only">View</span>
+</Link>
+```
+
+Same anti-pattern as Bug 5, in a different file. Both show that the
+mdx-card shape was copied verbatim into the guides list page. Fixing one
+without the other would leave the second site-wide.
+
+These aren't theoretical. shadcn-ui/taxonomy is the canonical Next.js +
+Contentlayer reference site (≈3.6k stars). It's the kind of code LLMs
+copy verbatim into production apps.
+
+## Positive control fixture results
+
+`/tmp/deslint-real-test/src/BadLinks.tsx` — 14 anchors total: 8 generic +
+3 empty + 3 valid (descriptive / aria-label / dynamic). Result: **11/11
+expected hits, 0 misses, 0 FPs.** The valid cases (descriptive text,
+non-empty `aria-label`, `title`, dynamic `{label}` expression) were
+correctly skipped, including the nested-element case
+`<a><span>read more</span></a>` which still flagged via recursive text
+extraction.
+
+## FP-avoidance choices baked in
+
+- **Exact match on normalized text, not substring.** "Read more about
+  Wallace's biography" is fine — the generic phrase is a substring but
+  the full normalized form `read more about wallace s biography` is not
+  in the GENERIC_LINK_TEXTS set. Tested.
+- **Dynamic text → skip.** `<a>{label}</a>`, `<a>{t("link.label")}</a>`
+  return `null` from `getStaticTextContent` and we trust the developer.
+- **Spread props → skip.** `<a {...linkProps}>` may inject `aria-label`
+  we can't see.
+- **Non-empty `aria-label` → skip even with bad text.**
+  `<a aria-label="Open homepage">→</a>` is valid.
+- **`aria-labelledby` → skip unconditionally.** We can't follow the
+  reference statically; assume the referenced element is real.
+- **Empty `aria-label="" `→ fall through to text checks.** Handled
+  explicitly in tests — empty SR label is the same as no SR label.
+
+## Cross-element pattern not used
+
+Unlike `heading-hierarchy`, `link-text` is per-element — every anchor
+can be evaluated independently. No `onComplete` hook needed. This
+confirms the cross-element pattern is opt-in cost only when a rule
+actually requires it.
+
+## Cumulative trust metrics through end of S4 day 2
+
+| Metric | Threshold | Result | Status |
+|---|---|---|---|
+| FP rate (S4 rules, real OSS) | < 5% | **0%** (0 FPs / 451 file-rule combinations) | MET |
+| TP detection (positive control) | ≥ 1 per defect class | **18/18** | MET |
+| Real bugs found in production | ≥ 1 | **6** (3 in apps/docs, 1 in saas-starter, 2 in taxonomy) | MET |
+| Crash rate | 0 | **0** | MET |
+| Unit tests | passing | **766** plugin tests | MET |
+| Integration drift caught | n/a | lint-runner.ts kept in sync | OK |
+| Dogfood-driven design changes | n/a | **1** (linkComponents option added after first scan returned 0 hits) | OK |
+
+## Sprint S4 progress
+
+Half of S4 (4 of 6 rules) shipped on day 2 of the sprint. Day 1 + day 2
+combined: **6 real production bugs found across 4 different codebases,
+0 false positives across 451 file-rule combinations.**
+
+Remaining S4 rules:
+
+- S4 5/6 = `form-labels` (WCAG 1.3.1 + 3.3.2 — every input needs a label)
+- S4 6/6 = `aria-validation` (WCAG 4.1.2 — invalid ARIA roles/attributes)
+

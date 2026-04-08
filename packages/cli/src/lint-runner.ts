@@ -21,6 +21,7 @@ export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'deslint/lang-attribute': 'consistency',
   'deslint/viewport-meta': 'consistency',
   'deslint/heading-hierarchy': 'consistency',
+  'deslint/link-text': 'consistency',
 };
 
 export interface LintMessage {
@@ -97,6 +98,7 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     'deslint/lang-attribute': 'warn',
     'deslint/viewport-meta': 'error',
     'deslint/heading-hierarchy': 'warn',
+    'deslint/link-text': 'warn',
   };
 
   // Apply user overrides

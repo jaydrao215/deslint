@@ -15,6 +15,7 @@ import noMagicNumbersLayout from './rules/no-magic-numbers-layout.js';
 import langAttribute from './rules/lang-attribute.js';
 import viewportMeta from './rules/viewport-meta.js';
 import headingHierarchy from './rules/heading-hierarchy.js';
+import linkText from './rules/link-text.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -43,6 +44,7 @@ const plugin = {
     'lang-attribute': langAttribute,
     'viewport-meta': viewportMeta,
     'heading-hierarchy': headingHierarchy,
+    'link-text': linkText,
   },
   configs: {} as Record<string, any>,
 };
@@ -68,6 +70,7 @@ plugin.configs.recommended = {
     'deslint/lang-attribute': 'warn',
     'deslint/viewport-meta': 'error',
     'deslint/heading-hierarchy': 'warn',
+    'deslint/link-text': 'warn',
   },
 };
 
@@ -91,6 +94,7 @@ plugin.configs.strict = {
     'deslint/lang-attribute': 'error',
     'deslint/viewport-meta': 'error',
     'deslint/heading-hierarchy': 'error',
+    'deslint/link-text': 'error',
   },
 };
 
