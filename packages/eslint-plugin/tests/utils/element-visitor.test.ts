@@ -34,7 +34,7 @@ describe('createElementVisitor', () => {
     expect(visitor).toHaveProperty('Tag');
   });
 
-  // ─── React / JSX ────────────────────────────────────────────────────────
+  // ─── React / JSX ─────────────────────────────────────────────────────
 
   describe('JSX dispatch', () => {
     it('normalizes a simple <img alt="hi" />', () => {
@@ -179,7 +179,7 @@ describe('createElementVisitor', () => {
     });
   });
 
-  // ─── tagNames filter ────────────────────────────────────────────────────
+  // ─── tagNames filter ───────────────────────────────────────────────
 
   describe('tagNames filter', () => {
     it('only fires for listed tag names (case-insensitive)', () => {
@@ -206,7 +206,7 @@ describe('createElementVisitor', () => {
     });
   });
 
-  // ─── Vue ────────────────────────────────────────────────────────────────
+  // ─── Vue ───────────────────────────────────────────────────────────
 
   describe('Vue dispatch', () => {
     it('walks Program.templateBody and normalizes VElements', () => {
@@ -308,7 +308,7 @@ describe('createElementVisitor', () => {
     });
   });
 
-  // ─── Svelte ─────────────────────────────────────────────────────────────
+  // ─── Svelte ──────────────────────────────────────────────────────
 
   describe('Svelte dispatch', () => {
     it('normalizes SvelteElement with static attribute', () => {
@@ -376,7 +376,7 @@ describe('createElementVisitor', () => {
     });
   });
 
-  // ─── Angular ────────────────────────────────────────────────────────────
+  // ─── Angular ─────────────────────────────────────────────────────
 
   describe('Angular dispatch', () => {
     it('Element$1 normalizes static + bound attributes', () => {
@@ -429,9 +429,9 @@ describe('createElementVisitor', () => {
     });
   });
 
-  // ─── HTML stub ──────────────────────────────────────────────────────────
+  // ─── HTML (via @html-eslint/parser) ───────────────────────────────
 
-  describe('HTML dispatch (S2 stub)', () => {
+  describe('HTML dispatch (S2)', () => {
     it('normalizes an @html-eslint/parser Tag shape', () => {
       const { seen, check } = collector();
       const visitor = createElementVisitor({ check });
@@ -440,10 +440,7 @@ describe('createElementVisitor', () => {
         type: 'Tag',
         name: 'img',
         attributes: [
-          {
-            key: { value: 'alt' },
-            value: { value: 'hi' },
-          },
+          { type: 'Attribute', key: { value: 'alt' }, value: { value: 'hi' } },
         ],
       });
 
@@ -452,9 +449,102 @@ describe('createElementVisitor', () => {
       expect(seen[0].tagName).toBe('img');
       expect(seen[0].attributes[0]).toMatchObject({ name: 'alt', value: 'hi' });
     });
+
+    it('treats boolean attributes (no .value) as empty string', () => {
+      const { seen, check } = collector();
+      const visitor = createElementVisitor({ check });
+
+      visitor.Tag({
+        type: 'Tag',
+        name: 'input',
+        attributes: [
+          // html-eslint omits the `value` property entirely on boolean attrs
+          { type: 'Attribute', key: { value: 'disabled' } },
+          { type: 'Attribute', key: { value: 'required' } },
+        ],
+      });
+
+      expect(seen).toHaveLength(1);
+      expect(getStaticAttributeValue(seen[0], 'disabled')).toBe('');
+      expect(getStaticAttributeValue(seen[0], 'required')).toBe('');
+    });
+
+    it('preserves explicit empty-string values distinct from boolean attrs', () => {
+      // <input value=""> must not be confused with a boolean attribute
+      const { seen, check } = collector();
+      const visitor = createElementVisitor({ check });
+
+      visitor.Tag({
+        type: 'Tag',
+        name: 'input',
+        attributes: [
+          { type: 'Attribute', key: { value: 'value' }, value: { value: '' } },
+        ],
+      });
+
+      expect(getStaticAttributeValue(seen[0], 'value')).toBe('');
+    });
+
+    it('hasSpread is always false for plain HTML', () => {
+      const { seen, check } = collector();
+      const visitor = createElementVisitor({ check });
+
+      visitor.Tag({
+        type: 'Tag',
+        name: 'div',
+        attributes: [
+          { type: 'Attribute', key: { value: 'class' }, value: { value: 'x' } },
+        ],
+      });
+
+      expect(seen[0].hasSpread).toBe(false);
+    });
+
+    it('ignores non-Tag nodes (ScriptTag, StyleTag, Doctype)', () => {
+      const { seen, check } = collector();
+      const visitor = createElementVisitor({ check });
+
+      visitor.Tag({ type: 'ScriptTag', name: 'script', attributes: [] });
+      visitor.Tag({ type: 'StyleTag', name: 'style', attributes: [] });
+      visitor.Tag({ type: 'Doctype', name: 'html' });
+
+      expect(seen).toHaveLength(0);
+    });
+
+    it('skips malformed attribute entries without throwing', () => {
+      const { seen, check } = collector();
+      const visitor = createElementVisitor({ check });
+
+      visitor.Tag({
+        type: 'Tag',
+        name: 'img',
+        attributes: [
+          null,
+          undefined,
+          { type: 'Attribute' }, // missing key
+          { type: 'Attribute', key: {} }, // missing key.value
+          { type: 'Attribute', key: { value: 'src' }, value: { value: '/x.png' } },
+        ],
+      });
+
+      expect(seen).toHaveLength(1);
+      expect(seen[0].attributes).toHaveLength(1);
+      expect(seen[0].attributes[0].name).toBe('src');
+    });
+
+    it('respects the tagNames filter on HTML', () => {
+      const { seen, check } = collector();
+      const visitor = createElementVisitor({ check, tagNames: ['img'] });
+
+      visitor.Tag({ type: 'Tag', name: 'img', attributes: [] });
+      visitor.Tag({ type: 'Tag', name: 'div', attributes: [] });
+      visitor.Tag({ type: 'Tag', name: 'IMG', attributes: [] }); // html-eslint lowercases, but guard anyway
+
+      expect(seen.map((e) => e.tagName)).toEqual(['img', 'IMG']);
+    });
   });
 
-  // ─── Crash safety (CLAUDE.md: try/catch everywhere) ─────────────────────
+  // ─── Crash safety (CLAUDE.md: try/catch everywhere) ───────────────────
 
   describe('crash safety', () => {
     it('never throws on unexpected node shapes', () => {
@@ -491,7 +581,7 @@ describe('createElementVisitor', () => {
   });
 });
 
-// ─── Helpers ──────────────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────
 
 describe('element-visitor helpers', () => {
   const makeEl = (attrs: Array<{ name: string; value: string | null }>): NormalizedElement => ({
