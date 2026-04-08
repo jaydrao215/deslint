@@ -23,6 +23,7 @@ export const RULE_EFFORT_MINUTES: Record<string, number> = {
   'deslint/image-alt-text': 3,
   'deslint/lang-attribute': 2,
   'deslint/viewport-meta': 2,
+  'deslint/heading-hierarchy': 5,
 
   // Medium — refactor required
   'deslint/no-inline-styles': 5,

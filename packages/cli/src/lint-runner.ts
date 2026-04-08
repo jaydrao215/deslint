@@ -20,6 +20,7 @@ export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'deslint/no-magic-numbers-layout': 'spacing',
   'deslint/lang-attribute': 'consistency',
   'deslint/viewport-meta': 'consistency',
+  'deslint/heading-hierarchy': 'consistency',
 };
 
 export interface LintMessage {
@@ -95,6 +96,7 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     'deslint/no-magic-numbers-layout': 'warn',
     'deslint/lang-attribute': 'warn',
     'deslint/viewport-meta': 'error',
+    'deslint/heading-hierarchy': 'warn',
   };
 
   // Apply user overrides

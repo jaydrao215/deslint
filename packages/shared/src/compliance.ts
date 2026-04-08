@@ -105,6 +105,22 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     rules: ['deslint/viewport-meta'],
     url: 'https://www.w3.org/TR/WCAG22/#resize-text',
   },
+  {
+    id: '1.3.1',
+    title: 'Info and Relationships',
+    level: 'A',
+    description: 'Information, structure, and relationships conveyed through presentation can be programmatically determined. Skipped heading levels break the implied document outline.',
+    rules: ['deslint/heading-hierarchy'],
+    url: 'https://www.w3.org/TR/WCAG22/#info-and-relationships',
+  },
+  {
+    id: '2.4.6',
+    title: 'Headings and Labels',
+    level: 'AA',
+    description: 'Headings and labels describe topic or purpose. Multiple top-level h1 elements break the single-main-heading expectation screen readers rely on.',
+    rules: ['deslint/heading-hierarchy'],
+    url: 'https://www.w3.org/TR/WCAG22/#headings-and-labels',
+  },
 ];
 
 /** Per-criterion evaluation result. */

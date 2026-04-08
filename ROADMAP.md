@@ -161,11 +161,12 @@
 - Honest doc note about heuristic limits where applicable
 
 **Estimate:** 1.5 days per rule = 9 days for 6 rules
-**Status:** 🔵 in progress — 2/6 shipped
+**Status:** 🔵 in progress — 3/6 shipped
 - `lang-attribute` ✅ Apr 8 — 36 tests, WCAG 3.1.1, JSX autofix + cross-framework
 - `viewport-meta` ✅ Apr 8 — 24 tests, WCAG 1.4.4 (F77), cross-framework, dogfooded end-to-end via CLI on 3 real OSS projects + positive-control fixture (0 FPs / 169 files, 4/4 TPs). Found and fixed P1 bug: CLI rule list was hard-coded and skipped both new rules until lint-runner.ts was patched.
+- `heading-hierarchy` ✅ Apr 8 — 21 tests, WCAG 1.3.1 + 2.4.6, cross-framework via new `onComplete` hook on createElementVisitor. **Caught 4 real production WCAG bugs in dogfood**: 1 in our own apps/docs/src/app/docs/page.tsx (h1→h3 — fixed in this commit), 1 in leerob/next-saas-starter, 2 in built HTML output. 0 FPs across 143 files. First rule to use cross-element collect-then-evaluate pattern.
 **Depends on:** S1, S2
-**Validation log:** [validation/s4-day1-results.md](validation/s4-day1-results.md)
+**Validation log:** [validation/s4-day1-results.md](validation/s4-day1-results.md), [validation/s4-day2-results.md](validation/s4-day2-results.md)
 
 ---
 

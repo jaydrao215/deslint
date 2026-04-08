@@ -63,6 +63,15 @@ export interface NormalizedElement {
 /** Callback invoked for every element a rule cares about. */
 export type ElementCheckFn = (element: NormalizedElement) => void;
 
+/**
+ * Optional callback fired once per file after the visitor has finished
+ * walking every element. Hooked to `Program:exit`, which ESLint runs after
+ * all child nodes have been visited regardless of framework. Use this for
+ * rules that need to evaluate the full collection of elements (e.g.
+ * heading-hierarchy ordering, single-h1 enforcement).
+ */
+export type ElementCompleteFn = () => void;
+
 /** Options for `createElementVisitor`. */
 export interface ElementVisitorOptions {
   /** Called once per matched element. */
@@ -72,6 +81,12 @@ export interface ElementVisitorOptions {
    * tag name (lowercased) is in this list. If omitted, all elements match.
    */
   tagNames?: readonly string[];
+  /**
+   * Optional finalize hook fired once at end-of-file (Program:exit). Use
+   * this for cross-element rules that need the complete element set before
+   * making decisions (e.g. heading-hierarchy collects then evaluates).
+   */
+  onComplete?: ElementCompleteFn;
 }
 
 /* ────────────────────────────────────────────────────────────────────────── */
@@ -229,6 +244,19 @@ export function createElementVisitor(
         dispatch(normalizeHtml(node));
       } catch (err) {
         debugLog('element-visitor-html', err);
+      }
+    },
+
+    // ─── End-of-file finalize hook ───────────────────────────────────────
+    // Program:exit fires after ESLint walks every node regardless of parser,
+    // so it's the safe place to run cross-element evaluation (e.g.
+    // heading-hierarchy needs the full ordered list before deciding).
+    'Program:exit'() {
+      if (!opts.onComplete) return;
+      try {
+        opts.onComplete();
+      } catch (err) {
+        debugLog('element-visitor-onComplete', err);
       }
     },
   };
