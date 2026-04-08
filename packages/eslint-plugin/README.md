@@ -9,8 +9,6 @@
 
 **Validated on 7 real-world projects (4,061 files) with 0% false positive rate and 0 crashes.**
 
-> **Renamed in v0.1.1** — this package was previously published as `eslint-plugin-deslint`. The old name is deprecated; install `@deslint/eslint-plugin` instead. See the [migration note](#migration-from-eslint-plugin-deslint).
-
 ## Installation
 
 ```sh
@@ -313,34 +311,6 @@ Tested on 7 real-world open-source projects:
 | taxonomy | Next.js 13, shadcn/ui | 94 | 71 | 0 |
 
 **Cumulative: 4,061 files, 3,395 violations, 0 false positives, 0 crashes.**
-
-## Migration from `eslint-plugin-deslint`
-
-In v0.1.1, this package was renamed from `eslint-plugin-deslint` to `@deslint/eslint-plugin` to align with the rest of the `@deslint/*` workspace (`@deslint/cli`, `@deslint/mcp`, `@deslint/shared`). Same code, same rules, same config — only the package name and import specifier changed.
-
-**Migration steps:**
-
-```sh
-# 1. Uninstall the old package
-npm uninstall eslint-plugin-deslint
-
-# 2. Install the new one
-npm install -D @deslint/eslint-plugin
-```
-
-```js
-// 3. Update your eslint.config.js import
-- import deslint from 'eslint-plugin-deslint';
-+ import deslint from '@deslint/eslint-plugin';
-```
-
-**Nothing else changes:**
-- The plugin shorthand stays `deslint` (e.g. `'deslint/no-arbitrary-colors'`)
-- All rule names, options, and presets are identical
-- Auto-fix output is identical
-- `.deslintrc.json` schema is unchanged
-
-The old `eslint-plugin-deslint@0.1.0` will be deprecated on npm with a redirect message pointing here.
 
 ## License
 
