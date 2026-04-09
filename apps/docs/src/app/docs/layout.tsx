@@ -103,7 +103,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
 
           <div className="ml-auto flex items-center gap-3">
             <a
-              href="https://github.com/deslint/deslint"
+              href="https://github.com/jaydrao215/deslint"
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"

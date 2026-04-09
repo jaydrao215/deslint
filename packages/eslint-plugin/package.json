@@ -12,8 +12,20 @@
     "quality",
     "lint",
     "design-system",
-    "ai"
+    "ai",
+    "wcag",
+    "accessibility",
+    "a11y"
   ],
+  "homepage": "https://deslint.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaydrao215/deslint.git",
+    "directory": "packages/eslint-plugin"
+  },
+  "bugs": {
+    "url": "https://github.com/jaydrao215/deslint/issues"
+  },
   "license": "MIT",
   "author": "Deslint",
   "engines": {

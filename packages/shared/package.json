@@ -2,6 +2,15 @@
   "name": "@deslint/shared",
   "version": "0.2.0",
   "description": "Shared types, schemas, and utilities for Deslint",
+  "homepage": "https://deslint.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaydrao215/deslint.git",
+    "directory": "packages/shared"
+  },
+  "bugs": {
+    "url": "https://github.com/jaydrao215/deslint/issues"
+  },
   "license": "MIT",
   "author": "Deslint",
   "engines": {

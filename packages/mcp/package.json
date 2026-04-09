@@ -2,6 +2,15 @@
   "name": "@deslint/mcp",
   "version": "0.2.0",
   "description": "MCP server for Deslint — real-time design quality feedback in Cursor/Claude Code",
+  "homepage": "https://deslint.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaydrao215/deslint.git",
+    "directory": "packages/mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/jaydrao215/deslint/issues"
+  },
   "license": "MIT",
   "author": "Deslint",
   "engines": {
