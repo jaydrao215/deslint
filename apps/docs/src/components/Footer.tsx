@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { BrandLockup } from './BrandLockup';
 
 const GITHUB_URL = 'https://github.com/jaydrao215/deslint';
 
@@ -33,16 +33,8 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <Image
-                src="/icons/icon-32.svg"
-                alt=""
-                role="presentation"
-                width={28}
-                height={28}
-                className="h-7 w-7"
-              />
-              <span className="font-semibold text-gray-900">Deslint</span>
+            <Link href="/" className="inline-block mb-4">
+              <BrandLockup size="footer" showTagline />
             </Link>
             <p className="text-sm text-gray-500 leading-relaxed mb-4 max-w-xs">
               Design quality for the AI code era. Design-system + WCAG linting,

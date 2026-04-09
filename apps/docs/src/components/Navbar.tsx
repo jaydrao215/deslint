@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Menu, X, BookOpen, Zap } from 'lucide-react';
+import { BrandLockup } from './BrandLockup';
 
 const NAV_LINKS = [
   { href: '/docs', label: 'Docs', icon: BookOpen },
@@ -33,19 +33,8 @@ export function Navbar() {
     >
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <Image
-              src="/icons/icon-32.svg"
-              alt=""
-              role="presentation"
-              width={32}
-              height={32}
-              priority
-              className="h-8 w-8 transition-transform group-hover:scale-105"
-            />
-            <span className="font-semibold text-gray-900 text-lg tracking-tight">
-              Deslint
-            </span>
+          <Link href="/" className="group transition-transform hover:scale-[1.02]">
+            <BrandLockup priority />
           </Link>
 
           {/* Desktop Nav */}
