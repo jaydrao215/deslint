@@ -8,7 +8,12 @@
  */
 
 import type { LintResult } from './lint-runner.js';
-import type { ComplianceResult, CriterionResult } from '@deslint/shared';
+import type {
+  ComplianceResult,
+  CriterionResult,
+  LevelSummary,
+  WcagLevel,
+} from '@deslint/shared';
 import { evaluateCompliance } from '@deslint/shared';
 
 export interface ComplianceReportInput {
@@ -60,23 +65,11 @@ function levelBadge(level: string): string {
   return `<span class="level level-${level.toLowerCase()}">${escapeHtml(level)}</span>`;
 }
 
-/**
- * Render a compliance report as standalone HTML.
- *
- * Inlined CSS, no external fonts, no JS. Safe to email, attach to a
- * SOC2 audit, or print to PDF.
- */
-export function renderComplianceHtml(input: ComplianceReportInput): string {
-  const compliance = buildComplianceResult(input.lintResult);
-  const scannedAtIso = input.scannedAt.toISOString();
-  const scannedAtHuman = input.scannedAt.toUTCString();
-
-  const rows = compliance.criteria
-    .map((c) => {
-      const rulesList = c.criterion.rules
-        .map((r) => `<code>${escapeHtml(r)}</code>`)
-        .join(', ');
-      return `
+function renderCriterionRow(c: CriterionResult): string {
+  const rulesList = c.criterion.rules
+    .map((r) => `<code>${escapeHtml(r)}</code>`)
+    .join(', ');
+  return `
       <tr class="row-${c.status}">
         <td class="sc-id"><a href="${escapeHtml(c.criterion.url)}" target="_blank" rel="noopener">${escapeHtml(c.criterion.id)}</a></td>
         <td class="sc-title">${escapeHtml(c.criterion.title)}</td>
@@ -89,11 +82,79 @@ export function renderComplianceHtml(input: ComplianceReportInput): string {
           <div class="rules">Evidence: ${rulesList}</div>
         </td>
       </tr>`;
+}
+
+function renderLevelSection(
+  level: WcagLevel,
+  criteria: CriterionResult[],
+  summary: LevelSummary | undefined,
+): string {
+  // No criteria at this level in our map → skip the whole section
+  // instead of rendering an empty table.
+  if (criteria.length === 0 || !summary) return '';
+
+  const conformanceBadge = summary.conformant
+    ? `<span class="badge pass">Conformant</span>`
+    : summary.evaluated === 0
+      ? `<span class="badge skip">Not evaluated</span>`
+      : `<span class="badge fail">Not conformant</span>`;
+
+  const rows = criteria.map(renderCriterionRow).join('\n');
+
+  return `
+  <section class="level-section" data-level="${level}">
+    <div class="level-header">
+      <h2>Level ${level} <span class="level-count">(${summary.passed}/${summary.evaluated} passing${summary.notEvaluated > 0 ? `, ${summary.notEvaluated} not evaluated` : ''})</span></h2>
+      ${conformanceBadge}
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>SC</th>
+          <th>Title</th>
+          <th>Level</th>
+          <th>Status</th>
+          <th>Violations</th>
+          <th>Files</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
+  </section>`;
+}
+
+/**
+ * Render a compliance report as standalone HTML.
+ *
+ * Inlined CSS, no external fonts, no JS. Safe to email, attach to a
+ * SOC2 audit, or print to PDF.
+ */
+export function renderComplianceHtml(input: ComplianceReportInput): string {
+  const compliance = buildComplianceResult(input.lintResult);
+  const scannedAtIso = input.scannedAt.toISOString();
+  const scannedAtHuman = input.scannedAt.toUTCString();
+
+  const levelOrder: WcagLevel[] = ['A', 'AA', 'AAA'];
+  const levelSections = levelOrder
+    .map((lvl) => {
+      const summary = compliance.byLevel.find((b) => b.level === lvl);
+      const atLevel = compliance.criteria.filter((c) => c.criterion.level === lvl);
+      return renderLevelSection(lvl, atLevel, summary);
     })
+    .filter((s) => s.length > 0)
     .join('\n');
 
   const levelLabel = compliance.levelReached === 'none' ? 'Not Met' : `Level ${compliance.levelReached}`;
   const levelClass = compliance.levelReached === 'none' ? 'fail' : 'pass';
+
+  const wcag21Label =
+    compliance.wcag21.levelReached === 'none'
+      ? 'Not Met'
+      : `Level ${compliance.wcag21.levelReached}`;
+  const wcag21Class = compliance.wcag21.levelReached === 'none' ? 'fail' : 'pass';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -133,9 +194,12 @@ export function renderComplianceHtml(input: ComplianceReportInput): string {
   .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
   .hero {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
     margin-bottom: 2rem;
+  }
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: repeat(2, 1fr); }
   }
   .stat {
     background: var(--panel);
@@ -212,6 +276,33 @@ export function renderComplianceHtml(input: ComplianceReportInput): string {
   }
   tr.row-fail { background: rgba(231, 76, 60, 0.03); }
   tr.row-pass { background: rgba(39, 174, 96, 0.02); }
+  .level-section { margin-bottom: 2.5rem; }
+  .level-section:last-of-type { margin-bottom: 1.5rem; }
+  .level-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .level-header h2 {
+    color: var(--primary);
+    margin: 0;
+    font-size: 1.1rem;
+  }
+  .level-header .level-count {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 0.85rem;
+  }
+  .wcag21-note {
+    background: var(--panel);
+    border-left: 3px solid var(--primary);
+    padding: 0.75rem 1rem;
+    margin: 0 0 2rem;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
+  .wcag21-note strong { color: var(--primary); }
   footer {
     margin-top: 3rem;
     padding-top: 1.5rem;
@@ -235,8 +326,12 @@ export function renderComplianceHtml(input: ComplianceReportInput): string {
 
   <div class="hero">
     <div class="stat">
-      <div class="label">Conformance</div>
+      <div class="label">WCAG 2.2</div>
       <div class="value ${levelClass}">${escapeHtml(levelLabel)}</div>
+    </div>
+    <div class="stat">
+      <div class="label">WCAG 2.1 AA<sup>*</sup></div>
+      <div class="value ${wcag21Class}">${escapeHtml(wcag21Label)}</div>
     </div>
     <div class="stat">
       <div class="label">Pass Rate</div>
@@ -252,22 +347,15 @@ export function renderComplianceHtml(input: ComplianceReportInput): string {
     </div>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>SC</th>
-        <th>Title</th>
-        <th>Level</th>
-        <th>Status</th>
-        <th>Violations</th>
-        <th>Files</th>
-        <th>Detail</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rows}
-    </tbody>
-  </table>
+  <div class="wcag21-note">
+    <strong>ADA Title II note:</strong> The public-entity ADA Title II rule adopts
+    <a href="https://www.w3.org/TR/WCAG21/" target="_blank" rel="noopener">WCAG 2.1</a> Level AA as its
+    technical standard. Every criterion Deslint evaluates here also exists in WCAG 2.1, so this
+    report doubles as 2.1 evidence for the ${compliance.wcag21.evaluated} of ${compliance.wcag21.totalMapped}
+    criteria we cover. <sup>*</sup> "WCAG 2.1 AA" above reflects conformance over that 2.1 subset only;
+    full 2.1 AA conformance requires auditing the criteria Deslint doesn't statically detect.
+  </div>
+  ${levelSections}
 
   <footer>
     Generated by Deslint &middot;

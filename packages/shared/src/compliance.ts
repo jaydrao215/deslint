@@ -16,6 +16,32 @@
 /** WCAG conformance level. */
 export type WcagLevel = 'A' | 'AA' | 'AAA';
 
+/**
+ * IDs of criteria that ALSO exist unchanged in WCAG 2.1. Used to
+ * compute the 2.1 AA equivalence reported alongside the 2.2 result.
+ *
+ * WCAG 2.1 is the legal floor for ADA Title II. WCAG 2.2 is mostly a
+ * superset — it added criteria but also REMOVED 4.1.1 Parsing. We
+ * don't map 4.1.1, so every criterion in our evaluator exists in both
+ * specs. We still list them explicitly instead of assuming "2.2
+ * implies 2.1" so the set is auditable when we add new criteria.
+ */
+export const WCAG_21_CRITERIA_IDS: ReadonlySet<string> = new Set([
+  '1.1.1',
+  '1.3.1',
+  '1.4.3',
+  '1.4.4',
+  '1.4.10',
+  '1.4.11',
+  '1.4.12',
+  '2.4.4',
+  '2.4.6',
+  '2.4.7',
+  '3.1.1',
+  '3.3.2',
+  '4.1.2',
+]);
+
 /** A single WCAG 2.2 Success Criterion we evaluate. */
 export interface WcagCriterion {
   /** e.g. "1.4.3" */
@@ -158,6 +184,28 @@ export interface CriterionResult {
   filesAffected: number;
 }
 
+/** Per-level rollup used by the HTML report's "Level A" / "Level AA" sections. */
+export interface LevelSummary {
+  level: WcagLevel;
+  /** Total mapped criteria at this exact level. */
+  total: number;
+  /** Criteria evaluated (i.e. at least one mapped rule was enabled). */
+  evaluated: number;
+  /** Evaluated criteria that passed. */
+  passed: number;
+  /** Evaluated criteria that failed. */
+  failed: number;
+  /** Criteria not evaluated (no mapped rule enabled). */
+  notEvaluated: number;
+  /**
+   * True when conformance to this level is claimable — matches the
+   * `levelReached` rule: every evaluated criterion at this level AND
+   * every level below passes, AND at least one criterion at this
+   * exact level was evaluated.
+   */
+  conformant: boolean;
+}
+
 /** Overall compliance evaluation result. */
 export interface ComplianceResult {
   /** Per-criterion breakdown. */
@@ -176,6 +224,32 @@ export interface ComplianceResult {
     passed: number;
     failed: number;
     notEvaluated: number;
+  };
+  /** Per-level breakdown — one entry per level that has at least one mapped criterion. */
+  byLevel: LevelSummary[];
+  /**
+   * WCAG 2.1 AA equivalence. 2.1 is the ADA Title II legal floor;
+   * every criterion we currently map also exists in 2.1 (see
+   * `WCAG_21_CRITERIA_IDS`), so the same evaluation gives us a 2.1
+   * conformance statement "for free".
+   */
+  wcag21: {
+    /**
+     * Total criteria in our map that are also in WCAG 2.1 at Level A or AA.
+     * If we ever add a criterion unique to 2.2, it would be excluded here.
+     */
+    totalMapped: number;
+    /** Criteria in the 2.1 subset that were evaluated. */
+    evaluated: number;
+    /** Criteria in the 2.1 subset that passed. */
+    passed: number;
+    /** Criteria in the 2.1 subset that failed. */
+    failed: number;
+    /**
+     * The 2.1 level reached, computed the same way as `levelReached`
+     * but over the WCAG 2.1 subset of criteria only.
+     */
+    levelReached: WcagLevel | 'none';
   };
 }
 
@@ -239,20 +313,62 @@ export function evaluateCompliance(scan: ComplianceScanSnapshot): ComplianceResu
   // that exact level was evaluated. Requirement (b) prevents us from
   // claiming AAA conformance when we have no AAA coverage at all.
   const levelOrder: WcagLevel[] = ['A', 'AA', 'AAA'];
-  let levelReached: WcagLevel | 'none' = 'none';
-  for (const level of levelOrder) {
-    const criteriaAtOrBelow = criteria.filter(
+  const computeLevelReached = (pool: CriterionResult[]): WcagLevel | 'none' => {
+    let reached: WcagLevel | 'none' = 'none';
+    for (const level of levelOrder) {
+      const atOrBelow = pool.filter(
+        (c) => levelOrder.indexOf(c.criterion.level) <= levelOrder.indexOf(level),
+      );
+      const atExactLevel = pool.filter((c) => c.criterion.level === level);
+      const allPass = atOrBelow.every((c) => c.status === 'pass');
+      const hasExactLevelEvaluated = atExactLevel.some((c) => c.status !== 'not-evaluated');
+      if (allPass && hasExactLevelEvaluated) {
+        reached = level;
+      } else if (!allPass) {
+        break;
+      }
+    }
+    return reached;
+  };
+  const levelReached = computeLevelReached(criteria);
+
+  // Per-level breakdown — one entry per level that actually has mapped
+  // criteria, in A → AA → AAA order. `conformant` uses the same
+  // at-or-below rule as `levelReached` so the HTML report's per-level
+  // sections never contradict the overall headline.
+  const levelsWithCriteria = levelOrder.filter((lvl) =>
+    criteria.some((c) => c.criterion.level === lvl),
+  );
+  const byLevel: LevelSummary[] = levelsWithCriteria.map((level) => {
+    const atLevel = criteria.filter((c) => c.criterion.level === level);
+    const atOrBelow = criteria.filter(
       (c) => levelOrder.indexOf(c.criterion.level) <= levelOrder.indexOf(level),
     );
-    const criteriaAtExactLevel = criteria.filter((c) => c.criterion.level === level);
-    const allPass = criteriaAtOrBelow.every((c) => c.status === 'pass');
-    const hasExactLevelEvaluated = criteriaAtExactLevel.some((c) => c.status !== 'not-evaluated');
-    if (allPass && hasExactLevelEvaluated) {
-      levelReached = level;
-    } else if (!allPass) {
-      break;
-    }
-  }
+    const atLevelEvaluated = atLevel.filter((c) => c.status !== 'not-evaluated');
+    const conformant =
+      atLevelEvaluated.length > 0 && atOrBelow.every((c) => c.status === 'pass');
+    return {
+      level,
+      total: atLevel.length,
+      evaluated: atLevelEvaluated.length,
+      passed: atLevel.filter((c) => c.status === 'pass').length,
+      failed: atLevel.filter((c) => c.status === 'fail').length,
+      notEvaluated: atLevel.filter((c) => c.status === 'not-evaluated').length,
+      conformant,
+    };
+  });
+
+  // WCAG 2.1 equivalence — same criteria, filtered to the ones that
+  // also exist in WCAG 2.1 (which is currently all of them, but this
+  // will protect the report if we ever add a criterion unique to 2.2).
+  const wcag21Criteria = criteria.filter((c) => WCAG_21_CRITERIA_IDS.has(c.criterion.id));
+  const wcag21 = {
+    totalMapped: wcag21Criteria.length,
+    evaluated: wcag21Criteria.filter((c) => c.status !== 'not-evaluated').length,
+    passed: wcag21Criteria.filter((c) => c.status === 'pass').length,
+    failed: wcag21Criteria.filter((c) => c.status === 'fail').length,
+    levelReached: computeLevelReached(wcag21Criteria),
+  };
 
   // Sum violations by unique mapped rule so a rule covering two
   // criteria (e.g. a11y-color-contrast → 1.4.3 + 1.4.11) isn't counted
@@ -274,6 +390,8 @@ export function evaluateCompliance(scan: ComplianceScanSnapshot): ComplianceResu
       : 0,
     totalViolations,
     summary: { evaluated, passed, failed, notEvaluated },
+    byLevel,
+    wcag21,
   };
 }
 

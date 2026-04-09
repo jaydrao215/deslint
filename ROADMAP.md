@@ -2,8 +2,8 @@
 
 > **Read me first.** This is the active planning document. It captures: live state, what's in flight, what's queued, what's deferred, decisions made, and the prioritized backlog. **Updated on every meaningful commit.** Future conversations should read this BEFORE assuming anything about state — it supersedes chat history and memory. Where this conflicts with DESLINT-EXECUTION.md or sprint plan files, this wins.
 
-**Last updated:** 2026-04-08
-**Last update reason:** Accessibility Foundation sprint — **S4 COMPLETE** (6/6 rules shipped in day 2). All 6 WCAG-mapped a11y rules: lang-attribute, viewport-meta, heading-hierarchy, link-text, form-labels, aria-validation. 842/842 plugin tests, 6 real production WCAG bugs caught, 0 FPs across 731 file-rule combinations. ~8 days of sprint slack created.
+**Last updated:** 2026-04-09
+**Last update reason:** CI fix (stale lockfile from S2 blocked `pnpm install --frozen-lockfile`; regenerated) + **S5 COMPLETE** (compliance report widened to 13 WCAG criteria, grouped-by-level HTML sections, WCAG 2.1 AA equivalence badge, +16 tests). Dogfood on `apps/docs` surfaced a real 1.3.1 Level A failure in our own site — see §2. Remaining sprint work: S6 landing page deploy, S7 MCP demo recording, S8 v0.2.0 release, S9 distribution launch.
 
 ---
 
@@ -14,8 +14,9 @@
 | **Latest npm release** | `@deslint/*@0.1.1` — **live on npm** ✅ with KPMG Phase 1 (VIZ-026 → VIZ-030). Inaugural publish complete. Next release: v0.2.0 after Accessibility Foundation sprint. |
 | **Latest commit** | (see `git log -1`) |
 | **Default branch** | `main` |
-| **CI** | ✅ green (Node 20 + 22 matrix on Ubuntu) |
-| **Trust metrics** | All met — 0% FP across 4,061 files, 0 crashes, 3.05s scan of 1,838 files (25× under 15s/500-file budget), 14/14 auto-fixers verified |
+| **Active feature branch** | `claude/fix-ci-build-G0xCx` — CI fix (lockfile regen) + S5 compliance widening. Not yet merged to main. |
+| **CI** | ✅ green locally on Node 22 (full mirror: install/build/lint/typecheck/test). Previous failure was `ERR_PNPM_OUTDATED_LOCKFILE` — S2 added `@html-eslint/parser` as a dev+peer dep on `@deslint/eslint-plugin` without regenerating `pnpm-lock.yaml`. **Rule for future sessions:** any change to a `package.json` must be followed by `pnpm install` (not `--frozen-lockfile`) before commit. |
+| **Trust metrics** | All met — 0% FP across 4,061 files, 0 crashes, 3.05s scan of 1,838 files (25× under 15s/500-file budget), 14/14 auto-fixers verified. New dogfood surface: `deslint compliance` on `apps/docs` reports 5/13 criteria failing (1.3.1 A, 1.4.3 AA, 1.4.11 AA, 1.4.12 AA, 2.4.7 AA) — real issues in our own site, tracked as follow-up below. |
 | **KPMG Phase 1 (5 stories VIZ-026 → VIZ-030)** | ✅ SHIPPED to npm in v0.1.1 — Design Debt Score, Quality Gates, Trend command, W3C tokens import, WCAG 2.2 compliance report |
 | **Domain** | `deslint.com` purchased ✅ — landing page NOT yet deployed (S6 task) |
 
@@ -23,26 +24,27 @@
 
 ## 2. What I'm working on RIGHT NOW
 
-**Sprint items S1 + S3 substantially complete in a single session.** ✅✅
+**S1 → S5 all shipped.** Branch `claude/fix-ci-build-G0xCx` has everything from sprint items 1–5 plus the CI lockfile fix. Not yet merged to main — waiting on sprint completion.
 
-**S1 — Element Visitor Abstraction (3-day budget, ~1.5 days spent):**
-- `packages/eslint-plugin/src/utils/element-visitor.ts` — framework-agnostic `createElementVisitor({ check, tagNames })` factory with JSX / Vue / Angular / Svelte dispatches + HTML stub awaiting S2.
-- Helpers: `getAttribute`, `getStaticAttributeValue`, `hasSpreadAttribute` — case-insensitive, camelCase↔kebab-case normalized.
-- 31 synthetic-AST unit tests in `tests/utils/element-visitor.test.ts`.
+### S5 — Compliance report widening (just shipped in this session)
+- `packages/shared/src/compliance.ts`: extended `ComplianceResult` with `byLevel: LevelSummary[]` (per-level conformance rollup) and `wcag21: { evaluated, passed, failed, levelReached, totalMapped }` (ADA Title II equivalence). New exported constant `WCAG_21_CRITERIA_IDS` — explicit set of criteria we map that also exist in WCAG 2.1. Explicit-set approach is deliberate (WCAG 2.2 is NOT a strict superset — it removed 4.1.1 Parsing).
+- `packages/cli/src/compliance-report.ts`: single flat table replaced with per-level `<section>`s (Level A, Level AA) each carrying their own Conformant / Not-conformant badge, passing count, and full criterion table. New hero stat card "WCAG 2.1 AA" alongside "WCAG 2.2". New `wcag21-note` callout explaining the ADA Title II relationship.
+- Tests: +9 in `packages/shared/tests/compliance.test.ts` (byLevel conformance semantics + wcag21 subset) and +7 in new `packages/cli/tests/compliance-report.test.ts` (rendered HTML assertions — presence checks, not snapshots, to avoid cosmetic churn). **Also added a guard test:** if a future criterion is added to `WCAG_CRITERIA` without being listed in `WCAG_21_CRITERIA_IDS`, that test will fail — forces an explicit decision on whether the new criterion is 2.1-equivalent.
 
-**S3 — Port 3 JSX-only rules to cross-framework (6-day budget, ~2 hours spent):**
-- `image-alt-text` ✅ — all 44 JSX tests intact, +18 cross-framework synthetic tests (Svelte/Angular/Vue). Framework-guarded Next.js `Image` detection.
-- `missing-states` ✅ — all 23 JSX tests intact, +18 cross-framework synthetic tests (Svelte/Angular/Vue + `requireAriaRequired` option).
-- `responsive-required` ✅ — all 33 JSX tests intact, +11 cross-framework synthetic tests (Svelte/Angular/Vue). Helper `collectElementClasses` handles JSX expression-container fallback for `className={cn(...)}` while non-JSX frameworks use the normalized static value.
+**Dogfood follow-up (apps/docs is failing our own Level A):**
+- Ran `deslint compliance` on `apps/docs` → 13/13 criteria evaluated, 8 pass, 5 fail. Level A failure is SC 1.3.1 Info and Relationships — 1 violation, 1 file. Heading-hierarchy or form-labels caught something in our own docs site. **This must be fixed before S6 (landing page deploy) or we ship a site that fails its own tool.** Actionable — investigate exact file, fix or document.
+- AA failures: 1.4.3, 1.4.11 (a11y-color-contrast), 1.4.12 (no-inline-styles), 2.4.7 (missing-states). Lower urgency than the Level A fail but want clean before launch.
 
-**Tests total: 644/644 passing** (was 579 at sprint start; +31 element-visitor unit + 47 cross-framework rule tests + 12 that shifted from helper-level to rule-level). Typecheck ✅, lint ✅, turbo build ✅ across all 6 packages.
+### Next up (in order)
+1. **apps/docs dogfood cleanup** — fix the 1.3.1 Level A failure before any landing page work. Blocking S6.
+2. **S6 — Landing page deploy** at deslint.com. Budget 2 days. Depends on #1.
+3. **S7 — MCP self-correction demo recording.** Can run in parallel to S6. Budget 1.5 days.
+4. **S8 — v0.2.0 release** (bump packages, CHANGELOG, tag, publish). Depends on S5–S7. 1 day.
+5. **S9 — Distribution launch sequence** timed to ADA Title II deadline (2026-04-26).
 
-**Massive sprint velocity buyback:** S3 was budgeted at 6 days (2/rule); took ~2 hours because createElementVisitor was proven on image-alt-text first, making the remaining two rules mechanical refactors. **~5.5 days of sprint slack created**, which goes directly to S4 (6 new WCAG rules) and lets us keep the quality bar high without dropping the rule count.
-
-**Next up (remaining day 1):**
-1. S1 day 3 finish — add real-parser integration tests via `vue-eslint-parser` + `svelte-eslint-parser` as dev deps + benchmark visitor overhead (<0.5ms/file target). Lower priority now that the ports themselves prove the abstraction works.
-2. S2 — Plain HTML parser support (`@html-eslint/parser` peer dep + lint-runner routing). 1.5 days budgeted.
-3. S4 — 6 new WCAG rules (heading-hierarchy, form-labels, lang-attribute, aria-validation, link-text, viewport-meta). 9 days budgeted, but with ~5.5 days of buyback from S3 velocity, we have headroom.
+### Sprint math (reality check)
+Budget at sprint start: S1 (3d) + S2 (1.5d) + S3 (6d) + S4 (9d) + S5 (2d) = 21.5d of code work.
+Actual: S1 ~1.5d + S2 ~1d + S3 ~2h + S4 ~1d + S5 ~3h = **~4 days**. ~17 days of slack, of which ~5 has been consumed by CI / dogfood follow-ups. Remaining slack is real and goes into landing page polish, demo retakes, and distribution effort.
 
 ---
 
@@ -186,7 +188,12 @@
 - Validated end-to-end: run `deslint compliance` on a real project, open the HTML, sanity-check the rendering
 
 **Estimate:** 2 days
-**Status:** ⏸ not started
+**Status:** ✅ **COMPLETE — shipped 2026-04-09** (~3 hours of work, not 2 days)
+- Evaluator now returns `byLevel` (per-level conformance using the same at-or-below rule as `levelReached`) and `wcag21` (ADA Title II subset evaluated independently).
+- HTML report rebuilt around grouped per-level sections; new stat cards for WCAG 2.2 + WCAG 2.1 AA side by side; new `wcag21-note` callout.
+- **S4 SC mapping was already in place** — it landed in `compliance.ts` during S4 itself, so the "all new rules from S4 mapped" acceptance criterion was technically done before S5 started. Only the HTML widening + 2.1 equivalence logic + grouped views was net-new in S5.
+- S3 ports (image-alt-text, missing-states, responsive-required) already had their WCAG mappings carried over from pre-port; cross-framework port didn't change rule IDs, so the existing mapping still applies.
+- End-to-end validated on `apps/docs` — report renders cleanly, exposed 5/13 real failures in our own site.
 **Depends on:** S3, S4
 
 ---
@@ -393,22 +400,29 @@ Of the 14 shipping rules:
 
 **Fix path:** Add `@html-eslint/parser` as an optional peer dep, route plain HTML files to it, extend `createClassVisitor` and the new `createElementVisitor` to handle its AST shapes. This is sprint item S2.
 
-### 6.3 WCAG compliance mapping (current state)
+### 6.3 WCAG compliance mapping (current state — post S5)
 
-[packages/shared/src/compliance.ts](packages/shared/src/compliance.ts) `WCAG_CRITERIA` maps **6 Success Criteria → 4 Deslint rules**:
+[packages/shared/src/compliance.ts](packages/shared/src/compliance.ts) `WCAG_CRITERIA` maps **13 Success Criteria → 11 Deslint rules** (6 criteria at sprint start, 13 after S4 landed new rule SCs and S5 widened the report around them):
 
 | WCAG SC | Title | Level | Mapped rule(s) |
 |---|---|---|---|
 | 1.1.1 | Non-text Content | A | `image-alt-text` |
+| 1.3.1 | Info and Relationships | A | `heading-hierarchy`, `form-labels` |
+| 2.4.4 | Link Purpose (In Context) | A | `link-text` |
+| 3.1.1 | Language of Page | A | `lang-attribute` |
+| 3.3.2 | Labels or Instructions | A | `form-labels` |
+| 4.1.2 | Name, Role, Value | A | `aria-validation` |
 | 1.4.3 | Contrast (Minimum) | AA | `a11y-color-contrast` |
+| 1.4.4 | Resize Text | AA | `viewport-meta` |
 | 1.4.10 | Reflow | AA | `responsive-required` |
 | 1.4.11 | Non-text Contrast | AA | `a11y-color-contrast` |
 | 1.4.12 | Text Spacing | AA | `no-inline-styles` |
+| 2.4.6 | Headings and Labels | AA | `heading-hierarchy` |
 | 2.4.7 | Focus Visible | AA | `missing-states` |
 
-**The compliance evaluator is honest:** it requires at least one criterion at the exact level to be evaluated before claiming that conformance level (no false AAA claims). The HTML report renders this cleanly and is one of the strongest shareable artifacts in the product.
+Split: 6 A-level, 7 AA-level, 0 AAA. The evaluator enforces "at least one criterion at the exact level must be evaluated" before claiming that level — prevents phantom AAA claims. S5 added `byLevel` rollup so the HTML report renders per-level sections without redoing this logic on the client.
 
-**Sprint S5 widens this to 12-15 SCs** by mapping the 6 new a11y rules. **Important:** WCAG 2.2 is a strict superset of WCAG 2.1, so a 2.2 conformance evaluation also serves as a 2.1 evidence base — relevant for ADA Title II legal-floor positioning.
+**WCAG 2.1 equivalence:** every criterion in the table above also exists unchanged in WCAG 2.1, so the evaluator's `wcag21` field produces a parallel 2.1 AA conformance statement. Maintained via explicit `WCAG_21_CRITERIA_IDS` set, not "2.2 ⊇ 2.1" reasoning — WCAG 2.2 actually REMOVED 4.1.1 Parsing, so future-proof logic must be opt-in per criterion. Guard test in `packages/shared/tests/compliance.test.ts` fails if a future commit adds a criterion to `WCAG_CRITERIA` without updating `WCAG_21_CRITERIA_IDS`.
 
 ### 6.4 Distribution surface (current state — as of 2026-04-08)
 
@@ -499,6 +513,21 @@ Append-only. Each entry: date, decision, rationale, what we'd revisit it on.
 **Decision:** Don't start Cross-File Design Graph or any other Phase 2 capability work until after the Accessibility Foundation sprint ships AND has 2-3 weeks of organic install data.
 **Rationale:** Phase 2 capabilities are multi-week each. Phase 1 + v0.1.x shipped to npm with zero distribution. We can't keep building features users never see. The Accessibility Foundation sprint is structured to deliver BOTH product depth AND distribution kick-off in one push, so we have actual user signal before committing to multi-week capability builds.
 **Wouldn't revisit unless:** We get strong user demand for a specific Phase 2 capability before v0.2.0 ships (e.g., an enterprise design system team asking specifically for cross-file analysis). Would then prioritize that one capability ahead of distribution.
+
+### 2026-04-09 — WCAG 2.1 equivalence as an explicit criterion set, not "2.2 ⊇ 2.1"
+**Decision:** S5 introduced `WCAG_21_CRITERIA_IDS` as an explicit ReadonlySet that lists which mapped criteria are also in WCAG 2.1. The report's 2.1 AA equivalence is computed by filtering `criteria` through this set, NOT by assuming "WCAG 2.2 is a superset of 2.1."
+**Rationale:** WCAG 2.2 is NOT a strict superset — it REMOVED 4.1.1 Parsing. We don't currently map 4.1.1, so the superset assumption would work today, but it's fragile: any future addition of a 2.2-only criterion would silently break ADA Title II claims. The explicit set is auditable, diff-friendly, and paired with a guard test that fails if `WCAG_CRITERIA` grows without the new criterion being classified. ADA Title II legal-floor claims must be unambiguous.
+**Wouldn't revisit unless:** W3C restructures 2.1/2.2/3.0 such that version-to-criterion membership changes retroactively. Extremely unlikely.
+
+### 2026-04-09 — Grouped-by-level HTML report sections instead of JS filter controls
+**Decision:** S5 renders Level A and Level AA as separate `<section>` blocks with their own headers, conformance badges, and criterion tables, rather than adding JavaScript filter controls to a single table.
+**Rationale:** The compliance report has a hard no-JS constraint (safe to email, PDF-print, attach to SOC2 audits). JS filters would violate that. Grouping is also better for the target audience: legal/compliance reviewers read top-to-bottom and want to answer "are we Level A conformant?" before "are we Level AA conformant?" — the grouped layout matches that reading path. Cost: slight HTML verbosity from repeating the `<thead>` per level. Accepted.
+**Wouldn't revisit unless:** The report grows past ~50 criteria and the repeated headers become visually heavy. Would consider a single table with level sub-headers then.
+
+### 2026-04-09 — CI fix rule: lockfile regen is mandatory after any package.json edit
+**Decision:** Every change to any `packages/*/package.json` must be followed by `pnpm install` (not `--frozen-lockfile`) before the commit, and the resulting `pnpm-lock.yaml` delta must be in the same commit.
+**Rationale:** S2 added `@html-eslint/parser` as both optional peer dep and dev dep on `@deslint/eslint-plugin` without regenerating the lockfile. CI's `pnpm install --frozen-lockfile` step then failed with `ERR_PNPM_OUTDATED_LOCKFILE` on every push from that point forward until fixed. The local `pnpm install` without `--frozen-lockfile` works, so the problem is invisible until CI runs — exactly the kind of footgun that eats sprint time.
+**Wouldn't revisit unless:** We add a pre-commit hook or CI preflight that regenerates and diffs the lockfile automatically, at which point the manual rule can be relaxed to "trust the hook."
 
 ### 2026-04-08 — Persistent ROADMAP.md as the source of truth
 **Decision:** Create this file (`ROADMAP.md`) as the live planning document that gets updated on every meaningful commit. Future conversations should read this BEFORE assuming anything about state.
