@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
+import { createContext, useContext, useRef } from 'react';
 
 /**
  * VSCode-style editor window showing a real Deslint lint error in-context:
@@ -10,10 +11,19 @@ import { motion } from 'framer-motion';
  *
  * All hand-coded — syntax highlighting is deliberate span coloring, the
  * squiggle is an inline SVG, and the tooltip is a positioned absolute element.
+ * Child animations are gated behind useInView so the sequence replays when
+ * the viewport scrolls over this block (instead of firing once on mount and
+ * being missed by any user who arrives past the fold).
  */
+const InViewContext = createContext(false);
+
 export function EditorMockup() {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-80px' });
+
   return (
-    <div className="relative">
+    <InViewContext.Provider value={inView}>
+    <div ref={ref} className="relative">
       <div className="rounded-2xl border border-gray-800 bg-[#1e1e1e] shadow-2xl shadow-primary/10 overflow-hidden font-mono">
         {/* Title bar */}
         <div className="flex items-center gap-2 px-4 py-2 bg-[#323233] border-b border-black/40">
@@ -119,13 +129,8 @@ export function EditorMockup() {
         </div>
       </div>
 
-      {/* Floating tooltip */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 1.4, ease: [0.21, 0.47, 0.32, 0.98] }}
-        className="absolute left-4 right-4 sm:left-[18%] sm:right-auto top-[65%] sm:top-[62%] z-10 sm:max-w-sm"
-      >
+      {/* Floating tooltip — gated on scroll into view */}
+      <Tooltip>
         <div className="rounded-lg border border-red-500/40 bg-[#252526] shadow-2xl shadow-red-900/40 overflow-hidden">
           <div className="flex items-start gap-2 px-3 py-2 border-b border-black/40">
             <svg className="h-4 w-4 flex-none text-red-400 mt-0.5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -147,8 +152,23 @@ export function EditorMockup() {
             <code className="text-pass-light">bg-primary</code>
           </div>
         </div>
-      </motion.div>
+      </Tooltip>
     </div>
+    </InViewContext.Provider>
+  );
+}
+
+function Tooltip({ children }: { children: React.ReactNode }) {
+  const inView = useContext(InViewContext);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.4, delay: 1.4, ease: [0.21, 0.47, 0.32, 0.98] }}
+      className="absolute left-4 right-4 sm:left-[18%] sm:right-auto top-[65%] sm:top-[62%] z-10 sm:max-w-sm"
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -187,13 +207,14 @@ function Punct({ children }: { children: React.ReactNode }) {
 }
 
 function Squiggle({ children }: { children: React.ReactNode }) {
+  const inView = useContext(InViewContext);
   return (
     <span className="relative inline-block">
       {children}
-      {/* Wavy red underline */}
+      {/* Wavy red underline — draws when scrolled into view */}
       <motion.svg
         initial={{ pathLength: 0, opacity: 0 }}
-        animate={{ pathLength: 1, opacity: 1 }}
+        animate={inView ? { pathLength: 1, opacity: 1 } : {}}
         transition={{ duration: 0.6, delay: 1.0 }}
         viewBox="0 0 120 4"
         preserveAspectRatio="none"

@@ -28,7 +28,7 @@ export function Hero() {
             >
               <div className="inline-flex items-center gap-2.5 rounded-full border border-primary/15 bg-primary-50/60 backdrop-blur-sm px-4 py-1.5 text-sm font-medium text-primary mb-7">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                <span>Design system + WCAG gate for AI-generated code</span>
+                <span>Design quality + WCAG gate for AI-generated code</span>
               </div>
             </motion.div>
 
@@ -38,8 +38,8 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
               className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-[1.06] mb-6 text-balance"
             >
-              Design quality for the{' '}
-              <span className="gradient-text-hero">AI code era</span>
+              AI writes fast.{' '}
+              <span className="gradient-text-hero">Deslint keeps it clean.</span>
             </motion.h1>
 
             <motion.p
@@ -48,10 +48,10 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.35 }}
               className="text-base sm:text-lg text-gray-500 mb-8 max-w-xl leading-relaxed"
             >
-              AI code generators ship fast. They also ship arbitrary colors, broken
-              responsive layouts, and WCAG failures that fail audits. Deslint catches
-              design-system drift and accessibility regressions the moment they land —
-              local, deterministic, every framework.
+              The deterministic gate that catches arbitrary colors, broken type
+              scales, and WCAG failures the moment AI writes them — in your
+              editor, your CI, and every pull request. One config, every
+              framework, zero cloud.
             </motion.p>
 
             <motion.div
