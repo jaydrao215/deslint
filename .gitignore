@@ -24,3 +24,6 @@ coverage/
 
 # Deslint scan artifacts
 .deslint/
+
+# Smoke-test screenshots (regenerated on demand)
+apps/docs/scripts/.smoke-out/
