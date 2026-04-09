@@ -3,44 +3,67 @@
 import { motion, useInView } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 
-/**
- * macOS-style terminal with a progressive "deslint scan" output animation.
- * Lines reveal sequentially; the bars fill from zero; a blinking cursor
- * trails the last line. Plays once when the viewport enters view.
- */
 interface Line {
   delay: number;
   text: React.ReactNode;
 }
 
+// Target values — initialized into state so SSR/OG crawlers and above-fold
+// viewers render the final report, not an empty "0/100" skeleton.
+const TARGET_SCORE = 88;
+const TARGET_COLORS = 92;
+const TARGET_SPACING = 92;
+const TARGET_TYPO = 86;
+const TARGET_RESP = 97;
+const TARGET_A11Y = 100;
+
 export function TerminalMockup() {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
 
-  // Bar fills are animated independently so the widths animate from 0
-  const [score, setScore] = useState(0);
-  const [colorsPct, setColorsPct] = useState(0);
-  const [spacingPct, setSpacingPct] = useState(0);
-  const [typoPct, setTypoPct] = useState(0);
-  const [respPct, setRespPct] = useState(0);
-  const [a11yPct, setA11yPct] = useState(0);
+  const [score, setScore] = useState(TARGET_SCORE);
+  const [colorsPct, setColorsPct] = useState(TARGET_COLORS);
+  const [spacingPct, setSpacingPct] = useState(TARGET_SPACING);
+  const [typoPct, setTypoPct] = useState(TARGET_TYPO);
+  const [respPct, setRespPct] = useState(TARGET_RESP);
+  const [a11yPct, setA11yPct] = useState(TARGET_A11Y);
+  const [armed, setArmed] = useState(false);
+
+  // On mount, if the element is below the fold, arm the animation:
+  // reset all values to zero so the existing in-view effect can run
+  // the 0 → target fill when the user scrolls to the section.
+  // If the element is already in view on mount, leave the target
+  // values in place — no snap-to-zero flicker.
+  useEffect(() => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const belowFold = rect.top > window.innerHeight;
+    if (belowFold) {
+      setScore(0);
+      setColorsPct(0);
+      setSpacingPct(0);
+      setTypoPct(0);
+      setRespPct(0);
+      setA11yPct(0);
+      setArmed(true);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!inView) return;
+    if (!inView || !armed) return;
     const timers: ReturnType<typeof setTimeout>[] = [];
-    timers.push(setTimeout(() => setColorsPct(92), 1400));
-    timers.push(setTimeout(() => setSpacingPct(92), 1550));
-    timers.push(setTimeout(() => setTypoPct(86), 1700));
-    timers.push(setTimeout(() => setRespPct(97), 1850));
-    timers.push(setTimeout(() => setA11yPct(100), 2000));
-    // Score ticks up 0 → 88
+    timers.push(setTimeout(() => setColorsPct(TARGET_COLORS), 1400));
+    timers.push(setTimeout(() => setSpacingPct(TARGET_SPACING), 1550));
+    timers.push(setTimeout(() => setTypoPct(TARGET_TYPO), 1700));
+    timers.push(setTimeout(() => setRespPct(TARGET_RESP), 1850));
+    timers.push(setTimeout(() => setA11yPct(TARGET_A11Y), 2000));
     timers.push(
       setTimeout(() => {
         let v = 0;
         const id = setInterval(() => {
           v += 4;
-          if (v >= 88) {
-            v = 88;
+          if (v >= TARGET_SCORE) {
+            v = TARGET_SCORE;
             clearInterval(id);
           }
           setScore(v);
@@ -49,7 +72,7 @@ export function TerminalMockup() {
       }, 2200),
     );
     return () => timers.forEach((t) => clearTimeout(t));
-  }, [inView]);
+  }, [inView, armed]);
 
   const lines: Line[] = [
     {
@@ -250,7 +273,7 @@ function BarRow({
         />
       </div>
       <span className="w-8 text-right tabular-nums text-white font-semibold">
-        {pct > 0 ? value : '--'}
+        {value}
       </span>
       <span className={`ml-2 ${statusColor}`}>{status}</span>
     </div>

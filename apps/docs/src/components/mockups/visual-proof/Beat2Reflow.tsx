@@ -257,12 +257,14 @@ function FixedDashboard() {
   return (
     <div
       aria-hidden
-      className="vp-fixed-grid"
+      className="vp-fixed-grid-container"
       style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
     >
-      <StatCard title="Monthly revenue" value="$42,180" trend="+12.4%" color="#10B981" />
-      <StatCard title="Active users" value="18,203" trend="+4.1%" color="#3B82F6" />
-      <StatCard title="Avg session" value="4m 32s" trend="-0.3%" color="#F59E0B" />
+      <div className="vp-fixed-grid">
+        <StatCard title="Monthly revenue" value="$42,180" trend="+12.4%" color="#10B981" />
+        <StatCard title="Active users" value="18,203" trend="+4.1%" color="#3B82F6" />
+        <StatCard title="Avg session" value="4m 32s" trend="-0.3%" color="#F59E0B" />
+      </div>
     </div>
   );
 }

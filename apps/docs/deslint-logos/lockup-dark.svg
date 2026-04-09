@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="60" viewBox="0 0 320 60">
+  <rect width="320" height="60" fill="#18181b"/>
+  <g transform="translate(0,4)">
+    <rect width="52" height="52" rx="10.82" fill="#534AB7"/>
+    <rect x="7.28" y="7.02" width="37.44" height="38.48" rx="4.89" fill="white" opacity="0.07"/>
+    <rect x="11.91" y="14.04" width="17.32" height="2.7" rx="1.35" fill="white" opacity="0.50"/>
+    <rect x="11.91" y="20.54" width="23.82" height="2.7" rx="1.35" fill="white" opacity="0.85"/>
+    <rect x="11.91" y="27.04" width="13.0" height="2.7" rx="1.35" fill="#1D9E75"/>
+    <circle cx="39.0" cy="28.39" r="3.8" fill="#1D9E75"/>
+    <path d="M37.29 28.39 L38.81 30.29 L40.98 26.3" fill="none" stroke="white" stroke-width="0.99" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="66" y="37" font-family="system-ui,-apple-system,sans-serif" font-size="30" font-weight="500" letter-spacing="-0.8" fill="white">Deslint</text>
+  <text x="67" y="53" font-family="system-ui,-apple-system,sans-serif" font-size="9.5" font-weight="400" letter-spacing="2.2" fill="#71717a">DESIGN QUALITY GATE</text>
+</svg>

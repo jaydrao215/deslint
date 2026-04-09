@@ -127,15 +127,17 @@
   cursor: ew-resize;
 }
 
-.vp-fixed-grid {
+.vp-fixed-grid-container {
   container-type: inline-size;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
   width: 100%;
   max-width: 1100px;
   margin: 0 auto;
   padding: 16px;
+}
+.vp-fixed-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 @container (min-width: 560px) {
   .vp-fixed-grid {

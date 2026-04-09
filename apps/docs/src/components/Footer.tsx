@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BrandLockup } from './BrandLockup';
 
 const GITHUB_URL = 'https://github.com/jaydrao215/deslint';
 
@@ -31,13 +32,9 @@ export function Footer() {
     <footer className="border-t border-gray-100 bg-surface-100">
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-          {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">
-                D
-              </div>
-              <span className="font-semibold text-gray-900">Deslint</span>
+            <Link href="/" className="inline-block mb-4">
+              <BrandLockup size="footer" showTagline />
             </Link>
             <p className="text-sm text-gray-500 leading-relaxed mb-4 max-w-xs">
               Design quality for the AI code era. Design-system + WCAG linting,
@@ -87,14 +84,26 @@ export function Footer() {
           ))}
         </div>
 
-        {/* Bottom bar */}
-        <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-400">
-            &copy; {new Date().getFullYear()} Deslint. MIT License.
-          </p>
-          <p className="text-xs text-gray-400">
-            Local-first. Deterministic. Zero cloud dependency.
-          </p>
+        <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1 text-xs text-gray-400 sm:text-sm">
+            <p>
+              &copy; {new Date().getFullYear()} Deslint &middot;{' '}
+              <span className="text-gray-500">
+                MIT licensed &middot; always-free open source core
+              </span>
+            </p>
+            <p className="text-[11px] text-gray-400 sm:text-xs">
+              Local-first &middot; deterministic &middot; zero cloud dependency
+            </p>
+          </div>
+          <a
+            href="mailto:hello@deslint.com?subject=Teams%20%26%20enterprise%20inquiry"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-medium text-gray-600 transition-colors hover:border-primary/30 hover:bg-primary-50/60 hover:text-primary sm:text-sm"
+          >
+            <span className="hidden sm:inline">Teams &amp; enterprise?</span>
+            <span className="sm:hidden">Enterprise</span>
+            <span className="text-gray-400 sm:inline">&rarr;</span>
+          </a>
         </div>
       </div>
     </footer>
