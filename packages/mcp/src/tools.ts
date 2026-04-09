@@ -2,13 +2,20 @@
  * MCP Tool implementations for Deslint.
  *
  * These functions are pure (no MCP SDK dependency) — they accept
- * parameters, run ESLint programmatically, and return structured results.
+ * parameters, run the CLI's runLint engine, and return structured results.
  * The MCP server layer (server.ts) wires them to the transport.
+ *
+ * Design note: every tool delegates to `@deslint/cli`'s `runLint`, which is
+ * the same engine the `deslint` CLI uses. That means the MCP server always
+ * inherits — for free — the canonical rule list, every parser (TypeScript,
+ * Vue, Svelte, Angular, plain HTML), the deslint/* message filter, and
+ * category aggregation. No duplication = no drift between how `deslint scan`
+ * and `analyze_file` behave.
  */
 
-import { resolve, relative } from 'node:path';
-import { existsSync, readFileSync } from 'node:fs';
-import { ESLint } from 'eslint';
+import { resolve, relative, dirname, basename, join } from 'node:path';
+import { existsSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -53,52 +60,37 @@ export interface AnalyzeAndFixResult {
   remainingViolations: Violation[];
 }
 
-// ── ESLint config builder ────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────
 
-let _pluginCache: any = null;
-
-async function loadPlugin(): Promise<any> {
-  if (_pluginCache) return _pluginCache;
-  const mod = await import('@deslint/eslint-plugin');
-  _pluginCache = mod.default ?? mod;
-  return _pluginCache;
+/**
+ * Resolve the project directory we'll hand to ESLint. If the caller supplied
+ * a projectDir and the file lives inside it, use that. Otherwise pivot to the
+ * file's own directory — ESLint v10 silently drops files outside its cwd
+ * ("File ignored because outside of base path"), which is exactly the kind
+ * of thing an MCP-driven AI agent can't recover from.
+ */
+function resolveProjectDir(filePath: string, projectDir?: string): { projectDir: string; absPath: string } {
+  const requestedDir = projectDir ?? process.cwd();
+  const absPath = resolve(requestedDir, filePath);
+  const insideRequested = absPath.startsWith(resolve(requestedDir));
+  return {
+    absPath,
+    projectDir: insideRequested ? requestedDir : dirname(absPath),
+  };
 }
 
-async function createEslintInstance(cwd: string, fix = false): Promise<ESLint> {
-  const plugin = await loadPlugin();
-
-  return new ESLint({
-    cwd,
-    overrideConfigFile: true,
-    overrideConfig: [
-      {
-        files: ['**/*.{js,jsx,ts,tsx}'],
-        languageOptions: {
-          ecmaVersion: 'latest' as const,
-          sourceType: 'module' as const,
-          parserOptions: {
-            ecmaFeatures: { jsx: true },
-          },
-        },
-        plugins: {
-          deslint: plugin,
-        },
-        rules: {
-          'deslint/no-arbitrary-colors': 'warn',
-          'deslint/no-arbitrary-spacing': 'warn',
-          'deslint/no-arbitrary-typography': 'warn',
-          'deslint/responsive-required': 'warn',
-          'deslint/consistent-component-spacing': 'warn',
-          'deslint/a11y-color-contrast': 'warn',
-          'deslint/max-component-lines': 'warn',
-          'deslint/missing-states': 'warn',
-          'deslint/dark-mode-coverage': 'warn',
-          'deslint/no-arbitrary-zindex': 'warn',
-        },
-      },
-    ] as any,
-    fix,
-  });
+function toViolation(msg: any): Violation {
+  const v: Violation = {
+    ruleId: msg.ruleId ?? 'unknown',
+    message: msg.message,
+    severity: msg.severity === 2 ? 'error' : 'warning',
+    line: msg.line,
+    column: msg.column,
+  };
+  if (msg.endLine !== undefined && msg.endLine !== null) v.endLine = msg.endLine;
+  if (msg.endColumn !== undefined && msg.endColumn !== null) v.endColumn = msg.endColumn;
+  if (msg.fix) v.fix = { range: msg.fix.range as [number, number], text: msg.fix.text };
+  return v;
 }
 
 // ── Tool: analyze_file ──────────────────────────────────────────────
@@ -107,35 +99,22 @@ export async function analyzeFile(params: {
   filePath: string;
   projectDir?: string;
 }): Promise<AnalyzeFileResult> {
-  const projectDir = params.projectDir ?? process.cwd();
-  const absPath = resolve(projectDir, params.filePath);
+  const { absPath, projectDir } = resolveProjectDir(params.filePath, params.projectDir);
 
   if (!existsSync(absPath)) {
     throw new Error(`File not found: ${params.filePath}`);
   }
 
-  const eslint = await createEslintInstance(projectDir);
-  const results = await eslint.lintFiles([absPath]);
+  const { runLint } = await import('@deslint/cli');
+  const lintResult = await runLint({ files: [absPath], cwd: projectDir });
 
   const violations: Violation[] = [];
   let errors = 0;
   let warnings = 0;
 
-  for (const result of results) {
+  for (const result of lintResult.results) {
     for (const msg of result.messages) {
-      const v: Violation = {
-        ruleId: msg.ruleId ?? 'unknown',
-        message: msg.message,
-        severity: msg.severity === 2 ? 'error' : 'warning',
-        line: msg.line,
-        column: msg.column,
-        endLine: msg.endLine ?? undefined,
-        endColumn: msg.endColumn ?? undefined,
-      };
-      if (msg.fix) {
-        v.fix = { range: msg.fix.range as [number, number], text: msg.fix.text };
-      }
-      violations.push(v);
+      violations.push(toViolation(msg));
       if (msg.severity === 2) errors++;
       else warnings++;
     }
@@ -162,9 +141,7 @@ export async function analyzeProject(params: {
   const projectDir = params.projectDir ?? process.cwd();
   const maxFiles = params.maxFiles ?? 200;
 
-  // Use the CLI's discovery and scoring engine
-  const { discoverFiles } = await import('@deslint/cli');
-  const { runLint, calculateScore } = await import('@deslint/cli');
+  const { discoverFiles, runLint, calculateScore } = await import('@deslint/cli');
 
   const files = await discoverFiles({ cwd: projectDir });
   const filesToScan = files.slice(0, maxFiles);
@@ -182,7 +159,7 @@ export async function analyzeProject(params: {
     };
   }
 
-  const lintResult = await runLint({ files: filesToScan });
+  const lintResult = await runLint({ files: filesToScan, cwd: projectDir });
   const scoreResult = calculateScore(lintResult);
 
   // Collect top 10 violations for the summary
@@ -190,13 +167,7 @@ export async function analyzeProject(params: {
   for (const result of lintResult.results) {
     for (const msg of result.messages) {
       if (topViolations.length >= 10) break;
-      topViolations.push({
-        ruleId: msg.ruleId ?? 'unknown',
-        message: msg.message,
-        severity: msg.severity === 2 ? 'error' : 'warning',
-        line: msg.line,
-        column: msg.column,
-      });
+      topViolations.push(toViolation(msg));
     }
     if (topViolations.length >= 10) break;
   }
@@ -220,54 +191,62 @@ export async function analyzeProject(params: {
 
 // ── Tool: analyze_and_fix ───────────────────────────────────────────
 
+/**
+ * Analyze a file and return the auto-fixed version. The original file on
+ * disk is NEVER modified. We copy the file to a temp directory, run runLint
+ * with `fix: true` against the copy (which writes the fixed output to the
+ * copy), then read it back and compare. This preserves the pure-function
+ * contract the MCP spec asks for — an AI agent can preview the fix without
+ * mutating the workspace.
+ */
 export async function analyzeAndFix(params: {
   filePath: string;
   projectDir?: string;
 }): Promise<AnalyzeAndFixResult> {
-  const projectDir = params.projectDir ?? process.cwd();
-  const absPath = resolve(projectDir, params.filePath);
+  const { absPath, projectDir } = resolveProjectDir(params.filePath, params.projectDir);
 
   if (!existsSync(absPath)) {
     throw new Error(`File not found: ${params.filePath}`);
   }
 
+  const { runLint } = await import('@deslint/cli');
+
   const originalCode = readFileSync(absPath, 'utf-8');
 
-  // Single lint pass without fix to count original violations
-  const eslint = await createEslintInstance(projectDir, false);
-  const originalResults = await eslint.lintFiles([absPath]);
-  let originalViolationCount = 0;
-  for (const r of originalResults) {
-    originalViolationCount += r.messages.length;
-  }
+  // First pass: read the real file in-place to count original violations.
+  const originalLint = await runLint({ files: [absPath], cwd: projectDir });
+  const originalCount = originalLint.results[0]?.messages.length ?? 0;
 
-  // Single lint pass with fix to get corrected code
-  const eslintFix = await createEslintInstance(projectDir, true);
-  const fixResults = await eslintFix.lintFiles([absPath]);
+  // Second pass: copy to a temp dir and fix the copy so the workspace stays
+  // untouched. We preserve the file's basename so the parser/path heuristics
+  // (e.g. `.tsx` → TS parser) still fire.
+  const scratchDir = mkdtempSync(join(tmpdir(), 'deslint-mcp-fix-'));
+  const scratchPath = join(scratchDir, basename(absPath));
 
   let fixedCode = originalCode;
   const remaining: Violation[] = [];
 
-  for (const result of fixResults) {
-    if (result.output !== undefined) {
-      fixedCode = result.output;
+  try {
+    writeFileSync(scratchPath, originalCode);
+    const fixedLint = await runLint({ files: [scratchPath], cwd: scratchDir, fix: true });
+
+    // runLint → ESLint.outputFixes writes the fixed code back to scratchPath
+    fixedCode = readFileSync(scratchPath, 'utf-8');
+
+    for (const result of fixedLint.results) {
+      for (const msg of result.messages) {
+        remaining.push(toViolation(msg));
+      }
     }
-    for (const msg of result.messages) {
-      remaining.push({
-        ruleId: msg.ruleId ?? 'unknown',
-        message: msg.message,
-        severity: msg.severity === 2 ? 'error' : 'warning',
-        line: msg.line,
-        column: msg.column,
-      });
-    }
+  } finally {
+    rmSync(scratchDir, { recursive: true, force: true });
   }
 
   return {
     filePath: relative(projectDir, absPath),
     originalCode,
     fixedCode,
-    fixedViolations: Math.max(0, originalViolationCount - remaining.length),
+    fixedViolations: Math.max(0, originalCount - remaining.length),
     remainingViolations: remaining,
   };
 }

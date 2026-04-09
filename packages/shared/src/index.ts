@@ -29,6 +29,7 @@ export type { W3CToken, W3CParseResult } from './tokens/index.js';
 
 export {
   WCAG_CRITERIA,
+  WCAG_21_CRITERIA_IDS,
   evaluateCompliance,
   formatComplianceSummary,
 } from './compliance.js';
@@ -36,6 +37,7 @@ export type {
   WcagLevel,
   WcagCriterion,
   CriterionResult,
+  LevelSummary,
   ComplianceResult,
   ComplianceScanSnapshot,
 } from './compliance.js';

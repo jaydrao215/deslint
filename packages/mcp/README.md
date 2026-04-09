@@ -65,6 +65,22 @@ The MCP server runs locally via stdio (JSON-RPC 2.0). All analysis happens on yo
 4. AI corrects the code
 5. Re-analyze to confirm fixes
 
+## See it in action
+
+This repo ships a real JSON-RPC client you can run against the compiled
+server to watch the loop end-to-end — no mock, no LLM, no cloud:
+
+```bash
+pnpm --filter @deslint/mcp build
+node packages/mcp/demo/self-correction-loop.mjs
+```
+
+The script spawns `@deslint/mcp` over stdio, runs `initialize` →
+`tools/list` → `analyze_file` → `analyze_and_fix` against a deliberately
+broken `Button.tsx`, and pretty-prints every protocol beat. The same
+recording powers the "Real terminal session" tab on
+[deslint.com](https://deslint.com).
+
 ## Manual Configuration
 
 If auto-install doesn't work, add to your MCP config:
