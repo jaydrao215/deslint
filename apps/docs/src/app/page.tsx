@@ -1,8 +1,7 @@
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
-import { Surfaces } from '@/components/Surfaces';
+import { ProductShowcase } from '@/components/ProductShowcase';
 import { WhatItCatches } from '@/components/WhatItCatches';
-import { HowItWorks } from '@/components/HowItWorks';
 import { AccessibilitySection } from '@/components/AccessibilitySection';
 import { FrameworkMatrix } from '@/components/FrameworkMatrix';
 import { ProofBar } from '@/components/ProofBar';
@@ -15,9 +14,8 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
-        <Surfaces />
+        <ProductShowcase />
         <WhatItCatches />
-        <HowItWorks />
         <AccessibilitySection />
         <FrameworkMatrix />
         <ProofBar />
