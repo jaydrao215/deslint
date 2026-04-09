@@ -1,10 +1,17 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Copy, Check, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Copy, Check, ShieldCheck, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ComplianceReportMockup } from './mockups/ComplianceReportMockup';
+import { formatStarCount } from '@/lib/github-stars';
+
+const GITHUB_URL = 'https://github.com/jaydrao215/deslint';
+
+interface HeroProps {
+  stars: number | null;
+}
 
 /**
  * Split hero — copy on the left, live product visual on the right.
@@ -12,7 +19,7 @@ import { ComplianceReportMockup } from './mockups/ComplianceReportMockup';
  * of the actual HTML compliance report that `deslint compliance` produces,
  * with motion accents that play on mount.
  */
-export function Hero() {
+export function Hero({ stars }: HeroProps) {
   return (
     <section className="relative overflow-hidden">
       <HeroBackground />
@@ -76,12 +83,20 @@ export function Hero() {
                 Install in 30 seconds
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
-              <Link
-                href="/docs/rules"
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
               >
-                See the rules
-              </Link>
+                <Star className="h-4 w-4 text-warn group-hover:fill-warn transition-colors" aria-hidden />
+                <span>Star on GitHub</span>
+                {stars !== null && (
+                  <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-mono font-semibold text-gray-700 tabular-nums">
+                    {formatStarCount(stars)}
+                  </span>
+                )}
+              </a>
             </motion.div>
 
             <motion.div
@@ -92,7 +107,7 @@ export function Hero() {
             >
               <span className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-pass" />
-                14 deterministic rules
+                20 deterministic rules
               </span>
               <span className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-pass" />

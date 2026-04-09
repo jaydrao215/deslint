@@ -108,7 +108,7 @@ export function VisualProofSection() {
             transition={{ duration: 0.4 }}
             className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary"
           >
-            See it, don’t read it
+            Visual proof
           </motion.p>
           <motion.h2
             initial={{ opacity: 0, y: 12 }}
@@ -117,8 +117,8 @@ export function VisualProofSection() {
             transition={{ duration: 0.5, delay: 0.05 }}
             className="mb-4 text-balance text-3xl font-bold leading-tight text-gray-900 sm:text-4xl lg:text-5xl"
           >
-            What AI ships vs. what Deslint lands —{' '}
-            <span className="gradient-text-hero">live, not a screenshot.</span>
+            Before and after, rendered in your browser —{' '}
+            <span className="gradient-text-hero">not a screenshot.</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 12 }}
@@ -127,11 +127,9 @@ export function VisualProofSection() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="max-w-2xl text-lg leading-relaxed text-gray-500"
           >
-            Visual regression tools tell you the screenshot looks wrong.{' '}
-            <span className="font-semibold text-gray-700">
-              Deslint tells you <em>why</em> — and fixes it.
-            </span>{' '}
-            Four live beats, one stage, every fix rendered in your browser.
+            Four common failures AI code generators ship — dark mode, responsive
+            reflow, contrast, and the invisible accessibility gaps that only show
+            up in audits. Each one rendered live, before and after Deslint fixes it.
           </motion.p>
         </div>
 

@@ -3,17 +3,8 @@
 import { motion, useInView } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 
-/**
- * Strip of big verifiable numbers, placed immediately under the hero so the
- * first trust signal lands before any feature copy. Counters tick up from 0
- * the first time they scroll into view.
- *
- * Every number here is verifiable against the repo — no vanity metrics.
- *   1,145  → pnpm test across shared + eslint-plugin + cli + mcp + action
- *       14 → deterministic rules in packages/eslint-plugin/src/rules
- *        5 → React / Vue / Svelte / Angular / HTML
- *        0 → bytes that leave the machine
- */
+// Verifiable metrics: 1,145 = pnpm test count, 20 = rules in packages/eslint-plugin/src/rules,
+// 5 = React/Vue/Svelte/Angular/HTML, 0 = bytes leaving the machine.
 interface Metric {
   value: number;
   suffix?: string;
@@ -31,7 +22,7 @@ const METRICS: Metric[] = [
     format: (n) => n.toLocaleString(),
   },
   {
-    value: 14,
+    value: 20,
     label: 'Deterministic rules',
     sublabel: 'Design drift + WCAG 2.2 AA',
   },
@@ -65,29 +56,41 @@ export function MetricsBanner() {
 }
 
 function MetricCell({ metric, index }: { metric: Metric; index: number }) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-40px' });
-  const [displayed, setDisplayed] = useState(0);
+  // Initialize displayed at target so SSR/OG crawlers render final numbers.
+  // Reset to zero on mount only if below the fold; the in-view effect then
+  // animates 0 → target when the user scrolls to the section.
+  const [displayed, setDisplayed] = useState(metric.value);
+  const [armed, setArmed] = useState(false);
 
   useEffect(() => {
-    if (!inView) return;
+    if (!ref.current) return;
+    const belowFold = ref.current.getBoundingClientRect().top > window.innerHeight;
+    if (belowFold) {
+      setDisplayed(0);
+      setArmed(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!inView || !armed) return;
     if (metric.value === 0) {
       setDisplayed(0);
       return;
     }
-    const duration = 1200; // ms
+    const duration = 1200;
     const start = performance.now();
     let frame = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
-      // easeOutCubic for a satisfying decel
       const eased = 1 - Math.pow(1 - t, 3);
       setDisplayed(Math.round(metric.value * eased));
       if (t < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [inView, metric.value]);
+  }, [inView, armed, metric.value]);
 
   const formatted = metric.format ? metric.format(displayed) : displayed.toString();
 

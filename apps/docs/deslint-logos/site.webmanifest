@@ -1,0 +1,13 @@
+{
+  "name": "Deslint",
+  "short_name": "Deslint",
+  "description": "Design quality gate for AI-generated code",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.svg", "sizes": "any",     "type": "image/svg+xml" }
+  ],
+  "theme_color": "#534AB7",
+  "background_color": "#534AB7",
+  "display": "standalone"
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Menu, X, BookOpen, Zap } from 'lucide-react';
@@ -32,12 +33,16 @@ export function Navbar() {
     >
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white font-bold text-sm transition-transform group-hover:scale-105">
-              D
-              <div className="absolute inset-0 rounded-lg bg-primary-light/20 animate-pulse-glow" />
-            </div>
+            <Image
+              src="/icons/icon-32.svg"
+              alt=""
+              role="presentation"
+              width={32}
+              height={32}
+              priority
+              className="h-8 w-8 transition-transform group-hover:scale-105"
+            />
             <span className="font-semibold text-gray-900 text-lg tracking-tight">
               Deslint
             </span>
