@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Terminal } from 'lucide-react';
 import Link from 'next/link';
 
-const GITHUB_URL = 'https://github.com/jaydrao215/deslint';
+const GITHUB_URL = 'https://github.com/deslint/deslint';
 
 export function Cta() {
   return (

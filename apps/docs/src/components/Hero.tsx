@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { ComplianceReportMockup } from './mockups/ComplianceReportMockup';
 import { formatStarCount } from '@/lib/github-stars';
 
-const GITHUB_URL = 'https://github.com/jaydrao215/deslint';
+const GITHUB_URL = 'https://github.com/deslint/deslint';
 
 interface HeroProps {
   stars: number | null;
