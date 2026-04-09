@@ -3,7 +3,7 @@
 // Next revalidates once per hour so incremental rebuilds pick up new stars
 // without hammering the API.
 
-const REPO = 'deslint/deslint';
+const REPO = 'jaydrao215/deslint';
 
 export async function getGitHubStars(): Promise<number | null> {
   try {

@@ -5,11 +5,11 @@
   "homepage": "https://deslint.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/deslint/deslint.git",
+    "url": "git+https://github.com/jaydrao215/deslint.git",
     "directory": "packages/mcp"
   },
   "bugs": {
-    "url": "https://github.com/deslint/deslint/issues"
+    "url": "https://github.com/jaydrao215/deslint/issues"
   },
   "license": "MIT",
   "author": "Deslint",

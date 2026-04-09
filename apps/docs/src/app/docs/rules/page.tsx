@@ -286,7 +286,7 @@ export default function RulesReference() {
       </p>
       <p>
         <a
-          href="https://github.com/deslint/deslint/issues/new?labels=false-positive"
+          href="https://github.com/jaydrao215/deslint/issues/new?labels=false-positive"
           target="_blank"
           rel="noopener noreferrer"
         >

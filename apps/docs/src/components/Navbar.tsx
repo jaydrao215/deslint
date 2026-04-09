@@ -53,7 +53,7 @@ export function Navbar() {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <a
-              href="https://github.com/deslint/deslint"
+              href="https://github.com/jaydrao215/deslint"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3.5 py-2 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
@@ -95,7 +95,7 @@ export function Navbar() {
             ))}
             <div className="pt-3 border-t border-gray-100">
               <a
-                href="https://github.com/deslint/deslint"
+                href="https://github.com/jaydrao215/deslint"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-600 rounded-lg"
