@@ -2,6 +2,7 @@ import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { MetricsBanner } from '@/components/MetricsBanner';
 import { BeforeAfter } from '@/components/BeforeAfter';
+import { McpLoopSection } from '@/components/McpLoopSection';
 import { ProductShowcase } from '@/components/ProductShowcase';
 import { WhatItCatches } from '@/components/WhatItCatches';
 import { ComparisonTable } from '@/components/ComparisonTable';
@@ -20,6 +21,7 @@ export default function Home() {
         <Hero />
         <MetricsBanner />
         <BeforeAfter />
+        <McpLoopSection />
         <ProductShowcase />
         <WhatItCatches />
         <ComparisonTable />

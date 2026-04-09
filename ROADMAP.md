@@ -3,7 +3,7 @@
 > **Read me first.** This is the active planning document. It captures: live state, what's in flight, what's queued, what's deferred, decisions made, and the prioritized backlog. **Updated on every meaningful commit.** Future conversations should read this BEFORE assuming anything about state — it supersedes chat history and memory. Where this conflicts with DESLINT-EXECUTION.md or sprint plan files, this wins.
 
 **Last updated:** 2026-04-09
-**Last update reason:** CI fix (stale lockfile from S2) + **S5 COMPLETE** (13 WCAG criteria, per-level HTML sections, 2.1 AA equivalence, +16 tests) + **S6 landing page rebuilt THREE times**: (1) first pass = text-in-boxes with icons, shipped as d528344, (2) second pass added hand-coded product mockups (Editor/Terminal/PR/Compliance) after user feedback that mockups were required to compete with SonarQube/CodeRabbit, shipped as e0e0aa1, (3) **third pass (this session) adds the missing competitive depth**: MetricsBanner with animated counters, BeforeAfter enemy-framing section, ComparisonTable vs jsx-a11y/tailwindcss/SonarQube/CodeRabbit, PrivacyTrust "three zeros" positioning block, QuickStart 3-step install story, sharpened Hero copy ("AI writes fast. Deslint keeps it clean."), and EditorMockup animations gated behind useInView so they replay on scroll. **apps/docs still 100% clean: Level AA on 2.2 and 2.1 subsets, 13/13 criteria passing.** Remaining sprint work: S6 deploy-to-domain step, S7 MCP demo recording, S8 v0.2.0 release, S9 distribution launch.
+**Last update reason:** S7 MCP self-correction loop shipped: MCP server delegates to CLI `runLint` (fixes stale rule registry + out-of-tree file handling), real JSON-RPC demo client recorded via asciinema, paired landing assets (`McpFlowMockup` + `AsciinemaPlayer`) in new `McpLoopSection` after BeforeAfter. Level AA 13/13, 1,145 tests, 65.8 kB first-load JS.
 
 ---
 
@@ -24,9 +24,37 @@
 
 ## 2. What I'm working on RIGHT NOW
 
-**S1 → S5 shipped + S6 landing page rebuild just shipped.** Branch `claude/fix-ci-build-G0xCx` has everything from sprint items 1–5, the CI lockfile fix, and the S6 landing page rebuild. Not yet merged to main.
+**S1 → S5 shipped + S6 landing page rebuild shipped + S7 MCP self-correction loop just shipped.** Branch `claude/fix-ci-build-G0xCx` has everything from sprint items 1–5, the CI lockfile fix, the S6 landing page rebuilds, and the S7 MCP marketing beat. Not yet merged to main.
 
-### S6 — Landing page, third pass (this session): competitive depth
+### S7 — MCP self-correction loop (shipped)
+
+**MCP server (`packages/mcp/src/tools.ts`):**
+- `analyzeFile` and `analyzeAndFix` now delegate to `@deslint/cli`'s `runLint` — single source of truth for the full 20-rule set and all parsers (TS/Vue/Svelte/Angular/HTML). Fixes stale 10-rule registry that blocked S4 a11y rules from firing via MCP.
+- `resolveProjectDir()` helper pivots cwd to file's directory when requested `projectDir` doesn't contain the file (fixes ESLint v10 "File ignored because outside of base path").
+- `analyzeAndFix` copies file to `mkdtempSync` scratch dir, runs `runLint({ fix: true })`, reads diff, deletes scratch in `finally`. Workspace file never touched.
+- All 25 existing `@deslint/mcp` tests pass unchanged.
+
+**Demo client (`packages/mcp/demo/self-correction-loop.mjs`):** Real JSON-RPC client that spawns `packages/mcp/dist/cli.js` over stdio, runs `initialize` → `tools/list` → `analyze_file` → `analyze_and_fix` against `packages/mcp/demo/Button.tsx`, pretty-prints every protocol beat with ANSI brand colors. Round-trip timer reports real RPC compute (701ms), not choreographed sleep time.
+
+**Asciinema capture (`apps/docs/public/demo/mcp-self-correction.cast`):** Unedited recording of the demo client against the live server. Recorded via `asciinema rec --command "node packages/mcp/demo/self-correction-loop.mjs" --cols 82 --rows 38`.
+
+**Landing assets:**
+- `apps/docs/src/components/AsciinemaPlayer.tsx` — React wrapper around `asciinema-player@3.15.1`, dynamic-imported to keep player out of initial bundle.
+- `apps/docs/src/types/asciinema-player.d.ts` — TypeScript declarations (no official types ship).
+- `apps/docs/src/components/mockups/McpFlowMockup.tsx` — Hand-animated three-pane mockup (Editor before → MCP console → Editor after) with framer-motion SVG connectors, VSCode-style syntax highlighting, `useInView` + `setInterval` loop gating.
+- `apps/docs/src/components/McpLoopSection.tsx` — Section with Visual/Real tab switcher (McpFlowMockup ↔ AsciinemaPlayer), trust footer (`3 tools · <1s round trip · 0 bytes egress`).
+
+**Landing page composition:** `McpLoopSection` inserted after `BeforeAfter` in `apps/docs/src/app/page.tsx`.
+
+**README update:** `packages/mcp/README.md` "See it in action" section points at the demo script.
+
+**Verification:**
+- `pnpm --filter @deslint/mcp build` / `test` — 25/25 pass
+- `pnpm --filter @deslint/docs build` / `lint` / `typecheck` — clean, 65.8 kB first-load JS (+3.7 kB vs prior, asciinema-player dynamic chunk)
+- `pnpm -r --filter '!@deslint/docs' test` — 1,145 tests passing (91+892+17+120+25)
+- `deslint compliance apps/docs/out` — Level AA, 13/13 passing, 0 failing
+
+### S6 — Landing page, third pass (previous session in this sprint): competitive depth
 User directive: "Do we have good animations, realistic feel, an excellent page designs like sonarqube or coderabbit. Take inspiration from them, learn from them... Think as a product manager sitting with a ceo and designer who is defining our marketing page which will be killers."
 
 After studying https://www.sonarsource.com/products/sonarqube/ (SonarQube's "Fight AI slop" enemy framing, 80px headline, minimal but sharp) and https://www.coderabbit.ai/ (CodeRabbit's metrics banner under the hero with 3M / 75M / 15,000+, 6-card feature grid, testimonial carousel, security trust block, 2-click install emphasis), the gaps were clear: we had mockups but lacked (1) an immediate metrics strip under the hero, (2) enemy-framing before/after, (3) explicit competitive differentiation, (4) privacy-by-architecture positioning, (5) a 30-second install story. All five shipped in this pass.
