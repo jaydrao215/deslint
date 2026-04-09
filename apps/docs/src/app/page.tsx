@@ -1,6 +1,7 @@
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { MetricsBanner } from '@/components/MetricsBanner';
+import { VisualProofSection } from '@/components/VisualProofSection';
 import { BeforeAfter } from '@/components/BeforeAfter';
 import { McpLoopSection } from '@/components/McpLoopSection';
 import { ProductShowcase } from '@/components/ProductShowcase';
@@ -20,6 +21,7 @@ export default function Home() {
       <main>
         <Hero />
         <MetricsBanner />
+        <VisualProofSection />
         <BeforeAfter />
         <McpLoopSection />
         <ProductShowcase />
