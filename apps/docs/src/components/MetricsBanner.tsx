@@ -16,10 +16,9 @@ interface Metric {
 
 const METRICS: Metric[] = [
   {
-    value: 1145,
-    label: 'Tests passing',
-    sublabel: 'Every rule: valid + invalid + fix',
-    format: (n) => n.toLocaleString(),
+    value: 0,
+    label: 'Bytes leave your machine',
+    sublabel: 'No cloud, no telemetry, no LLM',
   },
   {
     value: 20,
@@ -32,9 +31,10 @@ const METRICS: Metric[] = [
     sublabel: 'React · Vue · Svelte · Angular · HTML',
   },
   {
-    value: 0,
-    label: 'Bytes leave your machine',
-    sublabel: 'No cloud, no telemetry, no LLM',
+    value: 1145,
+    label: 'Tests passing',
+    sublabel: 'Every rule: valid + invalid + fix',
+    format: (n) => n.toLocaleString(),
   },
 ];
 

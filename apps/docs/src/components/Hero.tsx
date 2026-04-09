@@ -55,10 +55,12 @@ export function Hero({ stars }: HeroProps) {
               transition={{ duration: 0.6, delay: 0.35 }}
               className="text-base sm:text-lg text-gray-500 mb-8 max-w-xl leading-relaxed"
             >
-              The deterministic gate that catches arbitrary colors, broken type
-              scales, and WCAG failures the moment AI writes them — in your
-              editor, your CI, and every pull request. One config, every
-              framework, zero cloud.
+              AI ships design drift, dark-mode gaps, and WCAG failures at the
+              speed of autocomplete. Deslint catches them in your editor, your
+              CI, and every PR —{' '}
+              <span className="font-semibold text-gray-700">
+                without ever sending your code to a cloud.
+              </span>
             </motion.p>
 
             <motion.div
@@ -119,7 +121,7 @@ export function Hero({ stars }: HeroProps) {
               </span>
               <span className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-pass" />
-                Zero cloud
+                Code never leaves your machine
               </span>
             </motion.div>
           </div>

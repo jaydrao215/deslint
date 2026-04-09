@@ -22,6 +22,7 @@ export default async function Home() {
       <main>
         <Hero stars={stars} />
         <MetricsBanner />
+        <PrivacyTrust />
         <VisualProofSection />
         <McpLoopSection />
         <ProductShowcase />
@@ -29,7 +30,6 @@ export default async function Home() {
         <ComparisonTable />
         <AccessibilitySection />
         <FrameworkMatrix />
-        <PrivacyTrust />
         <QuickStart />
         <Cta />
       </main>
