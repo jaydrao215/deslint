@@ -2,6 +2,15 @@
   "name": "@deslint/cli",
   "version": "0.2.0",
   "description": "CLI for Deslint — project-wide design quality analysis + Design Health Score",
+  "homepage": "https://deslint.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deslint/deslint.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/deslint/deslint/issues"
+  },
   "license": "MIT",
   "author": "Deslint",
   "engines": {

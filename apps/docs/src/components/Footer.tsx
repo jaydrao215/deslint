@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { BrandLockup } from './BrandLockup';
 
-const GITHUB_URL = 'https://github.com/jaydrao215/deslint';
+const GITHUB_URL = 'https://github.com/deslint/deslint';
 
 interface FooterLink {
   label: string;
