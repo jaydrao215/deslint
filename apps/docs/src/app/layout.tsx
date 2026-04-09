@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import 'asciinema-player/dist/bundle/asciinema-player.css';
 
 export const metadata: Metadata = {
   title: 'Deslint — Design Quality Gate for AI-Generated Code',

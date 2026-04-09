@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import 'asciinema-player/dist/bundle/asciinema-player.css';
 
 /**
  * Thin React wrapper around the real `asciinema-player` npm package.
