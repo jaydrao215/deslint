@@ -107,10 +107,10 @@ These rules correctly produce 0 violations on Angular templates — they're JSX-
 |-----------|---------|-------|----------|
 | React/TSX | ✓ | All 14 | ✓ (node.range present) |
 | React/JSX | ✓ | All 14 | ✓ (node.range present) |
-| Angular HTML | ✓ | 7/14 | No (node.range absent) |
+| Angular HTML | ✓ | 12/14 | No (node.range absent) |
 | Vue SFC | Supported (peer dep) | All | ✓ |
 | Svelte | Supported (peer dep) | All | ✓ |
-| Plain HTML | No | — | — |
+| Plain HTML | Supported (optional peer dep `@html-eslint/parser`) | 12/14 | Reports OK; HTML-native source-range autofix deferred |
 
 ## Known Limitations
 

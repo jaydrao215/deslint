@@ -112,6 +112,18 @@ export function createClassVisitor(check: CheckFn): Record<string, (node: any) =
         }
       } catch (err) { debugLog('class-visitor', err); return; }
     },
+
+    // ─── Plain HTML (via @html-eslint/parser) — class="..." on Tag nodes ───
+    // html-eslint emits `Attribute` nodes with shape `{ key: { value }, value: { value } }`.
+    // The `Attribute` type is distinct from JSX/Vue/Angular/Svelte attribute
+    // types so this selector is safely scoped to html-eslint output.
+    'Attribute[key.value="class"]'(node: any) {
+      try {
+        if (typeof node.value?.value === 'string') {
+          check(node.value.value, node);
+        }
+      } catch (err) { debugLog('class-visitor-html', err); return; }
+    },
   };
 }
 

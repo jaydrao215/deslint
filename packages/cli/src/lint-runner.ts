@@ -147,6 +147,18 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     // Not installed — Svelte files will use default parser
   }
 
+  // Plain HTML parser. When present, it takes precedence over Angular for
+  // vanilla `.html` files; Angular then only claims `.component.html` (the
+  // standard Angular convention). When absent, Angular parser still handles
+  // `.html` so existing Angular users keep working.
+  let htmlParser: any;
+  try {
+    htmlParser = await import('@html-eslint/parser');
+  } catch {
+    // Not installed — plain HTML files will fall back to Angular parser
+    // (if available) or be skipped entirely.
+  }
+
   const baseConfig = {
     plugins: { deslint: plugin } as any,
     rules,
@@ -187,11 +199,31 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     },
   });
 
+  // Plain HTML files — use @html-eslint/parser when available.
+  // Comes FIRST so that if both html-eslint and Angular parsers are installed,
+  // plain `.html` gets html-eslint by default. Angular still owns
+  // `**/*.component.html` below (added after — later config wins in ESLint
+  // flat config merge order).
+  if (htmlParser) {
+    configs.push({
+      ...baseConfig,
+      files: ['**/*.html'],
+      languageOptions: {
+        parser: htmlParser,
+      },
+    });
+  }
+
   // Angular HTML templates
   if (angularTemplateParser) {
     configs.push({
       ...baseConfig,
-      files: ['**/*.html'],
+      // When html-eslint is also installed, narrow Angular's claim to the
+      // `.component.html` convention so plain `.html` files don't get routed
+      // to the Angular template parser. When html-eslint is NOT installed,
+      // Angular parser keeps its historical `**/*.html` claim so existing
+      // Angular users don't regress.
+      files: htmlParser ? ['**/*.component.html'] : ['**/*.html'],
       languageOptions: {
         parser: angularTemplateParser,
       },

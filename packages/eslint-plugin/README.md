@@ -7,7 +7,7 @@
 
 14 ESLint rules that catch design quality violations in AI-generated frontend code — arbitrary colors, inconsistent spacing, missing responsive breakpoints, accessibility gaps, and more. Auto-fix support for 11 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
 
-**Validated on 7 real-world projects (4,061 files) with 0% false positive rate and 0 crashes.**
+**Validated on 11 real-world projects (4,071 files) with 0% false positive rate and 0 crashes.**
 
 ## Installation
 
@@ -27,7 +27,14 @@ pnpm add -D vue-eslint-parser
 pnpm add -D @angular-eslint/template-parser
 # Svelte
 pnpm add -D svelte-eslint-parser
+# Plain HTML (.html files)
+pnpm add -D @html-eslint/parser
 ```
+
+> **Angular vs plain HTML:** When both `@angular-eslint/template-parser` and
+> `@html-eslint/parser` are installed, Deslint routes `**/*.component.html` to
+> the Angular parser and every other `**/*.html` file to the html-eslint parser.
+> If only one is installed, it handles all `.html` files.
 
 ## Quick Start
 
@@ -291,15 +298,19 @@ Create `.deslintrc.json` to define your design system tokens:
 | Vue / Nuxt | Yes | All 14 | Yes | 1 project |
 | Svelte | Yes | All 14 | Yes | Parser ready |
 | Angular | Yes | 7/14* | No** | 1 project |
-| Plain HTML | Yes | All 14 | Yes | Not yet |
+| Plain HTML | Yes*** | All 14 | Yes**** | 5 projects |
 
 \* JSX-specific rules (`a11y-color-contrast`, `missing-states`, `consistent-component-spacing`, `max-component-lines`, `responsive-required`) produce 0 violations on Angular templates — they require JSX AST patterns.
 
 \*\* Angular template parser nodes lack `range` property. Violations are reported but auto-fix is skipped.
 
+\*\*\* Via optional peer dependency `@html-eslint/parser@>=0.40.0`. Install it alongside the plugin if you lint `.html` files.
+
+\*\*\*\* Rules fire and report correctly on plain HTML; programmatic source-range autofix for HTML-native ranges is deferred (JSX autofix paths remain fully fixable). See ROADMAP §6.2.
+
 ## Validation Results
 
-Tested on 7 real-world open-source projects:
+Tested on 11 real-world open-source projects:
 
 | Project | Framework | Files | Violations | False Positives |
 |---------|-----------|------:|----------:|-----------:|
@@ -309,8 +320,14 @@ Tested on 7 real-world open-source projects:
 | Vintor | Angular 21, Tailwind v4 | 74 | 3 | 0 |
 | saas-starter | Next.js 15, shadcn/ui | 23 | 51 | 0 |
 | taxonomy | Next.js 13, shadcn/ui | 94 | 71 | 0 |
+| h5bp/html5-boilerplate | Plain HTML | 4 | 2 | 0 |
+| StartBootstrap Agency | Plain HTML | 1 | 15 | 0 |
+| StartBootstrap Resume | Plain HTML | 1 | 4 | 0 |
+| StartBootstrap Clean Blog | Plain HTML | 4 | 13 | 0 |
 
-**Cumulative: 4,061 files, 3,395 violations, 0 false positives, 0 crashes.**
+**Cumulative: 4,071 files, 3,429 violations, 0 false positives, 0 crashes.**
+
+See `validation/s2-html-results.md` for the plain-HTML cohort triage.
 
 ## License
 

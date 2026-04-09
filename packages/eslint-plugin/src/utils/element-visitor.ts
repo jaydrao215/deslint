@@ -8,6 +8,10 @@
  * - Svelte: SvelteElement
  * - Plain HTML: Tag (via @html-eslint/parser — wired up in sprint item S2)
  *
+ * S2 lands HTML via @html-eslint/parser. The parser declares visitorKeys for
+ * `Tag.children`, so ESLint auto-traverses the DOM and every `Tag(node)` fires.
+ * See `normalizeHtml` for the concrete shape we consume.
+ *
  * Every rule passes a single `check(element)` callback that receives a
  * `NormalizedElement` describing the tag, its attributes, whether there's a
  * spread, and the underlying AST node (for context.report).
@@ -89,9 +93,9 @@ export interface ElementVisitorOptions {
   onComplete?: ElementCompleteFn;
 }
 
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────────────────── */
 /*  Helpers — exported so rule modules can use them on NormalizedElement      */
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────────────────── */
 
 /**
  * Find an attribute by (case-insensitive) name. Returns `null` if not found.
@@ -133,9 +137,9 @@ export function hasSpreadAttribute(element: NormalizedElement): boolean {
   return element.hasSpread;
 }
 
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────────────────── */
 /*  Factory                                                                    */
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────────────────── */
 
 /**
  * Create a framework-agnostic element visitor object. Returned value is an
@@ -171,7 +175,7 @@ export function createElementVisitor(
   };
 
   return {
-    // ─── React / Preact / Solid ──────────────────────────────────────────
+    // ─── React / Preact / Solid ─────────────────────────────────────
     JSXOpeningElement(node: TSESTree.JSXOpeningElement) {
       try {
         dispatch(normalizeJsx(node));
@@ -180,7 +184,7 @@ export function createElementVisitor(
       }
     },
 
-    // ─── Vue: walk templateBody manually ─────────────────────────────────
+    // ─── Vue: walk templateBody manually ───────────────────────────────
     // vue-eslint-parser puts the template AST on Program.templateBody,
     // which ESLint's traverser does NOT walk. We walk it ourselves, matching
     // the pattern used in class-visitor.ts.
@@ -204,7 +208,7 @@ export function createElementVisitor(
       }
     },
 
-    // ─── Svelte ──────────────────────────────────────────────────────────
+    // ─── Svelte ───────────────────────────────────────────────────────
     SvelteElement(node: any) {
       try {
         dispatch(normalizeSvelte(node));
@@ -234,20 +238,21 @@ export function createElementVisitor(
       }
     },
 
-    // ─── Plain HTML (via @html-eslint/parser) ────────────────────────────
-    // Wired up in sprint item S2 once @html-eslint/parser is added as an
-    // optional peer dep. Handler is present as a stub so rules can register
-    // the visitor today and HTML support turns on automatically when S2
-    // lands. The selector `Tag` is what html-eslint emits.
+    // ─── Plain HTML (via @html-eslint/parser) ───────────────────────────
+    // html-eslint emits `Tag` nodes with visitorKeys on `children` so ESLint
+    // auto-walks the DOM. Only true `Tag` nodes dispatch — `ScriptTag` /
+    // `StyleTag` are distinct AST types and are intentionally ignored here
+    // (script/style content is out of scope for element-visitor rules).
     Tag(node: any) {
       try {
+        if (node?.type !== 'Tag') return;
         dispatch(normalizeHtml(node));
       } catch (err) {
         debugLog('element-visitor-html', err);
       }
     },
 
-    // ─── End-of-file finalize hook ───────────────────────────────────────
+    // ─── End-of-file finalize hook ──────────────────────────────────
     // Program:exit fires after ESLint walks every node regardless of parser,
     // so it's the safe place to run cross-element evaluation (e.g.
     // heading-hierarchy needs the full ordered list before deciding).
@@ -262,9 +267,9 @@ export function createElementVisitor(
   };
 }
 
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────────────────── */
 /*  Per-framework normalizers                                                  */
-/* ────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────────────────── */
 
 /** Normalize a JSXOpeningElement into a NormalizedElement. */
 function normalizeJsx(
@@ -541,30 +546,43 @@ function normalizeAngular(node: any): NormalizedElement | null {
 }
 
 /**
- * Normalize a plain HTML tag (from @html-eslint/parser).
+ * Normalize a plain HTML tag (from `@html-eslint/parser`).
  *
- * STUB — full shape will be wired up in sprint item S2 once the peer dep is
- * added. For now the normalizer is best-effort and safe to call — if the
- * parser isn't installed, the visitor key never fires, so this is dead code
- * until S2.
+ * AST shape (verified against @html-eslint/parser 0.59.x):
+ *   Tag := { type: 'Tag', name: 'div', attributes: Attribute[], children: [], selfClosing: bool }
+ *   Attribute := { type: 'Attribute', key: { value: 'class' }, value?: { value: 'foo' } }
+ *
+ * Notes:
+ * - Tag names are lowercased by the parser — matches browser semantics.
+ * - Boolean attributes (e.g. `<input disabled>`) have NO `value` property on
+ *   the Attribute node. We normalize those to the empty string so they match
+ *   the JSX `<img alt />` convention and rules can tell "present but empty"
+ *   from "missing entirely" (null) from "dynamic" (null).
+ * - Plain HTML has no spread syntax; `hasSpread` is always false.
  */
 function normalizeHtml(node: any): NormalizedElement | null {
   if (!node || typeof node !== 'object') return null;
   const tagName: string | null =
-    typeof node.name === 'string'
-      ? node.name
-      : typeof node.rawName === 'string'
-        ? node.rawName
-        : null;
+    typeof node.name === 'string' ? node.name : null;
   if (!tagName) return null;
 
   const attributes: NormalizedAttribute[] = [];
 
   for (const attr of node.attributes ?? []) {
-    if (!attr || typeof attr.key?.value !== 'string') continue;
-    const name: string = attr.key.value;
+    if (!attr || typeof attr !== 'object') continue;
+    const name =
+      typeof attr.key?.value === 'string' ? attr.key.value : null;
+    if (!name) continue;
+
+    // Boolean attribute: value property is absent entirely (`<input disabled>`).
+    // Empty-string value (`<input value="">`) is still a real value.
     const value: string | null =
-      typeof attr.value?.value === 'string' ? attr.value.value : null;
+      attr.value === undefined || attr.value === null
+        ? ''
+        : typeof attr.value.value === 'string'
+          ? attr.value.value
+          : null;
+
     attributes.push({ name, value, node: attr, isSpread: false });
   }
 
