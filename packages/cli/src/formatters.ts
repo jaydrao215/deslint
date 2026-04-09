@@ -204,7 +204,7 @@ export function formatText(
 
     // ── False positive reporting ──
     lines.push(chalk.gray('  ─'.repeat(24)));
-    lines.push(`  ${chalk.dim('See a false positive?')} ${chalk.cyan('https://github.com/deslint/deslint/issues/new?labels=false-positive')}`);
+    lines.push(`  ${chalk.dim('See a false positive?')} ${chalk.cyan('https://github.com/jaydrao215/deslint/issues/new?labels=false-positive')}`);
     lines.push('');
   }
 

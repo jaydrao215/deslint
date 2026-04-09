@@ -1,6 +1,6 @@
 # Deslint
 
-[![CI](https://github.com/deslint/deslint/actions/workflows/ci.yml/badge.svg)](https://github.com/deslint/deslint/actions/workflows/ci.yml)
+[![CI](https://github.com/jaydrao215/deslint/actions/workflows/ci.yml/badge.svg)](https://github.com/jaydrao215/deslint/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@deslint/eslint-plugin?color=1A5276)](https://www.npmjs.com/package/@deslint/eslint-plugin)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
@@ -148,7 +148,7 @@ npx deslint-mcp install claude
 Add design quality checks to your PR workflow:
 
 ```yaml
-- uses: deslint/deslint/action@main
+- uses: jaydrao215/deslint/action@main
   with:
     min-score: 80
 ```

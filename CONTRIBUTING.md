@@ -17,7 +17,7 @@ whole guide before opening a PR.
 ### Getting Started
 
 ```bash
-git clone https://github.com/deslint/deslint.git
+git clone https://github.com/jaydrao215/deslint.git
 cd deslint
 pnpm install
 pnpm build
@@ -164,7 +164,7 @@ Conventional-commits style:
 
 ## Reporting bugs
 
-Please open an issue at https://github.com/deslint/deslint/issues with:
+Please open an issue at https://github.com/jaydrao215/deslint/issues with:
 
 - **Minimal repro** (10-line component, if possible, or a link to a
   public repo branch)
