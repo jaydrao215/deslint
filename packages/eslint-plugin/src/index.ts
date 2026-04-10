@@ -21,6 +21,11 @@ import ariaValidation from './rules/aria-validation.js';
 import focusVisibleStyle from './rules/focus-visible-style.js';
 import touchTargetSize from './rules/touch-target-size.js';
 import autocompleteAttribute from './rules/autocomplete-attribute.js';
+import noConflictingClasses from './rules/no-conflicting-classes.js';
+import noDuplicateClassStrings from './rules/no-duplicate-class-strings.js';
+import preferSemanticHtml from './rules/prefer-semantic-html.js';
+import consistentColorPalette from './rules/consistent-color-palette.js';
+import maxTailwindClasses from './rules/max-tailwind-classes.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -55,6 +60,11 @@ const plugin = {
     'focus-visible-style': focusVisibleStyle,
     'touch-target-size': touchTargetSize,
     'autocomplete-attribute': autocompleteAttribute,
+    'no-conflicting-classes': noConflictingClasses,
+    'no-duplicate-class-strings': noDuplicateClassStrings,
+    'prefer-semantic-html': preferSemanticHtml,
+    'consistent-color-palette': consistentColorPalette,
+    'max-tailwind-classes': maxTailwindClasses,
   },
   configs: {} as Record<string, any>,
 };
@@ -86,6 +96,11 @@ plugin.configs.recommended = {
     'deslint/focus-visible-style': 'warn',
     'deslint/touch-target-size': 'warn',
     'deslint/autocomplete-attribute': 'warn',
+    'deslint/no-conflicting-classes': 'warn',
+    'deslint/no-duplicate-class-strings': 'off',
+    'deslint/prefer-semantic-html': 'warn',
+    'deslint/consistent-color-palette': 'off',
+    'deslint/max-tailwind-classes': 'off',
   },
 };
 
@@ -115,6 +130,11 @@ plugin.configs.strict = {
     'deslint/focus-visible-style': 'error',
     'deslint/touch-target-size': 'error',
     'deslint/autocomplete-attribute': 'error',
+    'deslint/no-conflicting-classes': 'error',
+    'deslint/no-duplicate-class-strings': 'warn',
+    'deslint/prefer-semantic-html': 'error',
+    'deslint/consistent-color-palette': 'warn',
+    'deslint/max-tailwind-classes': 'warn',
   },
 };
 

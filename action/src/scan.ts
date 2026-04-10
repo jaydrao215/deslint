@@ -20,6 +20,17 @@ export interface CategoryScore {
   score: number;
 }
 
+export interface InlineViolation {
+  filePath: string;
+  line: number;
+  column: number;
+  endLine?: number;
+  endColumn?: number;
+  ruleId: string;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
 export interface ScanResult {
   /** Overall Design Health Score (0–100) */
   score: number;
@@ -40,6 +51,8 @@ export interface ScanResult {
   debtMinutes: number;
   /** Quality gate config loaded from .deslintrc.json (undefined if not configured). */
   qualityGate?: QualityGate;
+  /** Per-file, per-line violations for inline review comments. */
+  inlineViolations: InlineViolation[];
 }
 
 /** Map rule IDs → score category */
@@ -47,17 +60,31 @@ const RULE_CATEGORY_MAP: Record<string, string> = {
   'deslint/no-arbitrary-colors': 'colors',
   'deslint/a11y-color-contrast': 'colors',
   'deslint/dark-mode-coverage': 'colors',
+  'deslint/consistent-color-palette': 'colors',
   'deslint/no-arbitrary-spacing': 'spacing',
   'deslint/consistent-component-spacing': 'spacing',
   'deslint/no-magic-numbers-layout': 'spacing',
   'deslint/no-arbitrary-typography': 'typography',
+  'deslint/heading-hierarchy': 'typography',
   'deslint/responsive-required': 'responsive',
   'deslint/image-alt-text': 'responsive',
+  'deslint/touch-target-size': 'responsive',
   'deslint/no-arbitrary-zindex': 'consistency',
   'deslint/no-inline-styles': 'consistency',
   'deslint/consistent-border-radius': 'consistency',
   'deslint/max-component-lines': 'consistency',
   'deslint/missing-states': 'consistency',
+  'deslint/no-conflicting-classes': 'consistency',
+  'deslint/no-duplicate-class-strings': 'consistency',
+  'deslint/max-tailwind-classes': 'consistency',
+  'deslint/prefer-semantic-html': 'responsive',
+  'deslint/lang-attribute': 'responsive',
+  'deslint/viewport-meta': 'responsive',
+  'deslint/link-text': 'responsive',
+  'deslint/form-labels': 'responsive',
+  'deslint/aria-validation': 'responsive',
+  'deslint/focus-visible-style': 'responsive',
+  'deslint/autocomplete-attribute': 'responsive',
 };
 
 const CATEGORY_NAMES = ['colors', 'spacing', 'typography', 'responsive', 'consistency'];
@@ -115,6 +142,20 @@ export async function runScan(
     'deslint/consistent-border-radius': 'warn',
     'deslint/image-alt-text': 'warn',
     'deslint/no-magic-numbers-layout': 'warn',
+    'deslint/lang-attribute': 'warn',
+    'deslint/viewport-meta': 'error',
+    'deslint/heading-hierarchy': 'warn',
+    'deslint/link-text': 'warn',
+    'deslint/form-labels': 'warn',
+    'deslint/aria-validation': 'error',
+    'deslint/focus-visible-style': 'warn',
+    'deslint/touch-target-size': 'warn',
+    'deslint/autocomplete-attribute': 'warn',
+    'deslint/no-conflicting-classes': 'warn',
+    'deslint/no-duplicate-class-strings': 'off',
+    'deslint/prefer-semantic-html': 'warn',
+    'deslint/consistent-color-palette': 'off',
+    'deslint/max-tailwind-classes': 'off',
   };
 
   // Apply overrides
@@ -142,16 +183,17 @@ export async function runScan(
   const absoluteFiles = files.map((f) => path.resolve(cwd, f));
   const results = await eslint.lintFiles(absoluteFiles);
 
-  const aggregated = aggregateResults(results);
+  const aggregated = aggregateResults(results, cwd);
   return { ...aggregated, qualityGate };
 }
 
-function aggregateResults(results: ESLint.LintResult[]): ScanResult {
+function aggregateResults(results: ESLint.LintResult[], cwd: string): ScanResult {
   let totalViolations = 0;
   let errors = 0;
   let warnings = 0;
   let filesWithViolations = 0;
   let debtMinutes = 0;
+  const inlineViolations: InlineViolation[] = [];
 
   const byRule = new Map<string, { count: number; severity: number }>();
   const byCategory = new Map<string, number>();
@@ -162,6 +204,9 @@ function aggregateResults(results: ESLint.LintResult[]): ScanResult {
 
   for (const result of results) {
     if (result.messages.length > 0) filesWithViolations++;
+
+    // Compute relative path for inline review comments
+    const relPath = path.relative(cwd, result.filePath);
 
     for (const msg of result.messages) {
       totalViolations++;
@@ -175,6 +220,17 @@ function aggregateResults(results: ESLint.LintResult[]): ScanResult {
 
       if (ruleId.startsWith('deslint/')) {
         debtMinutes += effortForRule(ruleId);
+
+        inlineViolations.push({
+          filePath: relPath,
+          line: msg.line,
+          column: msg.column,
+          endLine: msg.endLine,
+          endColumn: msg.endColumn,
+          ruleId,
+          message: msg.message,
+          severity: msg.severity === 2 ? 'error' : 'warning',
+        });
       }
 
       const category = RULE_CATEGORY_MAP[ruleId];
@@ -214,5 +270,6 @@ function aggregateResults(results: ESLint.LintResult[]): ScanResult {
     filesScanned: results.length,
     filesWithViolations,
     debtMinutes,
+    inlineViolations,
   };
 }

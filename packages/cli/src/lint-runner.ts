@@ -27,6 +27,11 @@ export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'deslint/focus-visible-style': 'responsive',
   'deslint/touch-target-size': 'responsive',
   'deslint/autocomplete-attribute': 'consistency',
+  'deslint/no-conflicting-classes': 'consistency',
+  'deslint/no-duplicate-class-strings': 'consistency',
+  'deslint/prefer-semantic-html': 'responsive',
+  'deslint/consistent-color-palette': 'colors',
+  'deslint/max-tailwind-classes': 'consistency',
 };
 
 export interface LintMessage {
@@ -109,6 +114,11 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     'deslint/focus-visible-style': 'warn',
     'deslint/touch-target-size': 'warn',
     'deslint/autocomplete-attribute': 'warn',
+    'deslint/no-conflicting-classes': 'warn',
+    'deslint/no-duplicate-class-strings': 'off',
+    'deslint/prefer-semantic-html': 'warn',
+    'deslint/consistent-color-palette': 'off',
+    'deslint/max-tailwind-classes': 'off',
   };
 
   // Apply user overrides
