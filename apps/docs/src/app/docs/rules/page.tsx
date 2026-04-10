@@ -3,10 +3,10 @@ export default function RulesReference() {
     <div>
       <h1>Rules Reference</h1>
       <p>
-        Deslint ships with 10 rules across five categories: colors, spacing, typography,
-        responsive, and consistency. Each rule can be set to{' '}
-        <code>&quot;error&quot;</code>, <code>&quot;warn&quot;</code>, or{' '}
-        <code>&quot;off&quot;</code>.
+        Deslint ships with 23 rules across five scoring categories. Each rule can
+        be set to <code>&quot;error&quot;</code>, <code>&quot;warn&quot;</code>, or{' '}
+        <code>&quot;off&quot;</code>. Rules marked <em>fixable</em> will auto-fix
+        when you run <code>eslint --fix</code>.
       </p>
 
       {/* ── Colors ─────────────────────────────────────── */}
@@ -116,6 +116,24 @@ export default function RulesReference() {
 <div className="p-3 mt-2" />`}</code>
       </pre>
 
+      <h3>no-magic-numbers-layout</h3>
+      <p>
+        Disallow arbitrary (bracket) values in grid/flex layout Tailwind classes.
+        Flags classes like <code>gap-[16px]</code> and suggests scale tokens.
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> Yes (replaces with nearest scale value)</li>
+        <li><strong>Suggestions:</strong> Yes</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad
+<div className="grid gap-[16px] grid-cols-[200px_1fr]" />
+
+// Good
+<div className="grid gap-4 grid-cols-[200px_1fr]" />`}</code>
+      </pre>
+
       {/* ── Typography ─────────────────────────────────── */}
       <h2>Typography</h2>
 
@@ -144,6 +162,27 @@ export default function RulesReference() {
 
 // Good
 <p className="text-base font-medium" />`}</code>
+      </pre>
+
+      <h3>heading-hierarchy</h3>
+      <p>
+        Enforce sequential heading levels and at most one <code>&lt;h1&gt;</code>{' '}
+        per file. Maps to WCAG 1.3.1 and 2.4.6.
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> No</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — skipped heading level
+<h1>Title</h1>
+<h3>Subsection</h3>
+
+// Good — sequential levels
+<h1>Title</h1>
+<h2>Section</h2>
+<h3>Subsection</h3>`}</code>
       </pre>
 
       {/* ── Responsive ─────────────────────────────────── */}
@@ -175,6 +214,180 @@ export default function RulesReference() {
 <div className="w-full md:w-[800px]" />`}</code>
       </pre>
 
+      <h3>touch-target-size</h3>
+      <p>
+        Flag interactive elements with explicit dimensions smaller than 24×24 px.
+        AI-generated code often creates small icon buttons without adequate touch
+        targets. Maps to WCAG 2.5.8 (Target Size Minimum).
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> Yes (suggests minimum size classes)</li>
+        <li><strong>Suggestions:</strong> Yes</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — too small
+<button className="w-4 h-4">×</button>
+
+// Good — meets minimum
+<button className="w-6 h-6">×</button>`}</code>
+      </pre>
+
+      <h3>focus-visible-style</h3>
+      <p>
+        Detect elements with <code>outline-none</code> / <code>outline-0</code>{' '}
+        that lack a replacement focus indicator. Removing focus outlines without
+        providing an alternative violates WCAG 2.4.7 (Focus Visible).
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> Yes (suggests <code>focus-visible:ring-2</code>)</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — outline removed, no replacement
+<button className="outline-none">Click</button>
+
+// Good — replacement focus indicator
+<button className="outline-none focus-visible:ring-2 focus-visible:ring-offset-2">Click</button>`}</code>
+      </pre>
+
+      {/* ── Accessibility ──────────────────────────────── */}
+      <h2>Accessibility</h2>
+
+      <h3>image-alt-text</h3>
+      <p>
+        Require meaningful <code>alt</code> text on <code>&lt;img&gt;</code>{' '}
+        elements. AI-generated code frequently omits alt text, harming
+        accessibility and SEO.
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> Yes</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad
+<img src="hero.png" />
+
+// Good
+<img src="hero.png" alt="Product screenshot showing dashboard" />`}</code>
+      </pre>
+
+      <h3>form-labels</h3>
+      <p>
+        Every <code>&lt;input&gt;</code>, <code>&lt;select&gt;</code>, and{' '}
+        <code>&lt;textarea&gt;</code> must have an associated label via{' '}
+        <code>&lt;label&gt;</code>, <code>aria-label</code>, or{' '}
+        <code>aria-labelledby</code>. Maps to WCAG 1.3.1 and 3.3.2.
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> No</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — no label
+<input type="email" />
+
+// Good — associated label
+<label htmlFor="email">Email</label>
+<input id="email" type="email" />`}</code>
+      </pre>
+
+      <h3>autocomplete-attribute</h3>
+      <p>
+        Require <code>autocomplete</code> on identity and payment form fields.
+        AI-generated forms frequently omit autocomplete, violating WCAG 1.3.5
+        (Identify Input Purpose) and degrading autofill UX.
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> Yes (suggests the correct autocomplete value)</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — missing autocomplete
+<input type="email" name="email" />
+
+// Good — autocomplete present
+<input type="email" name="email" autoComplete="email" />`}</code>
+      </pre>
+
+      <h3>aria-validation</h3>
+      <p>
+        Forbid invalid ARIA roles and unknown <code>aria-*</code> attributes.
+        Validates against WAI-ARIA 1.2 and catches common typos. Maps to
+        WCAG 4.1.2.
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> No</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — invalid role
+<div role="buton" />
+
+// Good — valid role
+<div role="button" tabIndex={0} />`}</code>
+      </pre>
+
+      <h3>link-text</h3>
+      <p>
+        Forbid empty anchors and generic anchor text like &quot;click here&quot; or
+        &quot;read more&quot;. Maps to WCAG 2.4.4 (Link Purpose, In Context).
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> No</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — generic text
+<a href="/pricing">click here</a>
+
+// Good — descriptive text
+<a href="/pricing">View pricing plans</a>`}</code>
+      </pre>
+
+      <h3>lang-attribute</h3>
+      <p>
+        Require a valid <code>lang</code> attribute on the{' '}
+        <code>&lt;html&gt;</code> element. Maps to WCAG 3.1.1 (Language of Page).
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> Yes (adds <code>lang=&quot;en&quot;</code>)</li>
+        <li><strong>Suggestions:</strong> Yes</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — missing lang
+<html>...</html>
+
+// Good — valid BCP 47 tag
+<html lang="en">...</html>`}</code>
+      </pre>
+
+      <h3>viewport-meta</h3>
+      <p>
+        Forbid disabling user scaling on the viewport meta tag. Maps to
+        WCAG 1.4.4 (Resize Text). Detects <code>user-scalable=no</code> and{' '}
+        <code>maximum-scale=1</code>.
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> No</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — blocks zoom
+<meta name="viewport" content="width=device-width, user-scalable=no" />
+
+// Good — allows zoom
+<meta name="viewport" content="width=device-width, initial-scale=1" />`}</code>
+      </pre>
+
       {/* ── Consistency ─────────────────────────────────── */}
       <h2>Consistency</h2>
 
@@ -193,6 +406,26 @@ export default function RulesReference() {
   "threshold": 2,
   "ignoreSizeVariants": true
 }]`}</code>
+      </pre>
+
+      <h3>consistent-border-radius</h3>
+      <p>
+        Detect inconsistent border-radius patterns across similar components.
+        Reports the dominant pattern as the suggested standard.
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> No</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — mixed radii in similar components
+<div className="rounded-md p-4">Card A</div>
+<div className="rounded-xl p-4">Card B</div>
+
+// Good — consistent radius
+<div className="rounded-xl p-4">Card A</div>
+<div className="rounded-xl p-4">Card B</div>`}</code>
       </pre>
 
       <h3>max-component-lines</h3>
@@ -265,6 +498,24 @@ export default function RulesReference() {
 <div className="z-50" />
 
 // Auto-fix: z-[25] → z-20 (nearest scale value)`}</code>
+      </pre>
+
+      <h3>no-inline-styles</h3>
+      <p>
+        Disallow inline <code>style</code> attributes. Use Tailwind utility
+        classes instead for consistency and maintainability.
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> Yes</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad
+<div style={{ color: "red", padding: "16px" }} />
+
+// Good
+<div className="text-red-500 p-4" />`}</code>
       </pre>
 
       {/* ── Inline Suppression ─────────────────────────── */}

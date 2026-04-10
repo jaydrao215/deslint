@@ -20,6 +20,7 @@ interface Criterion {
 const CRITERIA: Criterion[] = [
   { id: '1.1.1', title: 'Non-text Content', level: 'A' },
   { id: '1.3.1', title: 'Info and Relationships', level: 'A' },
+  { id: '1.3.5', title: 'Identify Input Purpose', level: 'AA' },
   { id: '1.4.3', title: 'Contrast (Minimum)', level: 'AA' },
   { id: '1.4.4', title: 'Resize Text', level: 'AA' },
   { id: '1.4.10', title: 'Reflow', level: 'AA' },
@@ -28,6 +29,7 @@ const CRITERIA: Criterion[] = [
   { id: '2.4.4', title: 'Link Purpose (In Context)', level: 'A' },
   { id: '2.4.6', title: 'Headings and Labels', level: 'AA' },
   { id: '2.4.7', title: 'Focus Visible', level: 'AA' },
+  { id: '2.5.8', title: 'Target Size (Minimum)', level: 'AA' },
   { id: '3.1.1', title: 'Language of Page', level: 'A' },
   { id: '3.3.2', title: 'Labels or Instructions', level: 'A' },
   { id: '4.1.2', title: 'Name, Role, Value', level: 'A' },
@@ -42,16 +44,19 @@ export function AccessibilitySection() {
           <FadeIn className="lg:col-span-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary-50/60 px-3 py-1 text-xs font-semibold text-primary uppercase tracking-wider mb-4">
               <Scale className="h-3.5 w-3.5" />
-              ADA Title II ready
+              ADA Title II &amp; EAA ready
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-5 text-balance">
               Accessibility, treated as a legal requirement —
               not a checkbox
             </h2>
             <p className="text-lg text-gray-500 leading-relaxed mb-6">
-              The 2024 ADA Title II rule locks public entities to WCAG 2.1 Level AA.
-              Every criterion Deslint statically detects is in that set, so a passing
-              scan doubles as real compliance evidence.
+              The 2024 ADA Title II rule locks US public entities to WCAG 2.1 Level AA
+              by April 2026. The European Accessibility Act (EAA) already requires
+              WCAG 2.1 AA for digital products sold in the EU — enforceable since
+              June 2025, with penalties up to €100 K or 4 % of revenue. Every
+              criterion Deslint statically detects is in both sets, so a passing scan
+              doubles as real compliance evidence on either side of the Atlantic.
             </p>
             <p className="text-sm text-gray-500 leading-relaxed mb-6">
               Every violation links to the W3C specification. The compliance report
@@ -61,7 +66,7 @@ export function AccessibilitySection() {
             <div className="flex items-start gap-3 rounded-xl border border-gray-200/80 bg-surface-100 p-4">
               <ShieldCheck className="h-5 w-5 flex-none text-pass mt-0.5" />
               <p className="text-sm text-gray-600 leading-relaxed">
-                <strong className="text-gray-900">13 WCAG criteria</strong>{' '}
+                <strong className="text-gray-900">15 WCAG criteria</strong>{' '}
                 statically detected today. Everything Deslint cannot verify is
                 flagged as &quot;manual review required&quot; — no false
                 all-clear.
@@ -76,7 +81,7 @@ export function AccessibilitySection() {
                 <span className="text-xs font-semibold text-gray-900 uppercase tracking-wider">
                   WCAG 2.2 / 2.1 criteria covered
                 </span>
-                <span className="text-xs text-gray-500">13 / 13 mapped</span>
+                <span className="text-xs text-gray-500">15 / 15 mapped</span>
               </div>
               <ul className="divide-y divide-gray-100">
                 {CRITERIA.map((c) => (
@@ -102,7 +107,7 @@ export function AccessibilitySection() {
               </ul>
               <div className="px-5 py-3 border-t border-gray-200/80 bg-surface-100">
                 <p className="text-[11px] text-gray-500 leading-relaxed">
-                  5 Level A &middot; 8 Level AA. Conformance is computed
+                  6 Level A &middot; 9 Level AA. Conformance is computed
                   &quot;at-or-below&quot;: one Level A failure drops the whole
                   claim to Not Met.
                 </p>

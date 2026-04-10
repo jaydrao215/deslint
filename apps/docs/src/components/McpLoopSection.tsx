@@ -100,9 +100,9 @@ export function McpLoopSection() {
         <FadeIn delay={0.25}>
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             <TrustCell
-              value="3 tools"
+              value="6 tools"
               label="registered over MCP"
-              detail="analyze_file · analyze_project · analyze_and_fix"
+              detail="analyze · fix · compliance · rules · strategy"
             />
             <TrustCell
               value="<1s"

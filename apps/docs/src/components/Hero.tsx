@@ -109,7 +109,7 @@ export function Hero({ stars }: HeroProps) {
             >
               <span className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-pass" />
-                20 deterministic rules
+                23 deterministic rules
               </span>
               <span className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-pass" />
