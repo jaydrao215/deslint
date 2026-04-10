@@ -113,7 +113,7 @@ function PricingHero() {
           className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] pointer-events-none"
           style={{
             background:
-              'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(26, 82, 118, 0.07), transparent)',
+              'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(83, 74, 183, 0.07), transparent)',
           }}
         />
         <div className="absolute inset-0 dot-grid opacity-40" />

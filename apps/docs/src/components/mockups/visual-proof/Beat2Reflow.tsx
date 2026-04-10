@@ -195,7 +195,7 @@ function BrokenDashboard() {
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '12px',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: 'Satoshi, system-ui, sans-serif',
       }}
     >
       <StatCard title="Monthly revenue" value="$42,180" trend="+12.4%" color="#10B981" />
@@ -258,7 +258,7 @@ function FixedDashboard() {
     <div
       aria-hidden
       className="vp-fixed-grid-container"
-      style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+      style={{ fontFamily: 'Satoshi, system-ui, sans-serif' }}
     >
       <div className="vp-fixed-grid">
         <StatCard title="Monthly revenue" value="$42,180" trend="+12.4%" color="#10B981" />

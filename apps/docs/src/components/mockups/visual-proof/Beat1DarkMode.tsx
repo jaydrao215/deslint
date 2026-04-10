@@ -189,7 +189,7 @@ function BrokenPricingCard() {
         padding: '20px 22px',
         boxShadow: '0 1px 2px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06)',
         color: '#111827',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: 'Satoshi, system-ui, sans-serif',
       }}
     >
       <div
@@ -284,7 +284,7 @@ function FixedPricingCard({ isDark }: { isDark: boolean }) {
           ? '0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35)'
           : '0 1px 2px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06)',
         color: ink,
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: 'Satoshi, system-ui, sans-serif',
         transition: 'all 0.4s ease',
       }}
     >
