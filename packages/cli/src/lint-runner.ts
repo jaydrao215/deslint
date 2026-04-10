@@ -32,6 +32,11 @@ export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'deslint/prefer-semantic-html': 'responsive',
   'deslint/consistent-color-palette': 'colors',
   'deslint/max-tailwind-classes': 'consistency',
+  'deslint/prefers-reduced-motion': 'responsive',
+  'deslint/icon-accessibility': 'consistency',
+  'deslint/focus-trap-patterns': 'consistency',
+  'deslint/responsive-image-optimization': 'responsive',
+  'deslint/spacing-rhythm-consistency': 'spacing',
 };
 
 export interface LintMessage {

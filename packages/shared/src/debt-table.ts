@@ -49,6 +49,13 @@ export const RULE_EFFORT_MINUTES: Record<string, number> = {
   'deslint/prefer-semantic-html': 5,
   'deslint/consistent-color-palette': 10,
   'deslint/max-tailwind-classes': 5,
+
+  // v0.5.0 — Tier 1 universal rules
+  'deslint/prefers-reduced-motion': 3,
+  'deslint/icon-accessibility': 5,
+  'deslint/focus-trap-patterns': 5,
+  'deslint/responsive-image-optimization': 3,
+  'deslint/spacing-rhythm-consistency': 5,
 };
 
 /** Default effort for any rule not in the table (e.g. user-defined). */

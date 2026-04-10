@@ -26,6 +26,11 @@ import noDuplicateClassStrings from './rules/no-duplicate-class-strings.js';
 import preferSemanticHtml from './rules/prefer-semantic-html.js';
 import consistentColorPalette from './rules/consistent-color-palette.js';
 import maxTailwindClasses from './rules/max-tailwind-classes.js';
+import prefersReducedMotion from './rules/prefers-reduced-motion.js';
+import iconAccessibility from './rules/icon-accessibility.js';
+import focusTrapPatterns from './rules/focus-trap-patterns.js';
+import responsiveImageOptimization from './rules/responsive-image-optimization.js';
+import spacingRhythmConsistency from './rules/spacing-rhythm-consistency.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -65,6 +70,11 @@ const plugin = {
     'prefer-semantic-html': preferSemanticHtml,
     'consistent-color-palette': consistentColorPalette,
     'max-tailwind-classes': maxTailwindClasses,
+    'prefers-reduced-motion': prefersReducedMotion,
+    'icon-accessibility': iconAccessibility,
+    'focus-trap-patterns': focusTrapPatterns,
+    'responsive-image-optimization': responsiveImageOptimization,
+    'spacing-rhythm-consistency': spacingRhythmConsistency,
   },
   configs: {} as Record<string, any>,
 };
@@ -101,6 +111,11 @@ plugin.configs.recommended = {
     'deslint/prefer-semantic-html': 'warn',
     'deslint/consistent-color-palette': 'off',
     'deslint/max-tailwind-classes': 'off',
+    'deslint/prefers-reduced-motion': 'warn',
+    'deslint/icon-accessibility': 'warn',
+    'deslint/focus-trap-patterns': 'warn',
+    'deslint/responsive-image-optimization': 'warn',
+    'deslint/spacing-rhythm-consistency': 'off',
   },
 };
 
@@ -135,6 +150,11 @@ plugin.configs.strict = {
     'deslint/prefer-semantic-html': 'error',
     'deslint/consistent-color-palette': 'warn',
     'deslint/max-tailwind-classes': 'warn',
+    'deslint/prefers-reduced-motion': 'error',
+    'deslint/icon-accessibility': 'error',
+    'deslint/focus-trap-patterns': 'error',
+    'deslint/responsive-image-optimization': 'error',
+    'deslint/spacing-rhythm-consistency': 'warn',
   },
 };
 

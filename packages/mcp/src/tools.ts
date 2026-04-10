@@ -459,6 +459,11 @@ const RULE_METADATA: Record<string, { description: string; category: string; aut
   'deslint/focus-visible-style': { description: 'Detect outline-none without replacement focus indicator (WCAG 2.4.7).', category: 'responsive', autoFixable: true },
   'deslint/touch-target-size': { description: 'Flag interactive elements with touch targets smaller than 24x24px (WCAG 2.5.8).', category: 'responsive', autoFixable: false },
   'deslint/autocomplete-attribute': { description: 'Require autocomplete on identity/payment form fields (WCAG 1.3.5).', category: 'consistency', autoFixable: true },
+  'deslint/prefers-reduced-motion': { description: 'Flag animation/transition classes without motion-safe:/motion-reduce: variants (WCAG 2.3.3).', category: 'responsive', autoFixable: false },
+  'deslint/icon-accessibility': { description: 'Require accessible names on icon-only interactive elements; flag decorative icons missing aria-hidden.', category: 'consistency', autoFixable: false },
+  'deslint/focus-trap-patterns': { description: 'Require role, aria-modal, and labels on dialog/modal elements (WCAG 2.4.3, 2.1.2).', category: 'consistency', autoFixable: false },
+  'deslint/responsive-image-optimization': { description: 'Require loading, width/height, and srcset on <img> for performance and CLS prevention.', category: 'responsive', autoFixable: false },
+  'deslint/spacing-rhythm-consistency': { description: 'Detect inconsistent spacing patterns across similar elements; flag deviations from dominant rhythm.', category: 'spacing', autoFixable: false },
 };
 
 /**

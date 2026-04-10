@@ -85,6 +85,11 @@ const RULE_CATEGORY_MAP: Record<string, string> = {
   'deslint/aria-validation': 'responsive',
   'deslint/focus-visible-style': 'responsive',
   'deslint/autocomplete-attribute': 'responsive',
+  'deslint/prefers-reduced-motion': 'responsive',
+  'deslint/icon-accessibility': 'consistency',
+  'deslint/focus-trap-patterns': 'consistency',
+  'deslint/responsive-image-optimization': 'responsive',
+  'deslint/spacing-rhythm-consistency': 'spacing',
 };
 
 const CATEGORY_NAMES = ['colors', 'spacing', 'typography', 'responsive', 'consistency'];
