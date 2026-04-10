@@ -11,7 +11,7 @@
 
 import { Command } from 'commander';
 import { resolve } from 'node:path';
-import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { dirname } from 'node:path';
 import chalk from 'chalk';
 import { safeParseConfig, evaluateQualityGate, formatGateResult } from '@deslint/shared';
@@ -74,6 +74,12 @@ function loadConfig(projectDir: string): DeslintConfig | undefined {
   if (!existsSync(configPath)) return undefined;
 
   try {
+    // Security: limit config file size to 1 MB to prevent memory exhaustion
+    const { size } = statSync(configPath);
+    if (size > 1024 * 1024) {
+      console.error(chalk.red('  .deslintrc.json exceeds 1 MB size limit'));
+      return undefined;
+    }
     const raw = JSON.parse(readFileSync(configPath, 'utf-8'));
     const result = safeParseConfig(raw);
     if (result.success) return result.data;
@@ -460,11 +466,12 @@ program
       process.exit(1);
     }
 
-    // Open in default browser
-    const { exec } = await import('node:child_process');
+    // Open in default browser — use execFile (not exec) to avoid command injection
+    // via crafted directory names containing shell metacharacters.
+    const { execFile } = await import('node:child_process');
     const platform = process.platform;
     const cmd = platform === 'darwin' ? 'open' : platform === 'win32' ? 'start' : 'xdg-open';
-    exec(`${cmd} "${reportPath}"`, (err) => {
+    execFile(cmd, [reportPath], (err) => {
       if (err) {
         console.log(chalk.gray(`  Report: ${reportPath}`));
       } else {

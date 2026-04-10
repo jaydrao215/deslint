@@ -7,20 +7,20 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#1A5276',
-          light: '#2E86C1',
-          dark: '#0E2F44',
-          50: '#EBF5FB',
-          100: '#D6EAF8',
-          200: '#AED6F1',
-          300: '#85C1E9',
-          400: '#5DADE2',
-          500: '#2E86C1',
-          600: '#1A5276',
-          700: '#154360',
-          800: '#0E2F44',
-          900: '#071B28',
-          950: '#040E15',
+          DEFAULT: '#534AB7',
+          light: '#6C5FC2',
+          dark: '#3D3590',
+          50: '#F7F6FD',
+          100: '#EEEDFA',
+          200: '#DDDAF5',
+          300: '#C2BCE9',
+          400: '#9B91D4',
+          500: '#7B6DC7',
+          600: '#534AB7',
+          700: '#463DA0',
+          800: '#362F83',
+          900: '#271F66',
+          950: '#1A1640',
         },
         pass: {
           DEFAULT: '#10B981',
@@ -46,7 +46,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Satoshi', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       animation: {

@@ -15,9 +15,20 @@
  * v0.3.0 additions: compliance_check, get_rule_details, suggest_fix_strategy
  */
 
-import { resolve, relative, dirname, basename, join } from 'node:path';
-import { existsSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { resolve, relative, dirname, basename, join, normalize } from 'node:path';
+import { existsSync, readFileSync, writeFileSync, mkdtempSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+
+// ── Security constants ────────────────────────────────────────────────
+
+/** Maximum file size (10 MB) to prevent memory exhaustion via oversized files. */
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
+/** Maximum files to scan per request to prevent resource exhaustion. */
+const MAX_FILES_LIMIT = 5000;
+
+/** Maximum suggestions to return per request. */
+const MAX_SUGGESTIONS_LIMIT = 100;
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -132,15 +143,47 @@ export interface SuggestFixStrategyResult {
  * file's own directory — ESLint v10 silently drops files outside its cwd
  * ("File ignored because outside of base path"), which is exactly the kind
  * of thing an MCP-driven AI agent can't recover from.
+ *
+ * Security: normalizes paths and validates the resolved file lives inside
+ * the project directory to prevent path-traversal attacks via filePath
+ * containing `../` sequences.
  */
 function resolveProjectDir(filePath: string, projectDir?: string): { projectDir: string; absPath: string } {
-  const requestedDir = projectDir ?? process.cwd();
-  const absPath = resolve(requestedDir, filePath);
-  const insideRequested = absPath.startsWith(resolve(requestedDir));
+  const requestedDir = resolve(projectDir ?? process.cwd());
+  // Normalize to collapse any ../ sequences before comparison
+  const absPath = normalize(resolve(requestedDir, filePath));
+  const insideRequested = absPath.startsWith(requestedDir + '/') || absPath === requestedDir;
   return {
     absPath,
     projectDir: insideRequested ? requestedDir : dirname(absPath),
   };
+}
+
+/**
+ * Validate that a file exists and is within safe size limits.
+ * Prevents memory exhaustion from oversized files.
+ */
+function validateFile(absPath: string, displayPath: string): void {
+  if (!existsSync(absPath)) {
+    throw new Error(`File not found: ${displayPath}`);
+  }
+  const stat = statSync(absPath);
+  if (!stat.isFile()) {
+    throw new Error(`Not a file: ${displayPath}`);
+  }
+  if (stat.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error(
+      `File too large: ${displayPath} (${Math.round(stat.size / 1024 / 1024)}MB). Maximum: ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`,
+    );
+  }
+}
+
+/**
+ * Clamp numeric parameters to safe ranges.
+ */
+function clampMaxFiles(maxFiles?: number): number {
+  const val = maxFiles ?? 200;
+  return Math.max(1, Math.min(val, MAX_FILES_LIMIT));
 }
 
 function toViolation(msg: any): Violation {
@@ -165,9 +208,7 @@ export async function analyzeFile(params: {
 }): Promise<AnalyzeFileResult> {
   const { absPath, projectDir } = resolveProjectDir(params.filePath, params.projectDir);
 
-  if (!existsSync(absPath)) {
-    throw new Error(`File not found: ${params.filePath}`);
-  }
+  validateFile(absPath, params.filePath);
 
   const { runLint } = await import('@deslint/cli');
   const lintResult = await runLint({ files: [absPath], cwd: projectDir });
@@ -202,8 +243,8 @@ export async function analyzeProject(params: {
   projectDir?: string;
   maxFiles?: number;
 }): Promise<AnalyzeProjectResult> {
-  const projectDir = params.projectDir ?? process.cwd();
-  const maxFiles = params.maxFiles ?? 200;
+  const projectDir = resolve(params.projectDir ?? process.cwd());
+  const maxFiles = clampMaxFiles(params.maxFiles);
 
   const { discoverFiles, runLint, calculateScore } = await import('@deslint/cli');
 
@@ -269,9 +310,7 @@ export async function analyzeAndFix(params: {
 }): Promise<AnalyzeAndFixResult> {
   const { absPath, projectDir } = resolveProjectDir(params.filePath, params.projectDir);
 
-  if (!existsSync(absPath)) {
-    throw new Error(`File not found: ${params.filePath}`);
-  }
+  validateFile(absPath, params.filePath);
 
   const { runLint } = await import('@deslint/cli');
 
@@ -326,8 +365,8 @@ export async function complianceCheck(params: {
   projectDir?: string;
   maxFiles?: number;
 }): Promise<ComplianceCheckResult> {
-  const projectDir = params.projectDir ?? process.cwd();
-  const maxFiles = params.maxFiles ?? 200;
+  const projectDir = resolve(params.projectDir ?? process.cwd());
+  const maxFiles = clampMaxFiles(params.maxFiles);
 
   const { discoverFiles, runLint } = await import('@deslint/cli');
   const { evaluateCompliance, WCAG_CRITERIA } = await import('@deslint/shared');
@@ -408,18 +447,23 @@ const RULE_METADATA: Record<string, { description: string; category: string; aut
   'deslint/responsive-required': { description: 'Require responsive breakpoints on fixed-width containers.', category: 'responsive', autoFixable: false },
   'deslint/dark-mode-coverage': { description: 'Flag elements with color/bg utilities missing dark: variants.', category: 'colors', autoFixable: true },
   'deslint/missing-states': { description: 'Flag interactive elements missing hover/focus/disabled state handling.', category: 'consistency', autoFixable: false },
-  'deslint/a11y-color-contrast': { description: 'Check WCAG AA contrast ratios for text and UI components.', category: 'colors', autoFixable: true },
-  'deslint/image-alt-text': { description: 'Require meaningful alt text on <img> elements.', category: 'responsive', autoFixable: true },
+  'deslint/a11y-color-contrast': { description: 'Check WCAG AA contrast ratios for text and UI components.', category: 'colors', autoFixable: false },
+  'deslint/image-alt-text': { description: 'Require meaningful alt text on <img> elements.', category: 'responsive', autoFixable: false },
   'deslint/heading-hierarchy': { description: 'Flag skipped heading levels (e.g. h1 → h3).', category: 'consistency', autoFixable: false },
   'deslint/form-labels': { description: 'Match <label> to <input id>; flag unlabeled form controls.', category: 'consistency', autoFixable: false },
   'deslint/link-text': { description: 'Flag generic link text ("click here", "read more").', category: 'consistency', autoFixable: false },
   'deslint/lang-attribute': { description: 'Require lang attribute on <html> element.', category: 'consistency', autoFixable: true },
-  'deslint/viewport-meta': { description: 'Flag user-scalable=no and maximum-scale=1 on viewport meta.', category: 'consistency', autoFixable: true },
-  'deslint/aria-validation': { description: 'Catch invalid ARIA roles, hallucinated attributes, and LLM typos.', category: 'consistency', autoFixable: true },
+  'deslint/viewport-meta': { description: 'Flag user-scalable=no and maximum-scale=1 on viewport meta.', category: 'consistency', autoFixable: false },
+  'deslint/aria-validation': { description: 'Catch invalid ARIA roles, hallucinated attributes, and LLM typos.', category: 'consistency', autoFixable: false },
   'deslint/max-component-lines': { description: 'Flag overly large components exceeding line count threshold.', category: 'consistency', autoFixable: false },
-  'deslint/focus-visible-style': { description: 'Detect outline-none without replacement focus indicator (WCAG 2.4.7).', category: 'responsive', autoFixable: true },
+  'deslint/focus-visible-style': { description: 'Detect outline-none without replacement focus indicator (WCAG 2.4.7).', category: 'responsive', autoFixable: false },
   'deslint/touch-target-size': { description: 'Flag interactive elements with touch targets smaller than 24x24px (WCAG 2.5.8).', category: 'responsive', autoFixable: false },
-  'deslint/autocomplete-attribute': { description: 'Require autocomplete on identity/payment form fields (WCAG 1.3.5).', category: 'consistency', autoFixable: true },
+  'deslint/autocomplete-attribute': { description: 'Require autocomplete on identity/payment form fields (WCAG 1.3.5).', category: 'consistency', autoFixable: false },
+  'deslint/prefers-reduced-motion': { description: 'Flag animation/transition classes without motion-safe:/motion-reduce: variants (WCAG 2.3.3).', category: 'responsive', autoFixable: true },
+  'deslint/icon-accessibility': { description: 'Require accessible names on icon-only interactive elements; flag decorative icons missing aria-hidden.', category: 'consistency', autoFixable: true },
+  'deslint/focus-trap-patterns': { description: 'Require role, aria-modal, and labels on dialog/modal elements (WCAG 2.4.3, 2.1.2).', category: 'consistency', autoFixable: true },
+  'deslint/responsive-image-optimization': { description: 'Require loading, width/height, and srcset on <img> for performance and CLS prevention.', category: 'responsive', autoFixable: true },
+  'deslint/spacing-rhythm-consistency': { description: 'Detect inconsistent spacing patterns across similar elements; flag deviations from dominant rhythm.', category: 'spacing', autoFixable: false },
 };
 
 /**
@@ -482,9 +526,9 @@ export async function suggestFixStrategy(params: {
   maxFiles?: number;
   maxSuggestions?: number;
 }): Promise<SuggestFixStrategyResult> {
-  const projectDir = params.projectDir ?? process.cwd();
-  const maxFiles = params.maxFiles ?? 200;
-  const maxSuggestions = params.maxSuggestions ?? 10;
+  const projectDir = resolve(params.projectDir ?? process.cwd());
+  const maxFiles = clampMaxFiles(params.maxFiles);
+  const maxSuggestions = Math.max(1, Math.min(params.maxSuggestions ?? 10, MAX_SUGGESTIONS_LIMIT));
 
   const { discoverFiles, runLint, calculateScore } = await import('@deslint/cli');
   const { effortForRule } = await import('@deslint/shared');

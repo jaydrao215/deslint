@@ -154,7 +154,7 @@ function BrokenCard() {
       style={{
         width: '100%',
         maxWidth: '280px',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: 'Satoshi, system-ui, sans-serif',
       }}
     >
       <div
@@ -212,7 +212,7 @@ function FixedCard() {
       style={{
         width: '100%',
         maxWidth: '280px',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: 'Satoshi, system-ui, sans-serif',
       }}
     >
       <div

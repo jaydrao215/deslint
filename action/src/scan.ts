@@ -85,6 +85,11 @@ const RULE_CATEGORY_MAP: Record<string, string> = {
   'deslint/aria-validation': 'responsive',
   'deslint/focus-visible-style': 'responsive',
   'deslint/autocomplete-attribute': 'responsive',
+  'deslint/prefers-reduced-motion': 'responsive',
+  'deslint/icon-accessibility': 'consistency',
+  'deslint/focus-trap-patterns': 'consistency',
+  'deslint/responsive-image-optimization': 'responsive',
+  'deslint/spacing-rhythm-consistency': 'spacing',
 };
 
 const CATEGORY_NAMES = ['colors', 'spacing', 'typography', 'responsive', 'consistency'];
@@ -106,11 +111,23 @@ export async function runScan(
   let ruleOverrides: Record<string, unknown> = {};
   let qualityGate: QualityGate | undefined;
   // Resolve config: explicit configPath, otherwise try ./.deslintrc.json
+  // Security: normalize to prevent path traversal via configPath input
   const resolvedConfigPath = configPath
-    ? path.resolve(workingDirectory, configPath)
+    ? path.normalize(path.resolve(workingDirectory, configPath))
     : path.resolve(workingDirectory, '.deslintrc.json');
-  if (fs.existsSync(resolvedConfigPath)) {
+  const resolvedCwd = path.resolve(workingDirectory);
+  if (
+    !resolvedConfigPath.startsWith(resolvedCwd + path.sep) &&
+    resolvedConfigPath !== resolvedCwd
+  ) {
+    // Config path escapes the working directory — ignore it silently
+  } else if (fs.existsSync(resolvedConfigPath)) {
     try {
+      // Security: limit config file size to 1 MB to prevent memory exhaustion
+      const configStat = fs.statSync(resolvedConfigPath);
+      if (configStat.size > 1024 * 1024) {
+        throw new Error('Config file exceeds 1MB size limit');
+      }
       const raw = JSON.parse(fs.readFileSync(resolvedConfigPath, 'utf-8'));
       const parsed = safeParseConfig(raw);
       if (parsed.success) {
@@ -156,6 +173,11 @@ export async function runScan(
     'deslint/prefer-semantic-html': 'warn',
     'deslint/consistent-color-palette': 'off',
     'deslint/max-tailwind-classes': 'off',
+    'deslint/prefers-reduced-motion': 'warn',
+    'deslint/icon-accessibility': 'warn',
+    'deslint/focus-trap-patterns': 'warn',
+    'deslint/responsive-image-optimization': 'warn',
+    'deslint/spacing-rhythm-consistency': 'off',
   };
 
   // Apply overrides

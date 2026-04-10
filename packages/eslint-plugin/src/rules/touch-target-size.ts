@@ -77,7 +77,6 @@ export default createRule<Options, MessageIds>({
       description:
         'Flag interactive elements with explicit dimensions smaller than 24x24px (WCAG 2.5.8 Target Size Minimum). AI-generated code often creates small icon buttons without adequate touch targets.',
     },
-    fixable: 'code',
     schema: [
       {
         type: 'object',

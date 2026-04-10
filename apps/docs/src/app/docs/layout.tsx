@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { BrandLockup } from '@/components/BrandLockup';
 
 const SIDEBAR_ITEMS = [
   { href: '/docs', label: 'Overview', icon: BookOpen, exact: true },
@@ -70,12 +71,9 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
       {/* Top bar */}
       <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
         <div className="flex h-full items-center px-6">
-          <Link href="/" className="flex items-center gap-2.5 mr-8">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">
-              V
-            </div>
-            <span className="font-semibold text-gray-900 tracking-tight">Deslint</span>
-            <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
+          <Link href="/" aria-label="Deslint home" className="flex items-center gap-2 mr-8 group transition-transform hover:scale-[1.02]">
+            <BrandLockup priority />
+            <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md ml-1">
               Docs
             </span>
           </Link>

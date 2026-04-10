@@ -32,6 +32,11 @@ export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'deslint/prefer-semantic-html': 'responsive',
   'deslint/consistent-color-palette': 'colors',
   'deslint/max-tailwind-classes': 'consistency',
+  'deslint/prefers-reduced-motion': 'responsive',
+  'deslint/icon-accessibility': 'consistency',
+  'deslint/focus-trap-patterns': 'consistency',
+  'deslint/responsive-image-optimization': 'responsive',
+  'deslint/spacing-rhythm-consistency': 'spacing',
 };
 
 export interface LintMessage {
@@ -119,6 +124,11 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     'deslint/prefer-semantic-html': 'warn',
     'deslint/consistent-color-palette': 'off',
     'deslint/max-tailwind-classes': 'off',
+    'deslint/prefers-reduced-motion': 'warn',
+    'deslint/icon-accessibility': 'warn',
+    'deslint/focus-trap-patterns': 'warn',
+    'deslint/responsive-image-optimization': 'warn',
+    'deslint/spacing-rhythm-consistency': 'off',
   };
 
   // Apply user overrides
