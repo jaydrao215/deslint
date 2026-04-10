@@ -1,6 +1,6 @@
 {
   "name": "@deslint/cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "CLI for Deslint — project-wide design quality analysis + Design Health Score",
   "homepage": "https://deslint.com",
   "repository": {
