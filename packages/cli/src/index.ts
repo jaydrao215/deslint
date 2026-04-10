@@ -466,11 +466,12 @@ program
       process.exit(1);
     }
 
-    // Open in default browser
-    const { exec } = await import('node:child_process');
+    // Open in default browser — use execFile (not exec) to avoid command injection
+    // via crafted directory names containing shell metacharacters.
+    const { execFile } = await import('node:child_process');
     const platform = process.platform;
     const cmd = platform === 'darwin' ? 'open' : platform === 'win32' ? 'start' : 'xdg-open';
-    exec(`${cmd} "${reportPath}"`, (err) => {
+    execFile(cmd, [reportPath], (err) => {
       if (err) {
         console.log(chalk.gray(`  Report: ${reportPath}`));
       } else {
