@@ -1,4 +1,4 @@
-import { ESLintUtils } from '@typescript-eslint/utils';
+import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { debugLog } from '../utils/debug.js';
 import {
   createElementVisitor,
@@ -52,10 +52,21 @@ const DIALOG_COMPONENT_PATTERNS = [
   /^Overlay$/i,
 ];
 
+/** Insert a JSX attribute after the tag name. */
+function makeJsxInsertFix(element: any, attrText: string) {
+  if (element.framework !== 'jsx') return undefined;
+  return (fixer: any) => {
+    const jsxNode = element.node as TSESTree.JSXOpeningElement;
+    const tagEnd = jsxNode.name.range[1];
+    return fixer.insertTextAfterRange([tagEnd, tagEnd], ` ${attrText}`);
+  };
+}
+
 export default createRule<Options, MessageIds>({
   name: 'focus-trap-patterns',
   meta: {
     type: 'suggestion',
+    fixable: 'code',
     docs: {
       description:
         'Require dialog and modal elements to have proper focus management attributes: role, aria-modal, and accessible labels (WCAG 2.4.3, 2.1.2).',
@@ -116,6 +127,7 @@ export default createRule<Options, MessageIds>({
                 node: element.node as any,
                 messageId: 'dialogMissingAriaModal',
                 data: { tag, role },
+                fix: makeJsxInsertFix(element, 'aria-modal="true"'),
               });
             }
 
@@ -129,6 +141,7 @@ export default createRule<Options, MessageIds>({
                 node: element.node as any,
                 messageId: 'dialogMissingLabel',
                 data: { tag, role },
+                fix: makeJsxInsertFix(element, 'aria-label="Dialog"'),
               });
             }
 
@@ -136,13 +149,13 @@ export default createRule<Options, MessageIds>({
           }
 
           // Case 2: Component name looks like a dialog but has no role
-          // Only check PascalCase names (components, not HTML elements)
           if (tag[0] === tag[0].toUpperCase() && tag[0] !== tag[0].toLowerCase()) {
             if (isDialogComponent(tag) && !role) {
               context.report({
                 node: element.node as any,
                 messageId: 'dialogMissingRole',
                 data: { tag },
+                fix: makeJsxInsertFix(element, 'role="dialog" aria-modal="true"'),
               });
             }
           }

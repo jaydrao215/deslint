@@ -68,27 +68,29 @@ ruleTester.run('responsive-image-optimization', rule, {
   ],
 
   invalid: [
-    // ── Missing loading attribute ──
+    // ── Missing loading attribute → auto-fixed ──
     {
       code: '<img src="/photo.jpg" width="800" height="600" srcSet="photo-400.jpg 400w" alt="Photo" />',
+      output: '<img loading="lazy" src="/photo.jpg" width="800" height="600" srcSet="photo-400.jpg 400w" alt="Photo" />',
       errors: [{ messageId: 'missingLoading' }],
     },
 
-    // ── Missing width/height ──
+    // ── Missing width/height (not auto-fixable) ──
     {
       code: '<img src="/photo.jpg" loading="lazy" srcSet="photo-400.jpg 400w" alt="Photo" />',
       errors: [{ messageId: 'missingWidthHeight' }],
     },
 
-    // ── Missing srcset (non-SVG) ──
+    // ── Missing srcset (not auto-fixable) ──
     {
       code: '<img src="/photo.jpg" loading="lazy" width="800" height="600" alt="Photo" />',
       errors: [{ messageId: 'missingSrcset' }],
     },
 
-    // ── Missing everything ──
+    // ── Missing everything → loading auto-fixed, others reported ──
     {
       code: '<img src="/photo.jpg" alt="Photo" />',
+      output: '<img loading="lazy" src="/photo.jpg" alt="Photo" />',
       errors: [
         { messageId: 'missingLoading' },
         { messageId: 'missingWidthHeight' },

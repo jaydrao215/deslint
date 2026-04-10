@@ -1,4 +1,4 @@
-import { ESLintUtils } from '@typescript-eslint/utils';
+import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { debugLog } from '../utils/debug.js';
 import {
   createElementVisitor,
@@ -38,6 +38,7 @@ export default createRule<Options, MessageIds>({
   name: 'icon-accessibility',
   meta: {
     type: 'suggestion',
+    fixable: 'code',
     docs: {
       description:
         'Require accessible names on interactive elements containing only icons. Flag decorative icons missing aria-hidden.',
@@ -128,6 +129,10 @@ export default createRule<Options, MessageIds>({
 
           // Icon-only interactive: all children are icons, no text
           if (hasIcon && !hasText) {
+            // Derive a readable label from the icon name:
+            // "SearchIcon" → "Search", "ChevronRight" → "Chevron right"
+            const label = deriveLabel(iconName || 'Icon');
+
             context.report({
               node: node,
               messageId: 'iconOnlyInteractive',
@@ -135,6 +140,17 @@ export default createRule<Options, MessageIds>({
                 tag: element.tagName,
                 icon: iconName || 'Icon',
               },
+              fix:
+                element.framework === 'jsx'
+                  ? (fixer) => {
+                      const jsxNode = element.node as TSESTree.JSXOpeningElement;
+                      const tagEnd = jsxNode.name.range[1];
+                      return fixer.insertTextAfterRange(
+                        [tagEnd, tagEnd],
+                        ` aria-label="${label}"`,
+                      );
+                    }
+                  : undefined,
             });
           }
         } catch (err) {
@@ -144,6 +160,25 @@ export default createRule<Options, MessageIds>({
     });
   },
 });
+
+/**
+ * Derive a human-readable aria-label from an icon component name.
+ * "SearchIcon" → "Search", "ChevronRight" → "Chevron right",
+ * "FaHeart" → "Heart", "X" → "Close"
+ */
+function deriveLabel(iconName: string): string {
+  // Strip common suffixes/prefixes
+  let name = iconName
+    .replace(/Icon$/i, '')
+    .replace(/^(Fa|Fi|Hi|Ri|Bi|Ai|Bs|Cg|Ci|Di|Fc|Gi|Go|Gr|Im|Io|Md|Pi|Si|Sl|Tb|Ti|Vsc|Wi|Lucide)/, '');
+
+  if (name === 'X') return 'Close';
+  if (!name) return iconName;
+
+  // Split PascalCase into words: "ChevronRight" → "Chevron right"
+  name = name.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
 
 // ── JSX Children Helpers ─────────────────────────────────────────────
 

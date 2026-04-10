@@ -1,5 +1,6 @@
 import { ESLintUtils } from '@typescript-eslint/utils';
 import { createClassVisitor } from '../utils/class-visitor.js';
+import { safeGetText, safeGetRange } from '../utils/safe-source.js';
 import { debugLog } from '../utils/debug.js';
 
 const createRule = ESLintUtils.RuleCreator(
@@ -45,6 +46,7 @@ export default createRule<Options, MessageIds>({
   name: 'prefers-reduced-motion',
   meta: {
     type: 'suggestion',
+    fixable: 'code',
     docs: {
       description:
         'Require animation/transition classes to be wrapped with motion-safe: or motion-reduce: variants for users with vestibular disorders (WCAG 2.3.3).',
@@ -76,8 +78,6 @@ export default createRule<Options, MessageIds>({
         const classList = classes.split(/\s+/).filter(Boolean);
 
         // Build set of motion-variant-protected prefixes in this string.
-        // e.g. "motion-reduce:animate-none" protects the "animate-" prefix,
-        // meaning "animate-spin" in the same class list is intentional.
         const protectedPrefixes = new Set<string>();
         for (const cls of classList) {
           for (const variant of MOTION_VARIANTS) {
@@ -101,7 +101,6 @@ export default createRule<Options, MessageIds>({
           if (SAFE_CLASSES.has(cls)) continue;
 
           // Strip responsive/state variants to get the base utility
-          // e.g. "sm:hover:animate-spin" → check "animate-spin"
           const parts = cls.split(':');
           const baseUtility = parts[parts.length - 1];
 
@@ -115,10 +114,18 @@ export default createRule<Options, MessageIds>({
           // Skip safe base utilities
           if (SAFE_CLASSES.has(baseUtility)) continue;
 
+          const replacement = `motion-safe:${cls}`;
+
           context.report({
             node: node as any,
             messageId: 'missingMotionSafe',
             data: { cls },
+            fix(fixer) {
+              const src = safeGetText(context.sourceCode, node);
+              const range = safeGetRange(context.sourceCode, node);
+              if (!src || !range) return null;
+              return fixer.replaceTextRange(range, src.replace(cls, replacement));
+            },
           });
         }
       } catch (err) {

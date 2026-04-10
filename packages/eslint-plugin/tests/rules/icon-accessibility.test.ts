@@ -63,15 +63,17 @@ ruleTester.run('icon-accessibility', rule, {
   ],
 
   invalid: [
-    // ── Icon-only button without label ──
+    // ── Icon-only button → auto-fixed with aria-label ──
     {
       code: '<button><SearchIcon /></button>',
+      output: '<button aria-label="Search"><SearchIcon /></button>',
       errors: [{ messageId: 'iconOnlyInteractive' }],
     },
 
-    // ── Icon-only link without label ──
+    // ── Icon-only link → auto-fixed with aria-label ──
     {
       code: '<a href="/close"><CloseIcon /></a>',
+      output: '<a aria-label="Close" href="/close"><CloseIcon /></a>',
       errors: [{ messageId: 'iconOnlyInteractive' }],
     },
   ],

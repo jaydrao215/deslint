@@ -48,48 +48,67 @@ ruleTester.run('focus-trap-patterns', rule, {
   ],
 
   invalid: [
-    // ── role="dialog" without aria-modal ──
+    // ── role="dialog" without aria-modal → auto-fixed ──
     {
       code: '<div role="dialog" aria-label="Settings">Content</div>',
+      output: '<div aria-modal="true" role="dialog" aria-label="Settings">Content</div>',
       errors: [{ messageId: 'dialogMissingAriaModal' }],
     },
 
-    // ── role="dialog" without label ──
+    // ── role="dialog" without label → auto-fixed with placeholder ──
     {
       code: '<div role="dialog" aria-modal="true">Content</div>',
+      output: '<div aria-label="Dialog" role="dialog" aria-modal="true">Content</div>',
       errors: [{ messageId: 'dialogMissingLabel' }],
     },
 
-    // ── role="dialog" without aria-modal AND without label ──
+    // ── role="dialog" without aria-modal AND without label → multi-pass fix ──
     {
       code: '<div role="dialog">Content</div>',
+      output: [
+        '<div aria-modal="true" role="dialog">Content</div>',
+        '<div aria-label="Dialog" aria-modal="true" role="dialog">Content</div>',
+      ],
       errors: [
         { messageId: 'dialogMissingAriaModal' },
         { messageId: 'dialogMissingLabel' },
       ],
     },
 
-    // ── role="alertdialog" without aria-modal ──
+    // ── role="alertdialog" without aria-modal → auto-fixed ──
     {
       code: '<div role="alertdialog" aria-label="Warning">Content</div>',
+      output: '<div aria-modal="true" role="alertdialog" aria-label="Warning">Content</div>',
       errors: [{ messageId: 'dialogMissingAriaModal' }],
     },
 
-    // ── Dialog component without role ──
+    // ── Dialog component without role → multi-pass fix (role+modal, then label) ──
     {
       code: '<Modal>Content</Modal>',
+      output: [
+        '<Modal role="dialog" aria-modal="true">Content</Modal>',
+        '<Modal aria-label="Dialog" role="dialog" aria-modal="true">Content</Modal>',
+      ],
       errors: [{ messageId: 'dialogMissingRole' }],
     },
 
-    // ── Drawer component without role ──
+    // ── Drawer component without role → multi-pass fix ──
     {
       code: '<Drawer>Content</Drawer>',
+      output: [
+        '<Drawer role="dialog" aria-modal="true">Content</Drawer>',
+        '<Drawer aria-label="Dialog" role="dialog" aria-modal="true">Content</Drawer>',
+      ],
       errors: [{ messageId: 'dialogMissingRole' }],
     },
 
-    // ── Sheet component without role ──
+    // ── Sheet component without role → multi-pass fix ──
     {
       code: '<Sheet>Content</Sheet>',
+      output: [
+        '<Sheet role="dialog" aria-modal="true">Content</Sheet>',
+        '<Sheet aria-label="Dialog" role="dialog" aria-modal="true">Content</Sheet>',
+      ],
       errors: [{ messageId: 'dialogMissingRole' }],
     },
   ],

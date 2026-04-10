@@ -1,4 +1,4 @@
-import { ESLintUtils } from '@typescript-eslint/utils';
+import { ESLintUtils, type TSESTree } from '@typescript-eslint/utils';
 import { debugLog } from '../utils/debug.js';
 import {
   createElementVisitor,
@@ -46,10 +46,21 @@ const DEFAULT_OPTIMIZED_COMPONENTS = new Set([
   'NuxtPicture',  // Nuxt
 ]);
 
+/** Insert a JSX attribute after the tag name. */
+function makeJsxInsertFix(element: any, attrText: string) {
+  if (element.framework !== 'jsx') return undefined;
+  return (fixer: any) => {
+    const jsxNode = element.node as TSESTree.JSXOpeningElement;
+    const tagEnd = jsxNode.name.range[1];
+    return fixer.insertTextAfterRange([tagEnd, tagEnd], ` ${attrText}`);
+  };
+}
+
 export default createRule<Options, MessageIds>({
   name: 'responsive-image-optimization',
   meta: {
     type: 'suggestion',
+    fixable: 'code',
     docs: {
       description:
         'Require loading, width/height, and srcset attributes on <img> elements for performance and layout stability. Skips framework image components that handle optimization automatically.',
@@ -111,16 +122,17 @@ export default createRule<Options, MessageIds>({
           const src = getStaticAttributeValue(element, 'src');
           if (src?.startsWith('data:')) return;
 
-          // 1. Check for loading attribute
+          // 1. Check for loading attribute — auto-fixable (loading="lazy")
           const loading = getAttribute(element, 'loading');
           if (!loading) {
             context.report({
               node: element.node as any,
               messageId: 'missingLoading',
+              fix: makeJsxInsertFix(element, 'loading="lazy"'),
             });
           }
 
-          // 2. Check for width/height (CLS prevention)
+          // 2. Check for width/height (CLS prevention) — not auto-fixable
           const width = getAttribute(element, 'width');
           const height = getAttribute(element, 'height');
           if (!width && !height) {
@@ -130,7 +142,7 @@ export default createRule<Options, MessageIds>({
             });
           }
 
-          // 3. Check for srcset (responsive serving)
+          // 3. Check for srcset (responsive serving) — not auto-fixable
           const srcset = getAttribute(element, 'srcset');
           if (!srcset && src && !src.endsWith('.svg')) {
             context.report({
