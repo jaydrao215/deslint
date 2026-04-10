@@ -106,11 +106,23 @@ export async function runScan(
   let ruleOverrides: Record<string, unknown> = {};
   let qualityGate: QualityGate | undefined;
   // Resolve config: explicit configPath, otherwise try ./.deslintrc.json
+  // Security: normalize to prevent path traversal via configPath input
   const resolvedConfigPath = configPath
-    ? path.resolve(workingDirectory, configPath)
+    ? path.normalize(path.resolve(workingDirectory, configPath))
     : path.resolve(workingDirectory, '.deslintrc.json');
-  if (fs.existsSync(resolvedConfigPath)) {
+  const resolvedCwd = path.resolve(workingDirectory);
+  if (
+    !resolvedConfigPath.startsWith(resolvedCwd + path.sep) &&
+    resolvedConfigPath !== resolvedCwd
+  ) {
+    // Config path escapes the working directory — ignore it silently
+  } else if (fs.existsSync(resolvedConfigPath)) {
     try {
+      // Security: limit config file size to 1 MB to prevent memory exhaustion
+      const configStat = fs.statSync(resolvedConfigPath);
+      if (configStat.size > 1024 * 1024) {
+        throw new Error('Config file exceeds 1MB size limit');
+      }
       const raw = JSON.parse(fs.readFileSync(resolvedConfigPath, 'utf-8'));
       const parsed = safeParseConfig(raw);
       if (parsed.success) {

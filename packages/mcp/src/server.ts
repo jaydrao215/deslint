@@ -27,8 +27,8 @@ export function createServer(): McpServer {
     'analyze_file',
     'Lint a single file for design quality violations. Returns violations with line numbers, severity, rule IDs, and a file-level score (0-100). Never sends source code to external services.',
     {
-      filePath: z.string().describe('Path to the file to analyze (relative to projectDir or absolute)'),
-      projectDir: z.string().optional().describe('Project root directory. Defaults to current working directory.'),
+      filePath: z.string().max(1024).describe('Path to the file to analyze (relative to projectDir or absolute)'),
+      projectDir: z.string().max(1024).optional().describe('Project root directory. Defaults to current working directory.'),
     },
     async (params) => {
       try {
@@ -67,8 +67,8 @@ export function createServer(): McpServer {
     'analyze_project',
     'Scan an entire project for design quality violations. Returns a Design Health Score (0-100) with per-category breakdowns (colors, spacing, typography, responsive, consistency) and the top violations. Never sends source code to external services.',
     {
-      projectDir: z.string().optional().describe('Project root directory. Defaults to current working directory.'),
-      maxFiles: z.number().optional().describe('Maximum number of files to scan. Defaults to 200.'),
+      projectDir: z.string().max(1024).optional().describe('Project root directory. Defaults to current working directory.'),
+      maxFiles: z.number().int().min(1).max(5000).optional().describe('Maximum number of files to scan. Defaults to 200.'),
     },
     async (params) => {
       try {
@@ -107,8 +107,8 @@ export function createServer(): McpServer {
     'analyze_and_fix',
     'Analyze a file and return the auto-fixed version. Returns both the original and corrected code, the number of violations fixed, and any remaining violations that require manual attention. Does NOT modify the file on disk. Never sends source code to external services.',
     {
-      filePath: z.string().describe('Path to the file to analyze and fix (relative to projectDir or absolute)'),
-      projectDir: z.string().optional().describe('Project root directory. Defaults to current working directory.'),
+      filePath: z.string().max(1024).describe('Path to the file to analyze and fix (relative to projectDir or absolute)'),
+      projectDir: z.string().max(1024).optional().describe('Project root directory. Defaults to current working directory.'),
     },
     async (params) => {
       try {
@@ -156,8 +156,8 @@ export function createServer(): McpServer {
     'compliance_check',
     'Run a WCAG 2.2 compliance evaluation on a project. Returns per-criterion pass/fail status, the conformance level reached, and the WCAG 2.1 AA equivalence (ADA Title II legal floor). Use this to generate accessibility audit reports.',
     {
-      projectDir: z.string().optional().describe('Project root directory. Defaults to current working directory.'),
-      maxFiles: z.number().optional().describe('Maximum number of files to scan. Defaults to 200.'),
+      projectDir: z.string().max(1024).optional().describe('Project root directory. Defaults to current working directory.'),
+      maxFiles: z.number().int().min(1).max(5000).optional().describe('Maximum number of files to scan. Defaults to 200.'),
     },
     async (params) => {
       try {
@@ -196,7 +196,7 @@ export function createServer(): McpServer {
     'get_rule_details',
     'Get detailed metadata for a specific Deslint rule, including its description, category, auto-fix capability, remediation effort estimate, WCAG mapping, and documentation URL. Useful for understanding why a violation matters and how to fix it.',
     {
-      ruleId: z.string().describe('Rule ID (e.g. "no-arbitrary-colors" or "deslint/no-arbitrary-colors")'),
+      ruleId: z.string().max(128).describe('Rule ID (e.g. "no-arbitrary-colors" or "deslint/no-arbitrary-colors")'),
     },
     async (params) => {
       try {
@@ -232,9 +232,9 @@ export function createServer(): McpServer {
     'suggest_fix_strategy',
     'Analyze a project and suggest which design violations to fix first, ordered by impact-per-effort ratio. Prioritizes quick wins (auto-fixable, high-count rules) over manual, low-count fixes. Use this to plan an efficient remediation strategy.',
     {
-      projectDir: z.string().optional().describe('Project root directory. Defaults to current working directory.'),
-      maxFiles: z.number().optional().describe('Maximum number of files to scan. Defaults to 200.'),
-      maxSuggestions: z.number().optional().describe('Maximum number of fix suggestions to return. Defaults to 10.'),
+      projectDir: z.string().max(1024).optional().describe('Project root directory. Defaults to current working directory.'),
+      maxFiles: z.number().int().min(1).max(5000).optional().describe('Maximum number of files to scan. Defaults to 200.'),
+      maxSuggestions: z.number().int().min(1).max(100).optional().describe('Maximum number of fix suggestions to return. Defaults to 10.'),
     },
     async (params) => {
       try {
