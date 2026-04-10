@@ -12,7 +12,7 @@ export function PRReviewMockup() {
     <div className="relative">
       <div className="rounded-2xl border border-gray-200/80 bg-white shadow-2xl shadow-primary/10 overflow-hidden">
         {/* Tab strip */}
-        <div className="flex items-center gap-6 px-5 pt-4 pb-0 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center gap-3 sm:gap-6 px-3 sm:px-5 pt-4 pb-0 border-b border-gray-200 bg-gray-50 overflow-x-auto">
           <Tab label="Conversation" count="14" />
           <Tab label="Commits" count="7" />
           <Tab label="Checks" count="3" />
@@ -20,7 +20,7 @@ export function PRReviewMockup() {
         </div>
 
         {/* File path bar */}
-        <div className="flex items-center gap-2 px-5 py-2.5 border-b border-gray-200 bg-white text-[11px]">
+        <div className="flex items-center gap-2 px-3 sm:px-5 py-2.5 border-b border-gray-200 bg-white text-[11px] overflow-x-auto">
           <svg className="h-3.5 w-3.5 text-gray-500" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M2 1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.184 1.237.513l3.914 3.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0113.25 16h-9.5A1.75 1.75 0 012 14.25V1.75z" />
           </svg>
@@ -34,7 +34,7 @@ export function PRReviewMockup() {
         </div>
 
         {/* Diff */}
-        <div className="font-mono text-[11px] leading-[1.55]">
+        <div className="font-mono text-[11px] leading-[1.55] overflow-x-auto">
           <DiffLine oldNo="12" newNo="12" />
           <DiffLine oldNo="13" newNo="13">
             <Punct>&lt;</Punct>
@@ -98,7 +98,7 @@ export function PRReviewMockup() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="px-6 py-4 border-y border-gray-200 bg-gray-50"
+            className="px-3 sm:px-6 py-4 border-y border-gray-200 bg-gray-50"
           >
             <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
               {/* Comment header */}
@@ -188,7 +188,7 @@ export function PRReviewMockup() {
         </div>
 
         {/* Check status */}
-        <div className="flex items-center gap-2 px-5 py-3 border-t border-gray-200 bg-red-50">
+        <div className="flex items-center gap-2 px-3 sm:px-5 py-3 border-t border-gray-200 bg-red-50 overflow-x-auto">
           <svg className="h-4 w-4 text-fail" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M8 0a8 8 0 100 16A8 8 0 008 0zM3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z" />
           </svg>

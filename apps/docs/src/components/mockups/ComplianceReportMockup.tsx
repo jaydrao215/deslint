@@ -22,7 +22,7 @@ export function ComplianceReportMockup() {
             <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
           </div>
-          <div className="flex-1 mx-3 h-5 rounded-md bg-white border border-gray-200 flex items-center px-2 text-[10px] text-gray-400 font-mono truncate">
+          <div className="flex-1 mx-3 h-5 rounded-md bg-white border border-gray-200 flex items-center px-2 text-[10px] text-gray-500 font-mono truncate">
             file:///.deslint/compliance.html
           </div>
         </div>
@@ -40,8 +40,8 @@ export function ComplianceReportMockup() {
             </div>
           </div>
 
-          {/* Hero stat grid — 5 cards */}
-          <div className="grid grid-cols-5 gap-2 mb-4">
+          {/* Hero stat grid — 5 cards, wraps on very small screens */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
             <StatCard label="WCAG 2.2" value="Level AA" tone="pass" />
             <StatCard label="WCAG 2.1 AA*" value="Level AA" tone="pass" />
             <StatCard label="Pass Rate" value="100%" tone="default" />
@@ -97,12 +97,12 @@ export function ComplianceReportMockup() {
         </div>
       </div>
 
-      {/* Floating "Level AA" badge */}
+      {/* Floating "Level AA" badge — hidden on very small screens to prevent overflow */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 1.0, ease: [0.21, 0.47, 0.32, 0.98] }}
-        className="absolute -bottom-5 -right-3 sm:-right-5 rounded-xl bg-white border border-gray-200 shadow-xl shadow-primary/20 px-4 py-3 flex items-center gap-3"
+        className="hidden sm:flex absolute -bottom-5 -right-3 sm:-right-5 rounded-xl bg-white border border-gray-200 shadow-xl shadow-primary/20 px-4 py-3 items-center gap-3"
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pass/10">
           <svg className="h-5 w-5 text-pass" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} aria-hidden="true">
@@ -119,12 +119,12 @@ export function ComplianceReportMockup() {
         </div>
       </motion.div>
 
-      {/* Floating "13/13" badge */}
+      {/* Floating "13/13" badge — hidden on very small screens to prevent overflow */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8, y: -10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 1.2, ease: [0.21, 0.47, 0.32, 0.98] }}
-        className="absolute -top-4 -left-3 sm:-left-5 rounded-xl bg-primary text-white shadow-xl shadow-primary/30 px-4 py-3"
+        className="hidden sm:block absolute -top-4 -left-3 sm:-left-5 rounded-xl bg-primary text-white shadow-xl shadow-primary/30 px-4 py-3"
       >
         <div className="text-[10px] uppercase tracking-wider font-semibold opacity-80">
           Criteria Passing

@@ -162,7 +162,7 @@ function InstallCommand() {
       aria-label="Copy install command"
     >
       <span className="text-gray-500 select-none">$</span>
-      <span className="whitespace-nowrap">
+      <span className="sm:whitespace-nowrap">
         <span className="text-pass">npm</span>{' '}
         <span className="text-gray-400">install -D</span>{' '}
         <span className="text-white font-medium">@deslint/eslint-plugin</span>

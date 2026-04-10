@@ -184,12 +184,12 @@ function TrustCell({
   detail: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 backdrop-blur-sm">
-      <div className="flex items-baseline gap-2">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 sm:px-5 py-4 backdrop-blur-sm overflow-hidden">
+      <div className="flex items-baseline gap-2 flex-wrap">
         <span className="text-2xl font-bold text-primary-light tabular-nums">{value}</span>
         <span className="text-sm text-gray-300">{label}</span>
       </div>
-      <p className="text-xs text-gray-500 font-mono mt-1">{detail}</p>
+      <p className="text-xs text-gray-500 font-mono mt-1 break-words">{detail}</p>
     </div>
   );
 }

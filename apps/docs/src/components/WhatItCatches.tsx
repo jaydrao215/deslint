@@ -127,7 +127,7 @@ export function WhatItCatches() {
                   {c.rules.map((r) => (
                     <code
                       key={r}
-                      className="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded"
+                      className="text-[10px] font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded"
                     >
                       {r}
                     </code>

@@ -53,7 +53,7 @@ export function Cta() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <div className="inline-flex items-center gap-3 rounded-xl bg-black/30 backdrop-blur-sm border border-white/10 px-6 py-4 font-mono text-sm text-gray-200">
+          <div className="inline-flex items-center gap-3 rounded-xl bg-black/30 backdrop-blur-sm border border-white/10 px-4 sm:px-6 py-4 font-mono text-xs sm:text-sm text-gray-200 max-w-full overflow-x-auto">
             <Terminal className="h-4 w-4 text-primary-300" />
             <span>
               <span className="text-pass-light">npm</span>{' '}

@@ -33,7 +33,7 @@ export function Navbar() {
     >
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="group transition-transform hover:scale-[1.02]">
+          <Link href="/" aria-label="Deslint home" className="group transition-transform hover:scale-[1.02]">
             <BrandLockup priority />
           </Link>
 

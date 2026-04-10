@@ -146,7 +146,7 @@ export function FrameworkMatrix() {
                 <Cell value="partial" />
                 Partial — some rules read-only
               </span>
-              <span className="ml-auto text-gray-400">
+              <span className="ml-auto text-gray-400 hidden sm:inline">
                 jsx-a11y is React-only. tailwindcss-eslint stalled on v4. Deslint covers both.
               </span>
             </div>
