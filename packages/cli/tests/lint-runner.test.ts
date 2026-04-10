@@ -404,7 +404,7 @@ describe('runLint', () => {
   <body>
     <h1>Welcome</h1>
     <p>This page is accessible.</p>
-    <img src="photo.jpg" alt="A golden retriever playing fetch">
+    <img src="photo.jpg" alt="A golden retriever playing fetch" loading="lazy" width="800" height="600" srcset="photo-400.jpg 400w, photo-800.jpg 800w">
     <form>
       <label for="email">Email</label>
       <input id="email" type="email" autocomplete="email" aria-invalid="false">
@@ -427,7 +427,7 @@ describe('runLint', () => {
     it('aggregates violations across multiple HTML files correctly', async () => {
       const good = await writeFile_(
         'good.html',
-        `<!DOCTYPE html><html lang="en"><body><h1>Good</h1><img src="x.png" alt="descriptive alt text"></body></html>\n`,
+        `<!DOCTYPE html><html lang="en"><body><h1>Good</h1><img src="x.png" alt="descriptive alt text" loading="lazy" width="400" height="300" srcset="x-200.png 200w, x-400.png 400w"></body></html>\n`,
       );
       const bad = await writeFile_(
         'bad.html',

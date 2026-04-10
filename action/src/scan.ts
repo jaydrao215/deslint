@@ -173,6 +173,11 @@ export async function runScan(
     'deslint/prefer-semantic-html': 'warn',
     'deslint/consistent-color-palette': 'off',
     'deslint/max-tailwind-classes': 'off',
+    'deslint/prefers-reduced-motion': 'warn',
+    'deslint/icon-accessibility': 'warn',
+    'deslint/focus-trap-patterns': 'warn',
+    'deslint/responsive-image-optimization': 'warn',
+    'deslint/spacing-rhythm-consistency': 'off',
   };
 
   // Apply overrides
