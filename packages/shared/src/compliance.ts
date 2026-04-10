@@ -22,13 +22,15 @@ export type WcagLevel = 'A' | 'AA' | 'AAA';
  *
  * WCAG 2.1 is the legal floor for ADA Title II. WCAG 2.2 is mostly a
  * superset — it added criteria but also REMOVED 4.1.1 Parsing. We
- * don't map 4.1.1, so every criterion in our evaluator exists in both
- * specs. We still list them explicitly instead of assuming "2.2
- * implies 2.1" so the set is auditable when we add new criteria.
+ * list them explicitly so the set is auditable when we add criteria.
+ *
+ * Note: 2.5.8 (Target Size Minimum) is NEW in WCAG 2.2 and is NOT
+ * included here. 1.3.5 (Identify Input Purpose) was added in WCAG 2.1.
  */
 export const WCAG_21_CRITERIA_IDS: ReadonlySet<string> = new Set([
   '1.1.1',
   '1.3.1',
+  '1.3.5',
   '1.4.3',
   '1.4.4',
   '1.4.10',
@@ -37,6 +39,7 @@ export const WCAG_21_CRITERIA_IDS: ReadonlySet<string> = new Set([
   '2.4.4',
   '2.4.6',
   '2.4.7',
+  // 2.5.8 is WCAG 2.2 only — intentionally excluded
   '3.1.1',
   '3.3.2',
   '4.1.2',
@@ -112,7 +115,7 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     title: 'Focus Visible',
     level: 'AA',
     description: 'Any keyboard-operable user interface has a visible focus indicator.',
-    rules: ['deslint/missing-states'],
+    rules: ['deslint/missing-states', 'deslint/focus-visible-style'],
     url: 'https://www.w3.org/TR/WCAG22/#focus-visible',
   },
   {
@@ -170,6 +173,22 @@ export const WCAG_CRITERIA: WcagCriterion[] = [
     description: 'For all UI components, the name, role, state, and value can be programmatically determined. Invalid ARIA roles and unknown aria-* attributes are silently ignored by assistive tech, leaving the component without a usable accessible name or role.',
     rules: ['deslint/aria-validation'],
     url: 'https://www.w3.org/TR/WCAG22/#name-role-value',
+  },
+  {
+    id: '1.3.5',
+    title: 'Identify Input Purpose',
+    level: 'AA',
+    description: 'The purpose of each input field collecting information about the user can be programmatically determined when the input field serves a purpose identified in the Input Purposes for User Interface Components section. The autocomplete attribute enables browsers and assistive technology to auto-fill identity and payment fields.',
+    rules: ['deslint/autocomplete-attribute'],
+    url: 'https://www.w3.org/TR/WCAG22/#identify-input-purpose',
+  },
+  {
+    id: '2.5.8',
+    title: 'Target Size (Minimum)',
+    level: 'AA',
+    description: 'The size of the target for pointer inputs is at least 24 by 24 CSS pixels. Small touch targets are especially problematic for users with motor impairments and on mobile devices.',
+    rules: ['deslint/touch-target-size'],
+    url: 'https://www.w3.org/TR/WCAG22/#target-size-minimum',
   },
 ];
 

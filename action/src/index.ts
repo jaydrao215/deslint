@@ -11,6 +11,7 @@ import { evaluateQualityGate, formatGateResult } from '@deslint/shared';
 import { getChangedFiles } from './changed-files.js';
 import { runScan } from './scan.js';
 import { formatComment } from './comment.js';
+import { postInlineReview } from './review.js';
 
 const COMMENT_MARKER = '<!-- deslint-design-review -->';
 
@@ -74,9 +75,24 @@ async function run(): Promise<void> {
       core.info(formatGateResult(gateResult));
     }
 
-    // 4. Format and post comment
+    // 4. Format and post summary comment
     const commentBody = formatComment(result, minScore, gateResult);
     await upsertComment(octokit, owner, repo, prNumber, commentBody);
+
+    // 4b. Post inline review comments on changed lines
+    const inlineReview = core.getInput('inline-review') !== 'false';
+    const maxInlineComments = parseInt(core.getInput('max-inline-comments') || '25', 10);
+    if (inlineReview && result.inlineViolations.length > 0) {
+      await postInlineReview(
+        octokit as any,
+        owner,
+        repo,
+        prNumber,
+        result.inlineViolations,
+        result.score,
+        maxInlineComments,
+      );
+    }
 
     // 5. Set outputs
     core.setOutput('score', String(result.score));

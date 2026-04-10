@@ -135,7 +135,7 @@ function EditorPane({ variant }: { variant: 'before' | 'after' }) {
               <div key={n}>{n}</div>
             ))}
           </div>
-          <div className="flex-grow py-3 pr-3 pl-2 overflow-hidden">
+          <div className="flex-grow py-3 pr-3 pl-2 overflow-x-auto">
             <CodeBlock key={`${variant}-${cycle}`} variant={variant} />
           </div>
         </div>
@@ -452,7 +452,7 @@ function Violation({
       initial={{ opacity: 0, x: -6 }}
       animate={playing ? { opacity: 1, x: 0 } : { opacity: 0 }}
       transition={{ duration: 0.3, delay, ease: 'easeOut' }}
-      className="pl-3 flex items-baseline gap-2"
+      className="pl-3 flex items-baseline gap-2 flex-wrap"
     >
       <span className={kind === 'fix' ? 'text-warn' : 'text-fail'}>●</span>
       <span className="text-gray-400">deslint/{rule}</span>

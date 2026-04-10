@@ -139,19 +139,21 @@ describe('evaluateCompliance byLevel', () => {
 });
 
 describe('evaluateCompliance wcag21 equivalence', () => {
-  it('includes every currently-mapped criterion in the 2.1 subset', () => {
-    // Sanity check that we haven't added a 2.2-only criterion without
-    // updating WCAG_21_CRITERIA_IDS — that would silently break the
-    // ADA Title II equivalence claim.
-    const unknown = WCAG_CRITERIA.filter((c) => !WCAG_21_CRITERIA_IDS.has(c.id));
-    expect(unknown).toEqual([]);
+  it('identifies any WCAG 2.2-only criteria correctly', () => {
+    // 2.5.8 (Target Size Minimum) is new in WCAG 2.2 and should NOT
+    // appear in the WCAG 2.1 criteria set. All other criteria should.
+    const wcag22Only = WCAG_CRITERIA.filter((c) => !WCAG_21_CRITERIA_IDS.has(c.id));
+    const wcag22OnlyIds = wcag22Only.map((c) => c.id);
+    expect(wcag22OnlyIds).toEqual(['2.5.8']);
   });
 
   it('reaches AA on the 2.1 subset when nothing fails', () => {
     const result = evaluateCompliance({ byRule: {} });
     expect(result.wcag21.levelReached).toBe('AA');
     expect(result.wcag21.failed).toBe(0);
-    expect(result.wcag21.totalMapped).toBe(WCAG_CRITERIA.length);
+    // 2.1 subset excludes WCAG 2.2-only criteria (e.g., 2.5.8)
+    const wcag21CriteriaCount = WCAG_CRITERIA.filter((c) => WCAG_21_CRITERIA_IDS.has(c.id)).length;
+    expect(result.wcag21.totalMapped).toBe(wcag21CriteriaCount);
   });
 
   it('drops to Level A when only an AA criterion fails', () => {

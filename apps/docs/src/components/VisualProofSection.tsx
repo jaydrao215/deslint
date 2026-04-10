@@ -169,7 +169,7 @@ export function VisualProofSection() {
             </button>
           </div>
 
-          <div key={active.id} className="min-h-[420px]">
+          <div key={active.id} className="min-h-[320px] sm:min-h-[420px]">
             {active.render({ isActive: true, autoPlay: isPlaying && inView })}
           </div>
         </motion.div>

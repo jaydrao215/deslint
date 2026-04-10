@@ -3,7 +3,7 @@
 import { motion, useInView } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 
-// Verifiable metrics: 1,145 = pnpm test count, 20 = rules in packages/eslint-plugin/src/rules,
+// Verifiable metrics: 1,303 = pnpm test count, 28 = rules in packages/eslint-plugin/src/rules,
 // 5 = React/Vue/Svelte/Angular/HTML, 0 = bytes leaving the machine.
 interface Metric {
   value: number;
@@ -21,7 +21,7 @@ const METRICS: Metric[] = [
     sublabel: 'No cloud, no telemetry, no LLM',
   },
   {
-    value: 20,
+    value: 28,
     label: 'Deterministic rules',
     sublabel: 'Design drift + WCAG 2.2 AA',
   },
@@ -31,7 +31,7 @@ const METRICS: Metric[] = [
     sublabel: 'React · Vue · Svelte · Angular · HTML',
   },
   {
-    value: 1145,
+    value: 1303,
     label: 'Tests passing',
     sublabel: 'Every rule: valid + invalid + fix',
     format: (n) => n.toLocaleString(),

@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Menu, X, BookOpen, Zap } from 'lucide-react';
+import { Menu, X, BookOpen, Zap, CreditCard } from 'lucide-react';
 import { BrandLockup } from './BrandLockup';
 
 const NAV_LINKS = [
   { href: '/docs', label: 'Docs', icon: BookOpen },
   { href: '/docs/getting-started', label: 'Get Started', icon: Zap },
   { href: '/docs/rules', label: 'Rules', icon: BookOpen },
+  { href: '/pricing', label: 'Pricing', icon: CreditCard },
 ];
 
 export function Navbar() {
@@ -33,7 +34,7 @@ export function Navbar() {
     >
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="group transition-transform hover:scale-[1.02]">
+          <Link href="/" aria-label="Deslint home" className="group transition-transform hover:scale-[1.02]">
             <BrandLockup priority />
           </Link>
 

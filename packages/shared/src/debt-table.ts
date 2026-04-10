@@ -37,6 +37,18 @@ export const RULE_EFFORT_MINUTES: Record<string, number> = {
   'deslint/responsive-required': 10,
   'deslint/a11y-color-contrast': 10,
   'deslint/max-component-lines': 30,
+
+  // v0.3.0 — new accessibility rules
+  'deslint/focus-visible-style': 2,
+  'deslint/touch-target-size': 3,
+  'deslint/autocomplete-attribute': 2,
+
+  // v0.4.0 — AI code quality rules
+  'deslint/no-conflicting-classes': 2,
+  'deslint/no-duplicate-class-strings': 5,
+  'deslint/prefer-semantic-html': 5,
+  'deslint/consistent-color-palette': 10,
+  'deslint/max-tailwind-classes': 5,
 };
 
 /** Default effort for any rule not in the table (e.g. user-defined). */

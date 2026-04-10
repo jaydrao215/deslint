@@ -33,7 +33,7 @@ const CATEGORIES: Category[] = [
       bad: 'p-[13px] gap-[7px]',
       good: 'p-3 gap-2',
     },
-    rules: ['spacing-scale-consistency', 'no-arbitrary-values'],
+    rules: ['no-arbitrary-spacing'],
   },
   {
     icon: <Type className="h-5 w-5" />,
@@ -44,7 +44,7 @@ const CATEGORIES: Category[] = [
       bad: 'text-[15px] leading-[22px]',
       good: 'text-base leading-relaxed',
     },
-    rules: ['typography-scale', 'typography-hierarchy'],
+    rules: ['no-arbitrary-typography', 'heading-hierarchy'],
   },
   {
     icon: <Smartphone className="h-5 w-5" />,
@@ -55,7 +55,7 @@ const CATEGORIES: Category[] = [
       bad: 'flex flex-row gap-8',
       good: 'flex flex-col md:flex-row gap-4 md:gap-8',
     },
-    rules: ['responsive-required', 'no-fixed-dimensions'],
+    rules: ['responsive-required', 'no-magic-numbers-layout'],
   },
   {
     icon: <Accessibility className="h-5 w-5" />,
@@ -66,7 +66,7 @@ const CATEGORIES: Category[] = [
       bad: '<img src="hero.png" />',
       good: '<img src="hero.png" alt="Product screenshot" />',
     },
-    rules: ['image-alt-text', 'a11y-color-contrast', 'form-label-required'],
+    rules: ['image-alt-text', 'a11y-color-contrast', 'form-labels'],
   },
   {
     icon: <Moon className="h-5 w-5" />,
@@ -77,7 +77,7 @@ const CATEGORIES: Category[] = [
       bad: 'bg-white text-gray-900',
       good: 'bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100',
     },
-    rules: ['dark-mode-required'],
+    rules: ['dark-mode-coverage'],
   },
 ];
 
@@ -127,7 +127,7 @@ export function WhatItCatches() {
                   {c.rules.map((r) => (
                     <code
                       key={r}
-                      className="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded"
+                      className="text-[10px] font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded"
                     >
                       {r}
                     </code>

@@ -2,14 +2,15 @@
  * MCP Server — wires Deslint tools to the Model Context Protocol.
  *
  * Transport: stdio (JSON-RPC 2.0), zero network calls.
- * Tools: analyze_file, analyze_project, analyze_and_fix
+ * Tools: analyze_file, analyze_project, analyze_and_fix,
+ *        compliance_check, get_rule_details, suggest_fix_strategy
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { VERSION } from './index.js';
-import { analyzeFile, analyzeProject, analyzeAndFix } from './tools.js';
+import { analyzeFile, analyzeProject, analyzeAndFix, complianceCheck, getRuleDetails, suggestFixStrategy } from './tools.js';
 
 /**
  * Create an MCP server with all Deslint tools registered.
@@ -130,6 +131,124 @@ export function createServer(): McpServer {
             {
               type: 'text' as const,
               text: JSON.stringify(response, null, 2),
+            },
+          ],
+        };
+      } catch (err) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({
+                error: err instanceof Error ? err.message : String(err),
+              }),
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── Tool: compliance_check ──────────────────────────────────────────
+
+  server.tool(
+    'compliance_check',
+    'Run a WCAG 2.2 compliance evaluation on a project. Returns per-criterion pass/fail status, the conformance level reached, and the WCAG 2.1 AA equivalence (ADA Title II legal floor). Use this to generate accessibility audit reports.',
+    {
+      projectDir: z.string().optional().describe('Project root directory. Defaults to current working directory.'),
+      maxFiles: z.number().optional().describe('Maximum number of files to scan. Defaults to 200.'),
+    },
+    async (params) => {
+      try {
+        const result = await complianceCheck({
+          projectDir: params.projectDir,
+          maxFiles: params.maxFiles,
+        });
+
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({
+                error: err instanceof Error ? err.message : String(err),
+              }),
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── Tool: get_rule_details ─────────────────────────────────────────
+
+  server.tool(
+    'get_rule_details',
+    'Get detailed metadata for a specific Deslint rule, including its description, category, auto-fix capability, remediation effort estimate, WCAG mapping, and documentation URL. Useful for understanding why a violation matters and how to fix it.',
+    {
+      ruleId: z.string().describe('Rule ID (e.g. "no-arbitrary-colors" or "deslint/no-arbitrary-colors")'),
+    },
+    async (params) => {
+      try {
+        const result = await getRuleDetails({ ruleId: params.ruleId });
+
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (err) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({
+                error: err instanceof Error ? err.message : String(err),
+              }),
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── Tool: suggest_fix_strategy ─────────────────────────────────────
+
+  server.tool(
+    'suggest_fix_strategy',
+    'Analyze a project and suggest which design violations to fix first, ordered by impact-per-effort ratio. Prioritizes quick wins (auto-fixable, high-count rules) over manual, low-count fixes. Use this to plan an efficient remediation strategy.',
+    {
+      projectDir: z.string().optional().describe('Project root directory. Defaults to current working directory.'),
+      maxFiles: z.number().optional().describe('Maximum number of files to scan. Defaults to 200.'),
+      maxSuggestions: z.number().optional().describe('Maximum number of fix suggestions to return. Defaults to 10.'),
+    },
+    async (params) => {
+      try {
+        const result = await suggestFixStrategy({
+          projectDir: params.projectDir,
+          maxFiles: params.maxFiles,
+          maxSuggestions: params.maxSuggestions,
+        });
+
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(result, null, 2),
             },
           ],
         };

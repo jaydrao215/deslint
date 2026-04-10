@@ -20,7 +20,7 @@ const CARDS = [
     href: '/docs/rules',
     icon: Shield,
     title: 'Rules Reference',
-    description: 'All 10 rules with examples, options, and auto-fix behavior.',
+    description: 'All 28 rules with examples, options, and auto-fix behavior.',
     color: 'text-warn bg-warn/10 border-warn/20',
   },
 ];
