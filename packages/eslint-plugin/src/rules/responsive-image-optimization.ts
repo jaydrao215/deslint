@@ -54,7 +54,6 @@ export default createRule<Options, MessageIds>({
       description:
         'Require loading, width/height, and srcset attributes on <img> elements for performance and layout stability. Skips framework image components that handle optimization automatically.',
     },
-    hasSuggestions: true,
     messages: {
       missingLoading:
         '`<img>` is missing `loading` attribute. Add `loading="lazy"` for offscreen images or `loading="eager"` for above-the-fold hero images to improve page load performance.',

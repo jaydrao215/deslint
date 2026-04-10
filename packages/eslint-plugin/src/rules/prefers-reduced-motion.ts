@@ -13,7 +13,7 @@ export type Options = [
   },
 ];
 
-export type MessageIds = 'missingMotionSafe' | 'suggestMotionSafe';
+export type MessageIds = 'missingMotionSafe';
 
 /**
  * Animation and transition class prefixes that require motion-safe/motion-reduce
@@ -49,12 +49,9 @@ export default createRule<Options, MessageIds>({
       description:
         'Require animation/transition classes to be wrapped with motion-safe: or motion-reduce: variants for users with vestibular disorders (WCAG 2.3.3).',
     },
-    hasSuggestions: true,
     messages: {
       missingMotionSafe:
         '`{{ cls }}` animates without respecting prefers-reduced-motion. Wrap with `motion-safe:{{ cls }}` or add a `motion-reduce:` override. ~15% of users have motion sensitivity (WCAG 2.3.3).',
-      suggestMotionSafe:
-        'Add motion-safe: prefix so the animation only plays when the user has no motion preference.',
     },
     schema: [
       {
@@ -122,14 +119,6 @@ export default createRule<Options, MessageIds>({
             node: node as any,
             messageId: 'missingMotionSafe',
             data: { cls },
-            suggest: [
-              {
-                messageId: 'suggestMotionSafe',
-                fix(_fixer) {
-                  return null as any; // Suggestion only — class string rewriting is complex
-                },
-              },
-            ],
           });
         }
       } catch (err) {

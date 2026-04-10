@@ -172,7 +172,8 @@ function classifyChild(child: any, framework: string, isIconCheck: (name: string
   if (child.type === 'JSXText') {
     const text = child.value?.trim() ?? '';
     if (text.length > 0) return { type: 'text', name: text };
-    return { type: 'unknown', name: '' }; // whitespace only
+    // Whitespace-only JSXText — not meaningful content, skip it
+    return { type: 'element', name: '' };
   }
 
   // JSX element child
