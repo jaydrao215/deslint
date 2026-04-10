@@ -18,6 +18,9 @@ import headingHierarchy from './rules/heading-hierarchy.js';
 import linkText from './rules/link-text.js';
 import formLabels from './rules/form-labels.js';
 import ariaValidation from './rules/aria-validation.js';
+import focusVisibleStyle from './rules/focus-visible-style.js';
+import touchTargetSize from './rules/touch-target-size.js';
+import autocompleteAttribute from './rules/autocomplete-attribute.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -49,6 +52,9 @@ const plugin = {
     'link-text': linkText,
     'form-labels': formLabels,
     'aria-validation': ariaValidation,
+    'focus-visible-style': focusVisibleStyle,
+    'touch-target-size': touchTargetSize,
+    'autocomplete-attribute': autocompleteAttribute,
   },
   configs: {} as Record<string, any>,
 };
@@ -77,6 +83,9 @@ plugin.configs.recommended = {
     'deslint/link-text': 'warn',
     'deslint/form-labels': 'warn',
     'deslint/aria-validation': 'error',
+    'deslint/focus-visible-style': 'warn',
+    'deslint/touch-target-size': 'warn',
+    'deslint/autocomplete-attribute': 'warn',
   },
 };
 
@@ -103,6 +112,9 @@ plugin.configs.strict = {
     'deslint/link-text': 'error',
     'deslint/form-labels': 'error',
     'deslint/aria-validation': 'error',
+    'deslint/focus-visible-style': 'error',
+    'deslint/touch-target-size': 'error',
+    'deslint/autocomplete-attribute': 'error',
   },
 };
 

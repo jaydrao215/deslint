@@ -24,6 +24,9 @@ export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'deslint/link-text': 'consistency',
   'deslint/form-labels': 'consistency',
   'deslint/aria-validation': 'consistency',
+  'deslint/focus-visible-style': 'responsive',
+  'deslint/touch-target-size': 'responsive',
+  'deslint/autocomplete-attribute': 'consistency',
 };
 
 export interface LintMessage {
@@ -103,6 +106,9 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     'deslint/link-text': 'warn',
     'deslint/form-labels': 'warn',
     'deslint/aria-validation': 'error',
+    'deslint/focus-visible-style': 'warn',
+    'deslint/touch-target-size': 'warn',
+    'deslint/autocomplete-attribute': 'warn',
   };
 
   // Apply user overrides

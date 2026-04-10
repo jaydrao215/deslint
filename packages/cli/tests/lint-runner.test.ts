@@ -407,7 +407,7 @@ describe('runLint', () => {
     <img src="photo.jpg" alt="A golden retriever playing fetch">
     <form>
       <label for="email">Email</label>
-      <input id="email" type="email" aria-invalid="false">
+      <input id="email" type="email" autocomplete="email" aria-invalid="false">
       <button type="submit">Subscribe to the newsletter</button>
     </form>
   </body>

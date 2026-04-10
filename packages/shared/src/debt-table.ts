@@ -37,6 +37,11 @@ export const RULE_EFFORT_MINUTES: Record<string, number> = {
   'deslint/responsive-required': 10,
   'deslint/a11y-color-contrast': 10,
   'deslint/max-component-lines': 30,
+
+  // v0.3.0 — new accessibility rules
+  'deslint/focus-visible-style': 2,
+  'deslint/touch-target-size': 3,
+  'deslint/autocomplete-attribute': 2,
 };
 
 /** Default effort for any rule not in the table (e.g. user-defined). */
