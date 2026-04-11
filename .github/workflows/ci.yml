@@ -50,3 +50,19 @@ jobs:
       - name: Benchmark rules
         run: pnpm --filter @deslint/eslint-plugin bench
         if: matrix.node-version == 22
+
+      # Rebundle the GitHub Action and fail the build if dist/ drifts
+      # from src/. `pnpm build` in the earlier step already produces the
+      # bundle via esbuild (see action/package.json#scripts.build), so
+      # any drift here means the source changed but the committed
+      # dist/index.js wasn't regenerated. Consumers using
+      # `uses: jaydrao215/deslint/action@main` always get the latest
+      # compiled entry point because CI enforces this invariant.
+      - name: Verify action bundle is up to date
+        run: |
+          if ! git diff --quiet -- action/dist; then
+            echo "::error::action/dist is out of date. Run 'pnpm --filter @deslint/action build' and commit the result."
+            git --no-pager diff --stat -- action/dist
+            exit 1
+          fi
+        if: matrix.node-version == 22

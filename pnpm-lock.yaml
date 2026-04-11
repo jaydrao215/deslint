@@ -57,9 +57,9 @@ importers:
       '@types/node':
         specifier: ^22.10.1
         version: 22.19.15
-      '@vercel/ncc':
-        specifier: ^0.38.3
-        version: 0.38.4
+      esbuild:
+        specifier: ^0.27.4
+        version: 0.27.4
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
@@ -1304,10 +1304,6 @@ packages:
         optional: true
       vue-router:
         optional: true
-
-  '@vercel/ncc@0.38.4':
-    resolution: {integrity: sha512-8LwjnlP39s08C08J5NstzriPvW1SP8Zfpp1BvC2sI35kPeZnHfxVkCwu4/+Wodgnd60UtT1n8K8zw+Mp7J9JmQ==}
-    hasBin: true
 
   '@vitest/coverage-v8@3.2.4':
     resolution: {integrity: sha512-EyF9SXU6kS5Ku/U82E259WSnvg6c8KTjppUncuNdm5QHpe17mwREHnjDzozC8x9MZ0xfBUFSaLkRv4TMA75ALQ==}
@@ -3982,8 +3978,6 @@ snapshots:
     optionalDependencies:
       next: 15.5.14(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react: 19.2.4
-
-  '@vercel/ncc@0.38.4': {}
 
   '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@25.5.0)(jiti@1.21.7)(tsx@4.21.0))':
     dependencies:

@@ -146,6 +146,7 @@ npx deslint scan
 | [`@deslint/cli`](./packages/cli) | CLI with scan, fix, init, Design Health Score |
 | [`@deslint/mcp`](./packages/mcp) | MCP server for Cursor / Claude Code AI self-correction |
 | [`@deslint/shared`](./packages/shared) | Shared types, config schema, Tailwind utilities |
+| [`@deslint/action`](./action) | GitHub Action for PR design reviews |
 
 ## MCP Server (AI Self-Correction)
 
@@ -160,6 +161,35 @@ npx deslint-mcp install
 - `analyze_file` — lint a single file, get violations + score
 - `analyze_project` — scan entire project, get score + top violations
 - `analyze_and_fix` — analyze and auto-fix in one step
+
+## GitHub Action
+
+Add design quality checks to your PR workflow:
+
+```yaml
+# .github/workflows/deslint.yml
+name: Deslint design review
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: jaydrao215/deslint/action@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          min-score: 80
+```
+
+Posts a Design Health Score summary comment on every PR with a category breakdown, and drops inline review comments on the changed lines that introduced violations. Re-runs update the existing comment instead of spamming new ones.
 
 ## Performance
 
