@@ -70,6 +70,38 @@ deslint suggest-tokens
 # One-off: max-w-[120px] — review intent
 ```
 
+### `deslint trend`
+
+Show Design Health Score trend over time from `.deslint/history.json` (populated automatically by `deslint scan`).
+
+```bash
+deslint trend                          # text chart of last 10 entries
+deslint trend --limit 30               # 30 most recent entries
+deslint trend --format json            # JSON for dashboards
+deslint trend --alert-threshold 3      # flag >= 3-point drops
+```
+
+Exits with code 1 when regressions are detected (opt-in CI hook).
+
+### `deslint compliance`
+
+Generate a WCAG 2.2 conformance report from the current scan.
+
+```bash
+deslint compliance                     # writes .deslint/compliance.html
+deslint compliance --format json       # machine-readable artifact
+deslint compliance --format text       # terminal summary only
+deslint compliance -o reports/wcag.html
+```
+
+### `deslint report`
+
+Open the latest HTML report (produced by `deslint scan`) in your default browser.
+
+```bash
+deslint report
+```
+
 ## Output Formats
 
 | Format | Flag | Use Case |

@@ -28,15 +28,14 @@ const TIERS: Tier[] = [
     price: 'Free',
     priceSuffix: 'forever',
     description:
-      'Full ESLint plugin, CLI, MCP server, and GitHub Action. Everything you need to gate design quality in CI.',
+      'Full ESLint plugin, CLI, and MCP server. Everything you need to gate design quality locally and in CI.',
     features: [
-      '28 deterministic rules',
+      '33 deterministic rules',
       'WCAG 2.2 AA compliance reports',
       'Design Health Score + quality gates',
-      'Auto-fix for 12+ rules',
+      'Auto-fix for 11 rules',
       'React, Vue, Svelte, Angular, HTML',
       'MCP server for AI coding agents',
-      'GitHub Action with inline PR review',
       'Local-first — zero cloud dependency',
       'MIT licensed',
     ],
