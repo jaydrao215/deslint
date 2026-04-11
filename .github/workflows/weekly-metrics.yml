@@ -23,6 +23,14 @@ on:
 permissions:
   contents: read
 
+# A second run kicked off before the first finishes (e.g. a manual
+# workflow_dispatch the same minute the cron fires) would race on the
+# $GITHUB_STEP_SUMMARY of its own run, which is harmless, but would also
+# double-post to Slack. Serialize and let the older run finish first.
+concurrency:
+  group: weekly-metrics
+  cancel-in-progress: false
+
 jobs:
   collect:
     runs-on: ubuntu-latest
@@ -54,15 +62,44 @@ jobs:
             echo "| Package | Last 7 days |"
             echo "|---|---:|"
           } >> "$GITHUB_STEP_SUMMARY"
+          any_upstream_failure=0
           for pkg in "${packages[@]}"; do
             url="https://api.npmjs.org/downloads/point/last-week/${pkg}"
-            # npm returns {"error":"..."} with 404 for unpublished packages;
-            # curl -f makes that a non-zero exit, so we tolerate it with ||.
-            json=$(curl -fsSL --retry 3 --retry-delay 2 "$url" || echo '{"downloads":0}')
-            downloads=$(printf '%s' "$json" | jq -r '.downloads // 0')
+            # Capture body + HTTP status separately so we can distinguish
+            # "package unpublished" (404, downloads=0 is the real answer)
+            # from "npm registry down" (5xx, which must NOT silently become
+            # a zero and mask an outage in the weekly report).
+            body_file=$(mktemp)
+            # curl -w always emits http_code (even '000' on DNS failure),
+            # but we need an explicit fallback for the exit-non-zero path
+            # so the capture + `|| …` form doesn't concatenate '000' twice.
+            if ! http=$(curl -sS --retry 3 --retry-delay 2 \
+              -o "$body_file" -w '%{http_code}' "$url" 2>/dev/null); then
+              http='000'
+            fi
+            body=$(cat "$body_file")
+            rm -f "$body_file"
+            case "$http" in
+              200)
+                downloads=$(printf '%s' "$body" | jq -r '.downloads // 0')
+                cell="$downloads"
+                ;;
+              404)
+                downloads=0
+                cell="_unpublished_"
+                ;;
+              *)
+                downloads=0
+                cell="⚠️ HTTP ${http}"
+                any_upstream_failure=1
+                ;;
+            esac
             total=$(( total + downloads ))
-            printf '| `%s` | %s |\n' "$pkg" "$downloads" >> "$GITHUB_STEP_SUMMARY"
+            printf '| `%s` | %s |\n' "$pkg" "$cell" >> "$GITHUB_STEP_SUMMARY"
           done
+          if [ "$any_upstream_failure" -eq 1 ]; then
+            echo "::warning::One or more npm downloads fetches failed — total is a lower bound."
+          fi
           {
             echo "| **Total** | **${total}** |"
             echo ""
