@@ -3,7 +3,7 @@ export default function RulesReference() {
     <div>
       <h1>Rules Reference</h1>
       <p>
-        Deslint ships with 28 rules across five scoring categories. Each rule can
+        Deslint ships with 33 rules across six scoring categories. Each rule can
         be set to <code>&quot;error&quot;</code>, <code>&quot;warn&quot;</code>, or{' '}
         <code>&quot;off&quot;</code>. Rules marked <em>fixable</em> will auto-fix
         when you run <code>eslint --fix</code>.
@@ -250,8 +250,8 @@ export default function RulesReference() {
         targets. Maps to WCAG 2.5.8 (Target Size Minimum).
       </p>
       <ul>
-        <li><strong>Fixable:</strong> Yes (suggests minimum size classes)</li>
-        <li><strong>Suggestions:</strong> Yes</li>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> Yes (suggests minimum size classes)</li>
       </ul>
       <p><strong>Examples:</strong></p>
       <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
@@ -666,6 +666,121 @@ const cardClasses = "flex items-center gap-4 p-4 rounded-lg";
 <Card className="flex items-center justify-between gap-4">
   <CardContent>...</CardContent>
 </Card>`}</code>
+      </pre>
+
+      {/* ── Motion & Animation ─────────────────────────── */}
+      <h2>Motion &amp; Animation</h2>
+
+      <h3>prefers-reduced-motion</h3>
+      <p>
+        Require animations and transitions to respect the user&apos;s{' '}
+        <code>prefers-reduced-motion</code> preference. AI-generated code often
+        ships Tailwind animation utilities (<code>animate-spin</code>,{' '}
+        <code>transition-*</code>) without the <code>motion-reduce:</code> variant,
+        causing vestibular disorders for users who opted out of motion. Maps to
+        WCAG 2.3.3 (Animation from Interactions).
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> Yes (wraps class in <code>motion-reduce:</code> variant)</li>
+        <li><strong>Suggestions:</strong> Yes</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — no reduced-motion fallback
+<div className="animate-spin transition-all duration-500" />
+
+// Good — respects user preference
+<div className="animate-spin motion-reduce:animate-none transition-all motion-reduce:transition-none" />`}</code>
+      </pre>
+
+      <h3>icon-accessibility</h3>
+      <p>
+        Require icons (Lucide, Heroicons, Radix) to carry an accessible name or be
+        marked decorative. Standalone icon-only buttons need{' '}
+        <code>aria-label</code>; decorative icons should be hidden from assistive
+        tech with <code>aria-hidden</code>. Maps to WCAG 1.1.1 (Non-text Content)
+        and 4.1.2 (Name, Role, Value).
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> Yes (auto-adds <code>aria-hidden</code> to decorative icons)</li>
+        <li><strong>Suggestions:</strong> Yes</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — icon-only button with no label
+<button><X /></button>
+
+// Good — accessible name on the button
+<button aria-label="Close dialog"><X aria-hidden /></button>`}</code>
+      </pre>
+
+      <h3>focus-trap-patterns</h3>
+      <p>
+        Detect modal / dialog / drawer components that don&apos;t establish a focus
+        trap. AI-generated overlays frequently lack <code>role=&quot;dialog&quot;</code>,{' '}
+        <code>aria-modal</code>, and programmatic focus management, letting keyboard
+        users escape into background content. Maps to WCAG 2.4.3 (Focus Order).
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> Yes (auto-adds <code>role</code> and <code>aria-modal</code>)</li>
+        <li><strong>Suggestions:</strong> Yes</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — modal without dialog semantics
+<div className="fixed inset-0">...</div>
+
+// Good — dialog semantics + focus trap
+<div role="dialog" aria-modal="true" className="fixed inset-0">...</div>`}</code>
+      </pre>
+
+      <h3>responsive-image-optimization</h3>
+      <p>
+        Flag <code>&lt;img&gt;</code> elements missing <code>loading</code>,{' '}
+        <code>width</code>/<code>height</code>, or <code>srcset</code>. These
+        attributes protect Core Web Vitals (LCP, CLS) and bandwidth on mobile — AI
+        code generators routinely omit them.
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> Yes (adds <code>loading=&quot;lazy&quot;</code> and <code>decoding=&quot;async&quot;</code>)</li>
+        <li><strong>Suggestions:</strong> Yes</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — no lazy loading, no intrinsic size
+<img src="hero.jpg" alt="Hero" />
+
+// Good — CLS-safe and bandwidth-friendly
+<img src="hero.jpg" alt="Hero" width="1200" height="630" loading="lazy" decoding="async" />`}</code>
+      </pre>
+
+      <h3>spacing-rhythm-consistency</h3>
+      <p>
+        Detect stacks that mix spacing tokens from different sub-scales (e.g.{' '}
+        <code>mt-3</code> next to <code>mt-5</code> next to <code>mt-7</code>) inside
+        the same section. Breaks vertical rhythm and is a strong tell-tale of
+        AI-assembled layouts. Off by default — enable once your design system has
+        stabilized.
+      </p>
+      <ul>
+        <li><strong>Fixable:</strong> No</li>
+        <li><strong>Suggestions:</strong> No</li>
+      </ul>
+      <p><strong>Examples:</strong></p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm">
+        <code>{`// Bad — three different rhythms in one stack
+<section>
+  <h2 className="mt-3">A</h2>
+  <p className="mt-5">B</p>
+  <p className="mt-7">C</p>
+</section>
+
+// Good — consistent rhythm
+<section className="space-y-4">
+  <h2>A</h2>
+  <p>B</p>
+  <p>C</p>
+</section>`}</code>
       </pre>
 
       {/* ── Inline Suppression ─────────────────────────── */}

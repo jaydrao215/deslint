@@ -3,13 +3,12 @@
   "version": "0.1.1",
   "private": true,
   "description": "GitHub Action for Deslint PR design reviews",
-  "type": "module",
+  "type": "commonjs",
   "engines": {
     "node": ">=20.19.0"
   },
   "scripts": {
-    "build": "tsc",
-    "bundle": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
+    "build": "rm -rf dist && esbuild src/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/index.js --minify --log-level=warning --banner:js=\"const __import_meta_url=require('url').pathToFileURL(__filename).href;\" --define:import.meta.url=__import_meta_url",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -23,7 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
-    "@vercel/ncc": "^0.38.3",
+    "esbuild": "^0.27.4",
     "typescript": "^5.7.2",
     "vitest": "^3.2.4"
   }

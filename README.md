@@ -43,9 +43,9 @@ npx deslint fix --all
 npx deslint fix --interactive
 ```
 
-## Rules (20)
+## Rules (33)
 
-### Design system & layout (8)
+### Design system & layout (6)
 
 | Rule | Description | Auto-fix | Default |
 |------|-------------|:--------:|---------|
@@ -53,39 +53,59 @@ npx deslint fix --interactive
 | `no-arbitrary-colors` | Flag hardcoded colors in Tailwind classes (`bg-[#FF0000]`) | Yes | warn |
 | `no-arbitrary-typography` | Flag arbitrary font size, weight, leading, tracking | Yes | warn |
 | `no-arbitrary-zindex` | Flag arbitrary z-index values (`z-[999]`) | Yes | warn |
-| `no-inline-styles` | Flag `style={{}}` attributes; prefer utility classes | Yes | warn |
+| `no-inline-styles` | Flag `style={{}}` attributes; prefer utility classes | No | off |
 | `no-magic-numbers-layout` | Flag arbitrary numbers in grid/flex layout | Yes | warn |
-| `consistent-component-spacing` | Detect spacing divergence across components | Yes | warn |
-| `consistent-border-radius` | Detect mixed `rounded-*` values in same-type components | Yes | warn |
+
+### Consistency (7)
+
+| Rule | Description | Auto-fix | Default |
+|------|-------------|:--------:|---------|
+| `consistent-component-spacing` | Detect spacing divergence across components | No | warn |
+| `consistent-border-radius` | Detect mixed `rounded-*` values in same-type components | No | warn |
+| `consistent-color-palette` | Cap unique color families per file | No | off |
+| `no-conflicting-classes` | Detect contradictory Tailwind utilities (`flex hidden`) | No | warn |
+| `no-duplicate-class-strings` | Flag identical class strings repeated 3+ times in a file | No | off |
+| `max-tailwind-classes` | Cap utility classes per element | No | off |
+| `spacing-rhythm-consistency` | Detect mixed spacing sub-scales in same stack | No | off |
 
 ### Responsive & dark mode (3)
 
 | Rule | Description | Auto-fix | Default |
 |------|-------------|:--------:|---------|
 | `responsive-required` | Require responsive breakpoints on fixed-width containers | No | warn |
-| `dark-mode-coverage` | Flag elements missing `dark:` variants | No | off |
-| `missing-states` | Flag interactive elements missing hover/focus/disabled states | Yes | warn |
+| `dark-mode-coverage` | Flag elements missing `dark:` variants | Yes | off |
+| `missing-states` | Flag interactive elements missing hover/focus/disabled states | No | off |
 
-### Accessibility (WCAG 2.2 mapped, 8 rules, 13 criteria covered)
+### Accessibility — WCAG 2.2 mapped (15)
 
 | Rule | WCAG | Description | Auto-fix | Default |
 |------|:----:|-------------|:--------:|---------|
-| `a11y-color-contrast` | 1.4.3 | Check WCAG AA color contrast ratios | Yes | warn |
-| `image-alt-text` | 1.1.1 | Flag `<img>` without alt or with meaningless alt text | Yes | warn |
+| `a11y-color-contrast` | 1.4.3 | Check WCAG AA color contrast ratios | No | warn |
+| `image-alt-text` | 1.1.1 | Flag `<img>` without alt or with meaningless alt text | No | warn |
+| `responsive-image-optimization` | 1.4.4 | Require `loading`/`width`/`height` on `<img>` | Yes | warn |
+| `icon-accessibility` | 1.1.1 · 4.1.2 | Require `aria-label`/`aria-hidden` on icons | Yes | warn |
 | `heading-hierarchy` | 1.3.1 · 2.4.6 | Flag skipped heading levels (`h1 → h3`) | No | warn |
 | `form-labels` | 1.3.1 · 3.3.2 | Match `<label>` to `<input id>`, walk ancestors | No | warn |
+| `autocomplete-attribute` | 1.3.5 | Require `autocomplete` on identity/payment fields | No | warn |
 | `link-text` | 2.4.4 | Flag generic link text (`click here`, `read more`) | No | warn |
+| `focus-visible-style` | 2.4.7 | Flag `outline-none` without a focus indicator | No | warn |
+| `focus-trap-patterns` | 2.4.3 | Require `role="dialog"` / `aria-modal` on overlays | Yes | warn |
+| `touch-target-size` | 2.5.8 | Flag interactive targets smaller than 24×24 px | No | warn |
+| `prefers-reduced-motion` | 2.3.3 | Require `motion-reduce:` variants on animations | Yes | warn |
+| `prefer-semantic-html` | 4.1.2 | Prefer `<button>` / `<nav>` over `<div>` + ARIA | No | warn |
 | `lang-attribute` | 3.1.1 | Require `lang` on root `<html>` | Yes | warn |
 | `viewport-meta` | 1.4.4 | Flag `user-scalable=no` / `maximum-scale=1` | No | error |
 | `aria-validation` | 4.1.2 | Invalid roles, hallucinated `aria-*`, LLM typos | No | error |
 
-### Quality gate (1)
+### Code quality (1)
 
 | Rule | Description | Auto-fix | Default |
 |------|-------------|:--------:|---------|
 | `max-component-lines` | Flag overly large components (default: 300 lines) | No | off |
 
-**Validation:** 4,061 files scanned across 7 real-world projects. **0% false positives, 0 crashes.** Every rule wrapped in try/catch.
+**Auto-fix coverage:** 11 of 33 rules auto-correct in place (the rest report only — adding a responsive breakpoint or naming a design token is a human decision).
+
+**Validation:** tested on a mix of real-world open-source projects (React / Next.js, Vue / Nuxt, Angular, Plain HTML). **0% false positives, 0 crashes.** Every rule wrapped in try/catch.
 
 ## Design Health Score
 
@@ -106,17 +126,17 @@ npx deslint scan
 
 ## Framework Support
 
-| Framework | Parsing | Cross-framework rules | Auto-fix | Validated |
-|-----------|:-------:|:---------------------:|:--------:|:---------:|
-| React / Next.js | Yes | 14 / 20 | Yes | Yes (4 projects) |
-| Vue / Nuxt | Yes | 14 / 20 | Yes | Yes (1 project) |
-| Svelte | Yes | 14 / 20 | Yes | Parser ready |
-| Angular | Yes | 14 / 20 | Partial\* | Yes (1 project) |
-| Plain HTML | Yes | 14 / 20 | Yes | Yes (via `@html-eslint/parser`) |
+| Framework | Parsing | Auto-fix | Validated |
+|-----------|:-------:|:--------:|:---------:|
+| React / Next.js | Yes | Yes | Yes (multiple projects) |
+| Vue / Nuxt | Yes | Yes | Yes (Elk) |
+| Svelte | Yes | Yes | Parser ready |
+| Angular | Yes | Partial\* | Yes (Vintor) |
+| Plain HTML | Yes | Yes\*\* | Yes (via `@html-eslint/parser`) |
 
 \* Angular template parser nodes lack `range` — violations reported but auto-fix skipped on those rules.
 
-The other 6 rules (`consistent-component-spacing`, `consistent-border-radius`, `max-component-lines`, `no-inline-styles`, `missing-states`, and `lang-attribute`) are framework-specific by design or still JSX-only pending v0.3.0 porting.
+\*\* A handful of rules (`consistent-component-spacing`, `consistent-border-radius`, `max-component-lines`, `missing-states`, `prefer-semantic-html`) are JSX-only by design.
 
 ## Packages
 
@@ -133,9 +153,8 @@ The other 6 rules (`consistent-component-spacing`, `consistent-border-radius`, `
 Deslint includes an MCP server that enables AI coding tools to self-correct design violations:
 
 ```bash
-# Install MCP server for Cursor or Claude Code
-npx deslint-mcp install cursor
-npx deslint-mcp install claude
+# Install MCP server — auto-detects and configures Cursor and Claude Code
+npx deslint-mcp install
 ```
 
 **Tools exposed:**
@@ -148,12 +167,29 @@ npx deslint-mcp install claude
 Add design quality checks to your PR workflow:
 
 ```yaml
-- uses: jaydrao215/deslint/action@main
-  with:
-    min-score: 80
+# .github/workflows/deslint.yml
+name: Deslint design review
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: jaydrao215/deslint/action@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          min-score: 80
 ```
 
-Posts a Design Health Score comment on every PR with category breakdown and violation summary.
+Posts a Design Health Score summary comment on every PR with a category breakdown, and drops inline review comments on the changed lines that introduced violations. Re-runs update the existing comment instead of spamming new ones.
 
 ## Performance
 
@@ -172,7 +208,7 @@ Budget: < 15 seconds for 500 files. Actual: **25x under budget**.
 # Prerequisites: Node.js >=20.19.0, pnpm >=9
 pnpm install
 pnpm build
-pnpm test        # 1,145 tests
+pnpm test        # 1,362 tests
 pnpm lint
 pnpm typecheck
 ```

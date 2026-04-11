@@ -3,6 +3,12 @@ dist/
 .turbo/
 *.tsbuildinfo
 
+# GitHub Action ships its bundled entry point in-tree (checked out by
+# `uses: jaydrao215/deslint/action@main`). The CI guard in
+# .github/workflows/ci.yml fails the build if this dir drifts from src/.
+!action/dist/
+!action/dist/**
+
 # OS
 .DS_Store
 

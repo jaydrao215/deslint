@@ -1,0 +1,36 @@
+name: Deslint self-review
+
+# Dogfood the Deslint GitHub Action on our own pull requests. If this
+# workflow ever fails because the action can't load or crashes, we've
+# broken the bundle and we find out immediately — not when a user does.
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deslint-design-review:
+    # Skip on PRs from forks — they don't get a writable GITHUB_TOKEN
+    # and the action needs to post a comment.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Deslint design review on this PR
+        uses: ./action
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          min-score: 0
+          # Only lint the files this repo actually ships as products,
+          # not the docs site mockups or tests.
+          file-patterns: 'packages/**/*.tsx,apps/docs/src/**/*.tsx'
