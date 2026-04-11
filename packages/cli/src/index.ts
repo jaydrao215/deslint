@@ -34,6 +34,7 @@ import {
   isValidTarget,
 } from './generate-config.js';
 import { initWizard } from './init.js';
+import { runImportTokens } from './import-tokens.js';
 import { buildTokenSuggestions, formatSuggestTokens } from './suggest-tokens.js';
 import {
   loadHistory,
@@ -330,6 +331,44 @@ program
       process.exit(1);
     }
   });
+
+// ── import-tokens command ───────────────────────────────────────────
+
+program
+  .command('import-tokens')
+  .description('Import design tokens from a Figma file (read-only Variables API)')
+  .requiredOption('--figma <file-id>', 'Figma file key (from the file URL)')
+  .option('--token <token>', 'Figma personal access token (or set FIGMA_TOKEN env var)')
+  .option('--mode <name>', 'Mode name to read (e.g. "Light", "Dark"). Case-insensitive.')
+  .option('-o, --output <path>', 'Output file path', 'tokens.json')
+  .option('--format <format>', 'Output format: dtcg (W3C tokens) or deslintrc', 'dtcg')
+  .option('--include-hidden', 'Include variables marked hidden-from-publishing')
+  .action(
+    async (opts: {
+      figma: string;
+      token?: string;
+      mode?: string;
+      output: string;
+      format: string;
+      includeHidden?: boolean;
+    }) => {
+      if (opts.format !== 'dtcg' && opts.format !== 'deslintrc') {
+        console.error(
+          chalk.red(`  Invalid --format "${opts.format}". Use: dtcg, deslintrc`),
+        );
+        process.exit(1);
+      }
+      await runImportTokens({
+        figma: opts.figma,
+        token: opts.token,
+        mode: opts.mode,
+        output: opts.output,
+        format: opts.format,
+        includeHidden: opts.includeHidden,
+        cwd: process.cwd(),
+      });
+    },
+  );
 
 // ── init command ────────────────────────────────────────────────────
 
