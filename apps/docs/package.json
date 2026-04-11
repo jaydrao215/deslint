@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
+    "@vercel/analytics": "^2.0.1",
     "asciinema-player": "3.15.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",

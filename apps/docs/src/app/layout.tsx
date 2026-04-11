@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import 'asciinema-player/dist/bundle/asciinema-player.css';
 
@@ -38,7 +39,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-white text-gray-900 font-sans antialiased">{children}</body>
+      <body className="bg-white text-gray-900 font-sans antialiased">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
