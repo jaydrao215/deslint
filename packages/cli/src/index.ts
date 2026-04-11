@@ -116,6 +116,21 @@ program
   .description('Design quality gate for AI-generated frontend code')
   .version(VERSION);
 
+// Trust footer shown at the end of the help output for the root command
+// and every subcommand (`afterAll`). This is the user-visible reinforcement
+// of the local-first promise — every inbound privacy-conscious developer
+// running `deslint --help` sees it. Kept off `--version` deliberately so
+// that scripts that parse version output (`deslint --version | grep 0.3`)
+// continue to work.
+program.addHelpText(
+  'afterAll',
+  '\n' +
+    chalk.dim(
+      'Local-first · zero telemetry · your code never leaves your machine.',
+    ) +
+    '\n',
+);
+
 // ── scan command ─────────────────────────────────────────────────────
 
 program
