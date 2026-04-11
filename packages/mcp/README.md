@@ -7,11 +7,9 @@ Enables Cursor, Claude Code, and other MCP-compatible AI tools to analyze and fi
 ## Installation
 
 ```bash
-# Auto-configure for Cursor
-npx deslint-mcp install cursor
-
-# Auto-configure for Claude Code
-npx deslint-mcp install claude
+# Auto-detect and configure every supported editor found on this machine
+# (Cursor + Claude Desktop / Claude Code, on macOS, Linux, and Windows)
+npx deslint-mcp install
 ```
 
 Or run the server directly:
@@ -19,6 +17,8 @@ Or run the server directly:
 ```bash
 npx deslint-mcp serve
 ```
+
+Remove the configuration at any time with `npx deslint-mcp uninstall`.
 
 **Requirements:** Node.js v20+
 

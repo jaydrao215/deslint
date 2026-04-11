@@ -235,6 +235,32 @@ describe('runLint', () => {
     expect(fixedContent).toContain('p-3');
   });
 
+  it('does NOT touch the file when writeFixes is false (dry-run contract)', async () => {
+    // Regression guard: `deslint fix --dry-run` used to silently write
+    // fixes to disk because runLint always called `ESLint.outputFixes`
+    // whenever `fix: true`. The dry-run path now sets writeFixes: false
+    // and must leave the original bytes on disk untouched.
+    const original = `const Fixable = () => <div className="bg-[#FF0000] p-[13px]">fix me</div>;\nexport default Fixable;\n`;
+    const filePath = await writeTsx('DryRun.tsx', original);
+
+    const result = await runLint({
+      files: [filePath],
+      fix: true,
+      writeFixes: false,
+    });
+
+    // Disk must be byte-identical to the original source.
+    const onDisk = await readFile(filePath, 'utf-8');
+    expect(onDisk).toBe(original);
+
+    // ...but the fixed source must still be available in `output` so that
+    // callers can render a diff preview without touching the filesystem.
+    const fileResult = result.results[0];
+    expect(fileResult.output).toBeDefined();
+    expect(fileResult.output).not.toContain('p-[13px]');
+    expect(fileResult.output).toContain('p-3');
+  });
+
   // ── Result structure ──
 
   it('returns results with correct LintFileResult structure', async () => {

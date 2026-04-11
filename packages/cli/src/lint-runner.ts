@@ -80,8 +80,14 @@ export interface LintRunnerOptions {
   files: string[];
   /** Rule overrides from .deslintrc.json */
   ruleOverrides?: Record<string, any>;
-  /** Whether to apply fixes */
+  /** Whether to compute fixes. When true, each result's `output` holds the
+   *  fixed source so callers can preview or apply the change themselves. */
   fix?: boolean;
+  /** Whether to write the computed fixes back to disk. Defaults to the value
+   *  of `fix`, which preserves the historical "fix means write" contract.
+   *  Pass `false` alongside `fix: true` to get a true dry-run (proposed
+   *  fixes in `output` without touching the filesystem). */
+  writeFixes?: boolean;
   /** Working directory (base path for ESLint). Defaults to process.cwd(). */
   cwd?: string;
 }
@@ -292,8 +298,11 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
 
   const results = await eslint.lintFiles(options.files);
 
-  // If fixing, write the fixed files
-  if (options.fix) {
+  // Write fixes to disk only when explicitly requested. Default preserves
+  // the historical "fix implies write" contract for backwards compatibility,
+  // but callers can pass `writeFixes: false` for a genuine dry-run.
+  const shouldWrite = options.writeFixes ?? options.fix ?? false;
+  if (shouldWrite) {
     await ESLint.outputFixes(results);
   }
 

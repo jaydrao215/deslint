@@ -21,8 +21,8 @@ Scan a project and report the Design Health Score.
 ```bash
 deslint scan                     # scan current directory
 deslint scan ./src               # scan specific directory
-deslint scan --output json       # JSON output
-deslint scan --output sarif      # SARIF format (for CI integration)
+deslint scan --format json       # JSON output
+deslint scan --format sarif      # SARIF format (for CI integration)
 deslint scan --profile strict    # use strict profile
 ```
 
@@ -74,10 +74,10 @@ deslint suggest-tokens
 
 | Format | Flag | Use Case |
 |--------|------|----------|
-| Text | `--output text` (default) | Terminal, human-readable |
-| JSON | `--output json` | Programmatic consumption |
-| SARIF | `--output sarif` | GitHub Code Scanning, CI/CD |
-| HTML | `--output html` | Shareable reports |
+| Text | `--format text` (default) | Terminal, human-readable |
+| JSON | `--format json` | Programmatic consumption |
+| SARIF | `--format sarif` | GitHub Code Scanning, CI/CD |
+| HTML | auto-written to `.deslint/report.html` | Shareable reports |
 
 ## Configuration
 

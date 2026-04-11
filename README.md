@@ -133,9 +133,8 @@ The other 6 rules (`consistent-component-spacing`, `consistent-border-radius`, `
 Deslint includes an MCP server that enables AI coding tools to self-correct design violations:
 
 ```bash
-# Install MCP server for Cursor or Claude Code
-npx deslint-mcp install cursor
-npx deslint-mcp install claude
+# Install MCP server — auto-detects and configures Cursor and Claude Code
+npx deslint-mcp install
 ```
 
 **Tools exposed:**

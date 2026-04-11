@@ -27,6 +27,19 @@ export async function fixAll(options: FixAllOptions): Promise<LintResult> {
     return fixAllDryRun(options);
   }
 
+  // Capture the pre-fix violation count so we can report accurate "fixed"
+  // numbers. ESLint's post-fix `messages` only contains what remains, and
+  // `fixableErrorCount`/`fixableWarningCount` on those results are zeros
+  // once the fixes have been applied — so we need a separate pre-scan.
+  const preFix = await runLint({
+    files: options.files,
+    ruleOverrides: options.ruleOverrides,
+  });
+  const fixableBefore = preFix.results.reduce(
+    (sum, r) => sum + r.messages.filter((m) => m.fix).length,
+    0,
+  );
+
   // Run ESLint with fix: true — it writes fixed files automatically
   const result = await runLint({
     files: options.files,
@@ -34,29 +47,27 @@ export async function fixAll(options: FixAllOptions): Promise<LintResult> {
     fix: true,
   });
 
-  // Count how many fixes were applied
-  let fixedCount = 0;
-  let fixedFiles = 0;
-  for (const r of result.results) {
-    if (r.output !== undefined) {
-      fixedFiles++;
-      // output exists means the file was modified
-      // Count the original violations that had fixes
-      fixedCount += r.messages.filter((m) => m.fix).length +
-        (r.fixableErrorCount ?? 0) + (r.fixableWarningCount ?? 0);
-    }
-  }
+  // A file was actually modified iff ESLint produced `output` for it.
+  const fixedFiles = result.results.filter((r) => r.output !== undefined).length;
 
   console.log('');
-  if (fixedFiles > 0) {
-    console.log(chalk.green(`  ✓ Fixed violations in ${fixedFiles} file${fixedFiles !== 1 ? 's' : ''}`));
+  if (fixableBefore > 0) {
+    console.log(
+      chalk.green(
+        `  ✓ Fixed ${fixableBefore} violation${fixableBefore !== 1 ? 's' : ''} in ${fixedFiles} file${fixedFiles !== 1 ? 's' : ''}`,
+      ),
+    );
   } else {
     console.log(chalk.green('  ✓ No fixable violations found'));
   }
 
-  // Show remaining violations
+  // Show remaining violations (everything still present after the fix pass)
   if (result.totalViolations > 0) {
-    console.log(chalk.yellow(`  ${result.totalViolations} violation${result.totalViolations !== 1 ? 's' : ''} remaining (not auto-fixable)`));
+    console.log(
+      chalk.yellow(
+        `  ${result.totalViolations} violation${result.totalViolations !== 1 ? 's' : ''} remaining (not auto-fixable)`,
+      ),
+    );
   }
   console.log('');
 
@@ -67,11 +78,13 @@ export async function fixAll(options: FixAllOptions): Promise<LintResult> {
  * Dry run — show what would change without modifying files.
  */
 async function fixAllDryRun(options: FixAllOptions): Promise<LintResult> {
-  // Run with fix to get the proposed changes, but don't write
+  // Compute fixes but do NOT write them to disk. This is a genuine preview:
+  // callers must be able to trust that --dry-run never touches the filesystem.
   const result = await runLint({
     files: options.files,
     ruleOverrides: options.ruleOverrides,
     fix: true,
+    writeFixes: false,
   });
 
   console.log('');
