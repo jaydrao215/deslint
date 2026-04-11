@@ -1,0 +1,136 @@
+name: Weekly metrics
+
+# Weekly installs + stars snapshot. Runs every Monday at 09:00 UTC so the
+# numbers are ready by the start of the working week. Can also be run
+# manually from the Actions tab for ad-hoc CEO / investor updates.
+#
+# Output:
+#   1. A markdown summary written to $GITHUB_STEP_SUMMARY, visible in the
+#      Actions run UI (no commit / PR churn).
+#   2. Optional Slack post to the webhook in secrets.SLACK_METRICS_WEBHOOK_URL
+#      — best-effort; a Slack failure does NOT fail the workflow.
+#
+# Tracked packages:
+#   @deslint/eslint-plugin, @deslint/cli, @deslint/mcp, @deslint/shared
+# (the GitHub Action is not on npm, so it's omitted here.)
+
+on:
+  schedule:
+    # Monday 09:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Write summary header
+        run: |
+          {
+            echo "# Deslint weekly metrics"
+            echo ""
+            echo "_Snapshot taken $(date -u '+%Y-%m-%d %H:%M UTC') · repo: ${GITHUB_REPOSITORY}_"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fetch npm weekly downloads
+        id: npm
+        run: |
+          set -euo pipefail
+          packages=(
+            "@deslint/eslint-plugin"
+            "@deslint/cli"
+            "@deslint/mcp"
+            "@deslint/shared"
+          )
+          total=0
+          {
+            echo "## npm weekly downloads"
+            echo ""
+            echo "| Package | Last 7 days |"
+            echo "|---|---:|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for pkg in "${packages[@]}"; do
+            url="https://api.npmjs.org/downloads/point/last-week/${pkg}"
+            # npm returns {"error":"..."} with 404 for unpublished packages;
+            # curl -f makes that a non-zero exit, so we tolerate it with ||.
+            json=$(curl -fsSL --retry 3 --retry-delay 2 "$url" || echo '{"downloads":0}')
+            downloads=$(printf '%s' "$json" | jq -r '.downloads // 0')
+            total=$(( total + downloads ))
+            printf '| `%s` | %s |\n' "$pkg" "$downloads" >> "$GITHUB_STEP_SUMMARY"
+          done
+          {
+            echo "| **Total** | **${total}** |"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "total=${total}" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch GitHub repo stats
+        id: gh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          stats=$(gh api "repos/${GITHUB_REPOSITORY}")
+          stars=$(printf '%s' "$stats" | jq -r '.stargazers_count')
+          forks=$(printf '%s' "$stats" | jq -r '.forks_count')
+          watchers=$(printf '%s' "$stats" | jq -r '.subscribers_count')
+          open_issues=$(printf '%s' "$stats" | jq -r '.open_issues_count')
+          {
+            echo "## GitHub"
+            echo ""
+            echo "| Metric | Value |"
+            echo "|---|---:|"
+            echo "| Stars | ${stars} |"
+            echo "| Forks | ${forks} |"
+            echo "| Watchers | ${watchers} |"
+            echo "| Open issues + PRs | ${open_issues} |"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "stars=${stars}"
+            echo "open_issues=${open_issues}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post to Slack (best-effort)
+        env:
+          SLACK_URL: ${{ secrets.SLACK_METRICS_WEBHOOK_URL }}
+          NPM_TOTAL: ${{ steps.npm.outputs.total }}
+          GH_STARS: ${{ steps.gh.outputs.stars }}
+          GH_OPEN_ISSUES: ${{ steps.gh.outputs.open_issues }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "${SLACK_URL:-}" ]; then
+            echo "SLACK_METRICS_WEBHOOK_URL not set — skipping Slack post."
+            exit 0
+          fi
+          payload=$(jq -n \
+            --arg npm "${NPM_TOTAL}" \
+            --arg stars "${GH_STARS}" \
+            --arg issues "${GH_OPEN_ISSUES}" \
+            --arg url "${RUN_URL}" \
+            '{
+              text: ("Deslint weekly metrics — " + $npm + " npm downloads · " + $stars + " stars · " + $issues + " open issues/PRs"),
+              blocks: [
+                {
+                  type: "section",
+                  text: {
+                    type: "mrkdwn",
+                    text: ("*Deslint weekly metrics*\n" +
+                           "npm (last 7d): *" + $npm + "*\n" +
+                           "GitHub stars: *" + $stars + "*\n" +
+                           "Open issues+PRs: *" + $issues + "*\n" +
+                           "<" + $url + "|Full run>")
+                  }
+                }
+              ]
+            }')
+          if ! curl -fsSL --retry 2 --retry-delay 2 \
+            -X POST -H 'Content-Type: application/json' \
+            -d "${payload}" "${SLACK_URL}"; then
+            echo "::warning::Slack post failed — metrics still captured in the job summary."
+          fi
