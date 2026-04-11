@@ -47,12 +47,13 @@ const TIERS: Tier[] = [
   {
     name: 'Teams',
     icon: Users,
-    price: '$29',
-    priceSuffix: '/ seat / month',
+    price: '$99',
+    priceSuffix: '/ month · up to 5 devs',
     description:
-      'Cross-repo dashboards, trend tracking, Figma design-token sync, and team-wide quality baselines.',
+      'Cross-repo dashboards, trend tracking, Figma design-token sync, and team-wide quality baselines. $19/seat/month beyond 5 developers.',
     features: [
       'Everything in Open Source',
+      'Up to 5 developers included',
       'Team dashboard with trend charts',
       'Cross-repo design debt tracking',
       'Figma design-token sync',
@@ -366,6 +367,10 @@ const FAQS = [
   {
     q: 'Is there a free trial for Teams?',
     a: 'Yes. Every Teams subscription starts with a 14-day free trial, no credit card required.',
+  },
+  {
+    q: 'How does Teams pricing scale with team size?',
+    a: 'Teams is a flat $99/month for up to 5 developers, then $19/seat/month for each additional developer. A 10-person team pays $99 + (5 × $19) = $194/month. The flat starter is designed to fit under standard expense-approval thresholds so you can try it without a procurement cycle.',
   },
 ];
 
