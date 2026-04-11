@@ -1,17 +1,9 @@
-// Vercel Edge serverless function for the Teams / Enterprise waitlist.
+// Next.js App Router route handler for the Teams / Enterprise waitlist.
 //
-// Why this lives at apps/docs/api/waitlist.ts (outside src/app/):
-// -------------------------------------------------------------
-// The Next.js site is built with `output: 'export'` (see next.config.ts),
-// which disables App Router API route handlers. Vercel's zero-config
-// `/api/*.ts` convention still works alongside a static export: files under
-// the project-root `api/` directory are picked up as standalone functions
-// and served at `/api/<name>` next to the static HTML in `out/`.
-//
-// The client entry point is the WaitlistForm component in
-// `src/app/pricing/page.tsx`. It POSTs { email, tier } here and falls back
-// to `localStorage` on any network failure, so signups are never lost while
-// the backend is unconfigured or unreachable.
+// Invoked by the WaitlistForm component in `src/app/pricing/page.tsx`,
+// which POSTs { email, tier } and falls back to localStorage on any
+// non-2xx response so signups are never lost while the backend is being
+// configured.
 //
 // Required environment variables (set in the Vercel project):
 //   RESEND_API_KEY                 — Resend API key (server-side only)
@@ -19,16 +11,17 @@
 //   RESEND_AUDIENCE_ID_ENTERPRISE  — Resend audience id for Enterprise leads
 //                                    (optional; falls back to the Teams id)
 //
-// If RESEND_API_KEY is not set we return 503 so the client falls back to
-// localStorage — the pricing page will still show the success state and
-// the signup is preserved for later import. We never echo Resend error
-// bodies to the client and we never log the submitted email.
+// Double opt-in: delegated to Resend's audience-level confirmation settings.
+// Enable "require double opt-in" on both audiences in the Resend dashboard
+// so Resend owns the confirmation email flow.
 //
-// Double opt-in: handled by Resend's audience-level confirmation settings.
-// Enable "require double opt-in" on the Teams and Enterprise audiences in
-// the Resend dashboard so Resend sends the confirmation mail for us.
+// TODO(sprint-13): add IP-based rate limiting. The current handler has no
+// throttle — a scripted `for i in {1..10000}` would pollute the audience
+// and trip Resend's abuse detection on our key. Pick Upstash Redis or
+// Vercel KV and gate at ~10 requests / minute / IP before a public launch
+// where the endpoint is discoverable.
 
-export const config = { runtime: 'edge' };
+export const runtime = 'edge';
 
 interface WaitlistPayload {
   email?: unknown;
@@ -54,18 +47,17 @@ function json(body: unknown, init?: ResponseInit): Response {
   });
 }
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') {
-    return json(
-      { ok: false, error: 'method_not_allowed' },
-      { status: 405, headers: { allow: 'POST' } },
-    );
-  }
-
-  // Cheap body-size guard — edge runtimes don't enforce this by default.
-  const contentLength = Number(request.headers.get('content-length') ?? '0');
-  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
-    return json({ ok: false, error: 'payload_too_large' }, { status: 413 });
+export async function POST(request: Request): Promise<Response> {
+  // Cheap body-size guard. A malformed content-length header (missing,
+  // non-numeric, negative) is treated as unknown and falls through to the
+  // runtime's own body-size limits. Only a *well-formed, too-large* header
+  // is rejected here.
+  const rawLength = request.headers.get('content-length');
+  if (rawLength !== null) {
+    const parsed = Number.parseInt(rawLength, 10);
+    if (Number.isFinite(parsed) && parsed > MAX_BODY_BYTES) {
+      return json({ ok: false, error: 'payload_too_large' }, { status: 413 });
+    }
   }
 
   let payload: WaitlistPayload;
@@ -87,22 +79,22 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ ok: false, error: 'invalid_tier' }, { status: 400 });
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    // Let the client fall back to localStorage so no signups are lost
-    // while we bring up the backend.
-    return json({ ok: false, error: 'backend_unconfigured' }, { status: 503 });
-  }
-
+  // `||` (not `??`) so an empty-string env var set via the Vercel UI still
+  // falls through to the next option instead of failing the request.
+  const apiKey = process.env.RESEND_API_KEY || '';
   const audienceId =
     tier === 'Enterprise'
-      ? process.env.RESEND_AUDIENCE_ID_ENTERPRISE ??
-        process.env.RESEND_AUDIENCE_ID_TEAMS ??
+      ? process.env.RESEND_AUDIENCE_ID_ENTERPRISE ||
+        process.env.RESEND_AUDIENCE_ID_TEAMS ||
         ''
-      : process.env.RESEND_AUDIENCE_ID_TEAMS ?? '';
+      : process.env.RESEND_AUDIENCE_ID_TEAMS || '';
 
-  if (!audienceId) {
-    return json({ ok: false, error: 'audience_unconfigured' }, { status: 503 });
+  if (!apiKey || !audienceId) {
+    // Single opaque error code so probes cannot distinguish "API key unset"
+    // from "audience id unset" — both are equally "the backend isn't
+    // configured yet." The client's localStorage fallback still catches the
+    // signup so nothing is lost.
+    return json({ ok: false, error: 'backend_unavailable' }, { status: 503 });
   }
 
   try {
