@@ -1,0 +1,46 @@
+name: Rule missed a real violation
+description: A rule should have flagged some code but didn't. Helps us close coverage gaps.
+title: "[MISS] <rule-name>: <one-line description>"
+labels: ["rule-missed", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the catch. Missed violations tell us where our AST patterns
+        fall short. A minimal reproducer is the fastest path to a fix — we'll
+        add it to the test corpus as a positive-case test.
+  - type: input
+    id: rule
+    attributes:
+      label: Rule name
+      description: Which rule should have caught this? If you're not sure, say "not sure".
+      placeholder: touch-target-size
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Deslint version
+      placeholder: 0.3.0
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Code that should have been flagged
+      render: tsx
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this code is a real violation
+      description: Which WCAG criterion, design-system rule, or user-visible issue does this break?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+    validations:
+      required: false

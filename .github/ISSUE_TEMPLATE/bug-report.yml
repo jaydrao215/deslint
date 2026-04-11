@@ -1,0 +1,59 @@
+name: Bug report
+description: Something other than a rule is broken — CLI crash, bad fix output, wrong report, etc.
+title: "[BUG] <one-line description>"
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For rule-level issues (false positives or missed violations) use the
+        "Rule false positive" or "Rule missed" templates instead — they route
+        faster.
+  - type: input
+    id: version
+    attributes:
+      label: Deslint version
+      placeholder: 0.3.0
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node version
+      placeholder: v20.19.0
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which surface?
+      options:
+        - CLI (`deslint scan` / `deslint fix` / `deslint init`)
+        - ESLint plugin (`@deslint/eslint-plugin`)
+        - MCP server (`@deslint/mcp`)
+        - GitHub Action
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands and any minimal repro repo or snippet.
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the full output or crash stack trace.
+      render: text
+    validations:
+      required: true

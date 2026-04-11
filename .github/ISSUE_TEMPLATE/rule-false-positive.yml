@@ -1,0 +1,61 @@
+name: Rule false positive
+description: A rule flagged code that is actually correct. This is the highest-priority bug class.
+title: "[FP] <rule-name>: <one-line description>"
+labels: ["rule-false-positive", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Deslint's core promise is **0% false positives**. A confirmed FP is a P0 bug
+        and will be fixed or the rule will be downgraded before the next release.
+        Please include a minimal reproducer so we can add it to the test corpus.
+  - type: input
+    id: rule
+    attributes:
+      label: Rule name
+      description: e.g. `no-arbitrary-spacing`, `form-labels`, `aria-validation`
+      placeholder: no-arbitrary-spacing
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Deslint version
+      description: Output of `npx deslint --version`
+      placeholder: 0.3.0
+    validations:
+      required: true
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Framework
+      options:
+        - React / Next.js
+        - Vue / Nuxt
+        - Svelte
+        - Angular
+        - Plain HTML
+        - Other (please describe in "Additional context")
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Minimal reproducer
+      description: The smallest snippet that triggers the false positive. We will paste this directly into a test file.
+      render: tsx
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this is correct code
+      description: Explain why the flagged code should NOT be flagged. Link to the design system / spec / style guide if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+    validations:
+      required: false
