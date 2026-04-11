@@ -21,7 +21,7 @@
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, relative, isAbsolute } from 'node:path';
 import chalk from 'chalk';
 import {
   figmaVariablesToDTCG,
@@ -67,6 +67,7 @@ export class ImportTokensError extends Error {
     message: string,
     public code:
       | 'missing_token'
+      | 'invalid_file_key'
       | 'http_forbidden'
       | 'http_not_found'
       | 'http_rate_limited'
@@ -94,11 +95,13 @@ export async function importTokens(
   if (!options.figma || !FILE_KEY_REGEX.test(options.figma)) {
     throw new ImportTokensError(
       'Invalid --figma file key. Expected the portion of the Figma URL after /file/ or /design/, e.g. "abc123XYZ".',
-      'invalid_response',
+      'invalid_file_key',
     );
   }
 
-  const token = options.token ?? process.env.FIGMA_TOKEN;
+  // `||` rather than `??` so an empty-string --token (e.g. from a shell
+  // alias with an unset variable) falls through to the env var.
+  const token = options.token || process.env.FIGMA_TOKEN;
   if (!token) {
     throw new ImportTokensError(
       'Missing Figma token. Pass --token or set the FIGMA_TOKEN environment variable. Create a read-only personal access token at https://help.figma.com/hc/en-us/articles/8085703771159',
@@ -125,7 +128,7 @@ export async function importTokens(
   // 3. Transform.
   const transform = figmaVariablesToDTCG(raw, {
     mode: options.mode,
-    excludeHidden: options.includeHidden ? false : true,
+    excludeHidden: !options.includeHidden,
   });
 
   if (transform.tokenCount === 0) {
@@ -169,12 +172,15 @@ async function fetchWithRetry(
       });
     } catch (err) {
       // True network-layer failure (DNS, TCP reset, abort). Retry.
+      // We deliberately DON'T interpolate err.message into the user-
+      // facing error — fetch error messages can include the full URL
+      // (and in some runtimes the request headers), and we'd rather
+      // not surface the Figma token by accident. Callers who need the
+      // underlying cause can inspect `Error.cause`.
       lastNetworkError = err;
       if (attempt === MAX_ATTEMPTS) {
         throw new ImportTokensError(
-          `Figma API request failed after ${MAX_ATTEMPTS} attempts${
-            err instanceof Error ? `: ${err.message}` : '.'
-          }`,
+          `Figma API request failed after ${MAX_ATTEMPTS} attempts (network error). Check your connection and try again.`,
           'network_error',
         );
       }
@@ -223,10 +229,9 @@ async function fetchWithRetry(
 
   // Unreachable: the loop either returns on res.ok or throws on final
   // attempt. Kept as a safety throw for the typechecker.
+  void lastNetworkError;
   throw new ImportTokensError(
-    `Figma API request failed after ${MAX_ATTEMPTS} attempts${
-      lastNetworkError instanceof Error ? `: ${lastNetworkError.message}` : '.'
-    }`,
+    `Figma API request failed after ${MAX_ATTEMPTS} attempts (network error).`,
     'network_error',
   );
 }
@@ -311,11 +316,14 @@ export async function runImportTokens(
       }
     }
     // Use a relative path in the success message for readability,
-    // but keep the absolute path available if it's outside cwd.
-    const rel = result.outputPath.startsWith(cwd + '/')
-      ? result.outputPath.slice(cwd.length + 1)
-      : result.outputPath;
-    console.log(chalk.green(`  ✓ Wrote ${rel}`));
+    // but keep the absolute path when the output sits outside cwd
+    // (where `relative()` would start with ../). Works on Windows too.
+    const relPath = relative(cwd, result.outputPath);
+    const display =
+      relPath && !relPath.startsWith('..') && !isAbsolute(relPath)
+        ? relPath
+        : result.outputPath;
+    console.log(chalk.green(`  ✓ Wrote ${display}`));
   } catch (err) {
     if (err instanceof ImportTokensError) {
       console.error(chalk.red(`  Error: ${err.message}`));

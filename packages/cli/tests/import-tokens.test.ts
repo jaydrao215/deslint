@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -81,6 +81,7 @@ describe('importTokens', () => {
   });
   afterEach(() => {
     rmSync(workDir, { recursive: true, force: true });
+    vi.unstubAllEnvs();
   });
 
   it('writes a W3C DTCG JSON file on the happy path', async () => {
@@ -153,38 +154,44 @@ describe('importTokens', () => {
 
   it('honours the FIGMA_TOKEN env var when --token is absent', async () => {
     const { fn, calls } = queuedFetch([{ status: 200, body: happyResponse() }]);
-    process.env.FIGMA_TOKEN = 'env-token';
-    try {
-      await importTokens({
-        figma: 'ABC123',
-        cwd: workDir,
-        fetchImpl: fn,
-      });
-      expect(calls[0]!.token).toBe('env-token');
-    } finally {
-      delete process.env.FIGMA_TOKEN;
-    }
+    vi.stubEnv('FIGMA_TOKEN', 'env-token');
+    await importTokens({
+      figma: 'ABC123',
+      cwd: workDir,
+      fetchImpl: fn,
+    });
+    expect(calls[0]!.token).toBe('env-token');
   });
 
   it('prefers --token over FIGMA_TOKEN when both are set', async () => {
     const { fn, calls } = queuedFetch([{ status: 200, body: happyResponse() }]);
-    process.env.FIGMA_TOKEN = 'env-token';
-    try {
-      await importTokens({
-        figma: 'ABC123',
-        token: 'arg-token',
-        cwd: workDir,
-        fetchImpl: fn,
-      });
-      expect(calls[0]!.token).toBe('arg-token');
-    } finally {
-      delete process.env.FIGMA_TOKEN;
-    }
+    vi.stubEnv('FIGMA_TOKEN', 'env-token');
+    await importTokens({
+      figma: 'ABC123',
+      token: 'arg-token',
+      cwd: workDir,
+      fetchImpl: fn,
+    });
+    expect(calls[0]!.token).toBe('arg-token');
+  });
+
+  it('falls back to FIGMA_TOKEN when --token is an empty string', async () => {
+    // Shell aliases with unset vars commonly expand to `--token ""`.
+    // `||` (not `??`) is what makes this case DTRT.
+    const { fn, calls } = queuedFetch([{ status: 200, body: happyResponse() }]);
+    vi.stubEnv('FIGMA_TOKEN', 'env-token');
+    await importTokens({
+      figma: 'ABC123',
+      token: '',
+      cwd: workDir,
+      fetchImpl: fn,
+    });
+    expect(calls[0]!.token).toBe('env-token');
   });
 
   it('throws missing_token when neither arg nor env var is set', async () => {
     const { fn } = queuedFetch([]);
-    delete process.env.FIGMA_TOKEN;
+    vi.stubEnv('FIGMA_TOKEN', '');
     await expect(
       importTokens({ figma: 'ABC123', cwd: workDir, fetchImpl: fn }),
     ).rejects.toMatchObject({
@@ -202,7 +209,7 @@ describe('importTokens', () => {
         cwd: workDir,
         fetchImpl: fn,
       }),
-    ).rejects.toMatchObject({ code: 'invalid_response' });
+    ).rejects.toMatchObject({ code: 'invalid_file_key' });
     expect(calls).toEqual([]);
   });
 
@@ -257,14 +264,21 @@ describe('importTokens', () => {
       { status: 502, body: { err: 'down' } },
       { status: 200, body: happyResponse() },
     ]);
+    const start = Date.now();
     const result = await importTokens({
       figma: 'ABC123',
       token: 'fk',
       cwd: workDir,
       fetchImpl: fn,
     });
+    const elapsed = Date.now() - start;
     expect(result.transform.tokenCount).toBe(1);
     expect(calls).toHaveLength(3);
+    // Backoff is linear: 500ms after attempt 1, 1000ms after attempt 2.
+    // We want proof the sleeps actually ran, so assert a floor just
+    // below the nominal 1500ms total (allowing for timer jitter on
+    // slow CI runners).
+    expect(elapsed).toBeGreaterThanOrEqual(1400);
   }, 10_000);
 
   it('gives up after 3 consecutive 5xx and throws http_other', async () => {

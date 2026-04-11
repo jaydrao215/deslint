@@ -604,6 +604,147 @@ describe('figmaVariablesToDTCG', () => {
     expect(leaf.$description).toBe('The main brand colour');
   });
 
+  it('records a slug_collision when two variables slug to the same DTCG path', () => {
+    // "Brand / Primary" and "brand/primary" both slug to
+    // primitives.brand.primary. First-come-first-served: the first
+    // entry in `variables` wins, the second is reported explicitly.
+    const result = figmaVariablesToDTCG(
+      fixture({
+        collections: { c1: DEFAULT_COLLECTION },
+        variables: {
+          v1: {
+            id: 'v1',
+            name: 'Brand / Primary',
+            variableCollectionId: 'c1',
+            resolvedType: 'COLOR',
+            valuesByMode: { m1: { r: 1, g: 0, b: 0 } }, // red wins
+          },
+          v2: {
+            id: 'v2',
+            name: 'brand/primary',
+            variableCollectionId: 'c1',
+            resolvedType: 'COLOR',
+            valuesByMode: { m1: { r: 0, g: 1, b: 0 } }, // green loses
+          },
+        },
+      }),
+    );
+    expect(result.tokenCount).toBe(1);
+    const leaf = (result.dtcg['primitives'] as any)['brand']['primary'] as {
+      $value: string;
+    };
+    expect(leaf.$value).toBe('#ff0000');
+    expect(result.skipped).toEqual([
+      { name: 'brand/primary', reason: 'slug_collision' },
+    ]);
+  });
+
+  it('resolves a multi-hop alias chain A → B → C without cycles', () => {
+    const result = figmaVariablesToDTCG(
+      fixture({
+        collections: { c1: DEFAULT_COLLECTION },
+        variables: {
+          c: {
+            id: 'c',
+            name: 'brand/blue-500',
+            variableCollectionId: 'c1',
+            resolvedType: 'COLOR',
+            valuesByMode: { m1: { r: 0, g: 0, b: 1 } }, // concrete
+          },
+          b: {
+            id: 'b',
+            name: 'brand/primary',
+            variableCollectionId: 'c1',
+            resolvedType: 'COLOR',
+            valuesByMode: { m1: { type: 'VARIABLE_ALIAS', id: 'c' } },
+          },
+          a: {
+            id: 'a',
+            name: 'bg/surface',
+            variableCollectionId: 'c1',
+            resolvedType: 'COLOR',
+            valuesByMode: { m1: { type: 'VARIABLE_ALIAS', id: 'b' } },
+          },
+        },
+      }),
+    );
+    expect(result.tokenCount).toBe(3);
+    expect(result.skipped).toEqual([]);
+    // All three survive; the parser should resolve A → B → C to #0000ff.
+    const parsed = parseW3CTokens(result.dtcg);
+    expect(parsed.unresolvedAliases).toEqual([]);
+    const colors = parsed.designSystem.colors ?? {};
+    const values = Object.values(colors);
+    expect(values).toContain('#0000ff');
+    expect(new Set(values).size).toBe(1);
+  });
+
+  it('drops a self-referential alias cycle without looping forever', () => {
+    const result = figmaVariablesToDTCG(
+      fixture({
+        collections: { c1: DEFAULT_COLLECTION },
+        variables: {
+          v1: {
+            id: 'v1',
+            name: 'looping',
+            variableCollectionId: 'c1',
+            resolvedType: 'COLOR',
+            valuesByMode: { m1: { type: 'VARIABLE_ALIAS', id: 'v1' } },
+          },
+        },
+      }),
+    );
+    expect(result.tokenCount).toBe(0);
+    expect(result.skipped).toEqual([{ name: 'looping', reason: 'unresolved_alias' }]);
+  });
+
+  it('rejects STRING fontFamily values that are not CSS-shaped lists', () => {
+    // Name says "font-family" but value is a single bare word — we
+    // deliberately reject it to keep marketing copy out of the tree.
+    const result = figmaVariablesToDTCG(
+      fixture({
+        collections: { c1: DEFAULT_COLLECTION },
+        variables: {
+          v1: {
+            id: 'v1',
+            name: 'font-family/body',
+            variableCollectionId: 'c1',
+            resolvedType: 'STRING',
+            valuesByMode: { m1: 'Inter' }, // ambiguous — no comma, not a generic
+          },
+        },
+      }),
+    );
+    expect(result.tokenCount).toBe(0);
+    expect(result.skipped).toEqual([
+      { name: 'font-family/body', reason: 'unsupported_type:STRING' },
+    ]);
+  });
+
+  it('accepts a single well-known generic family as a fontFamily value', () => {
+    const result = figmaVariablesToDTCG(
+      fixture({
+        collections: { c1: DEFAULT_COLLECTION },
+        variables: {
+          v1: {
+            id: 'v1',
+            name: 'font-family/system',
+            variableCollectionId: 'c1',
+            resolvedType: 'STRING',
+            valuesByMode: { m1: 'system-ui' },
+          },
+        },
+      }),
+    );
+    expect(result.tokenCount).toBe(1);
+    const leaf = (result.dtcg['primitives'] as any)['font-family']['system'] as {
+      $value: string;
+      $type: string;
+    };
+    expect(leaf.$type).toBe('fontFamily');
+    expect(leaf.$value).toBe('system-ui');
+  });
+
   it('feeds cleanly through parseW3CTokens end-to-end', () => {
     const result = figmaVariablesToDTCG(
       fixture({
@@ -637,7 +778,10 @@ describe('figmaVariablesToDTCG', () => {
             name: 'font-family/body',
             variableCollectionId: 'c1',
             resolvedType: 'STRING',
-            valuesByMode: { m1: 'Inter' },
+            // Must be a CSS-shaped family list, not a bare word — the
+            // value gate rejects "Inter" alone as ambiguous (could be
+            // marketing copy). A proper fallback stack passes.
+            valuesByMode: { m1: 'Inter, sans-serif' },
           },
         },
       }),

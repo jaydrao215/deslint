@@ -122,8 +122,41 @@ export interface FigmaTransformResult {
 }
 
 /**
+ * A variable that made it through the initial filtering gauntlet.
+ * Kept as an internal type so the multi-pass transform can share
+ * pre-computed state (mode id, dtcg path) without recomputing.
+ */
+interface Candidate {
+  id: string;
+  variable: FigmaVariable;
+  collection: FigmaVariableCollection;
+  modeId: string;
+  rawValue: FigmaVariableValue;
+  dtcgPath: string;
+  dtcgType: string;
+}
+
+/**
  * Transform a Figma Variables API response into a W3C DTCG tokens
  * document. Pure: no network, no filesystem, no globals.
+ *
+ * The transform runs in four explicit passes so that every reason a
+ * variable can be dropped is classified into `skipped[]` and the
+ * reported `tokenCount` exactly matches what's in the emitted tree:
+ *
+ *   1. Collect candidates: apply type/scope/visibility/mode filters.
+ *   2. Dedupe paths: if two candidates slug to the same dtcg path,
+ *      the first one wins and the loser is recorded as
+ *      `slug_collision`. Without this step an alias targeting the
+ *      loser would silently resolve to the winner's leaf.
+ *   3. Reachability: walk alias chains. If any hop in the chain is
+ *      missing from the deduped set, the head is dropped as
+ *      `unresolved_alias`. Prevents emitting a leaf whose `{path}`
+ *      reference points at nothing.
+ *   4. Emit: call `setAtPath` for each reachable candidate. A path
+ *      clash at an *intermediate* segment (e.g. variable A at
+ *      `a.b.c` vs variable B at `a.b`) is still possible and reported
+ *      as `intermediate_path_collision`.
  */
 export function figmaVariablesToDTCG(
   response: FigmaVariablesResponse,
@@ -133,51 +166,24 @@ export function figmaVariablesToDTCG(
   const variables = response.meta?.variables ?? {};
   const collections = response.meta?.variableCollections ?? {};
 
-  // Index variables by id so alias resolution can find its target.
-  // We'll only emit aliases as DTCG `{path}` references if the target
-  // is also going to be emitted in the same run (same mode, not hidden,
-  // supported type). Otherwise we resolve them through to the final
-  // concrete value by walking the alias chain here.
-
   const dtcg: W3CTokensJson = {};
   const skipped: Array<{ name: string; reason: string }> = [];
   let tokenCount = 0;
   const collectionsSeen = new Set<string>();
 
-  // First pass: figure out which variables we're going to emit and
-  // what path they'll live at. Used for alias resolution in the second
-  // pass so we can route a DTCG alias to the right path.
-  const pathByVariableId = new Map<string, string>();
-  const emittableIds = new Set<string>();
-
-  for (const [id, variable] of Object.entries(variables)) {
-    if (!variable || typeof variable !== 'object') continue;
-    if (excludeHidden && variable.hiddenFromPublishing) continue;
-    // Skip remote variables — they live in another team library and
-    // the file owner may not have permission to publish them.
-    if (variable.remote) continue;
-
-    const collection = collections[variable.variableCollectionId];
-    if (!collection) continue;
-
-    const dtcgType = mapResolvedType(variable);
-    if (!dtcgType) continue;
-
-    const path = dtcgPath(collection.name, variable.name);
-    pathByVariableId.set(id, path);
-    emittableIds.add(id);
-  }
-
-  // Second pass: emit leaves.
+  // ── Pass 1: collect candidates ───────────────────────────────────
+  // A variable is a candidate if it has a known collection, a
+  // supported resolved-type/scope combination, isn't hidden or remote
+  // (unless the caller opts in), and has a value for the chosen mode.
+  // Anything that fails here is recorded in `skipped` with a specific
+  // reason so users can tell "BOOLEAN isn't supported" from "hidden".
+  const rawCandidates: Candidate[] = [];
   for (const [id, variable] of Object.entries(variables)) {
     if (!variable || typeof variable !== 'object') continue;
 
     const collection = collections[variable.variableCollectionId];
     if (!collection) {
-      skipped.push({
-        name: variable.name,
-        reason: 'collection_missing',
-      });
+      skipped.push({ name: variable.name, reason: 'collection_missing' });
       continue;
     }
 
@@ -206,32 +212,111 @@ export function figmaVariablesToDTCG(
       continue;
     }
 
-    const dtcgValue = toDtcgValue(
-      rawValue,
-      variable,
-      pathByVariableId,
-      emittableIds,
-    );
-    if (dtcgValue === undefined) {
+    // STRING fontFamily has an extra value-shape gate — a marketing
+    // copy variable named "marketing/font-family-disclaimer" would
+    // otherwise emit arbitrary text as a design token. We only let
+    // it through if the value itself looks like a CSS font-family
+    // list (comma-separated, or a single known generic).
+    if (
+      dtcgType === 'fontFamily' &&
+      typeof rawValue === 'string' &&
+      !looksLikeFontFamilyValue(rawValue)
+    ) {
       skipped.push({
         name: variable.name,
-        reason: 'unresolved_alias',
+        reason: 'unsupported_type:STRING',
       });
       continue;
     }
 
-    const path = pathByVariableId.get(id);
-    if (!path) continue;
-
-    setAtPath(dtcg, path, {
-      $value: dtcgValue,
-      $type: dtcgType,
-      ...(variable.description
-        ? { $description: variable.description }
-        : {}),
+    rawCandidates.push({
+      id,
+      variable,
+      collection,
+      modeId,
+      rawValue,
+      dtcgPath: dtcgPath(collection.name, variable.name),
+      dtcgType,
     });
+  }
+
+  // ── Pass 2: dedupe paths ─────────────────────────────────────────
+  // First-come-first-served. The loser is classified as
+  // `slug_collision` so users can see why their two Figma variables
+  // merged into one.
+  const pathByVariableId = new Map<string, string>();
+  const winnerIdByPath = new Map<string, string>();
+  const dedupedCandidates: Candidate[] = [];
+  for (const cand of rawCandidates) {
+    if (winnerIdByPath.has(cand.dtcgPath)) {
+      skipped.push({ name: cand.variable.name, reason: 'slug_collision' });
+      continue;
+    }
+    winnerIdByPath.set(cand.dtcgPath, cand.id);
+    pathByVariableId.set(cand.id, cand.dtcgPath);
+    dedupedCandidates.push(cand);
+  }
+
+  // ── Pass 3: alias chain reachability ─────────────────────────────
+  // A candidate whose direct value is concrete is trivially
+  // reachable. An alias is reachable only if the full chain ends at a
+  // concrete value whose every hop is also a deduped candidate. We
+  // walk the chain once per head, cycle-protected, and record any
+  // head whose chain is broken as `unresolved_alias`.
+  const reachable = new Set<string>();
+  for (const cand of dedupedCandidates) {
+    if (
+      isAliasChainReachable(
+        cand.id,
+        variables,
+        collections,
+        pathByVariableId,
+        options.mode,
+        new Set(),
+      )
+    ) {
+      reachable.add(cand.id);
+    } else {
+      skipped.push({ name: cand.variable.name, reason: 'unresolved_alias' });
+    }
+  }
+
+  // ── Pass 4: emit ─────────────────────────────────────────────────
+  // At this point a failure can only come from an intermediate-path
+  // clash (candidate A sits at `a.b.c`, candidate B tries to sit at
+  // `a.b`). We surface that as its own reason so it's debuggable.
+  for (const cand of dedupedCandidates) {
+    if (!reachable.has(cand.id)) continue;
+
+    const dtcgValue = toDtcgValue(
+      cand.rawValue,
+      cand.variable,
+      pathByVariableId,
+      reachable,
+    );
+    if (dtcgValue === undefined) {
+      // Defensive: reachability should have caught this.
+      skipped.push({ name: cand.variable.name, reason: 'unresolved_alias' });
+      continue;
+    }
+
+    const leaf = {
+      $value: dtcgValue,
+      $type: cand.dtcgType,
+      ...(cand.variable.description
+        ? { $description: cand.variable.description }
+        : {}),
+    };
+
+    if (!setAtPath(dtcg, cand.dtcgPath, leaf)) {
+      skipped.push({
+        name: cand.variable.name,
+        reason: 'intermediate_path_collision',
+      });
+      continue;
+    }
     tokenCount++;
-    collectionsSeen.add(collection.name);
+    collectionsSeen.add(cand.collection.name);
   }
 
   return {
@@ -445,16 +530,18 @@ function slug(s: string): string {
 
 /**
  * Assign `leaf` at `path` inside `doc`, creating intermediate groups
- * as plain objects on the way down. Safe: every intermediate node must
- * be a plain object, otherwise we bail (prevents clobbering a leaf).
+ * as plain objects on the way down. Returns `false` if any intermediate
+ * segment is already occupied by a leaf, or if the tail already exists
+ * — the caller surfaces those as `intermediate_path_collision` so users
+ * can see why their Figma variable wasn't emitted.
  */
 function setAtPath(
   doc: W3CTokensJson,
   path: string,
   leaf: { $value: unknown; $type: string; $description?: string },
-): void {
+): boolean {
   const segments = path.split('.').filter((s) => s.length > 0);
-  if (segments.length === 0) return;
+  if (segments.length === 0) return false;
 
   let cursor: Record<string, unknown> = doc as Record<string, unknown>;
   for (let i = 0; i < segments.length - 1; i++) {
@@ -467,16 +554,94 @@ function setAtPath(
       cursor[seg] = next;
       cursor = next;
     } else {
-      // Collision: a leaf or non-object is already at this path. Two
-      // Figma variables ended up with the same slug. Skip — the first
-      // one wins. The caller can surface this via the skipped list if
-      // we want to warn in a later iteration.
-      return;
+      // Clash: a leaf (or other non-object) already sits at this
+      // intermediate segment. Two Figma variables slugged to paths
+      // where one is a prefix of the other.
+      return false;
     }
   }
 
   const tail = segments[segments.length - 1]!;
-  // If the tail already exists, don't overwrite — first one wins.
-  if (cursor[tail] !== undefined) return;
+  if (cursor[tail] !== undefined) return false;
   cursor[tail] = leaf;
+  return true;
+}
+
+/**
+ * Value-shape gate for STRING variables that claim to be font families.
+ * We only trust the string if it looks like a CSS font-family list —
+ * either comma-separated, wrapped in quotes, or a single well-known
+ * generic. This prevents a marketing-copy variable from leaking into
+ * the design token tree just because its name contains "font".
+ */
+const GENERIC_FONT_FAMILIES = new Set([
+  'serif',
+  'sans-serif',
+  'monospace',
+  'cursive',
+  'fantasy',
+  'system-ui',
+  'ui-serif',
+  'ui-sans-serif',
+  'ui-monospace',
+  'ui-rounded',
+  'math',
+  'emoji',
+  'fangsong',
+]);
+
+function looksLikeFontFamilyValue(value: string): boolean {
+  const v = value.trim();
+  if (v.length === 0) return false;
+  // CSS font-family list: at least one comma separating families.
+  if (v.includes(',')) return true;
+  // Single quoted family name, e.g. `"Inter"` or `'Helvetica Neue'`.
+  if (/^["'].*["']$/.test(v)) return true;
+  // Single well-known generic family.
+  if (GENERIC_FONT_FAMILIES.has(v.toLowerCase())) return true;
+  return false;
+}
+
+/**
+ * Walk an alias chain from `headId` and return true only if the entire
+ * chain terminates at a concrete value whose every hop is also present
+ * in `pathByVariableId` (i.e. survived pass 2). Cycle-protected via the
+ * `seen` set so a self-referential alias doesn't loop forever.
+ */
+function isAliasChainReachable(
+  headId: string,
+  variables: Record<string, FigmaVariable>,
+  collections: Record<string, FigmaVariableCollection>,
+  pathByVariableId: Map<string, string>,
+  preferredMode: string | undefined,
+  seen: Set<string>,
+): boolean {
+  if (seen.has(headId)) return false;
+  if (!pathByVariableId.has(headId)) return false;
+
+  const variable = variables[headId];
+  if (!variable) return false;
+  const collection = collections[variable.variableCollectionId];
+  if (!collection) return false;
+
+  const modeId = pickModeId(collection, preferredMode);
+  const value = variable.valuesByMode[modeId];
+  if (value === undefined) return false;
+
+  if (!isAlias(value)) {
+    // Concrete leaf — the chain terminates here.
+    return true;
+  }
+
+  // Recurse with a cloned visited set so sibling chains don't interact.
+  const nextSeen = new Set(seen);
+  nextSeen.add(headId);
+  return isAliasChainReachable(
+    value.id,
+    variables,
+    collections,
+    pathByVariableId,
+    preferredMode,
+    nextSeen,
+  );
 }
