@@ -122,13 +122,19 @@ program
 // running `deslint --help` sees it. Kept off `--version` deliberately so
 // that scripts that parse version output (`deslint --version | grep 0.3`)
 // continue to work.
+//
+// Callback form so chalk's color detection (including `NO_COLOR`) is
+// evaluated at render time, not module-load time — a wrapper script that
+// sets NO_COLOR after import but before parse still suppresses dim styling.
+// No trailing `\n`: commander's help renderer adds a terminating newline,
+// so an extra one would produce a blank line after the footer.
 program.addHelpText(
   'afterAll',
-  '\n' +
+  () =>
+    '\n' +
     chalk.dim(
       'Local-first · zero telemetry · your code never leaves your machine.',
-    ) +
-    '\n',
+    ),
 );
 
 // ── scan command ─────────────────────────────────────────────────────
