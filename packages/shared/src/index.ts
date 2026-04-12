@@ -24,8 +24,21 @@ export type { GateScanSnapshot, GateResult, GateFailure, GateCategory } from './
 
 export { RULE_EFFORT_MINUTES, DEFAULT_RULE_EFFORT_MINUTES, effortForRule } from './debt-table.js';
 
-export { parseW3CTokens, loadW3CTokensFile, findW3CTokensFile } from './tokens/index.js';
-export type { W3CToken, W3CParseResult } from './tokens/index.js';
+export {
+  parseW3CTokens,
+  loadW3CTokensFile,
+  findW3CTokensFile,
+  figmaVariablesToDTCG,
+} from './tokens/index.js';
+export type {
+  W3CToken,
+  W3CParseResult,
+  FigmaVariablesResponse,
+  FigmaVariable,
+  FigmaVariableCollection,
+  FigmaTransformOptions,
+  FigmaTransformResult,
+} from './tokens/index.js';
 
 export {
   WCAG_CRITERIA,

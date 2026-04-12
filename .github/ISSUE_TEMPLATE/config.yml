@@ -1,0 +1,12 @@
+# Disable free-form "Open a blank issue" so every inbound issue lands on a
+# labeled template. This is what powers the sprint-window triage SLA
+# (first-response <24h). Blank issues bypass labels and waste triage time.
+blank_issues_enabled: false
+
+contact_links:
+  - name: Question or discussion
+    url: https://github.com/jaydrao215/deslint/discussions
+    about: Ask a question, share a usage pattern, or propose a new rule.
+  - name: Security disclosure
+    url: https://github.com/jaydrao215/deslint/security/advisories/new
+    about: Report a vulnerability privately. Do NOT open a public issue.

@@ -5,6 +5,19 @@ import { parseW3CTokens, type W3CParseResult } from './w3c-parser.js';
 export { parseW3CTokens } from './w3c-parser.js';
 export type { W3CToken, W3CParseResult } from './w3c-parser.js';
 
+export { figmaVariablesToDTCG } from './figma.js';
+export type {
+  FigmaVariablesResponse,
+  FigmaVariable,
+  FigmaVariableCollection,
+  FigmaVariableValue,
+  FigmaVariableAlias,
+  FigmaRgbaColor,
+  FigmaTransformOptions,
+  FigmaTransformResult,
+  W3CTokensJson,
+} from './figma.js';
+
 /**
  * Load and parse a W3C DTCG tokens file from disk.
  * Returns undefined if the file does not exist.

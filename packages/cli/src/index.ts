@@ -34,6 +34,7 @@ import {
   isValidTarget,
 } from './generate-config.js';
 import { initWizard } from './init.js';
+import { runImportTokens } from './import-tokens.js';
 import { buildTokenSuggestions, formatSuggestTokens } from './suggest-tokens.js';
 import {
   loadHistory,
@@ -115,6 +116,27 @@ program
   .name('deslint')
   .description('Design quality gate for AI-generated frontend code')
   .version(VERSION);
+
+// Trust footer shown at the end of the help output for the root command
+// and every subcommand (`afterAll`). This is the user-visible reinforcement
+// of the local-first promise — every inbound privacy-conscious developer
+// running `deslint --help` sees it. Kept off `--version` deliberately so
+// that scripts that parse version output (`deslint --version | grep 0.3`)
+// continue to work.
+//
+// Callback form so chalk's color detection (including `NO_COLOR`) is
+// evaluated at render time, not module-load time — a wrapper script that
+// sets NO_COLOR after import but before parse still suppresses dim styling.
+// No trailing `\n`: commander's help renderer adds a terminating newline,
+// so an extra one would produce a blank line after the footer.
+program.addHelpText(
+  'afterAll',
+  () =>
+    '\n' +
+    chalk.dim(
+      'Local-first · zero telemetry · your code never leaves your machine.',
+    ),
+);
 
 // ── scan command ─────────────────────────────────────────────────────
 
@@ -309,6 +331,44 @@ program
       process.exit(1);
     }
   });
+
+// ── import-tokens command ───────────────────────────────────────────
+
+program
+  .command('import-tokens')
+  .description('Import design tokens from a Figma file (read-only Variables API)')
+  .requiredOption('--figma <file-id>', 'Figma file key (from the file URL)')
+  .option('--token <token>', 'Figma personal access token (or set FIGMA_TOKEN env var)')
+  .option('--mode <name>', 'Mode name to read (e.g. "Light", "Dark"). Case-insensitive.')
+  .option('-o, --output <path>', 'Output file path', 'tokens.json')
+  .option('--format <format>', 'Output format: dtcg (W3C tokens) or deslintrc', 'dtcg')
+  .option('--include-hidden', 'Include variables marked hidden-from-publishing')
+  .action(
+    async (opts: {
+      figma: string;
+      token?: string;
+      mode?: string;
+      output: string;
+      format: string;
+      includeHidden?: boolean;
+    }) => {
+      if (opts.format !== 'dtcg' && opts.format !== 'deslintrc') {
+        console.error(
+          chalk.red(`  Invalid --format "${opts.format}". Use: dtcg, deslintrc`),
+        );
+        process.exit(1);
+      }
+      await runImportTokens({
+        figma: opts.figma,
+        token: opts.token,
+        mode: opts.mode,
+        output: opts.output,
+        format: opts.format,
+        includeHidden: opts.includeHidden,
+        cwd: process.cwd(),
+      });
+    },
+  );
 
 // ── init command ────────────────────────────────────────────────────
 

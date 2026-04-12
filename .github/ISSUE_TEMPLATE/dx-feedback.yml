@@ -1,0 +1,36 @@
+name: DX feedback
+description: The product technically works but the developer experience could be better — error messages, output format, config ergonomics, etc.
+title: "[DX] <one-line description>"
+labels: ["dx", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        DX feedback is high-signal. A rough edge that wastes 30 seconds per
+        run compounds fast across a team.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area?
+      options:
+        - CLI output / error messages
+        - Config schema / init flow
+        - Auto-fix behavior
+        - MCP tool responses
+        - GitHub Action PR comments
+        - Documentation / examples
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: What you tried to do and what happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you wish had happened instead
+    validations:
+      required: true
