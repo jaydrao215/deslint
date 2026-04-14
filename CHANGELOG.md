@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.3.1] — 2026-04-15
+
+Correctness release. Fixes two bugs in v0.3.0 (and earlier) that produced
+misleading results on TypeScript projects. **All users on 0.1.x–0.3.0 should
+upgrade.** Older versions have been deprecated on npm.
+
+### Fixed
+
+- **`deslint init` did not configure the TypeScript parser.** Generated flat
+  configs omitted `@typescript-eslint/parser`, so `.ts` / `.tsx` files failed
+  to parse with "keyword 'interface' is reserved" and similar errors on every
+  scan. `init` now injects the parser for TS/TSX overrides and adds
+  `@typescript-eslint/parser` as a dependency where appropriate.
+  (`packages/cli/src/init.ts`)
+- **Design Health Score returned 100/100 when all files failed to parse.**
+  The score calculation counted zero violations as "no problems found" even
+  when the underlying files produced parse errors and were never analyzed.
+  Score now returns an explicit unavailable state when parse failures
+  prevent analysis, and the formatter surfaces this instead of rendering a
+  misleading perfect score. Regression tests added.
+  (`packages/cli/src/lint-runner.ts`, `packages/cli/src/formatters.ts`,
+  `packages/cli/tests/score.test.ts`)
+
+### Deprecated
+
+- `@deslint/cli`, `@deslint/eslint-plugin`, `@deslint/mcp`, and
+  `@deslint/shared` versions `<0.3.1` are deprecated on npm. Both bugs above
+  were present in every prior release, so results from those versions on
+  TypeScript projects should not be trusted.
+
+### Validated
+
+- Full workspace test suite green (~1,280+ tests).
+- End-to-end scan on a real AI-generated Next.js + TypeScript project
+  (`tracklance-freelancer-dashboard`): zero parse errors, 82/100 score,
+  121 real design violations surfaced — previously reported as 100/100.
+
 ## [0.2.0] — 2026-04-09
 
 The Accessibility Foundation release. Adds framework-agnostic infrastructure,

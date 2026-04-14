@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
-import { formatJson, formatSarif } from '../src/formatters.js';
+import { formatJson, formatSarif, formatText } from '../src/formatters.js';
 import type { LintResult, RuleCategory } from '../src/lint-runner.js';
 import type { ScoreResult } from '../src/score.js';
 
@@ -22,6 +22,7 @@ function makeLintResult(overrides: Partial<LintResult> = {}): LintResult {
       consistency: 0,
     },
     filesWithViolations: 0,
+    parseErrors: 0,
     ...overrides,
   };
 }
@@ -187,5 +188,78 @@ describe('formatSarif', () => {
     const output = formatSarif(lintResult, makeScoreResult(), '/project');
     const parsed = JSON.parse(output);
     expect(parsed.runs[0].tool.driver.rules).toHaveLength(2);
+  });
+});
+
+// ── Bug 2 regression: score must be "unavailable" when all violations are parse errors ──
+// When every violation has ruleId === null (parse error), byCategory stays all-zero
+// and calculateScore() returns 100. The formatter must detect this and suppress the
+// bogus score, showing "unavailable" instead.
+
+describe('formatText — parse error score suppression (Bug 2 regression)', () => {
+  // Simulate the exact scenario from the bug: 24 files fail to parse,
+  // 0 design-rule violations, so byCategory is all zeros.
+  function makeAllParseErrorResult(): LintResult {
+    return makeLintResult({
+      totalFiles: 24,
+      totalViolations: 23,
+      bySeverity: { errors: 23, warnings: 0 },
+      filesWithViolations: 23,
+      parseErrors: 23,
+      byRule: { unknown: 23 },
+    });
+  }
+
+  it('renders "unavailable" instead of a numeric score when all violations are parse errors', () => {
+    const lintResult = makeAllParseErrorResult();
+    // calculateScore still returns 100 — that's what the fix must override in the formatter
+    const scoreResult = makeScoreResult({ overall: 100 });
+    const output = formatText(lintResult, scoreResult, '/project');
+
+    expect(output).toContain('unavailable');
+    expect(output).not.toContain('/100');
+  });
+
+  it('does not render category score bars when all violations are parse errors', () => {
+    const lintResult = makeAllParseErrorResult();
+    const scoreResult = makeScoreResult({ overall: 100 });
+    const output = formatText(lintResult, scoreResult, '/project');
+
+    // The category bars render "Colors", "Spacing", etc. — none should appear
+    expect(output).not.toMatch(/Colors\s+█/);
+    expect(output).not.toMatch(/Spacing\s+█/);
+  });
+
+  it('includes the parse error count in the unavailable message', () => {
+    const lintResult = makeAllParseErrorResult();
+    const scoreResult = makeScoreResult({ overall: 100 });
+    const output = formatText(lintResult, scoreResult, '/project');
+
+    expect(output).toContain('23');
+  });
+
+  it('still renders score bars normally when there are no parse errors', () => {
+    const lintResult = makeLintResult({
+      totalFiles: 5,
+      totalViolations: 2,
+      bySeverity: { errors: 2, warnings: 0 },
+      filesWithViolations: 1,
+      parseErrors: 0,
+      byCategory: { colors: 2, spacing: 0, typography: 0, responsive: 0, consistency: 0 },
+    });
+    const scoreResult = makeScoreResult({ overall: 80 });
+    const output = formatText(lintResult, scoreResult, '/project');
+
+    expect(output).toContain('/100');
+    expect(output).not.toContain('unavailable');
+  });
+
+  it('includes parseErrors in JSON output summary', () => {
+    const lintResult = makeAllParseErrorResult();
+    const scoreResult = makeScoreResult({ overall: 100 });
+    const output = formatJson(lintResult, scoreResult, '/project');
+    const parsed = JSON.parse(output);
+
+    expect(parsed.summary.parseErrors).toBe(23);
   });
 });

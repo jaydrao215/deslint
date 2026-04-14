@@ -56,22 +56,32 @@ export function formatText(
   lines.push('');
 
   // ── Score ──
-  const colorFn = scoreColor(scoreResult.overall);
-  lines.push(`  Design Health Score: ${colorFn(chalk.bold(String(scoreResult.overall)))}${chalk.gray('/100')}`);
+  const allViolationsAreParseErrors =
+    lintResult.parseErrors > 0 && lintResult.parseErrors === lintResult.totalViolations;
+
+  if (allViolationsAreParseErrors) {
+    lines.push(`  Design Health Score: ${chalk.red('unavailable')}`);
+    lines.push(chalk.red(`  Fix ${lintResult.parseErrors} parser error${lintResult.parseErrors !== 1 ? 's' : ''} first — no files were analyzed.`));
+  } else {
+    const colorFn = scoreColor(scoreResult.overall);
+    lines.push(`  Design Health Score: ${colorFn(chalk.bold(String(scoreResult.overall)))}${chalk.gray('/100')}`);
+  }
   lines.push('');
 
   // ── Category breakdown ──
-  for (const cat of ['colors', 'spacing', 'typography', 'responsive', 'consistency'] as RuleCategory[]) {
-    const data: CategoryScore = scoreResult.categories[cat];
-    const label = categoryLabel(cat).padEnd(12);
-    const bar = scoreBar(data.score);
-    const scoreStr = String(data.score).padStart(3);
-    const violations = data.violations > 0
-      ? chalk.gray(` (${data.violations} violation${data.violations !== 1 ? 's' : ''})`)
-      : '';
-    lines.push(`  ${label} ${bar} ${scoreStr}${violations}`);
+  if (!allViolationsAreParseErrors) {
+    for (const cat of ['colors', 'spacing', 'typography', 'responsive', 'consistency'] as RuleCategory[]) {
+      const data: CategoryScore = scoreResult.categories[cat];
+      const label = categoryLabel(cat).padEnd(12);
+      const bar = scoreBar(data.score);
+      const scoreStr = String(data.score).padStart(3);
+      const violations = data.violations > 0
+        ? chalk.gray(` (${data.violations} violation${data.violations !== 1 ? 's' : ''})`)
+        : '';
+      lines.push(`  ${label} ${bar} ${scoreStr}${violations}`);
+    }
+    lines.push('');
   }
-  lines.push('');
 
   // ── Summary ──
   lines.push(chalk.gray(`  Files scanned: ${lintResult.totalFiles}`));
@@ -227,6 +237,7 @@ export interface JsonReport {
     totalViolations: number;
     errors: number;
     warnings: number;
+    parseErrors: number;
   };
   debt: {
     totalMinutes: number;
@@ -269,6 +280,7 @@ export function formatJson(
       totalViolations: lintResult.totalViolations,
       errors: lintResult.bySeverity.errors,
       warnings: lintResult.bySeverity.warnings,
+      parseErrors: lintResult.parseErrors,
     },
     debt: {
       totalMinutes: debt.totalMinutes,
