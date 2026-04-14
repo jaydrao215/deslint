@@ -17,6 +17,7 @@ function makeLintResult(overrides: Partial<LintResult> = {}): LintResult {
       consistency: 0,
     },
     filesWithViolations: 0,
+    parseErrors: 0,
     ...overrides,
   };
 }

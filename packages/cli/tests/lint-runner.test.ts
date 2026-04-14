@@ -483,3 +483,63 @@ describe('runLint', () => {
     });
   });
 });
+
+// ── Bug 1 regression: TypeScript files must not produce parse errors ─────────
+// @typescript-eslint/parser must be a real dependency of @deslint/cli (not just
+// available via workspace hoisting) so that published-package users don't see
+// "Parsing error: The keyword 'interface' is reserved" on every .ts/.tsx file.
+
+describe('TypeScript parsing (Bug 1 regression)', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'deslint-ts-'));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('parses a .tsx file with TypeScript interface syntax without parse errors', async () => {
+    const filePath = join(tmpDir, 'Component.tsx');
+    await writeFile(
+      filePath,
+      `interface Props { label: string; count: number; }\n` +
+      `const Component = ({ label, count }: Props) => (\n` +
+      `  <div className="p-4">{label}: {count as string}</div>\n` +
+      `);\n` +
+      `export default Component;\n`,
+    );
+
+    const result = await runLint({ files: [filePath] });
+
+    // No parse errors — every message must have a non-null ruleId
+    const parseErrorMessages = result.results
+      .flatMap((r) => r.messages)
+      .filter((m) => m.ruleId === null);
+
+    expect(parseErrorMessages).toHaveLength(0);
+    expect(result.parseErrors).toBe(0);
+    expect(result.totalFiles).toBe(1);
+  });
+
+  it('parses a .ts file with type annotations and as-cast without parse errors', async () => {
+    const filePath = join(tmpDir, 'util.ts');
+    await writeFile(
+      filePath,
+      `export function greet(name: string): string {\n` +
+      `  const msg = ('hello ' + name) as string;\n` +
+      `  return msg;\n` +
+      `}\n`,
+    );
+
+    const result = await runLint({ files: [filePath] });
+
+    const parseErrorMessages = result.results
+      .flatMap((r) => r.messages)
+      .filter((m) => m.ruleId === null);
+
+    expect(parseErrorMessages).toHaveLength(0);
+    expect(result.parseErrors).toBe(0);
+  });
+});

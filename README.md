@@ -105,7 +105,7 @@ npx deslint fix --interactive
 
 **Auto-fix coverage:** 11 of 33 rules auto-correct in place (the rest report only — adding a responsive breakpoint or naming a design token is a human decision).
 
-**Validation:** tested on a mix of real-world open-source projects (React / Next.js, Vue / Nuxt, Angular, Plain HTML). **0% false positives, 0 crashes.** Every rule wrapped in try/catch.
+**Validation:** tested across React/Next.js, Vue/Nuxt, Angular, and plain HTML codebases. No crashes observed in testing; false-positive rate has been low in the projects we've scanned, but we have not formally quantified it. Every rule is wrapped in try/catch. If you hit a false positive, please [open an issue](https://github.com/jaydrao215/deslint/issues).
 
 ## Design Health Score
 
@@ -129,9 +129,9 @@ npx deslint scan
 | Framework | Parsing | Auto-fix | Validated |
 |-----------|:-------:|:--------:|:---------:|
 | React / Next.js | Yes | Yes | Yes (multiple projects) |
-| Vue / Nuxt | Yes | Yes | Yes (Elk) |
+| Vue / Nuxt | Yes | Yes | Yes |
 | Svelte | Yes | Yes | Parser ready |
-| Angular | Yes | Partial\* | Yes (Vintor) |
+| Angular | Yes | Partial\* | Yes |
 | Plain HTML | Yes | Yes\*\* | Yes (via `@html-eslint/parser`) |
 
 \* Angular template parser nodes lack `range` — violations reported but auto-fix skipped on those rules.
@@ -208,7 +208,7 @@ Budget: < 15 seconds for 500 files. Actual: **25x under budget**.
 # Prerequisites: Node.js >=20.19.0, pnpm >=9
 pnpm install
 pnpm build
-pnpm test        # 1,362 tests
+pnpm test        # ~1,200+ tests across the workspace
 pnpm lint
 pnpm typecheck
 ```

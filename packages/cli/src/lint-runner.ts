@@ -73,6 +73,8 @@ export interface LintResult {
   byCategory: Record<RuleCategory, number>;
   /** Files with violations */
   filesWithViolations: number;
+  /** Number of files that failed to parse (ruleId === null messages) */
+  parseErrors: number;
 }
 
 export interface LintRunnerOptions {
@@ -317,6 +319,7 @@ function aggregateResults(results: LintFileResult[]): LintResult {
   let errors = 0;
   let warnings = 0;
   let filesWithViolations = 0;
+  let parseErrors = 0;
   const byRule: Record<string, number> = {};
   const byCategory: Record<RuleCategory, number> = {
     colors: 0,
@@ -346,13 +349,18 @@ function aggregateResults(results: LintFileResult[]): LintResult {
         warnings++;
       }
 
+      if (msg.ruleId === null) {
+        // Parse error — counted in totals but not mapped to a design category
+        parseErrors++;
+      } else {
+        const category = RULE_CATEGORY_MAP[msg.ruleId];
+        if (category) {
+          byCategory[category]++;
+        }
+      }
+
       const ruleId = msg.ruleId ?? 'unknown';
       byRule[ruleId] = (byRule[ruleId] ?? 0) + 1;
-
-      const category = RULE_CATEGORY_MAP[ruleId];
-      if (category) {
-        byCategory[category]++;
-      }
     }
   }
 
@@ -372,5 +380,6 @@ function aggregateResults(results: LintFileResult[]): LintResult {
     byRule,
     byCategory,
     filesWithViolations,
+    parseErrors,
   };
 }

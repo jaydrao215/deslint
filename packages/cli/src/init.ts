@@ -294,9 +294,26 @@ export async function initWizard(options: InitOptions): Promise<void> {
       writeFileSync(eslintConfigPath, generateEslintConfig(frameworkLabel));
       prompts.log.success(`Updated ${chalk.cyan('eslint.config.js')}`);
     } else {
-      prompts.log.warn(
-        `Skipped eslint.config.js — add ${chalk.cyan("import deslint from '@deslint/eslint-plugin'")} manually.`,
-      );
+      const isTypeScript = existsSync(resolve(cwd, 'tsconfig.json'));
+      if (isTypeScript) {
+        prompts.log.warn(
+          `Skipped eslint.config.js — your existing config will be used by other tools, but ${chalk.bold('deslint scan')} runs its own parser config independently.\n` +
+          `  Your project has TypeScript (${chalk.cyan('tsconfig.json')} detected). Add this block to your ${chalk.cyan('eslint.config.js')} so the ESLint extension and ${chalk.cyan('npx eslint')} also parse .ts/.tsx correctly:\n\n` +
+          chalk.dim(
+            `  import deslint from '@deslint/eslint-plugin';\n` +
+            `  import tsParser from '@typescript-eslint/parser';\n\n` +
+            `  export default [\n` +
+            `    { files: ['**/*.ts', '**/*.tsx'], languageOptions: { parser: tsParser, parserOptions: { ecmaFeatures: { jsx: true } } } },\n` +
+            `    deslint.configs.recommended,\n` +
+            `    { ignores: ['dist/**', 'node_modules/**'] },\n` +
+            `  ];`,
+          ),
+        );
+      } else {
+        prompts.log.warn(
+          `Skipped eslint.config.js — add ${chalk.cyan("import deslint from '@deslint/eslint-plugin'")} and spread ${chalk.cyan('deslint.configs.recommended')} into your config manually.`,
+        );
+      }
     }
   } else {
     writeFileSync(eslintConfigPath, generateEslintConfig(frameworkLabel));
