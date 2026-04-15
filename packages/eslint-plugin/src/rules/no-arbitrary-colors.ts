@@ -75,54 +75,84 @@ export default createRule<Options, MessageIds>({
     const allowCssVariables = options.allowCssVariables ?? true;
 
     /**
-     * Find best replacement — custom tokens first, then Tailwind defaults.
+     * Resolve a hex to an EXACT token from `customTokens`. Returns null if
+     * the author hasn't declared a token for this specific value — we do NOT
+     * fall back to a nearest-colour guess here because rewriting
+     * `bg-[#1A5276]` (a brand blue) to `bg-slate-700` silently changes the
+     * design: the rewritten colour is visually different and breaks brand
+     * consistency. Nearest-colour matches are only used as SUGGESTIONS
+     * (see `findHexSuggestion`).
      */
-    function findHexReplacement(hexValue: string, utilityPrefix: string): string | null {
+    function findExactHexToken(hexValue: string, utilityPrefix: string): string | null {
       for (const [name, value] of Object.entries(customTokens)) {
         if (value.toLowerCase() === hexValue.toLowerCase()) {
           return `${utilityPrefix}-${name}`;
         }
       }
+      return null;
+    }
+
+    /**
+     * Nearest-colour suggestion for hex/rgb/hsl. Used for the suggestion
+     * path only — never as a top-level autofix — because euclidean RGB
+     * distance has no opinion about brand identity.
+     */
+    function findHexSuggestion(hexValue: string, utilityPrefix: string): string | null {
       return findNearestColor(hexValue, `${utilityPrefix}-[${hexValue}]`);
     }
 
-    function findRgbReplacement(rgb: [number, number, number], utilityPrefix: string): string | null {
+    function findRgbSuggestion(rgb: [number, number, number], utilityPrefix: string): string | null {
       return findNearestColorByRgb(rgb, `${utilityPrefix}-[rgb]`);
     }
 
+    /**
+     * Emit the violation. Invariant: `exactReplacement` (when non-null) is
+     * a safe token-for-token substitution authored by the user via
+     * `customTokens`; `nearestSuggestion` is a heuristic guess that MUST
+     * NOT be written by `--fix`, only offered as a suggestion.
+     */
     function reportViolation(
       node: TSESTree.Node,
       cls: string,
-      fullReplacement: string | null,
+      exactReplacement: string | null,
+      nearestSuggestion: string | null,
     ) {
-      const suggestion = fullReplacement ? ` Suggested: \`${fullReplacement}\`` : '';
+      // Prefer the exact token for the message preview when we have one.
+      const preview = exactReplacement ?? nearestSuggestion;
+      const suggestion = preview ? ` Suggested: \`${preview}\`` : '';
+
+      const makeFix = (replacement: string) => (fixer: Parameters<NonNullable<Parameters<typeof context.report>[0]['fix']>>[0]) => {
+        const src = safeGetText(context.sourceCode, node);
+        const range = safeGetRange(context.sourceCode, node);
+        if (!src || !range) return null;
+        return fixer.replaceTextRange(range, src.replace(cls, replacement));
+      };
+
+      // When the user has declared an exact token for this hex, that is THE
+      // answer — don't also offer a nearest-colour alternative that would
+      // override their own token (confusing + contradicts their config).
+      type SuggestionArr = NonNullable<Parameters<typeof context.report>[0]['suggest']>;
+      const suggestions: SuggestionArr = [];
+      if (exactReplacement) {
+        (suggestions as Array<SuggestionArr[number]>).push({
+          messageId: 'suggestToken',
+          data: { replacement: exactReplacement },
+          fix: makeFix(exactReplacement),
+        });
+      } else if (nearestSuggestion) {
+        (suggestions as Array<SuggestionArr[number]>).push({
+          messageId: 'suggestToken',
+          data: { replacement: nearestSuggestion },
+          fix: makeFix(nearestSuggestion),
+        });
+      }
 
       context.report({
         node,
         messageId: 'arbitraryColor',
         data: { className: cls, suggestion },
-        ...(fullReplacement
-          ? {
-              fix(fixer) {
-                const src = safeGetText(context.sourceCode, node);
-                const range = safeGetRange(context.sourceCode, node);
-                if (!src || !range) return null;
-                return fixer.replaceTextRange(range, src.replace(cls, fullReplacement));
-              },
-              suggest: [
-                {
-                  messageId: 'suggestToken',
-                  data: { replacement: fullReplacement },
-                  fix(fixer) {
-                    const src = safeGetText(context.sourceCode, node);
-                    const range = safeGetRange(context.sourceCode, node);
-                    if (!src || !range) return null;
-                    return fixer.replaceTextRange(range, src.replace(cls, fullReplacement));
-                  },
-                },
-              ],
-            }
-          : {}),
+        ...(exactReplacement ? { fix: makeFix(exactReplacement) } : {}),
+        ...(suggestions && suggestions.length > 0 ? { suggest: suggestions } : {}),
       });
     }
 
@@ -138,6 +168,10 @@ export default createRule<Options, MessageIds>({
 
           const { baseClass, variants } = parseClass(cls);
 
+          // Helper: apply the variants prefix to a bare utility.
+          const withVariants = (bare: string | null) =>
+            bare ? [...variants, bare].join(':') : null;
+
           // ── Hex colors: bg-[#FF0000] ──
           const hexMatch = baseClass.match(ARBITRARY_PATTERNS.color);
           if (hexMatch) {
@@ -149,11 +183,9 @@ export default createRule<Options, MessageIds>({
               const prefixMatch = baseClass.match(/^([\w-]+?)-\[/);
               if (!prefixMatch) continue;
 
-              const replacement = findHexReplacement(hexValue, prefixMatch[1]);
-              const fullReplacement = replacement
-                ? [...variants, replacement].join(':')
-                : null;
-              reportViolation(node, cls, fullReplacement);
+              const exact = withVariants(findExactHexToken(hexValue, prefixMatch[1]));
+              const nearest = withVariants(findHexSuggestion(hexValue, prefixMatch[1]));
+              reportViolation(node, cls, exact, nearest);
               continue;
             }
           }
@@ -163,11 +195,11 @@ export default createRule<Options, MessageIds>({
           if (rgbMatch) {
             const rgb = parseRgbString(rgbMatch[2]);
             if (rgb) {
-              const replacement = findRgbReplacement(rgb, rgbMatch[1]);
-              const fullReplacement = replacement
-                ? [...variants, replacement].join(':')
-                : null;
-              reportViolation(node, cls, fullReplacement);
+              // RGB values have no customTokens lookup path (tokens are hex
+              // in the config schema), so there is no "exact" replacement —
+              // only a nearest-colour suggestion.
+              const nearest = withVariants(findRgbSuggestion(rgb, rgbMatch[1]));
+              reportViolation(node, cls, null, nearest);
               continue;
             }
           }
@@ -177,11 +209,8 @@ export default createRule<Options, MessageIds>({
           if (hslMatch) {
             const rgb = parseHslString(hslMatch[2]);
             if (rgb) {
-              const replacement = findRgbReplacement(rgb, hslMatch[1]);
-              const fullReplacement = replacement
-                ? [...variants, replacement].join(':')
-                : null;
-              reportViolation(node, cls, fullReplacement);
+              const nearest = withVariants(findRgbSuggestion(rgb, hslMatch[1]));
+              reportViolation(node, cls, null, nearest);
               continue;
             }
           }
