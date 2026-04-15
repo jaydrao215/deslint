@@ -18,6 +18,7 @@
     "@deslint/eslint-plugin": "workspace:*",
     "@deslint/shared": "workspace:*",
     "eslint": "^9.27.0",
+    "glob": "^13.0.6",
     "minimatch": "^10.0.1"
   },
   "devDependencies": {

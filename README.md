@@ -16,7 +16,7 @@ Deslint is the design quality gate for AI-generated frontend code. It catches sp
 
 ```bash
 # Install
-npm install -D @deslint/eslint-plugin
+npm install -D @deslint/eslint-plugin @deslint/cli
 
 # Set up config, scripts, and design system
 npx deslint init
@@ -36,12 +36,33 @@ export default [
 # Scan your project
 npx deslint scan
 
+# Scan only what changed since your base branch
+npx deslint scan --diff origin/main
+
+# Enforce an error budget
+npx deslint scan --budget .deslint/budget.json
+
 # Auto-fix violations
 npx deslint fix --all
 
 # Interactive fix (review each change)
 npx deslint fix --interactive
+
+# Emit a reproducible attestation artifact
+npx deslint attest --stdout
 ```
+
+`deslint scan` in text mode also writes `.deslint/report.html` for a
+shareable local report.
+
+## v0.6 Highlights
+
+- Error budgets for CLI and MCP via `scan --budget` and `enforce_budget`
+- Diff-only scans via `scan --diff <ref>`
+- Reproducible attestations and `Deslint-Compliance` trailer helpers
+- GitHub Action trailer verification with optional `strict-trailer`
+- Expanded MCP surface for compliance, rule metadata, prioritization, and
+  budget vetoes
 
 ## Rules (33)
 
@@ -115,8 +136,10 @@ Deslint computes a 0-100 Design Health Score across categories:
 - **Typography** — adherence to type scale
 - **Colors** — design token usage vs. hardcoded values
 - **Responsiveness** — breakpoint coverage
-- **Accessibility** — contrast ratios, alt text, interactive states
 - **Consistency** — border-radius, z-index, component spacing
+
+Accessibility-focused rules feed into these score buckets rather than
+living in a separate score category.
 
 ```bash
 npx deslint scan
@@ -143,9 +166,9 @@ npx deslint scan
 | Package | Description |
 |---------|-------------|
 | [`@deslint/eslint-plugin`](./packages/eslint-plugin) | ESLint rules for design quality |
-| [`@deslint/cli`](./packages/cli) | CLI with scan, fix, init, Design Health Score |
-| [`@deslint/mcp`](./packages/mcp) | MCP server for Cursor / Claude Code AI self-correction |
-| [`@deslint/shared`](./packages/shared) | Shared types, config schema, Tailwind utilities |
+| [`@deslint/cli`](./packages/cli) | CLI with scan, fix, diff scoping, budgets, reports, and attestations |
+| [`@deslint/mcp`](./packages/mcp) | MCP server for Cursor / Claude Code AI self-correction and budget enforcement |
+| [`@deslint/shared`](./packages/shared) | Shared config, budget, compliance, trailer, and token utilities |
 | [`@deslint/action`](./action) | GitHub Action for PR design reviews |
 
 ## MCP Server (AI Self-Correction)
@@ -161,6 +184,10 @@ npx deslint-mcp install
 - `analyze_file` — lint a single file, get violations + score
 - `analyze_project` — scan entire project, get score + top violations
 - `analyze_and_fix` — analyze and auto-fix in one step
+- `compliance_check` — evaluate WCAG 2.2 / WCAG 2.1 AA coverage
+- `get_rule_details` — get rule metadata, docs URL, effort, and WCAG mapping
+- `suggest_fix_strategy` — prioritize fixes by impact and effort
+- `enforce_budget` — veto completion when the repo is over budget
 
 ## GitHub Action
 
@@ -187,9 +214,12 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           min-score: 80
+          strict-trailer: true
 ```
 
 Posts a Design Health Score summary comment on every PR with a category breakdown, and drops inline review comments on the changed lines that introduced violations. Re-runs update the existing comment instead of spamming new ones.
+When `strict-trailer` is enabled, the Action also verifies the head
+commit's `Deslint-Compliance:` trailer against a server-side re-scan.
 
 ## Performance
 

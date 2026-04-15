@@ -1,17 +1,11 @@
-/**
- * Deslint GitHub Action: PR Design Review
- *
- * Runs deslint scan on changed files in a PR and posts a comment
- * with the Design Health Score, violations, and suggestions.
- */
-
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { evaluateQualityGate, formatGateResult } from '@deslint/shared';
 import { getChangedFiles } from './changed-files.js';
-import { runScan } from './scan.js';
+import { runProjectScan, runScan } from './scan.js';
 import { formatComment } from './comment.js';
 import { postInlineReview } from './review.js';
+import { verifyTrailer, formatTrailerSection } from './trailer.js';
 
 const COMMENT_MARKER = '<!-- deslint-design-review -->';
 
@@ -29,9 +23,8 @@ async function run(): Promise<void> {
     const octokit = github.getOctokit(token);
     const { context } = github;
 
-    // This action only works on pull_request events
     if (!context.payload.pull_request) {
-      core.info('Not a pull request event — skipping Deslint design review.');
+      core.info('Not a pull request event \u2014 skipping Deslint design review.');
       return;
     }
 
@@ -39,7 +32,6 @@ async function run(): Promise<void> {
     const owner = context.repo.owner;
     const repo = context.repo.repo;
 
-    // 1. Get changed files in the PR
     core.info('Fetching changed files...');
     const changedFiles = await getChangedFiles(octokit, owner, repo, prNumber, filePatterns);
 
@@ -54,10 +46,8 @@ async function run(): Promise<void> {
 
     core.info(`Scanning ${changedFiles.length} changed file(s)...`);
 
-    // 2. Run deslint scan
     const result = await runScan(changedFiles, workingDirectory, configPath);
 
-    // 3. Evaluate quality gate (opt-in via .deslintrc.json `qualityGate`).
     const gateResult = evaluateQualityGate(result.qualityGate, {
       overall: result.score,
       categories: {
@@ -75,11 +65,39 @@ async function run(): Promise<void> {
       core.info(formatGateResult(gateResult));
     }
 
-    // 4. Format and post summary comment
-    const commentBody = formatComment(result, minScore, gateResult);
+    // Trailer verification: agent's claim vs Action's re-scan. Always runs so
+    // a lying trailer is surfaced regardless of strict-trailer.
+    const strictTrailer = core.getInput('strict-trailer') === 'true';
+    let trailerSection = '';
+    let trailerVerified = false;
+    let trailerStatus: string = 'skipped';
+    try {
+      const headSha = context.payload.pull_request.head.sha;
+      const { data: headCommit } = await octokit.rest.repos.getCommit({
+        owner,
+        repo,
+        ref: headSha,
+      });
+      const commitMessage = headCommit.commit.message ?? '';
+      const projectScan = await runProjectScan(workingDirectory, configPath);
+      const verification = verifyTrailer({
+        commitMessage,
+        rules: projectScan.userRules,
+        score: projectScan.score,
+        fileCount: projectScan.filesScanned,
+      });
+      trailerSection = formatTrailerSection(verification);
+      trailerVerified = verification.status === 'verified';
+      trailerStatus = verification.status;
+      core.info(`Trailer verification: ${verification.status} \u2014 ${verification.message}`);
+    } catch (trailerErr) {
+      const msg = trailerErr instanceof Error ? trailerErr.message : String(trailerErr);
+      core.warning(`Trailer verification could not run: ${msg}`);
+    }
+
+    const commentBody = formatComment(result, minScore, gateResult) + trailerSection;
     await upsertComment(octokit, owner, repo, prNumber, commentBody);
 
-    // 4b. Post inline review comments on changed lines
     const inlineReview = core.getInput('inline-review') !== 'false';
     const maxInlineComments = parseInt(core.getInput('max-inline-comments') || '25', 10);
     if (inlineReview && result.inlineViolations.length > 0) {
@@ -94,14 +112,14 @@ async function run(): Promise<void> {
       );
     }
 
-    // 5. Set outputs
     core.setOutput('score', String(result.score));
     core.setOutput('total-violations', String(result.totalViolations));
     core.setOutput('debt-minutes', String(result.debtMinutes));
     core.setOutput('quality-gate-passed', String(gateResult.passed));
+    core.setOutput('trailer-verified', String(trailerVerified));
+    core.setOutput('trailer-status', trailerStatus);
     core.setOutput('passed', String(result.score >= minScore && gateResult.passed));
 
-    // 6. Fail check if below `min-score` input threshold (legacy behavior).
     if (minScore > 0 && result.score < minScore) {
       core.setFailed(
         `Design Health Score ${result.score} is below the minimum threshold of ${minScore}.`,
@@ -109,10 +127,17 @@ async function run(): Promise<void> {
       return;
     }
 
-    // 7. Fail check if quality gate is enforced AND failed (opt-in).
     if (gateResult.enforced && !gateResult.passed) {
       core.setFailed(
         `Quality gate failed: ${gateResult.failures.map((f) => f.condition).join(', ')}`,
+      );
+    }
+
+    if (strictTrailer && !trailerVerified) {
+      core.setFailed(
+        `Trailer verification failed (status: ${trailerStatus}). ` +
+          `Re-run compliance_check / enforce_budget and commit with an ` +
+          `up-to-date \`Deslint-Compliance:\` trailer.`,
       );
     }
   } catch (error) {
@@ -121,10 +146,6 @@ async function run(): Promise<void> {
   }
 }
 
-/**
- * Find and update existing Deslint comment, or create a new one.
- * Prevents duplicate comments on subsequent pushes.
- */
 async function upsertComment(
   octokit: ReturnType<typeof github.getOctokit>,
   owner: string,
@@ -134,7 +155,6 @@ async function upsertComment(
 ): Promise<void> {
   const fullBody = `${COMMENT_MARKER}\n${body}`;
 
-  // Search for existing comment
   const { data: comments } = await octokit.rest.issues.listComments({
     owner,
     repo,
@@ -142,9 +162,7 @@ async function upsertComment(
     per_page: 100,
   });
 
-  const existing = comments.find(
-    (c) => c.body?.includes(COMMENT_MARKER),
-  );
+  const existing = comments.find((c) => c.body?.includes(COMMENT_MARKER));
 
   if (existing) {
     core.info('Updating existing Deslint comment...');

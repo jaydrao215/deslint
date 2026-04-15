@@ -11,7 +11,6 @@ describe('@deslint/cli exports', () => {
   });
 
   it('VERSION is a valid semver string', () => {
-    // semver format: major.minor.patch with optional pre-release
     const semverRegex = /^\d+\.\d+\.\d+(-[\w.]+)?(\+[\w.]+)?$/;
     expect(VERSION).toMatch(semverRegex);
   });
@@ -27,25 +26,15 @@ describe('CLI commands', () => {
     return program.commands.map((c) => c.name());
   }
 
-  it('has scan command', () => {
-    expect(commandNames()).toContain('scan');
-  });
-
-  it('has fix command', () => {
-    expect(commandNames()).toContain('fix');
-  });
-
-  it('has generate-config command', () => {
-    expect(commandNames()).toContain('generate-config');
-  });
-
-  it('has init command', () => {
-    expect(commandNames()).toContain('init');
-  });
+  it('has scan command', () => { expect(commandNames()).toContain('scan'); });
+  it('has fix command', () => { expect(commandNames()).toContain('fix'); });
+  it('has generate-config command', () => { expect(commandNames()).toContain('generate-config'); });
+  it('has init command', () => { expect(commandNames()).toContain('init'); });
 
   it('has exactly the expected set of commands', () => {
     const names = commandNames().sort();
     expect(names).toEqual([
+      'attest',
       'compliance',
       'fix',
       'generate-config',
@@ -61,18 +50,14 @@ describe('CLI commands', () => {
   it('scan command accepts format option', () => {
     const scanCmd = program.commands.find((c) => c.name() === 'scan');
     expect(scanCmd).toBeDefined();
-    const formatOpt = scanCmd!.options.find(
-      (o) => o.long === '--format',
-    );
+    const formatOpt = scanCmd!.options.find((o) => o.long === '--format');
     expect(formatOpt).toBeDefined();
   });
 
   it('scan command accepts min-score option', () => {
     const scanCmd = program.commands.find((c) => c.name() === 'scan');
     expect(scanCmd).toBeDefined();
-    const minScoreOpt = scanCmd!.options.find(
-      (o) => o.long === '--min-score',
-    );
+    const minScoreOpt = scanCmd!.options.find((o) => o.long === '--min-score');
     expect(minScoreOpt).toBeDefined();
   });
 

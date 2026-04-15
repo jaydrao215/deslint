@@ -1,464 +1,83 @@
 # Changelog
 
-## [0.5.0] — 2026-04-15
+All notable changes to this project are documented in this file.
 
-**MCP-first release.** Brings the `@deslint/mcp` server in line with the
-current Anthropic MCP spec (2025-06-18), making Deslint a first-class
-self-correction surface for Claude Code, Cursor, and Claude Desktop. The
-core ESLint plugin and CLI are unchanged at the rule level — every existing
-0.4.x project keeps the same lint output — so this is a safe, additive
-upgrade for everyone, and the headline win for AI-assisted workflows.
-
-### `@deslint/mcp`
-
-- **MCP 2025-06-18 spec compliance.** Server now uses the modern
-  `registerTool` API, advertises capabilities correctly, and returns typed
-  `structuredContent` alongside the human-readable text block so agents
-  can parse results without scraping stringified JSON.
-  (`packages/mcp/src/server.ts`)
-- **Tool annotations on every tool.** Each tool declares `readOnlyHint`,
-  `destructiveHint`, `idempotentHint`, and `openWorldHint`, so MCP clients
-  can surface accurate consent prompts and skip redundant approvals for
-  read-only operations. (`packages/mcp/src/tools.ts`)
-- **`server.json` manifest** for MCP Registry submission. Lets the package
-  be discovered and installed via the official MCP Registry under the
-  reverse-DNS identifier `io.github.jaydrao215/deslint`.
-  (`packages/mcp/server.json`)
-- **Hardened path handling.** Path-traversal containment now uses
-  `path.relative` instead of separator-string prefix matching, so it
-  behaves correctly across macOS, Linux, and Windows.
-  (`packages/mcp/src/server.ts`)
-- **Resource caps.** Files > 10 MB are rejected; `analyze_project`,
-  `compliance_check`, and `suggest_fix_strategy` clamp `maxFiles` to ≤ 5000
-  per request. Prevents accidental memory exhaustion in large monorepos.
-
-### Documentation & marketing
-
-- **Landing reframe** around the AI-coding wedge. Hero is now "AI writes
-  fast. Deslint keeps it clean.", subhead and proof chips emphasise the
-  deterministic-check-in-the-agent-loop posture, and a new MCP loop section
-  surfaces the self-correction story above the ESLint/CLI/Action lineup.
-  (`apps/docs/src/components/{Hero,McpLoopSection,ProductShowcase}.tsx`)
-- **Demo GIFs on every published README.** `@deslint/mcp`,
-  `@deslint/cli`, and `@deslint/eslint-plugin` now show the product in
-  motion at the top of their npm listing, served from the deslint.com CDN
-  to keep tarball sizes flat.
-  (`apps/docs/public/demo/{mcp-loop,cli-demo,vscode-squiggle}.gif`)
-- **Pricing reframe.** Teams tier drops the misleading "Figma sync"
-  marketing claim (the real Figma Variables → DTCG transform remains shipped
-  in the free OSS CLI) and leads with the AI-PR design-debt dashboard wedge.
-  Enterprise tier shifts from "Custom" to "From $10k / year · 20+ seats" so
-  the page filters self-disqualifying conversations earlier.
-  (`apps/docs/src/app/pricing/page.tsx`)
-
-### `@deslint/eslint-plugin`, `@deslint/cli`, `@deslint/shared`
-
-No rule-level changes. Versions bump in lockstep with `@deslint/mcp` per
-the changeset `linked` config so the four packages always publish as a
-matched set.
-
-### Verification
-
-- 1,480 tests passing (shared 125 · plugin 1,140 · cli 173 · mcp 25 ·
-  action 17), zero regressions vs 0.4.0.
-- End-to-end smoke against the compiled binaries on a dirty React sample:
-  `deslint scan` correctly scored 40/100 with 8 violations; `deslint fix
-  --all` applied 6 autofixes (`p-[7px]→p-1.5`, `mt-[19px]→mt-5`,
-  `loading="lazy"` on `<img>`) and refused the 10 fixes that need human
-  judgement.
-- `node packages/mcp/demo/self-correction-loop.mjs` exercised the real
-  stdio JSON-RPC path: `initialize` → `tools/list` (6 tools) → `analyze_file`
-  (4 violations + autofix suggestions) → `analyze_and_fix` (corrected file
-  returned, 2 fixed / 2 flagged for review).
-
-## [0.4.0] — 2026-04-15
-
-**Autofix that preserves your design.** A batch of 13 fixes that turn every
-silent-rewrite autofix in 0.3 into an opt-in suggestion with reasoning.
-Your design is preserved by default; riskier transforms are now explicit.
-
-**All users on 0.3.x should upgrade.** None of the previous autofix
-behaviours are gone — they're all still available, but behind
-per-rule opt-in flags. If you were relying on `--fix` rewriting
-everything silently, see *Behaviour changes* below.
-
-### CLI fixes
-
-- **Multi-fix passes no longer corrupt files.** `fixAll` /
-  `fixInteractive` now apply multiple autofixes via a byte-exact replay
-  against the original source, instead of re-parsing partially-fixed
-  output. Fixes cases where a second fix would see a mangled token
-  stream from the first and silently drop its edit.
-  (`packages/cli/src/fix-apply.ts`)
-- **`cwd` is forwarded through `fixAll` / `fixInteractive`.** ESLint
-  resolves config files relative to `cwd`, so running `deslint fix` from
-  a subdirectory now uses the right config. (`packages/cli/src/fix.ts`)
-- **Monorepo leaf support.** `.deslintrc.json` is now found by walking
-  upward from the target file, not just from `process.cwd()`. Leaf
-  apps in a pnpm/turborepo workspace no longer require a local config
-  copy. (`packages/cli/src/config-loader.ts`)
-- **`deslint init` merges into existing `eslint.config.js`** instead of
-  overwriting, and no longer auto-adds `deslint:fix` to `package.json`
-  scripts (opt-in via `--with-scripts`). (`packages/cli/src/init.ts`)
-
-### Rule fixes (autofix safety)
-
-Every rule below previously rewrote code on `--fix`. In 0.4, the
-rewrites still exist — but as *suggestions*, not silent autofixes —
-except where the fix is guaranteed safe (exact token matches, explicit
-opt-in, etc.).
-
-- **`dark-mode-coverage`** — autofix is opt-in. The rule used to rewrite
-  `bg-white` / `text-slate-900` across every file on `--fix`, shipping
-  light-themed apps as dark ones. Now suggest-only by default; opt in
-  with `{ autofix: true }` when your dark-mode token mapping is
-  complete. (`packages/eslint-plugin/src/rules/dark-mode-coverage.ts`)
-- **`no-arbitrary-zindex`** — portal values are allowlisted. `z-[999]`,
-  `z-[1000]`, `z-[9999]` no longer get clamped to `z-50`, so modals,
-  toasts, and dropdowns stay above sticky headers. Allowlist is
-  configurable via `exemptValues`.
-  (`packages/eslint-plugin/src/rules/no-arbitrary-zindex.ts`)
-- **`no-arbitrary-colors`** — only autofixes *exact* `customTokens`
-  matches. When a user has declared a token for a specific hex, we use
-  it; when they haven't, we emit a suggestion with the nearest match
-  instead of silently rewriting. Eliminates "why did my brand red turn
-  into `bg-red-500`?" regressions.
-  (`packages/eslint-plugin/src/rules/no-arbitrary-colors.ts`)
-- **`prefers-reduced-motion`** — `animate-spin` and `animate-ping` are
-  exempt by default. Their motion IS the loading signal; wrapping them
-  in `motion-safe:` leaves reduced-motion users looking at a static
-  circle. Exempt list is configurable via `exemptClasses`.
-  (`packages/eslint-plugin/src/rules/prefers-reduced-motion.ts`)
-- **`icon-accessibility`** — autofix is opt-in. Guessed `aria-label`
-  values were frequently wrong (e.g. "close" for a kebab menu) and
-  misled screen reader users. The rule still reports missing labels;
-  the fix is suggest-only unless `{ autofix: true }` is set with an
-  `iconLabels` map.
-  (`packages/eslint-plugin/src/rules/icon-accessibility.ts`)
-- **`lang-attribute`** — only autofixes when `defaultLang` is
-  configured. Previously stamped `lang="en"` on every `<html>` without
-  asking, which broke sites in other languages and tripped
-  WCAG 3.1.1 audits.
-  (`packages/eslint-plugin/src/rules/lang-attribute.ts`)
-- **`responsive-image-optimization`** — priority-aware. `<img loading>`
-  is no longer auto-set to `"lazy"` on images inside the first viewport
-  or marked `priority`/`fetchPriority="high"`. LCP hero images stay
-  eagerly loaded. (`packages/eslint-plugin/src/rules/responsive-image-optimization.ts`)
-- **`focus-trap-patterns`** — component allowlist for headless UI kits.
-  Radix `<Dialog>`, Headless UI `<Dialog>`, and shadcn/ui `<Sheet>` are
-  no longer flagged as missing focus traps — they implement focus
-  trapping themselves. Configurable via `trustedComponents`.
-  (`packages/eslint-plugin/src/rules/focus-trap-patterns.ts`)
-
-### Config schema
-
-- **`ProfileSchema` is now strict.** Unknown keys in `.deslintrc.json`
-  are rejected with a clear error instead of silently ignored, catching
-  typos like `severity` vs `severities` at load time.
-  (`packages/shared/src/config-schema.ts`)
-
-### Behaviour changes
-
-If you were relying on any of these autofix rewrites, add the opt-in flag
-to the rule's options in your `eslint.config.js`:
-
-```js
-// Before (0.3): silent rewrite on --fix
-// After (0.4): suggest-only, explicit opt-in
-'@deslint/dark-mode-coverage': ['error', { autofix: true }],
-'@deslint/icon-accessibility': ['error', { autofix: true, iconLabels: { /* ... */ } }],
-'@deslint/lang-attribute': ['error', { defaultLang: 'en' }],
-```
-
-### Validated
-
-- Full workspace test suite green (1,480+ tests across 5 packages).
-- Typecheck clean across all packages.
-- Action bundle verified in CI (PR #28).
-
-## [0.3.1] — 2026-04-15
-
-Correctness release. Fixes two bugs in v0.3.0 (and earlier) that produced
-misleading results on TypeScript projects. **All users on 0.1.x–0.3.0 should
-upgrade.** Older versions have been deprecated on npm.
-
-### Fixed
-
-- **`deslint init` did not configure the TypeScript parser.** Generated flat
-  configs omitted `@typescript-eslint/parser`, so `.ts` / `.tsx` files failed
-  to parse with "keyword 'interface' is reserved" and similar errors on every
-  scan. `init` now injects the parser for TS/TSX overrides and adds
-  `@typescript-eslint/parser` as a dependency where appropriate.
-  (`packages/cli/src/init.ts`)
-- **Design Health Score returned 100/100 when all files failed to parse.**
-  The score calculation counted zero violations as "no problems found" even
-  when the underlying files produced parse errors and were never analyzed.
-  Score now returns an explicit unavailable state when parse failures
-  prevent analysis, and the formatter surfaces this instead of rendering a
-  misleading perfect score. Regression tests added.
-  (`packages/cli/src/lint-runner.ts`, `packages/cli/src/formatters.ts`,
-  `packages/cli/tests/score.test.ts`)
-
-### Deprecated
-
-- `@deslint/cli`, `@deslint/eslint-plugin`, `@deslint/mcp`, and
-  `@deslint/shared` versions `<0.3.1` are deprecated on npm. Both bugs above
-  were present in every prior release, so results from those versions on
-  TypeScript projects should not be trusted.
-
-### Validated
-
-- Full workspace test suite green (~1,280+ tests).
-- End-to-end scan on a real AI-generated Next.js + TypeScript project
-  (`tracklance-freelancer-dashboard`): zero parse errors, 82/100 score,
-  121 real design violations surfaced — previously reported as 100/100.
-
-## [0.2.0] — 2026-04-09
-
-The Accessibility Foundation release. Adds framework-agnostic infrastructure,
-6 new WCAG-mapped a11y rules, plain HTML parser support, a widened WCAG 2.2 +
-2.1 compliance evaluator, and a productionized MCP self-correction loop. Every
-shipping rule now works across React, Vue, Svelte, Angular, and plain HTML.
+## [Unreleased]
 
 ### Added
 
-- **6 new WCAG-mapped accessibility rules in `@deslint/eslint-plugin`:**
-  - `heading-hierarchy` — WCAG 1.3.1 + 2.4.6 — flags skipped heading levels
-    (`h1 → h3`) across single-page and multi-component hierarchies, with a new
-    cross-element `onComplete` hook pattern for collect-then-evaluate analysis.
-    Caught 4 real production bugs during dogfood on 3 real OSS projects.
-  - `form-labels` — WCAG 1.3.1 + 3.3.2 — matches `<label htmlFor>` to `<input
-    id>`, walks wrapping `<label>` ancestors, and treats PascalCase
-    `<Input>`/`<TextField>` as opaque design-system components to avoid false
-    positives.
-  - `lang-attribute` — WCAG 3.1.1 — HTML-only, requires `lang` on root `<html>`.
-  - `viewport-meta` — WCAG 1.4.4 (F77) — flags `user-scalable=no` and
-    `maximum-scale=1` which block pinch-zoom. Dogfood caught and fixed a P1 bug
-    where the CLI rule list was hard-coded and silently skipped this rule.
-  - `link-text` — WCAG 2.4.4 (Link Purpose in Context) — flags generic link
-    text (`click here`, `read more`, `here`, `more`). `linkComponents` option
-    (default `['Link', 'NextLink']`) supports Next.js anchor abstractions.
-    Caught 2 real production bugs in `shadcn-ui/taxonomy`.
-  - `aria-validation` — WCAG 4.1.2 (Name, Role, Value) — detects invalid roles,
-    hallucinated `aria-*` attributes, and common LLM typos like `aria-labelby`,
-    `aira-label`, `aria-pressd` with did-you-mean suggestions.
-  - **Validation:** 731 file-rule combinations evaluated on 3 real OSS
-    projects, 6 real bugs caught, 0 false positives.
-
-- **Framework-agnostic element visitor abstraction:**
-  - New `createElementVisitor()` in `packages/eslint-plugin/src/utils/` —
-    sibling to the existing `createClassVisitor()` — emits a uniform
-    `{ tagName, attributes, node, framework }` callback across React JSX,
-    Angular `Element$1`, Vue `VElement`, Svelte `SvelteElement`, and plain
-    HTML `Tag`.
-  - Helpers: `getAttribute(node, name)`, `getStaticAttributeValue(attr)`,
-    `hasSpreadAttribute(node)`, `isDecorative(element)`, plus the new
-    cross-element `onComplete` hook for collect-then-evaluate rules.
-  - `image-alt-text`, `missing-states`, and `responsive-required` ported from
-    hand-rolled `JSXOpeningElement` selectors to the element visitor — now
-    work cross-framework with no regression on the existing JSX test suites.
-
-- **Plain HTML parser support:**
-  - `@html-eslint/parser` added as an optional peer dep on
-    `@deslint/eslint-plugin`. When installed, plain `.html` files route to
-    html-eslint; Angular's template parser continues to own `.component.html`.
-  - `@deslint/cli` flat config now loads `@html-eslint/parser` dynamically,
-    with graceful fallback when the package isn't installed.
-  - `createClassVisitor` gained a `Attribute[key.value="class"]` selector for
-    html-eslint AST nodes.
-  - Unblocks government, legal-tech, and regulated-industry codebases that
-    ship plain HTML or server-rendered templates without Angular installed.
-
-- **WCAG 2.2 + 2.1 compliance report widening (`@deslint/cli`):**
-  - Evaluator now returns `byLevel` (per-level conformance using the same
-    at-or-below logic as `levelReached`) and `wcag21` (an explicit
-    `WCAG_21_CRITERIA_IDS` subset evaluated independently, not assumed from
-    the 2.2 → 2.1 superset).
-  - HTML report grouped into `Level A` and `Level AA` sections with separate
-    conformance badges per level. New stat cards show WCAG 2.2 and WCAG 2.1
-    AA side by side.
-  - **ADA Title II framing** — new `wcag21-note` callout explicitly states
-    that WCAG 2.1 AA is the ADA Title II technical standard and maps the
-    evaluated subset for audit evidence.
-  - All 6 new S4 rules mapped to WCAG criteria. Coverage expanded from 6 to
-    13 evaluated criteria.
-
-- **`@deslint/mcp` productionization:**
-  - `analyzeFile` and `analyzeAndFix` now delegate to `@deslint/cli`'s
-    `runLint` as the single source of truth. Fixes a stale 10-rule registry
-    that blocked the S4 rules (and the three ported rules) from firing via
-    MCP.
-  - New `resolveProjectDir()` helper pivots `cwd` to the file's directory
-    when the requested `projectDir` doesn't contain the file — fixes the
-    ESLint v10 "File ignored because outside of base path" error for
-    out-of-tree files.
-  - `analyzeAndFix` now copies the target file to `mkdtempSync` scratch,
-    runs `runLint({ fix: true })`, reads the diff, and deletes the scratch
-    in `finally`. The workspace file is never touched.
-  - New demo client at `packages/mcp/demo/self-correction-loop.mjs` — real
-    JSON-RPC client that spawns the MCP server over stdio, walks
-    `initialize → tools/list → analyze_file → analyze_and_fix`, and
-    pretty-prints every protocol beat.
+- Shared budget primitives: budget schema, loader, evaluator, and
+  `Deslint-Compliance` trailer helpers in `@deslint/shared`.
+- CLI support for diff-scoped scans (`scan --diff <ref>`), budget checks
+  (`scan --budget <path>`), and reproducible attestations
+  (`deslint attest`).
+- GitHub Action trailer verification controls:
+  `strict-trailer`, `trailer-verified`, and `trailer-status`.
+- MCP `enforce_budget` plus the supporting agent-loop budget/trailer flow.
 
 ### Changed
 
-- **Rule count: 14 → 20.** The 6 new a11y rules bring the shipping rule count
-  to 20 across all categories. The recommended config enables all of them by
-  default; the strict config upgrades 4 of the 6 to `error`.
-- **Element visitor ports.** `image-alt-text`, `missing-states`, and
-  `responsive-required` now use the element visitor. No behavioral change on
-  JSX; adds React, Vue, Svelte, Angular, and plain HTML support from the
-  same rule file.
-- **CLI lint runner.** Rule registry is now the single source of truth
-  (`packages/cli/src/lint-runner.ts`). Previously, the CLI and MCP had
-  separate rule lists that drifted; they are now unified and the MCP
-  delegates to the CLI.
-- **Coverage thresholds.** Adjusted to honest enforced baselines (86% lines
-  / 75% branches for `@deslint/eslint-plugin`) rather than the unenforced
-  aspirational 95/90 from v0.1.x. Ratcheting strategy: targeted file-level
-  tests, not big-bang sprints.
+- GitHub Action trailer verification now checks the head commit trailer
+  against a full-project re-scan instead of the PR-changed-files subset.
+- `scan --diff <ref>` now scopes added lines from the merge-base with
+  `<ref>`, avoiding false positives caused by unrelated changes on the
+  base branch.
+- Trailer hashing now preserves structured rule options instead of
+  collapsing nested configs to the same stringified value.
+- Action scan logic is aligned with the CLI defaults and scoring model so
+  server-side judgement matches local scans.
 
-### Fixed
-
-- **MCP rule registry drift.** The `@deslint/mcp` server shipped with a
-  10-rule hard-coded list in v0.1.1, which silently skipped all S4
-  accessibility rules and any rule added after the initial MCP write. Fixed
-  by delegating to the CLI's `runLint`.
-- **MCP "File ignored because outside of base path" error.** Users running
-  the MCP against files outside the `projectDir` (common in Cursor's
-  single-file analysis flow) got an ESLint v10 base-path error. Fixed via
-  `resolveProjectDir()`.
-- **CLI rule list hard-coding.** S4 dogfood revealed that `lint-runner.ts`
-  had a hard-coded rule list that didn't include `viewport-meta` or
-  `lang-attribute` despite both being registered in the plugin. Fixed by
-  pulling directly from the plugin's `rules` export.
-- **Heading hierarchy dogfood bug.** The S4 `heading-hierarchy` rule was
-  dogfooded on `apps/docs` and immediately caught a real `h1 → h3` skip in
-  the landing docs page. Fixed in the same commit that introduced the rule.
-- **`form-labels` PascalCase false positive.** Initial v1 matched all
-  `<Input>` regardless of case, producing FPs on Radix-based design
-  systems. Fixed: JSX `<input>` is matched case-sensitively (lowercase
-  only); PascalCase components are treated as opaque.
-- **`link-text` scope too narrow.** Initial v1 only checked raw `<a>`, which
-  returned 0 hits on every real Next.js project because they all use
-  `<Link>`. Re-scoped to include `linkComponents` option.
-
-### Engineering
-
-- **Framework parity.** Of the 20 shipping rules, 14 are now fully
-  framework-agnostic (up from 6 in v0.1.1). The remaining 6 are either
-  inherently framework-specific (`lang-attribute`, `viewport-meta` on HTML)
-  or still JSX-only pending v0.3.0 porting (`consistent-component-spacing`,
-  `consistent-border-radius`, `max-component-lines`, `no-inline-styles`).
-- **Test suite growth.** 792 tests in v0.1.1 → **1,145 tests in v0.2.0**
-  (+353 tests). All green on Node 20 + 22.
-- **New cross-element rule pattern.** The `onComplete` hook added to
-  `createElementVisitor` enables rules that need to collect all elements
-  of a type before evaluating (heading hierarchy, form label matching,
-  aria attribute cross-validation). This pattern will underpin future
-  cross-file analysis in v0.3.0.
-- **Release workflow** idempotency — each publish step checks the npm
-  registry first and skips if `name@version` is already published. Makes
-  partial-publish failures (token scope, network blip) fully recoverable by
-  re-running the workflow on the same tag.
-
-### Validated
-
-- **Dogfood coverage.** S4 rules validated on 3 real OSS projects
-  (`shadcn-ui/taxonomy`, `leerob/next-saas-starter`, Vintor), 731 file-rule
-  combinations evaluated, 6 real production bugs caught, 0 false positives.
-- **End-to-end compliance dogfood.** `deslint compliance apps/docs/out` on
-  the rebuilt Deslint landing page: **Level AA, 13/13 passing, 0 failing**
-  on both WCAG 2.2 and the 2.1 subset.
-- **Cross-framework smoke.** Visual-proof landing section tested across
-  Chromium, WebKit, and Firefox via Playwright; all 4 beats render
-  correctly on all 3 browsers.
-
-### Not yet shipping (v0.3.0 roadmap)
-
-- Porting the remaining 5 JSX-only rules (`consistent-component-spacing`,
-  `consistent-border-radius`, `max-component-lines`, `no-inline-styles`,
-  and `missing-states`'s Angular autofix) to full cross-framework parity.
-- `focus-indicators`, `keyboard-navigation`, `skip-navigation`,
-  `touch-target-size`, and `autocomplete-attribute` — considered for S4
-  but deferred because the static-AST heuristics don't meet the 0% FP bar.
-  Revisit once CSS scanning lands (Stage 2D).
-- Cross-file design graph ("47 Buttons across 23 files, here's how they
-  diverge") — KPMG Phase 2, post-v0.2.0.
-
-## [0.1.1] — 2026-04-08
-
-Inaugural public release of the `@deslint/*` packages on npm:
-
-- `@deslint/eslint-plugin`
-- `@deslint/cli`
-- `@deslint/mcp`
-- `@deslint/shared`
+## [0.5.0] — 2026-04-15
 
 ### Added
 
-- **`@deslint/eslint-plugin`** — 14 ESLint rules for design quality
-  - `no-arbitrary-colors`: detects hex/rgb/rgba/hsl/hsla arbitrary colors with auto-fix
-  - `no-arbitrary-spacing`: detects arbitrary spacing values with auto-fix
-  - `no-arbitrary-typography`: detects arbitrary font size, weight, leading, tracking with auto-fix
-  - `no-arbitrary-zindex`: detects arbitrary z-index values with auto-fix
-  - `no-inline-styles`: flags `style={{}}` attributes across React/Vue/Svelte/Angular
-  - `no-magic-numbers-layout`: flags arbitrary numbers in grid/flex layout with auto-fix
-  - `consistent-component-spacing`: detects spacing divergence across components
-  - `consistent-border-radius`: detects mixed `rounded-*` values across same-type components
-  - `responsive-required`: requires responsive breakpoints on fixed-width containers
-  - `missing-states`: flags interactive elements missing hover/focus/disabled states
-  - `dark-mode-coverage`: flags elements missing dark mode variants (off by default)
-  - `a11y-color-contrast`: checks WCAG AA contrast ratios
-  - `image-alt-text`: flags `<img>` without alt or with meaningless alt text
-  - `max-component-lines`: flags overly large components
-  - Framework support: React, Vue, Svelte, Angular, HTML via shared `createClassVisitor()`
-  - Tailwind v3 + v4 support with 40+ class name mappings
-  - `recommended` and `strict` config presets
-- **`@deslint/shared`**
-  - `.deslintrc.json` Zod schema covering 5 user control levels
-  - Tailwind v3 config reader (`tailwind.config.js/ts`)
-  - Tailwind v4 `@theme` CSS parser
-  - CSS `:root` custom property parser
-  - Design system merge logic (manual overrides auto-imported)
-  - `importTailwindConfig()` auto-detection utility
-  - W3C Design Tokens (DTCG) import
-- **`@deslint/cli`**
-  - `deslint scan` — scan with Design Health Score (0-100)
-  - `deslint fix --all` / `deslint fix --interactive` — auto-fix modes
-  - `deslint init` — interactive setup wizard
-  - `deslint generate-config` — generate Cursor/Claude/Agents configs
-  - `deslint suggest-tokens` — analyze arbitrary values and suggest replacements
-  - `deslint trend` — track Design Health Score over time
-  - Design Debt scoring
-  - Quality Gates (configurable pass/fail thresholds)
-  - WCAG 2.2 compliance report export (HTML)
-  - Output formats: text, JSON, SARIF, HTML
-  - Grouped violation formatter (deduplicates repeated patterns)
-- **`@deslint/mcp`** — MCP server for AI self-correction
-  - `analyze_file` — lint single file, return violations + score
-  - `analyze_project` — scan project, return score + top violations
-  - `analyze_and_fix` — analyze and apply fixes in one step
-  - Auto-install for Cursor and Claude Code
-- **`@deslint/action`** — GitHub Action for PR design reviews
-  - Posts Design Health Score comment on PRs with category breakdown
-  - Comment deduplication (find-and-update pattern)
-  - Configurable `min-score` threshold for pass/fail check status
+- MCP server updated to the current MCP tool-registration model with
+  typed structured responses.
+- MCP tool annotations and `server.json` manifest for registry-friendly
+  installation.
 
-### Engineering
+### Changed
 
-- Monorepo: Turborepo + pnpm workspaces
-- ESLint v10 flat config only (no legacy `.eslintrc` support anywhere)
-- Node.js ≥20.19.0 minimum, enforced in every `package.json`
-- 792 tests across all packages, all green on Node 20 + 22
-- Coverage thresholds enforced in CI (v8 provider, 86% lines / 75% branches for `@deslint/eslint-plugin`)
-- Every rule wrapped in try/catch — an unhandled exception never crashes lint for the entire file
-- All silent catch blocks use `debugLog()` (zero-overhead in production)
-- Per-rule benchmark in CI via `eslint-rule-benchmark`
+- Hardened MCP path containment checks to use `path.relative`.
+- Added resource caps for large files and large project scans.
 
-### Validated
+## [0.4.0] — 2026-04-15
 
-- 7 real-world projects: Cal.com, Dub.co, Elk, Vintor, saas-starter, taxonomy, Vintor re-run
-- 4,061 files scanned, 3,395 true violations, **0 false positives, 0 crashes**
-- Performance: 602 files/sec on 1,838-file project (25× under the 15s/500-file budget)
-- Auto-fix correctness: 14/14 verified correct on JSX, 0 regressions
+### Fixed
+
+- Multi-fix application in the CLI now replays edits safely instead of
+  corrupting files across repeated fixes.
+- `fixAll` / `fixInteractive` now forward `cwd` correctly.
+- Config lookup now works from monorepo leaf directories.
+- `deslint init` merges into existing `eslint.config.js` instead of
+  overwriting it.
+
+### Changed
+
+- Safer autofix defaults for rules where silent rewrites were too risky:
+  `dark-mode-coverage`, `icon-accessibility`, `lang-attribute`,
+  `responsive-image-optimization`, `focus-trap-patterns`,
+  `no-arbitrary-colors`, `no-arbitrary-zindex`, and
+  `prefers-reduced-motion`.
+- `ProfileSchema` now rejects unknown keys instead of silently ignoring
+  them.
+
+## [0.3.1] — 2026-04-15
+
+### Fixed
+
+- `deslint init` now configures the TypeScript parser for generated flat
+  configs.
+- Design Health Score no longer reports `100/100` when files failed to
+  parse and were never analyzed.
+
+## [0.2.0] — 2026-04-09
+
+### Added
+
+- Six WCAG-mapped accessibility rules:
+  `heading-hierarchy`, `form-labels`, `lang-attribute`,
+  `viewport-meta`, `link-text`, and `aria-validation`.
+- Cross-framework element visitor utilities covering React, Vue,
+  Svelte, Angular, and plain HTML.
+- Plain HTML parser support and broader WCAG compliance evaluation.

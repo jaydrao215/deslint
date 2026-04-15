@@ -14,24 +14,17 @@
  *
  * v0.3.0 additions: compliance_check, get_rule_details, suggest_fix_strategy
  */
-
 import { resolve, relative, dirname, basename, join, normalize, isAbsolute, sep } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdtempSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-
 // ── Security constants ────────────────────────────────────────────────
-
 /** Maximum file size (10 MB) to prevent memory exhaustion via oversized files. */
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-
 /** Maximum files to scan per request to prevent resource exhaustion. */
 const MAX_FILES_LIMIT = 5000;
-
 /** Maximum suggestions to return per request. */
 const MAX_SUGGESTIONS_LIMIT = 100;
-
 // ── Types ─────────────────────────────────────────────────────────────
-
 export interface Violation {
   ruleId: string;
   message: string;
@@ -45,7 +38,6 @@ export interface Violation {
     text: string;
   };
 }
-
 export interface AnalyzeFileResult {
   filePath: string;
   violations: Violation[];
@@ -53,7 +45,6 @@ export interface AnalyzeFileResult {
   totalErrors: number;
   totalWarnings: number;
 }
-
 export interface AnalyzeProjectResult {
   projectDir: string;
   overallScore: number;
@@ -64,7 +55,6 @@ export interface AnalyzeProjectResult {
   categories: Record<string, { score: number; violations: number }>;
   topViolations: Violation[];
 }
-
 export interface AnalyzeAndFixResult {
   filePath: string;
   originalCode: string;
@@ -72,7 +62,6 @@ export interface AnalyzeAndFixResult {
   fixedViolations: number;
   remainingViolations: Violation[];
 }
-
 export interface ComplianceCheckResult {
   projectDir: string;
   /** WCAG 2.2 conformance level reached ('A', 'AA', 'AAA', or 'none'). */
@@ -94,7 +83,6 @@ export interface ComplianceCheckResult {
     description: string;
   }>;
 }
-
 export interface RuleDetails {
   ruleId: string;
   description: string;
@@ -110,7 +98,6 @@ export interface RuleDetails {
   /** URL for full rule documentation. */
   docsUrl: string;
 }
-
 export interface FixSuggestion {
   ruleId: string;
   /** Number of violations for this rule. */
@@ -124,7 +111,6 @@ export interface FixSuggestion {
   /** Short recommendation on priority. */
   recommendation: string;
 }
-
 export interface SuggestFixStrategyResult {
   projectDir: string;
   overallScore: number;
@@ -134,9 +120,7 @@ export interface SuggestFixStrategyResult {
   /** Estimated total effort to fix everything, in minutes. */
   totalEffortMinutes: number;
 }
-
 // ── Helpers ──────────────────────────────────────────────────────────
-
 /**
  * Resolve the project directory we'll hand to ESLint. If the caller supplied
  * a projectDir and the file lives inside it, use that. Otherwise pivot to the
@@ -163,7 +147,6 @@ function resolveProjectDir(filePath: string, projectDir?: string): { projectDir:
     projectDir: insideRequested ? requestedDir : dirname(absPath),
   };
 }
-
 /**
  * Validate that a file exists and is within safe size limits.
  * Prevents memory exhaustion from oversized files.
@@ -182,7 +165,6 @@ function validateFile(absPath: string, displayPath: string): void {
     );
   }
 }
-
 /**
  * Clamp numeric parameters to safe ranges.
  */
@@ -190,7 +172,6 @@ function clampMaxFiles(maxFiles?: number): number {
   const val = maxFiles ?? 200;
   return Math.max(1, Math.min(val, MAX_FILES_LIMIT));
 }
-
 function toViolation(msg: any): Violation {
   const v: Violation = {
     ruleId: msg.ruleId ?? 'unknown',
@@ -204,24 +185,18 @@ function toViolation(msg: any): Violation {
   if (msg.fix) v.fix = { range: msg.fix.range as [number, number], text: msg.fix.text };
   return v;
 }
-
 // ── Tool: analyze_file ──────────────────────────────────────────────
-
 export async function analyzeFile(params: {
   filePath: string;
   projectDir?: string;
 }): Promise<AnalyzeFileResult> {
   const { absPath, projectDir } = resolveProjectDir(params.filePath, params.projectDir);
-
   validateFile(absPath, params.filePath);
-
   const { runLint } = await import('@deslint/cli');
   const lintResult = await runLint({ files: [absPath], cwd: projectDir });
-
   const violations: Violation[] = [];
   let errors = 0;
   let warnings = 0;
-
   for (const result of lintResult.results) {
     for (const msg of result.messages) {
       violations.push(toViolation(msg));
@@ -229,10 +204,8 @@ export async function analyzeFile(params: {
       else warnings++;
     }
   }
-
   // Sub-score: max(0, 100 - violations * 10), capped at 0
   const score = Math.max(0, 100 - violations.length * 10);
-
   return {
     filePath: relative(projectDir, absPath),
     violations,
@@ -241,21 +214,16 @@ export async function analyzeFile(params: {
     totalWarnings: warnings,
   };
 }
-
 // ── Tool: analyze_project ───────────────────────────────────────────
-
 export async function analyzeProject(params: {
   projectDir?: string;
   maxFiles?: number;
 }): Promise<AnalyzeProjectResult> {
   const projectDir = resolve(params.projectDir ?? process.cwd());
   const maxFiles = clampMaxFiles(params.maxFiles);
-
   const { discoverFiles, runLint, calculateScore } = await import('@deslint/cli');
-
   const files = await discoverFiles({ cwd: projectDir });
   const filesToScan = files.slice(0, maxFiles);
-
   if (filesToScan.length === 0) {
     return {
       projectDir,
@@ -268,10 +236,8 @@ export async function analyzeProject(params: {
       topViolations: [],
     };
   }
-
   const lintResult = await runLint({ files: filesToScan, cwd: projectDir });
   const scoreResult = calculateScore(lintResult);
-
   // Collect top 10 violations for the summary
   const topViolations: Violation[] = [];
   for (const result of lintResult.results) {
@@ -281,12 +247,10 @@ export async function analyzeProject(params: {
     }
     if (topViolations.length >= 10) break;
   }
-
   const categories: Record<string, { score: number; violations: number }> = {};
   for (const [cat, data] of Object.entries(scoreResult.categories)) {
     categories[cat] = { score: data.score, violations: data.violations };
   }
-
   return {
     projectDir,
     overallScore: scoreResult.overall,
@@ -298,9 +262,7 @@ export async function analyzeProject(params: {
     topViolations,
   };
 }
-
 // ── Tool: analyze_and_fix ───────────────────────────────────────────
-
 /**
  * Analyze a file and return the auto-fixed version. The original file on
  * disk is NEVER modified. We copy the file to a temp directory, run runLint
@@ -314,33 +276,24 @@ export async function analyzeAndFix(params: {
   projectDir?: string;
 }): Promise<AnalyzeAndFixResult> {
   const { absPath, projectDir } = resolveProjectDir(params.filePath, params.projectDir);
-
   validateFile(absPath, params.filePath);
-
   const { runLint } = await import('@deslint/cli');
-
   const originalCode = readFileSync(absPath, 'utf-8');
-
   // First pass: read the real file in-place to count original violations.
   const originalLint = await runLint({ files: [absPath], cwd: projectDir });
   const originalCount = originalLint.results[0]?.messages.length ?? 0;
-
   // Second pass: copy to a temp dir and fix the copy so the workspace stays
   // untouched. We preserve the file's basename so the parser/path heuristics
   // (e.g. `.tsx` → TS parser) still fire.
   const scratchDir = mkdtempSync(join(tmpdir(), 'deslint-mcp-fix-'));
   const scratchPath = join(scratchDir, basename(absPath));
-
   let fixedCode = originalCode;
   const remaining: Violation[] = [];
-
   try {
     writeFileSync(scratchPath, originalCode);
     const fixedLint = await runLint({ files: [scratchPath], cwd: scratchDir, fix: true });
-
     // runLint → ESLint.outputFixes writes the fixed code back to scratchPath
     fixedCode = readFileSync(scratchPath, 'utf-8');
-
     for (const result of fixedLint.results) {
       for (const msg of result.messages) {
         remaining.push(toViolation(msg));
@@ -349,7 +302,6 @@ export async function analyzeAndFix(params: {
   } finally {
     rmSync(scratchDir, { recursive: true, force: true });
   }
-
   return {
     filePath: relative(projectDir, absPath),
     originalCode,
@@ -358,9 +310,7 @@ export async function analyzeAndFix(params: {
     remainingViolations: remaining,
   };
 }
-
 // ── Tool: compliance_check ─────────────────────────────────────────
-
 /**
  * Run WCAG 2.2 compliance evaluation on a project. Returns per-criterion
  * pass/fail status, conformance level reached, and the WCAG 2.1 AA
@@ -372,13 +322,10 @@ export async function complianceCheck(params: {
 }): Promise<ComplianceCheckResult> {
   const projectDir = resolve(params.projectDir ?? process.cwd());
   const maxFiles = clampMaxFiles(params.maxFiles);
-
   const { discoverFiles, runLint } = await import('@deslint/cli');
   const { evaluateCompliance, WCAG_CRITERIA } = await import('@deslint/shared');
-
   const files = await discoverFiles({ cwd: projectDir });
   const filesToScan = files.slice(0, maxFiles);
-
   if (filesToScan.length === 0) {
     return {
       projectDir,
@@ -398,9 +345,7 @@ export async function complianceCheck(params: {
       })),
     };
   }
-
   const lintResult = await runLint({ files: filesToScan, cwd: projectDir });
-
   // Build per-rule file count for the compliance evaluator
   const filesByRule: Record<string, number> = {};
   for (const result of lintResult.results) {
@@ -412,12 +357,10 @@ export async function complianceCheck(params: {
       }
     }
   }
-
   const compliance = evaluateCompliance({
     byRule: lintResult.byRule,
     filesByRule,
   });
-
   return {
     projectDir,
     levelReached: compliance.levelReached,
@@ -436,9 +379,257 @@ export async function complianceCheck(params: {
     })),
   };
 }
-
+// ── Tool: enforce_budget ───────────────────────────────────────────
+/**
+ * Shape of a single budget breach returned by `enforce_budget`.
+ * Mirrors @deslint/shared's `BudgetBreach` but with a serializable,
+ * MCP-friendly interface (no enum unions with shared).
+ */
+export interface EnforceBudgetBreach {
+  condition: string;
+  message: string;
+  threshold: number;
+  actual: number;
+  /** Category, if the breach is category-scoped. */
+  category?: string;
+  /** Rule id (canonical `deslint/<rule>`), if rule-scoped. */
+  ruleId?: string;
+}
+/**
+ * Minimal suggested-edit shape. Populated with the cheapest manual fixes
+ * the agent could apply to bring the scan under budget; today we surface
+ * the top N auto-fixable rules driving the breach, each annotated with
+ * the command to run. This is advisory — the Action is the judge.
+ */
+export interface EnforceBudgetEdit {
+  /** The rule driving the suggestion. */
+  ruleId: string;
+  /** Human-readable message describing what to do. */
+  message: string;
+  /** Whether the suggestion is auto-fixable. */
+  autoFixable: boolean;
+  /** Shell command the agent can run (informational only). */
+  command?: string;
+}
+export interface EnforceBudgetResult {
+  /** True when every configured cap is satisfied. If no budget is
+   *  configured and no `budgetPath` was given, returns true: "there is
+   *  nothing to enforce." */
+  allowed: boolean;
+  /** True when the budget file exists AND has `enforce: true`. The Action
+   *  uses this to decide whether to fail CI; agents should treat any
+   *  `allowed: false` as a veto regardless of `enforced`. */
+  enforced: boolean;
+  /** All breaches. Empty when `allowed` is true. */
+  reasons: EnforceBudgetBreach[];
+  /** Advisory edits the agent can apply to get under budget. */
+  suggestedEdits: EnforceBudgetEdit[];
+  /** Scan snapshot used to evaluate the budget. */
+  score: {
+    overall: number;
+    grade: string;
+    categories: Record<string, { score: number; violations: number }>;
+    totalViolations: number;
+    debtMinutes: number;
+  };
+  /** Absolute path of the budget file used, if any. Undefined when
+   *  no budget was found. */
+  budgetPath?: string;
+  /** Number of files actually scanned (after any `files` narrowing). */
+  filesScanned: number;
+  /** Ready-to-paste commit-trailer line. Agents SHOULD include this in
+   *  the commit message of the PR to prove compliance; the Action
+   *  re-computes and verifies it. Format:
+   *  `Deslint-Compliance: <sha16>.<score>.<fileCount>`. */
+  trailer: string;
+}
+/**
+ * `enforce_budget` — evaluate a scan against `.deslint/budget.yml` (or an
+ * explicit path) and return a strict allowed/rejected decision.
+ *
+ * Design intent (from v0.6 plan): this is the agent-loop veto. An agent
+ * SHOULD call `enforce_budget` before declaring a task complete. A
+ * rejection returns `{allowed: false}` + suggested edits; the agent
+ * self-corrects and re-calls. The GitHub Action runs the same evaluation
+ * on the merge commit — it is the backstop, so agents cannot spoof
+ * approval.
+ *
+ * Pure function: no I/O side-effects beyond reading the requested files
+ * and the budget file. Idempotent: calling it twice on the same inputs
+ * returns byte-identical output.
+ */
+export async function enforceBudget(params: {
+  projectDir?: string;
+  /** Optional narrowing — limit the scan to this file set (absolute or
+   *  relative to `projectDir`). When omitted, scans the whole project
+   *  via the normal file-discovery pipeline. */
+  files?: string[];
+  /** Optional explicit path to the budget file. When omitted, the loader
+   *  probes `.deslint/budget.yml` → `.yaml` → `.json`. */
+  budgetPath?: string;
+  /** Resource cap, mirrors `analyze_project`. */
+  maxFiles?: number;
+}): Promise<EnforceBudgetResult> {
+  const projectDir = resolve(params.projectDir ?? process.cwd());
+  const maxFiles = clampMaxFiles(params.maxFiles);
+  const { discoverFiles, runLint, calculateScore } = await import('@deslint/cli');
+  const {
+    loadBudget,
+    evaluateBudget,
+    effortForRule,
+    formatTrailerLine,
+    safeParseConfig,
+  } = await import('@deslint/shared');
+  // Read user-declared rule overrides from `.deslintrc.json`, if present.
+  // Used both for applying overrides to the scan AND for computing the
+  // trailer's ruleset hash (which the Action re-computes identically).
+  let userRules: Record<string, unknown> = {};
+  const rcPath = join(projectDir, '.deslintrc.json');
+  if (existsSync(rcPath)) {
+    try {
+      const raw = JSON.parse(readFileSync(rcPath, 'utf-8'));
+      const parsed = safeParseConfig(raw);
+      if (parsed.success) {
+        userRules = (parsed.data.rules ?? {}) as Record<string, unknown>;
+      } else {
+        userRules = (raw?.rules ?? {}) as Record<string, unknown>;
+      }
+    } catch {
+      /* leave userRules empty */
+    }
+  }
+  // Load budget up front — if it's configured-but-malformed, we want to
+  // fail loudly rather than silently pretend there's no cap.
+  const loaded = await loadBudget({ explicitPath: params.budgetPath, cwd: projectDir });
+  // Resolve the candidate file list. An explicit `files` list lets an
+  // agent restrict evaluation to just-edited files; otherwise we scan
+  // everything (bounded by `maxFiles`).
+  let candidates: string[];
+  if (params.files && params.files.length > 0) {
+    candidates = params.files.map((f) => (isAbsolute(f) ? f : resolve(projectDir, f)));
+    // Path-traversal guard: any file outside projectDir is refused.
+    for (const abs of candidates) {
+      const rel = relative(projectDir, abs);
+      if (rel.startsWith('..' + sep) || rel === '..' || isAbsolute(rel)) {
+        throw new Error(`File outside project directory: ${abs}`);
+      }
+      validateFile(abs, abs);
+    }
+  } else {
+    const discovered = await discoverFiles({ cwd: projectDir });
+    candidates = discovered.slice(0, maxFiles);
+  }
+  // Zero-file scan: trivially passes, since there's nothing to violate.
+  if (candidates.length === 0) {
+    return {
+      allowed: true,
+      enforced: loaded?.budget.enforce === true,
+      reasons: [],
+      suggestedEdits: [],
+      score: {
+        overall: 100,
+        grade: 'pass',
+        categories: {},
+        totalViolations: 0,
+        debtMinutes: 0,
+      },
+      budgetPath: loaded?.path,
+      filesScanned: 0,
+      trailer: formatTrailerLine({ rules: userRules, score: 100, fileCount: 0 }),
+    };
+  }
+  const lintResult = await runLint({
+    files: candidates,
+    cwd: projectDir,
+    ruleOverrides: userRules,
+  });
+  const scoreResult = calculateScore(lintResult);
+  // Debt minutes: effort × count per rule.
+  let debtMinutes = 0;
+  for (const [ruleId, count] of Object.entries(lintResult.byRule)) {
+    debtMinutes += effortForRule(ruleId) * count;
+  }
+  const snapshot = {
+    overall: scoreResult.overall,
+    categories: {
+      colors: scoreResult.categories.colors.score,
+      spacing: scoreResult.categories.spacing.score,
+      typography: scoreResult.categories.typography.score,
+      responsive: scoreResult.categories.responsive.score,
+      consistency: scoreResult.categories.consistency.score,
+    },
+    totalViolations: lintResult.totalViolations,
+    debtMinutes,
+    byRule: lintResult.byRule,
+  };
+  const budgetResult = evaluateBudget(loaded?.budget, snapshot);
+  // Build suggested edits: for each breach that names a rule or hits a
+  // category, surface the top drivers (autoFixable first) so the agent
+  // knows what to fix. This is deliberately small (≤10) to keep the
+  // response bounded.
+  const suggestedEdits: EnforceBudgetEdit[] = [];
+  const seenRules = new Set<string>();
+  // Breach-driven suggestions first.
+  for (const breach of budgetResult.breaches) {
+    if (breach.ruleId && !seenRules.has(breach.ruleId)) {
+      seenRules.add(breach.ruleId);
+      const meta = RULE_METADATA[breach.ruleId];
+      suggestedEdits.push({
+        ruleId: breach.ruleId,
+        message: `${breach.message} ${meta?.autoFixable ? 'Auto-fixable — run `deslint fix`.' : 'Manual fix needed.'}`,
+        autoFixable: meta?.autoFixable ?? false,
+        command: meta?.autoFixable ? 'deslint fix' : undefined,
+      });
+    }
+  }
+  // Fill the remainder with top-driver rules in the current scan.
+  const sortedRules = Object.entries(lintResult.byRule).sort((a, b) => b[1] - a[1]);
+  for (const [ruleId, count] of sortedRules) {
+    if (suggestedEdits.length >= 10) break;
+    if (seenRules.has(ruleId)) continue;
+    const meta = RULE_METADATA[ruleId];
+    suggestedEdits.push({
+      ruleId,
+      message: `${count} violation${count === 1 ? '' : 's'} of ${ruleId}. ${meta?.autoFixable ? 'Auto-fixable.' : 'Manual fix needed.'}`,
+      autoFixable: meta?.autoFixable ?? false,
+      command: meta?.autoFixable ? 'deslint fix' : undefined,
+    });
+    seenRules.add(ruleId);
+  }
+  const categories: Record<string, { score: number; violations: number }> = {};
+  for (const [cat, data] of Object.entries(scoreResult.categories)) {
+    categories[cat] = { score: data.score, violations: data.violations };
+  }
+  const trailer = formatTrailerLine({
+    rules: userRules,
+    score: scoreResult.overall,
+    fileCount: lintResult.totalFiles,
+  });
+  return {
+    allowed: budgetResult.passed,
+    enforced: budgetResult.enforced,
+    reasons: budgetResult.breaches.map((b) => ({
+      condition: b.condition,
+      message: b.message,
+      threshold: b.threshold,
+      actual: b.actual,
+      category: b.category,
+      ruleId: b.ruleId,
+    })),
+    suggestedEdits,
+    score: {
+      overall: scoreResult.overall,
+      grade: scoreResult.grade,
+      categories,
+      totalViolations: lintResult.totalViolations,
+      debtMinutes,
+    },
+    budgetPath: loaded?.path,
+    filesScanned: lintResult.totalFiles,
+    trailer,
+  };
+}
 // ── Tool: get_rule_details ─────────────────────────────────────────
-
 /** Metadata for all deslint rules, used by the get_rule_details tool. */
 const RULE_METADATA: Record<string, { description: string; category: string; autoFixable: boolean }> = {
   'deslint/no-arbitrary-colors': { description: 'Flag hardcoded hex/rgb colors in Tailwind arbitrary values; suggest design tokens.', category: 'colors', autoFixable: true },
@@ -470,7 +661,6 @@ const RULE_METADATA: Record<string, { description: string; category: string; aut
   'deslint/responsive-image-optimization': { description: 'Require loading, width/height, and srcset on <img> for performance and CLS prevention.', category: 'responsive', autoFixable: true },
   'deslint/spacing-rhythm-consistency': { description: 'Detect inconsistent spacing patterns across similar elements; flag deviations from dominant rhythm.', category: 'spacing', autoFixable: false },
 };
-
 /**
  * Return metadata for a specific deslint rule, including its WCAG mapping,
  * effort estimate, and auto-fix capability.
@@ -479,23 +669,19 @@ export async function getRuleDetails(params: {
   ruleId: string;
 }): Promise<RuleDetails> {
   const { effortForRule, WCAG_CRITERIA } = await import('@deslint/shared');
-
   const ruleId = params.ruleId.startsWith('deslint/')
     ? params.ruleId
     : `deslint/${params.ruleId}`;
-
   const meta = RULE_METADATA[ruleId];
   if (!meta) {
     throw new Error(
       `Unknown rule: ${params.ruleId}. Available rules: ${Object.keys(RULE_METADATA).map((r) => r.replace('deslint/', '')).join(', ')}`,
     );
   }
-
   // Find WCAG criteria this rule maps to
   const wcagCriteria = WCAG_CRITERIA
     .filter((c) => c.rules.includes(ruleId))
     .map((c) => ({ id: c.id, title: c.title, level: c.level }));
-
   // Determine default severity from recommended config
   const RECOMMENDED_SEVERITY: Record<string, string> = {
     'deslint/viewport-meta': 'error',
@@ -506,7 +692,6 @@ export async function getRuleDetails(params: {
     'deslint/no-inline-styles': 'off',
   };
   const defaultSeverity = RECOMMENDED_SEVERITY[ruleId] ?? 'warn';
-
   return {
     ruleId,
     description: meta.description,
@@ -518,9 +703,7 @@ export async function getRuleDetails(params: {
     docsUrl: `https://deslint.com/docs/rules/${ruleId.replace('deslint/', '')}`,
   };
 }
-
 // ── Tool: suggest_fix_strategy ─────────────────────────────────────
-
 /**
  * Analyze a project and suggest which violations to fix first, ordered by
  * impact/effort ratio. Helps AI agents prioritize fixes for maximum design
@@ -534,13 +717,10 @@ export async function suggestFixStrategy(params: {
   const projectDir = resolve(params.projectDir ?? process.cwd());
   const maxFiles = clampMaxFiles(params.maxFiles);
   const maxSuggestions = Math.max(1, Math.min(params.maxSuggestions ?? 10, MAX_SUGGESTIONS_LIMIT));
-
   const { discoverFiles, runLint, calculateScore } = await import('@deslint/cli');
   const { effortForRule } = await import('@deslint/shared');
-
   const files = await discoverFiles({ cwd: projectDir });
   const filesToScan = files.slice(0, maxFiles);
-
   if (filesToScan.length === 0) {
     return {
       projectDir,
@@ -550,10 +730,8 @@ export async function suggestFixStrategy(params: {
       totalEffortMinutes: 0,
     };
   }
-
   const lintResult = await runLint({ files: filesToScan, cwd: projectDir });
   const scoreResult = calculateScore(lintResult);
-
   // Build per-rule stats
   const ruleStats: Array<{
     ruleId: string;
@@ -562,7 +740,6 @@ export async function suggestFixStrategy(params: {
     effortPerViolation: number;
     totalEffort: number;
   }> = [];
-
   for (const [ruleId, count] of Object.entries(lintResult.byRule)) {
     const meta = RULE_METADATA[ruleId];
     const effort = effortForRule(ruleId);
@@ -574,7 +751,6 @@ export async function suggestFixStrategy(params: {
       totalEffort: effort * count,
     });
   }
-
   // Calculate impact: how much each rule contributes to the overall score
   // Higher violation count + lower effort = higher impact score
   const totalViolations = lintResult.totalViolations;
@@ -587,7 +763,6 @@ export async function suggestFixStrategy(params: {
       const impactScore = stat.totalEffort > 0
         ? Math.round((violationShare * 100) / (stat.totalEffort * effortMultiplier) * 100) / 100
         : 0;
-
       let recommendation: string;
       if (stat.autoFixable && stat.count > 5) {
         recommendation = `Quick win: run \`deslint fix\` to auto-fix all ${stat.count} violations.`;
@@ -598,7 +773,6 @@ export async function suggestFixStrategy(params: {
       } else {
         recommendation = `Higher effort (${stat.totalEffort}min). Consider fixing incrementally.`;
       }
-
       return {
         ruleId: stat.ruleId,
         count: stat.count,
@@ -610,9 +784,7 @@ export async function suggestFixStrategy(params: {
     })
     .sort((a, b) => b.impactScore - a.impactScore)
     .slice(0, maxSuggestions);
-
   const totalEffortMinutes = ruleStats.reduce((sum, s) => sum + s.totalEffort, 0);
-
   return {
     projectDir,
     overallScore: scoreResult.overall,
