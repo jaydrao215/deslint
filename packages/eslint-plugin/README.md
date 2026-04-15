@@ -9,6 +9,10 @@
 
 **Validated on real-world open-source projects across React / Next.js, Vue / Nuxt, Angular, and plain HTML with 0% false positive rate and 0 crashes.**
 
+<p align="center">
+  <img src="https://deslint.com/demo/vscode-squiggle.gif" alt="Deslint ESLint rules surfacing design-quality squiggles inline in VS Code as you type" width="720">
+</p>
+
 ## Installation
 
 ```sh

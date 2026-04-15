@@ -9,6 +9,10 @@ analyze and fix design-quality issues in real time during code generation.
 Pure local static analysis — zero network calls, no source code leaves your
 machine.
 
+<p align="center">
+  <img src="https://deslint.com/demo/mcp-loop.gif" alt="Deslint MCP self-correction loop: analyze_file returns structured violations, analyze_and_fix returns autofixed code, all over stdio in under a second" width="720">
+</p>
+
 ## Install
 
 Pick the flow that matches your editor. All of them end up configuring the
