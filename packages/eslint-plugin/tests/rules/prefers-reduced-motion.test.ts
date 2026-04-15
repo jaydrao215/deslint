@@ -24,13 +24,40 @@ ruleTester.run('prefers-reduced-motion', rule, {
     { code: '<div className="duration-0">Instant</div>' },
     { code: '<div className="motion-safe:animate-bounce">Bounce</div>' },
     { code: '<div>No classes</div>' },
+
+    // ── Default-exempt classes: motion IS the information ──
+    // Wrapping these in motion-safe: turns off the only cue that tells the
+    // user something is still happening (loading spinner, notification
+    // pulse). Silently rewriting these regresses UX.
+    { code: '<div className="animate-spin">Loading</div>' },
+    { code: '<div className="animate-ping">New</div>' },
+    { code: '<span className="animate-spin mr-2" aria-hidden="true" />' },
+    { code: '<div className="sm:animate-spin">Loading</div>' },
   ],
 
   invalid: [
-    // ── Single motion class → one-pass fix ──
+    // ── Single motion class (bounce, not spin) → one-pass fix ──
+    // `animate-bounce` is a decorative bounce, safe to wrap.
+    {
+      code: '<div className="animate-bounce">Hi</div>',
+      output: '<div className="motion-safe:animate-bounce">Hi</div>',
+      errors: [{ messageId: 'missingMotionSafe' }],
+    },
+
+    // ── Opt-in strict mode: empty exemption list flags animate-spin ──
     {
       code: '<div className="animate-spin">Loading</div>',
+      options: [{ exemptClasses: [] }],
       output: '<div className="motion-safe:animate-spin">Loading</div>',
+      errors: [{ messageId: 'missingMotionSafe' }],
+    },
+
+    // ── User-customised exemption: swap in their own list ──
+    // `animate-pulse` is exempted here, `animate-bounce` is not.
+    {
+      code: '<div className="animate-pulse animate-bounce">Mixed</div>',
+      options: [{ exemptClasses: ['animate-pulse'] }],
+      output: '<div className="animate-pulse motion-safe:animate-bounce">Mixed</div>',
       errors: [{ messageId: 'missingMotionSafe' }],
     },
 
