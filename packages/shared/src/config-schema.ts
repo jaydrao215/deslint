@@ -47,9 +47,15 @@ export const IgnorePatternsSchema = z
   .describe('Glob patterns for files/folders to skip, e.g. ["**/generated/**"]');
 
 // ── Severity Profiles (Control Level 5) ──────────────────────────────
-export const ProfileSchema = z.object({
-  rules: z.record(RuleConfigSchema),
-});
+// `.strict()` so misspellings like `{ strict: { ruls: {...} } }` or stray
+// keys like `{ strict: { extends: "recommended" } }` fail loudly at load
+// time instead of being silently dropped — a silent drop means the profile
+// user expected to switch severity for is simply empty at runtime.
+export const ProfileSchema = z
+  .object({
+    rules: z.record(RuleConfigSchema),
+  })
+  .strict();
 export type Profile = z.infer<typeof ProfileSchema>;
 
 // ── Quality Gate (Phase 1, Moat 3) ───────────────────────────────────
