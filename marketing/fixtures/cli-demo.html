@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>deslint CLI demo</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --fg: #e5e7eb;
+    --muted: #94a3b8;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --green: #4ade80;
+    --blue: #60a5fa;
+    --magenta: #e879f9;
+    --cyan: #22d3ee;
+    --prompt: #a3e635;
+    --bar: #1f2937;
+  }
+  html, body {
+    margin: 0; padding: 0; background: #151923; height: 100%;
+    font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+    font-size: 15px; line-height: 1.55; color: var(--fg);
+  }
+  .term {
+    width: 920px; height: 540px; margin: 22px auto;
+    background: var(--bg); border-radius: 12px; overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,.5), 0 0 0 1px #1f2937 inset;
+  }
+  .titlebar {
+    background: var(--bar); height: 34px; display: flex; align-items: center; padding: 0 14px;
+    font-size: 12px; color: var(--muted);
+  }
+  .dot { width: 12px; height: 12px; border-radius: 999px; margin-right: 8px; }
+  .dot.r { background: #ef4444; }
+  .dot.y { background: #f59e0b; }
+  .dot.g { background: #10b981; }
+  .title { margin-left: 18px; }
+  .view { padding: 18px 22px; height: calc(540px - 34px); overflow: hidden; white-space: pre; }
+  .prompt { color: var(--prompt); }
+  .path { color: var(--cyan); }
+  .cmd { color: var(--fg); }
+  .cursor {
+    display: inline-block; width: 8px; height: 15px; background: var(--fg);
+    vertical-align: -2px; animation: blink 1s steps(2, start) infinite;
+  }
+  @keyframes blink { to { visibility: hidden; } }
+  .muted { color: var(--muted); }
+  .red { color: var(--red); }
+  .yellow { color: var(--yellow); }
+  .green { color: var(--green); }
+  .blue { color: var(--blue); }
+  .magenta { color: var(--magenta); }
+  .cyan { color: var(--cyan); }
+  .bold { font-weight: 700; }
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: rgba(248,113,113,.15); color: #fca5a5; font-size: 12px; margin-left: 6px;
+  }
+  .pill.ok { background: rgba(74,222,128,.15); color: #86efac; }
+  .caret { opacity: .85; }
+  #out { display: block; }
+</style>
+</head>
+<body>
+  <div class="term">
+    <div class="titlebar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span class="title">~/acme-app — deslint</span>
+    </div>
+    <pre class="view"><code id="out"></code><span class="cursor" id="cursor"></span></pre>
+  </div>
+
+<script>
+  const out = document.getElementById('out');
+  const cursor = document.getElementById('cursor');
+
+  // Scripted sequence: each entry is { t: typing speed (ms/char) | 0 for instant, s: string }
+  // Strings can contain HTML for colour spans.
+  const script = [
+    { s: '<span class="prompt">➜</span> <span class="path">acme-app</span> ', t: 0 },
+    { s: 'npx deslint scan', t: 45 },
+    { s: '\n', t: 0, wait: 500 },
+    { s: '<span class="muted">deslint v0.4.0 · 27 rules enabled</span>\n', t: 0, wait: 300 },
+    { s: '<span class="muted">scanning 184 files…</span>\n\n', t: 0, wait: 700 },
+
+    { s: '<span class="cyan bold">src/components/DashboardHeader.tsx</span>\n', t: 0, wait: 150 },
+    { s: '  <span class="red">✖</span>  12:23  <span class="red">error</span>    Arbitrary color <span class="yellow">bg-[#1A5276]</span>   <span class="muted">no-arbitrary-colors</span>\n', t: 0, wait: 50 },
+    { s: '  <span class="yellow">⚠</span>  28:11  <span class="yellow">warn</span>     Icon-only button missing aria-label  <span class="muted">icon-accessibility</span>\n', t: 0, wait: 50 },
+
+    { s: '\n<span class="cyan bold">src/components/Modal.tsx</span>\n', t: 0, wait: 150 },
+    { s: '  <span class="red">✖</span>  42:18  <span class="red">error</span>    Arbitrary z-index <span class="yellow">z-[9999]</span>       <span class="muted">no-arbitrary-zindex</span>\n', t: 0, wait: 50 },
+    { s: '       <span class="muted">↳ preserved: portal z-indices are allowlisted</span>\n', t: 0, wait: 50 },
+
+    { s: '\n<span class="cyan bold">src/components/Spinner.tsx</span>\n', t: 0, wait: 150 },
+    { s: '  <span class="red">✖</span>  7:14   <span class="red">error</span>    Missing motion-safe on animate-spin  <span class="muted">prefers-reduced-motion</span>\n', t: 0, wait: 50 },
+    { s: '       <span class="muted">↳ exempt: motion IS the loading signal</span>\n', t: 0, wait: 80 },
+
+    { s: '\n<span class="cyan bold">src/layouts/Marketing.tsx</span>\n', t: 0, wait: 150 },
+    { s: '  <span class="red">✖</span>  3:1    <span class="red">error</span>    Missing dark: variants on bg-white   <span class="muted">dark-mode-coverage</span>\n', t: 0, wait: 50 },
+    { s: '       <span class="muted">↳ suggest-only: opt-in with { autofix: true }</span>\n', t: 0, wait: 80 },
+
+    { s: '\n<span class="muted">…and 23 more in 17 files</span>\n\n', t: 0, wait: 300 },
+    { s: '<span class="red bold">✖ 31 problems</span> <span class="muted">(18 errors, 13 warnings) · 9 autofixable</span>\n\n', t: 0, wait: 700 },
+
+    // Second command
+    { s: '<span class="prompt">➜</span> <span class="path">acme-app</span> ', t: 0, wait: 400 },
+    { s: 'npx deslint fix --interactive', t: 42 },
+    { s: '\n', t: 0, wait: 400 },
+
+    { s: '<span class="muted">9 autofixes available — review each?</span>\n\n', t: 0, wait: 300 },
+
+    { s: '<span class="green">?</span> <span class="bold">src/components/Modal.tsx:42</span>\n', t: 0, wait: 150 },
+    { s: '    <span class="muted">rule:</span>      <span class="cyan">no-arbitrary-zindex</span>\n', t: 0, wait: 40 },
+    { s: '    <span class="muted">fix:</span>       <span class="red">z-[9999]</span> → <span class="green">z-modal</span> <span class="muted">(via customTokens)</span>\n', t: 0, wait: 40 },
+    { s: '    <span class="muted">[y]</span> yes   <span class="muted">[n]</span> no   <span class="muted">[a]</span> all   <span class="muted">[q]</span> quit\n', t: 0, wait: 300 },
+    { s: '    > <span class="green">y</span>\n', t: 0, wait: 500 },
+    { s: '    <span class="green">✓ applied</span>\n\n', t: 0, wait: 400 },
+
+    { s: '<span class="green">?</span> <span class="bold">src/components/DashboardHeader.tsx:12</span>\n', t: 0, wait: 150 },
+    { s: '    <span class="muted">rule:</span>      <span class="cyan">no-arbitrary-colors</span>\n', t: 0, wait: 40 },
+    { s: '    <span class="muted">fix:</span>       <span class="red">bg-[#1A5276]</span> → <span class="green">bg-brand-primary</span>\n', t: 0, wait: 40 },
+    { s: '    > <span class="green">a</span>\n', t: 0, wait: 500 },
+    { s: '    <span class="green">✓ applied all</span>\n\n', t: 0, wait: 500 },
+
+    { s: '<span class="green bold">✓ 9 fixes applied</span> · <span class="muted">0 bytes changed outside reported ranges</span>\n', t: 0, wait: 200 },
+    { s: '<span class="green bold">✓ 0 regressions</span> <span class="muted">· run `deslint scan` again to confirm</span>\n\n', t: 0, wait: 800 },
+
+    { s: '<span class="prompt">➜</span> <span class="path">acme-app</span> ', t: 0, wait: 200 },
+    { s: 'git diff --stat', t: 40 },
+    { s: '\n', t: 0, wait: 300 },
+    { s: ' <span class="cyan">src/components/DashboardHeader.tsx</span>  | 4 <span class="green">++</span><span class="red">--</span>\n', t: 0, wait: 80 },
+    { s: ' <span class="cyan">src/components/Modal.tsx</span>            | 2 <span class="green">+</span><span class="red">-</span>\n', t: 0, wait: 80 },
+    { s: ' <span class="cyan">src/components/Header.tsx</span>           | 3 <span class="green">++</span><span class="red">-</span>\n', t: 0, wait: 80 },
+    { s: ' <span class="muted">6 files changed, 14 insertions(+), 12 deletions(-)</span>\n\n', t: 0, wait: 400 },
+
+    { s: '<span class="prompt">➜</span> <span class="path">acme-app</span> ', t: 0, wait: 250 },
+  ];
+
+  let index = 0;
+  let chunkIndex = 0;
+
+  async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function autoscroll() {
+    const view = out.parentElement;
+    view.scrollTop = view.scrollHeight;
+  }
+
+  async function run() {
+    for (const { s, t, wait } of script) {
+      if (!t || t === 0) {
+        out.innerHTML += s;
+      } else {
+        // Type char-by-char, preserving HTML spans. Split by tag boundaries.
+        const parts = s.split(/(<[^>]+>)/);
+        for (const part of parts) {
+          if (part.startsWith('<')) {
+            out.innerHTML += part;
+          } else {
+            for (const ch of part) {
+              out.innerHTML += ch;
+              autoscroll();
+              await sleep(t);
+            }
+          }
+        }
+      }
+      autoscroll();
+      if (wait) await sleep(wait);
+    }
+    window.__done = true;
+  }
+
+  run();
+</script>
+</body>
+</html>

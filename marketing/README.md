@@ -1,8 +1,23 @@
-# deslint — before/after marketing assets
+# deslint — marketing assets
 
 Visual comparison of real regressions deslint's v0.3.0 autofix could cause in
 customer apps, paired with the fix behaviour shipped on branch
 `claude/debug-deslint-config-XTlLz`.
+
+## Files
+
+| File | Size | Use |
+|---|---|---|
+| `output/cli-demo.gif` | 4.7 MB | npm README hero — terminal scan/fix loop |
+| `output/cli-demo.webm` | 1.5 MB | High-quality source for docs/site embed |
+| `output/social-01-dashboard.mp4` | 1.3 MB · 15s · 1080² | SaaS dashboard gets silently dark-mode'd |
+| `output/social-02-ecommerce.mp4` | 800 KB · 15s · 1080² | Add-to-cart toast stuck behind header (z-index clamp) |
+| `output/social-03-spinner.mp4` | 940 KB · 15s · 1080² | Loader freezes for reduced-motion users |
+| `output/social-0x.gif` (×3) | 2–3 MB each | GIF fallbacks for PR comments / Slack |
+| `output/01-dark-mode.png`, `02-zindex.png`, `03-spinner.png` | 100–160 KB | Section crops for release notes |
+| `output/full.png` | 420 KB | Composite for the launch blog |
+| `output/walkthrough.webm` | 915 KB | Slow scroll — docs hero loop |
+| `IDEAS.md` | — | Launch playbook: channels, captions, partnerships |
 
 Each panel is a "before" (what the bad autofix produced) next to an "after"
 (what these commits now produce):
@@ -22,24 +37,19 @@ Each panel is a "before" (what the bad autofix produced) next to an "after"
 ## Reproducing
 
 ```bash
+# Static before/after gallery + slow-scroll walkthrough
 node marketing/capture.mjs
+
+# CLI terminal demo (GIF) + three 15s social clips (MP4 + GIF)
+node marketing/capture-social.mjs
 ```
 
-Outputs to `marketing/output/`:
-
-| File | Purpose |
-|---|---|
-| `full.png` | Composite full-page screenshot |
-| `01-dark-mode.png` | Section 1 crop |
-| `02-zindex.png` | Section 2 crop |
-| `03-spinner.png` | Section 3 crop (static image; spinner animation only shows in the video) |
-| `walkthrough.webm` | Slow scroll walkthrough recorded in Chromium |
-
-The capture script resolves Playwright from the globally-installed
+Requires `ffmpeg` on `$PATH` (apt: `apt-get install -y ffmpeg`). The
+capture scripts resolve Playwright from the globally-installed
 `/opt/node22/lib/node_modules/playwright` — no local `devDependency`
 needed. If you're on a different machine, drop a local
 `pnpm add -D playwright` in the repo root and replace the
-`require.resolve(...)` block at the top of `capture.mjs`.
+`require.resolve(...)` block at the top of each capture script.
 
 ## Fixture
 
