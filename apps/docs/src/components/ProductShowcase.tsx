@@ -3,7 +3,7 @@
 import { FadeIn } from './motion';
 import { EditorMockup } from './mockups/EditorMockup';
 import { TerminalMockup } from './mockups/TerminalMockup';
-import { PRReviewMockup } from './mockups/PRReviewMockup';
+import { PrReviewVideo } from './mockups/PrReviewVideo';
 import { Code2, Terminal, GitPullRequest, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -58,7 +58,7 @@ export function ProductShowcase() {
         { icon: <WcagIcon />, text: 'Every violation linked to its WCAG criterion' },
         { icon: <GateIcon />, text: 'Configurable gate: min-score, per-category, fail-on a11y' },
       ],
-      visual: <PRReviewMockup />,
+      visual: <PrReviewVideo />,
     },
   ];
 
@@ -84,6 +84,23 @@ export function ProductShowcase() {
           {surfaces.map((s) => (
             <SurfaceRow key={s.title} surface={s} />
           ))}
+        </div>
+
+        <div className="mt-20 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center text-sm">
+          <a
+            href="/coverage"
+            className="inline-flex items-center gap-1.5 font-medium text-primary hover:text-primary-light"
+          >
+            See framework &amp; WCAG coverage
+            <span aria-hidden>→</span>
+          </a>
+          <span className="hidden h-3 w-px bg-gray-200 sm:inline-block" />
+          <a
+            href="/pricing"
+            className="text-gray-500 hover:text-primary"
+          >
+            Compare with the rest of the tooling on /pricing
+          </a>
         </div>
       </div>
     </section>

@@ -57,7 +57,7 @@ export function EditorMockup() {
         </div>
 
         {/* Code area */}
-        <div className="flex text-[12px] leading-[1.55]">
+        <div className="flex text-xs leading-[1.55]">
           {/* Line numbers */}
           <div className="flex-none py-4 px-3 text-right text-gray-600 select-none bg-[#1e1e1e] border-r border-gray-800/50">
             {Array.from({ length: 9 }).map((_, i) => (
@@ -218,7 +218,7 @@ function Squiggle({ children }: { children: React.ReactNode }) {
         transition={{ duration: 0.6, delay: 1.0 }}
         viewBox="0 0 120 4"
         preserveAspectRatio="none"
-        className="absolute left-0 right-0 -bottom-0.5 w-full h-[4px]"
+        className="absolute left-0 right-0 -bottom-0.5 w-full h-1"
         aria-hidden="true"
       >
         <motion.path

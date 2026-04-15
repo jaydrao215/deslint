@@ -124,7 +124,7 @@ export function GlowingBorder({
 }) {
   return (
     <div className={`relative group ${className ?? ''}`}>
-      <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-primary-400/20 via-primary/30 to-primary-300/20 opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-500" />
+      <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-primary-400/20 via-primary/30 to-primary-300/20 opacity-0 group-hover:opacity-100 blur-sm motion-safe:transition-opacity motion-safe:duration-500" />
       <div className="relative">{children}</div>
     </div>
   );

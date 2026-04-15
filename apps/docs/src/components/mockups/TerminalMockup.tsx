@@ -135,7 +135,7 @@ export function TerminalMockup() {
 
         <div
           ref={ref}
-          className="px-5 py-4 font-mono text-[12px] leading-relaxed min-h-[380px]"
+          className="px-5 py-4 font-mono text-xs leading-relaxed min-h-[380px] overflow-x-auto whitespace-nowrap"
         >
           {lines.map((line, i) => (
             <motion.div
@@ -181,7 +181,7 @@ export function TerminalMockup() {
             className="mt-2 text-white font-semibold"
           >
             Design Health Score:{' '}
-            <span className="text-pass text-[14px]">{score}/100</span>
+            <span className="text-pass text-sm">{score}/100</span>
           </motion.div>
 
           {/* Bars */}
@@ -240,7 +240,7 @@ export function TerminalMockup() {
             className="mt-3 flex items-center"
           >
             <span className="text-gray-500 select-none">$ </span>
-            <span className="inline-block w-2 h-3.5 bg-white ml-1 animate-pulse" />
+            <span className="inline-block w-2 h-3.5 bg-white ml-1 motion-safe:animate-pulse" />
           </motion.div>
         </div>
       </div>

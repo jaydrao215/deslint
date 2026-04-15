@@ -103,9 +103,9 @@ export function WhatItCatches() {
         <StaggerContainer className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" staggerDelay={0.06}>
           {CATEGORIES.map((c) => (
             <StaggerItem key={c.title}>
-              <div className="group h-full flex flex-col rounded-xl border border-gray-200/80 bg-white p-6 transition-all duration-300 hover:border-gray-300 hover:shadow-lg hover:shadow-gray-200/50">
+              <div className="group h-full flex flex-col rounded-xl border border-gray-200/80 bg-white p-6 motion-safe:transition-all motion-safe:duration-300 hover:border-gray-300 hover:shadow-lg hover:shadow-gray-200/50">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/5 text-primary border border-primary/10 group-hover:bg-primary group-hover:text-white transition-all">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/5 text-primary border border-primary/10 group-hover:bg-primary group-hover:text-white motion-safe:transition-all">
                     {c.icon}
                   </div>
                   <h3 className="text-base font-semibold text-gray-900">{c.title}</h3>

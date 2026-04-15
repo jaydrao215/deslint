@@ -106,12 +106,24 @@
 .vp-slider {
   -webkit-appearance: none;
   appearance: none;
+  background: transparent;
+}
+.vp-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgb(229 231 235);
+}
+.vp-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgb(229 231 235);
 }
 .vp-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
+  margin-top: -10px;
   border-radius: 9999px;
   background: #534AB7;
   border: 2px solid white;
@@ -119,8 +131,8 @@
   cursor: ew-resize;
 }
 .vp-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   border-radius: 9999px;
   background: #534AB7;
   border: 2px solid white;

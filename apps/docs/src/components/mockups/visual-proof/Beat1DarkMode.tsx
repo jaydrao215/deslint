@@ -98,7 +98,7 @@ function ToggleButton({
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
-      className={`relative flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+      className={`relative flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all ${
         active
           ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
           : 'text-gray-500 hover:text-gray-700'
@@ -147,7 +147,7 @@ function PageFrame({
 
       {/* Simulated page surface */}
       <div
-        className="relative flex items-center justify-center p-6 transition-colors duration-500"
+        className="relative flex items-center justify-center p-6 motion-safe:transition-colors motion-safe:duration-500"
         style={{
           background: isDark ? '#0B1220' : '#F8FAFC',
           minHeight: '280px',

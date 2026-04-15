@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { ComparisonTable } from '@/components/ComparisonTable';
 
 interface Tier {
   name: string;
@@ -96,6 +97,9 @@ export default function PricingPage() {
       <main>
         <PricingHero />
         <PricingGrid />
+        <div id="how-we-compare">
+          <ComparisonTable />
+        </div>
         <FaqSection />
       </main>
       <Footer />
@@ -111,8 +115,9 @@ function PricingHero() {
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden">
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] pointer-events-none"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-full pointer-events-none"
           style={{
+            height: '500px',
             background:
               'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(83, 74, 183, 0.07), transparent)',
           }}
@@ -180,7 +185,7 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.15 + index * 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
-      className={`relative flex flex-col rounded-2xl border p-7 transition-shadow duration-300 ${
+      className={`relative flex flex-col rounded-xl border p-7 motion-safe:transition-shadow motion-safe:duration-300 ${
         isHighlighted
           ? 'border-primary/30 bg-white shadow-xl shadow-primary/10 ring-1 ring-primary/10'
           : 'border-gray-200 bg-white hover:shadow-lg hover:shadow-gray-200/60'
@@ -238,7 +243,7 @@ function TierCard({ tier, index }: { tier: Tier; index: number }) {
       ) : (
         <Link
           href={tier.href ?? '#'}
-          className={`flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-300 ${ctaClasses(tier.ctaStyle)}`}
+          className={`flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold motion-safe:transition-all motion-safe:duration-300 ${ctaClasses(tier.ctaStyle)}`}
         >
           {tier.cta}
           <ArrowRight className="h-4 w-4" />
@@ -328,12 +333,13 @@ function WaitlistForm({ tier }: { tier: Tier }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
-          className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/40 transition-all"
+          aria-label={`Email address for ${tier.name} waitlist`}
+          className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/40 motion-safe:transition-all"
         />
         <button
           type="submit"
           disabled={state === 'submitting'}
-          className={`shrink-0 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-300 disabled:opacity-60 ${ctaClasses(tier.ctaStyle)}`}
+          className={`shrink-0 rounded-xl px-5 py-3 text-sm font-semibold motion-safe:transition-all motion-safe:duration-300 disabled:opacity-60 ${ctaClasses(tier.ctaStyle)}`}
         >
           {state === 'submitting' ? 'Joining...' : tier.cta}
         </button>

@@ -134,7 +134,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+      className={`px-4 py-2 rounded-full text-sm font-medium motion-safe:transition-all ${
         active
           ? 'bg-primary text-white shadow-lg shadow-primary/30'
           : 'text-gray-400 hover:text-white'
@@ -150,7 +150,7 @@ function RealSessionPanel() {
     <div className="relative">
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-pass animate-pulse" />
+          <span className="h-2 w-2 rounded-full bg-pass motion-safe:animate-pulse" />
           <span className="text-[11px] font-semibold uppercase tracking-wider text-pass-light">
             Unedited recording
           </span>

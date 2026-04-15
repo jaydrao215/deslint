@@ -117,7 +117,7 @@ export function FrameworkMatrix() {
                   {ROWS.map((row) => (
                     <tr
                       key={row.framework}
-                      className="border-b border-gray-100 last:border-0 hover:bg-surface-50 transition-colors"
+                      className="border-b border-gray-100 last:border-0 hover:bg-surface-50 motion-safe:transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="font-semibold text-gray-900">{row.framework}</div>

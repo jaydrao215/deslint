@@ -1,16 +1,12 @@
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
-import { MetricsBanner } from '@/components/MetricsBanner';
+import { TrustBanner } from '@/components/TrustBanner';
 import { getGitHubStars } from '@/lib/github-stars';
 import { VisualProofSection } from '@/components/VisualProofSection';
 import { McpLoopSection } from '@/components/McpLoopSection';
 import { ProductShowcase } from '@/components/ProductShowcase';
 import { WhatItCatches } from '@/components/WhatItCatches';
-import { ComparisonTable } from '@/components/ComparisonTable';
-import { AccessibilitySection } from '@/components/AccessibilitySection';
-import { FrameworkMatrix } from '@/components/FrameworkMatrix';
-import { PrivacyTrust } from '@/components/PrivacyTrust';
-import { QuickStart } from '@/components/QuickStart';
+import { ComparisonStrip } from '@/components/ComparisonStrip';
 import { Cta } from '@/components/Cta';
 import { Footer } from '@/components/Footer';
 
@@ -21,16 +17,12 @@ export default async function Home() {
       <Navbar />
       <main>
         <Hero stars={stars} />
-        <MetricsBanner />
-        <PrivacyTrust />
+        <TrustBanner />
         <VisualProofSection />
         <McpLoopSection />
         <ProductShowcase />
         <WhatItCatches />
-        <ComparisonTable />
-        <AccessibilitySection />
-        <FrameworkMatrix />
-        <QuickStart />
+        <ComparisonStrip />
         <Cta />
       </main>
       <Footer />

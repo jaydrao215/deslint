@@ -72,16 +72,16 @@ export function Cta() {
         >
           <Link
             href="/docs/getting-started"
-            className="group inline-flex items-center gap-2 text-sm font-medium text-primary-200 hover:text-white transition-colors"
+            className="group inline-flex items-center gap-2 text-sm font-medium text-primary-200 hover:text-white motion-safe:transition-colors"
           >
-            Read the docs
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            Full setup in 2 minutes
+            <ArrowRight className="h-4 w-4 motion-safe:transition-transform group-hover:translate-x-0.5" />
           </Link>
           <a
             href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary-200 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary-200 hover:text-white motion-safe:transition-colors"
           >
             View source on GitHub
             <ArrowRight className="h-4 w-4" />
