@@ -1,6 +1,6 @@
 {
   "name": "@deslint/mcp",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "MCP server for Deslint — real-time design quality feedback in Cursor/Claude Code",
   "homepage": "https://deslint.com",
   "repository": {

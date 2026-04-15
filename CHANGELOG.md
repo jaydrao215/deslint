@@ -1,5 +1,110 @@
 # Changelog
 
+## [0.4.0] — 2026-04-15
+
+**Autofix that preserves your design.** A batch of 13 fixes that turn every
+silent-rewrite autofix in 0.3 into an opt-in suggestion with reasoning.
+Your design is preserved by default; riskier transforms are now explicit.
+
+**All users on 0.3.x should upgrade.** None of the previous autofix
+behaviours are gone — they're all still available, but behind
+per-rule opt-in flags. If you were relying on `--fix` rewriting
+everything silently, see *Behaviour changes* below.
+
+### CLI fixes
+
+- **Multi-fix passes no longer corrupt files.** `fixAll` /
+  `fixInteractive` now apply multiple autofixes via a byte-exact replay
+  against the original source, instead of re-parsing partially-fixed
+  output. Fixes cases where a second fix would see a mangled token
+  stream from the first and silently drop its edit.
+  (`packages/cli/src/fix-apply.ts`)
+- **`cwd` is forwarded through `fixAll` / `fixInteractive`.** ESLint
+  resolves config files relative to `cwd`, so running `deslint fix` from
+  a subdirectory now uses the right config. (`packages/cli/src/fix.ts`)
+- **Monorepo leaf support.** `.deslintrc.json` is now found by walking
+  upward from the target file, not just from `process.cwd()`. Leaf
+  apps in a pnpm/turborepo workspace no longer require a local config
+  copy. (`packages/cli/src/config-loader.ts`)
+- **`deslint init` merges into existing `eslint.config.js`** instead of
+  overwriting, and no longer auto-adds `deslint:fix` to `package.json`
+  scripts (opt-in via `--with-scripts`). (`packages/cli/src/init.ts`)
+
+### Rule fixes (autofix safety)
+
+Every rule below previously rewrote code on `--fix`. In 0.4, the
+rewrites still exist — but as *suggestions*, not silent autofixes —
+except where the fix is guaranteed safe (exact token matches, explicit
+opt-in, etc.).
+
+- **`dark-mode-coverage`** — autofix is opt-in. The rule used to rewrite
+  `bg-white` / `text-slate-900` across every file on `--fix`, shipping
+  light-themed apps as dark ones. Now suggest-only by default; opt in
+  with `{ autofix: true }` when your dark-mode token mapping is
+  complete. (`packages/eslint-plugin/src/rules/dark-mode-coverage.ts`)
+- **`no-arbitrary-zindex`** — portal values are allowlisted. `z-[999]`,
+  `z-[1000]`, `z-[9999]` no longer get clamped to `z-50`, so modals,
+  toasts, and dropdowns stay above sticky headers. Allowlist is
+  configurable via `exemptValues`.
+  (`packages/eslint-plugin/src/rules/no-arbitrary-zindex.ts`)
+- **`no-arbitrary-colors`** — only autofixes *exact* `customTokens`
+  matches. When a user has declared a token for a specific hex, we use
+  it; when they haven't, we emit a suggestion with the nearest match
+  instead of silently rewriting. Eliminates "why did my brand red turn
+  into `bg-red-500`?" regressions.
+  (`packages/eslint-plugin/src/rules/no-arbitrary-colors.ts`)
+- **`prefers-reduced-motion`** — `animate-spin` and `animate-ping` are
+  exempt by default. Their motion IS the loading signal; wrapping them
+  in `motion-safe:` leaves reduced-motion users looking at a static
+  circle. Exempt list is configurable via `exemptClasses`.
+  (`packages/eslint-plugin/src/rules/prefers-reduced-motion.ts`)
+- **`icon-accessibility`** — autofix is opt-in. Guessed `aria-label`
+  values were frequently wrong (e.g. "close" for a kebab menu) and
+  misled screen reader users. The rule still reports missing labels;
+  the fix is suggest-only unless `{ autofix: true }` is set with an
+  `iconLabels` map.
+  (`packages/eslint-plugin/src/rules/icon-accessibility.ts`)
+- **`lang-attribute`** — only autofixes when `defaultLang` is
+  configured. Previously stamped `lang="en"` on every `<html>` without
+  asking, which broke sites in other languages and tripped
+  WCAG 3.1.1 audits.
+  (`packages/eslint-plugin/src/rules/lang-attribute.ts`)
+- **`responsive-image-optimization`** — priority-aware. `<img loading>`
+  is no longer auto-set to `"lazy"` on images inside the first viewport
+  or marked `priority`/`fetchPriority="high"`. LCP hero images stay
+  eagerly loaded. (`packages/eslint-plugin/src/rules/responsive-image-optimization.ts`)
+- **`focus-trap-patterns`** — component allowlist for headless UI kits.
+  Radix `<Dialog>`, Headless UI `<Dialog>`, and shadcn/ui `<Sheet>` are
+  no longer flagged as missing focus traps — they implement focus
+  trapping themselves. Configurable via `trustedComponents`.
+  (`packages/eslint-plugin/src/rules/focus-trap-patterns.ts`)
+
+### Config schema
+
+- **`ProfileSchema` is now strict.** Unknown keys in `.deslintrc.json`
+  are rejected with a clear error instead of silently ignored, catching
+  typos like `severity` vs `severities` at load time.
+  (`packages/shared/src/config-schema.ts`)
+
+### Behaviour changes
+
+If you were relying on any of these autofix rewrites, add the opt-in flag
+to the rule's options in your `eslint.config.js`:
+
+```js
+// Before (0.3): silent rewrite on --fix
+// After (0.4): suggest-only, explicit opt-in
+'@deslint/dark-mode-coverage': ['error', { autofix: true }],
+'@deslint/icon-accessibility': ['error', { autofix: true, iconLabels: { /* ... */ } }],
+'@deslint/lang-attribute': ['error', { defaultLang: 'en' }],
+```
+
+### Validated
+
+- Full workspace test suite green (1,480+ tests across 5 packages).
+- Typecheck clean across all packages.
+- Action bundle verified in CI (PR #28).
+
 ## [0.3.1] — 2026-04-15
 
 Correctness release. Fixes two bugs in v0.3.0 (and earlier) that produced
