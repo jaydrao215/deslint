@@ -15,7 +15,11 @@ export type Options = [
   },
 ];
 
-export type MessageIds = 'missingLang' | 'emptyLang' | 'invalidLang';
+export type MessageIds =
+  | 'missingLang'
+  | 'emptyLang'
+  | 'invalidLang'
+  | 'suggestLang';
 
 /**
  * Very permissive BCP 47 sanity check. Matches common valid forms:
@@ -43,7 +47,7 @@ export default createRule<Options, MessageIds>({
           defaultLang: {
             type: 'string',
             description:
-              'Language code to insert when autofixing a missing lang attribute. BCP 47 format, e.g. "en", "en-US", "fr". Default: "en".',
+              'Language code to insert when autofixing a missing lang attribute. BCP 47 format, e.g. "en", "en-US", "fr". When unset the rule reports but does NOT autofix — guessing the language wrong (writing "en" on a French site) regresses screen-reader pronunciation across the whole page.',
           },
         },
         additionalProperties: false,
@@ -56,15 +60,18 @@ export default createRule<Options, MessageIds>({
         '`<html>` has an empty `lang` attribute. Set a valid BCP 47 language tag like "en", "en-US", or "fr".',
       invalidLang:
         '`<html lang="{{lang}}">` does not look like a valid BCP 47 language tag. Use a short code like "en", "en-US", "zh-CN", or "pt-BR".',
+      suggestLang: 'Insert `lang="{{lang}}"` (verify this matches the page content)',
     },
   },
-  defaultOptions: [
-    {
-      defaultLang: 'en',
-    },
-  ],
+  // IMPORTANT: no implicit defaultLang. If we default to 'en', then
+  // `deslint fix --all` stamps `lang="en"` on every French/Spanish/German/
+  // Japanese site it sees, telling screen readers to pronounce the entire
+  // page as English. That's a page-wide a11y regression. Users opt into
+  // autofix by explicitly setting `defaultLang`.
+  defaultOptions: [{}],
   create(context, [options]) {
-    const defaultLang = options.defaultLang ?? 'en';
+    const defaultLang = options.defaultLang;
+    const hasConfiguredLang = typeof defaultLang === 'string' && defaultLang.length > 0;
 
     return createElementVisitor({
       tagNames: ['html'],
@@ -75,22 +82,40 @@ export default createRule<Options, MessageIds>({
 
           const langAttr = getAttribute(element, 'lang');
 
-          // Missing lang entirely → report + autofix
+          // Missing lang entirely → report; autofix only if user configured it.
           if (!langAttr) {
+            // Build a fix closure bound to the configured lang — ONLY used
+            // as a top-level fix when `defaultLang` is explicitly set. The
+            // suggestion path always offers the placeholder "en" so IDE
+            // users can review before accepting.
+            const suggestedLang = hasConfiguredLang ? defaultLang : 'en';
+            const applyFix =
+              element.framework === 'jsx'
+                ? (fixer: Parameters<NonNullable<Parameters<typeof context.report>[0]['fix']>>[0]) => {
+                    const jsxNode = element.node as TSESTree.JSXOpeningElement;
+                    const tagEnd = jsxNode.name.range[1];
+                    return fixer.insertTextAfterRange(
+                      [tagEnd, tagEnd],
+                      ` lang="${suggestedLang}"`,
+                    );
+                  }
+                : undefined;
+
             context.report({
               node: element.node as TSESTree.Node,
               messageId: 'missingLang',
-              fix:
-                element.framework === 'jsx'
-                  ? (fixer) => {
-                      const jsxNode = element.node as TSESTree.JSXOpeningElement;
-                      const tagEnd = jsxNode.name.range[1];
-                      return fixer.insertTextAfterRange(
-                        [tagEnd, tagEnd],
-                        ` lang="${defaultLang}"`,
-                      );
-                    }
-                  : undefined,
+              ...(hasConfiguredLang && applyFix ? { fix: applyFix } : {}),
+              ...(applyFix
+                ? {
+                    suggest: [
+                      {
+                        messageId: 'suggestLang',
+                        data: { lang: suggestedLang },
+                        fix: applyFix,
+                      },
+                    ],
+                  }
+                : {}),
             });
             return;
           }
