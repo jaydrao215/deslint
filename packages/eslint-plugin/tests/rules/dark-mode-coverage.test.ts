@@ -14,18 +14,50 @@ const ruleTester = new RuleTester({
   },
 });
 
-function inv(code: string, output: string, suggested: string) {
+/**
+ * Suggest-only helper: default behaviour. The rule MUST NOT autofix
+ * (output: null) — the suggestion must still contain the inverted output.
+ */
+function suggestOnly(code: string, suggestedOutput: string, suggested: string) {
+  return {
+    code,
+    output: null,
+    errors: [
+      {
+        messageId: 'missingDarkVariant' as const,
+        suggestions: [
+          {
+            messageId: 'suggestDarkVariant' as const,
+            data: { suggested },
+            output: suggestedOutput,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * Opt-in autofix helper: when `autofix: true`, `--fix` should apply the
+ * inversion AND the suggestion should still be present.
+ */
+function autofixed(code: string, output: string, suggested: string) {
   return {
     code,
     output,
-    errors: [{
-      messageId: 'missingDarkVariant' as const,
-      suggestions: [{
-        messageId: 'suggestDarkVariant' as const,
-        data: { suggested },
-        output,
-      }],
-    }],
+    options: [{ autofix: true }],
+    errors: [
+      {
+        messageId: 'missingDarkVariant' as const,
+        suggestions: [
+          {
+            messageId: 'suggestDarkVariant' as const,
+            data: { suggested },
+            output,
+          },
+        ],
+      },
+    ],
   };
 }
 
@@ -71,50 +103,63 @@ ruleTester.run('dark-mode-coverage', rule, {
   ],
 
   invalid: [
-    inv(
+    // ── Default (suggest-only): no autofix, but suggestion is present ──
+    suggestOnly(
       '<div className="bg-blue-500 p-4" />',
       '<div className="bg-blue-500 dark:bg-blue-500 p-4" />',
       'dark:bg-blue-500',
     ),
-    inv(
+    suggestOnly(
       '<div className="bg-white text-black" />',
       '<div className="bg-white dark:bg-gray-900 text-black" />',
       'dark:bg-gray-900',
     ),
-    inv(
+    suggestOnly(
       '<div className="bg-black text-white" />',
       '<div className="bg-black dark:bg-gray-50 text-white" />',
       'dark:bg-gray-50',
     ),
-    inv(
+    suggestOnly(
       '<div className="bg-slate-100" />',
       '<div className="bg-slate-100 dark:bg-slate-900" />',
       'dark:bg-slate-900',
     ),
-    inv(
+    suggestOnly(
       '<div className="bg-red-200" />',
       '<div className="bg-red-200 dark:bg-red-800" />',
       'dark:bg-red-800',
     ),
-    inv(
+    suggestOnly(
       '<div className="bg-green-700" />',
       '<div className="bg-green-700 dark:bg-green-300" />',
       'dark:bg-green-300',
     ),
-    inv(
+    suggestOnly(
       '<div className="bg-gray-50 rounded" />',
       '<div className="bg-gray-50 dark:bg-gray-950 rounded" />',
       'dark:bg-gray-950',
     ),
-    inv(
+    suggestOnly(
       '<div className="bg-indigo-950" />',
       '<div className="bg-indigo-950 dark:bg-indigo-50" />',
       'dark:bg-indigo-50',
     ),
-    inv(
+    suggestOnly(
       '<div className={cn("bg-purple-400 p-4")} />',
       '<div className={cn("bg-purple-400 dark:bg-purple-600 p-4")} />',
       'dark:bg-purple-600',
+    ),
+
+    // ── Opt-in autofix: --fix applies inversion only when user sets autofix:true ──
+    autofixed(
+      '<div className="bg-blue-500 p-4" />',
+      '<div className="bg-blue-500 dark:bg-blue-500 p-4" />',
+      'dark:bg-blue-500',
+    ),
+    autofixed(
+      '<div className="bg-white text-black" />',
+      '<div className="bg-white dark:bg-gray-900 text-black" />',
+      'dark:bg-gray-900',
     ),
   ],
 });
