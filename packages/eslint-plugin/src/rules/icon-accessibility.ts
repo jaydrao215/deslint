@@ -15,10 +15,28 @@ export type Options = [
     iconComponents?: string[];
     /** Interactive wrapper elements to check (default: button, a). */
     interactiveElements?: string[];
+    /**
+     * When `true`, apply a derived aria-label as a top-level autofix via
+     * `--fix`. Default `false` — the derived label is inferred from the
+     * icon component's NAME (e.g. `<Search />` → "Search"), which is often
+     * wrong in context ("Search" may actually mean "Clear filter",
+     * "Submit query", "Reset", depending on the button's purpose). A
+     * wrong aria-label is strictly worse than none: it misleads assistive
+     * tech into announcing the wrong action. The suggestion path still
+     * offers the derived label for IDE / interactive-fix review.
+     */
+    autofix?: boolean;
+    /**
+     * Explicit mapping of icon component name to aria-label. When set,
+     * the rule autofixes (and suggests) using this label regardless of
+     * the `autofix` toggle, because the author has taken responsibility
+     * for the mapping.
+     */
+    iconLabels?: Record<string, string>;
   },
 ];
 
-export type MessageIds = 'iconOnlyInteractive' | 'decorativeWithoutHidden';
+export type MessageIds = 'iconOnlyInteractive' | 'decorativeWithoutHidden' | 'suggestIconLabel';
 
 /** Common icon component name patterns from popular libraries. */
 const DEFAULT_ICON_PATTERNS = [
@@ -39,15 +57,18 @@ export default createRule<Options, MessageIds>({
   meta: {
     type: 'suggestion',
     fixable: 'code',
+    hasSuggestions: true,
     docs: {
       description:
-        'Require accessible names on interactive elements containing only icons. Flag decorative icons missing aria-hidden.',
+        'Require accessible names on interactive elements containing only icons. Reports by default; autofix is opt-in because name-derived labels are often wrong in context.',
     },
     messages: {
       iconOnlyInteractive:
         'Interactive `<{{ tag }}>` contains only an icon (`<{{ icon }}>`) without an accessible name. Add `aria-label` to the {{ tag }} or `<span className="sr-only">` text so screen readers can announce the purpose.',
       decorativeWithoutHidden:
         'Decorative icon `<{{ icon }}>` adjacent to visible text should have `aria-hidden="true"` to prevent screen readers from announcing it twice.',
+      suggestIconLabel:
+        'Add `aria-label="{{ label }}"` (verify this matches the button\'s actual purpose)',
     },
     schema: [
       {
@@ -61,6 +82,13 @@ export default createRule<Options, MessageIds>({
             type: 'array',
             items: { type: 'string' },
           },
+          autofix: {
+            type: 'boolean',
+          },
+          iconLabels: {
+            type: 'object',
+            additionalProperties: { type: 'string' },
+          },
         },
         additionalProperties: false,
       },
@@ -71,6 +99,8 @@ export default createRule<Options, MessageIds>({
     const options = context.options[0] ?? {};
     const customIconNames = new Set(options.iconComponents ?? []);
     const customInteractive = options.interactiveElements ?? [];
+    const autofixEnabled = options.autofix === true;
+    const iconLabels = options.iconLabels ?? {};
 
     const interactiveTags = new Set([
       ...INTERACTIVE_TAGS,
@@ -129,9 +159,34 @@ export default createRule<Options, MessageIds>({
 
           // Icon-only interactive: all children are icons, no text
           if (hasIcon && !hasText) {
-            // Derive a readable label from the icon name:
-            // "SearchIcon" → "Search", "ChevronRight" → "Chevron right"
-            const label = deriveLabel(iconName || 'Icon');
+            // Prefer an explicit user-supplied mapping; fall back to a
+            // heuristic derived from the component name. The derived path
+            // is ONLY used for autofix when `autofix: true` is set OR when
+            // the author has provided an explicit label in `iconLabels` —
+            // a wrong aria-label is worse than none, because screen readers
+            // will confidently announce the wrong action to the user.
+            const explicitLabel = iconLabels[iconName];
+            const label = explicitLabel ?? deriveLabel(iconName || 'Icon');
+            const hasExplicitLabel = explicitLabel !== undefined;
+
+            const applyFix =
+              element.framework === 'jsx'
+                ? (fixer: Parameters<NonNullable<Parameters<typeof context.report>[0]['fix']>>[0]) => {
+                    const jsxNode = element.node as TSESTree.JSXOpeningElement;
+                    const tagEnd = jsxNode.name.range[1];
+                    return fixer.insertTextAfterRange(
+                      [tagEnd, tagEnd],
+                      ` aria-label="${label}"`,
+                    );
+                  }
+                : undefined;
+
+            // Top-level autofix only when the author has explicitly opted
+            // in (either globally via `autofix: true` or per-component via
+            // `iconLabels[iconName]`). Otherwise keep the suggestion so
+            // IDE / interactive mode still surfaces the fix, gated behind
+            // explicit user consent per occurrence.
+            const allowAutofix = hasExplicitLabel || autofixEnabled;
 
             context.report({
               node: node,
@@ -140,17 +195,18 @@ export default createRule<Options, MessageIds>({
                 tag: element.tagName,
                 icon: iconName || 'Icon',
               },
-              fix:
-                element.framework === 'jsx'
-                  ? (fixer) => {
-                      const jsxNode = element.node as TSESTree.JSXOpeningElement;
-                      const tagEnd = jsxNode.name.range[1];
-                      return fixer.insertTextAfterRange(
-                        [tagEnd, tagEnd],
-                        ` aria-label="${label}"`,
-                      );
-                    }
-                  : undefined,
+              ...(allowAutofix && applyFix ? { fix: applyFix } : {}),
+              ...(applyFix
+                ? {
+                    suggest: [
+                      {
+                        messageId: 'suggestIconLabel',
+                        data: { label },
+                        fix: applyFix,
+                      },
+                    ],
+                  }
+                : {}),
             });
           }
         } catch (err) {
