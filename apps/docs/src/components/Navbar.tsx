@@ -10,7 +10,6 @@ const NAV_LINKS = [
   { href: '/docs', label: 'Docs', icon: BookOpen },
   { href: '/docs/getting-started', label: 'Get Started', icon: Zap },
   { href: '/docs/rules', label: 'Rules', icon: BookOpen },
-  { href: '/pricing', label: 'Pricing', icon: CreditCard },
 ];
 
 export function Navbar() {
@@ -53,6 +52,13 @@ export function Navbar() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-gray-700 rounded-lg ring-1 ring-gray-200 hover:ring-primary/30 hover:text-primary hover:bg-primary-50/40 transition-all"
+            >
+              <CreditCard className="h-4 w-4" />
+              <span>Pricing</span>
+            </Link>
             <a
               href="https://github.com/jaydrao215/deslint"
               target="_blank"
@@ -94,7 +100,15 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <div className="pt-3 border-t border-gray-100">
+            <div className="pt-3 border-t border-gray-100 space-y-1">
+              <Link
+                href="/pricing"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-700 rounded-lg ring-1 ring-gray-200 hover:ring-primary/30 hover:text-primary"
+              >
+                <CreditCard className="h-4 w-4" />
+                Pricing
+              </Link>
               <a
                 href="https://github.com/jaydrao215/deslint"
                 target="_blank"
