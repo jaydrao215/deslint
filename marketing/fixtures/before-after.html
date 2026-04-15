@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>deslint — before/after fix</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  html, body { margin: 0; padding: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: #f4f5f7; }
+  .lane { position: relative; }
+  .lane-title {
+    position: absolute; top: 14px; left: 14px; z-index: 5;
+    font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    padding: 6px 10px; border-radius: 999px;
+  }
+  .lane-title.bad { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .lane-title.good { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .bigTitle { font-size: 32px; font-weight: 800; letter-spacing: -0.01em; text-align: center; padding: 28px 0 8px; color: #0f172a; }
+  .subTitle { text-align: center; color: #475569; font-size: 15px; padding-bottom: 22px; }
+  .pairWrap { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 0 32px 40px; max-width: 1280px; margin: 0 auto; }
+  .pairCard { background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 6px 22px rgba(15,23,42,.06); overflow: hidden; }
+  .pairCard .body { padding: 32px; min-height: 360px; position: relative; }
+  .caption { padding: 14px 20px; font-size: 13px; color: #334155; border-top: 1px solid #e2e8f0; background: #f8fafc; }
+  .sectionHeader { font-size: 20px; font-weight: 700; padding: 22px 32px 12px; color: #0f172a; max-width: 1280px; margin: 0 auto; }
+</style>
+</head>
+<body>
+  <div class="bigTitle">deslint — autofix that preserves your design</div>
+  <div class="subTitle">Real bugs we hunted in open-source apps, now fixed. Before (v0.3.0 autofix) vs After (these commits).</div>
+
+  <!-- ── Bug 1: dark-mode-coverage silently added dark: variants ── -->
+  <div class="sectionHeader">1. Dark-mode autofix no longer invents a dark theme</div>
+  <div class="pairWrap">
+    <!-- BEFORE: dark mode silently applied, page reads as dark -->
+    <div class="pairCard">
+      <div class="lane">
+        <div class="lane-title bad">Before — silent rewrite</div>
+        <div class="body" style="background: #0f172a; color: #f8fafc;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom: 22px;">
+            <div style="font-weight:700; font-size:18px;">Acme Studio</div>
+            <div style="display:flex; gap:12px;">
+              <span style="background:#1e293b; color:#cbd5e1; padding:6px 10px; border-radius:8px; font-size:13px;">Docs</span>
+              <span style="background:#334155; color:#f1f5f9; padding:6px 10px; border-radius:8px; font-size:13px;">Sign in</span>
+            </div>
+          </div>
+          <div style="font-size:26px; font-weight:800; padding-bottom:10px;">Design a brand site</div>
+          <div style="color:#94a3b8; padding-bottom:22px; font-size:14px;">Your brand identity — now in night mode without you asking for it.</div>
+          <div style="display:flex; gap:10px;">
+            <button style="background:#334155; color:#f1f5f9; padding:10px 16px; border:none; border-radius:8px;">Get started</button>
+            <button style="background:transparent; color:#cbd5e1; padding:10px 16px; border:1px solid #475569; border-radius:8px;">Learn more</button>
+          </div>
+        </div>
+      </div>
+      <div class="caption">deslint --fix rewrote <code>bg-white</code> to <code>bg-slate-900</code>, <code>text-slate-900</code> to <code>text-white</code> across the tree. The light-themed site shipped to production as a dark one.</div>
+    </div>
+
+    <!-- AFTER: original light palette preserved -->
+    <div class="pairCard">
+      <div class="lane">
+        <div class="lane-title good">After — preserved</div>
+        <div class="body" style="background: #ffffff; color: #0f172a;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom: 22px;">
+            <div style="font-weight:700; font-size:18px;">Acme Studio</div>
+            <div style="display:flex; gap:12px;">
+              <span style="background:#f1f5f9; color:#0f172a; padding:6px 10px; border-radius:8px; font-size:13px;">Docs</span>
+              <span style="background:#0f172a; color:#ffffff; padding:6px 10px; border-radius:8px; font-size:13px;">Sign in</span>
+            </div>
+          </div>
+          <div style="font-size:26px; font-weight:800; padding-bottom:10px;">Design a brand site</div>
+          <div style="color:#475569; padding-bottom:22px; font-size:14px;">Your brand identity — exactly the one you committed.</div>
+          <div style="display:flex; gap:10px;">
+            <button style="background:#0f172a; color:#ffffff; padding:10px 16px; border:none; border-radius:8px;">Get started</button>
+            <button style="background:transparent; color:#0f172a; padding:10px 16px; border:1px solid #cbd5e1; border-radius:8px;">Learn more</button>
+          </div>
+        </div>
+      </div>
+      <div class="caption">Dark-mode coverage is <b>suggest-only by default</b>. Opt in with <code>autofix: true</code> when you're ready. No silent colour inversions.</div>
+    </div>
+  </div>
+
+  <!-- ── Bug 2: z-[9999] modal clamped to z-50, falls behind sticky header ── -->
+  <div class="sectionHeader">2. Portal/modal z-index is no longer clamped behind your header</div>
+  <div class="pairWrap">
+    <!-- BEFORE -->
+    <div class="pairCard">
+      <div class="lane">
+        <div class="lane-title bad">Before — modal disappears</div>
+        <div class="body" style="padding:0; min-height: 360px; background:#f8fafc; position: relative;">
+          <!-- Page content -->
+          <div style="padding: 58px 24px 24px; background:#f8fafc; color:#334155; font-size:14px;">
+            <div style="padding-bottom:10px;">Orders · Q2</div>
+            <div style="height:32px; background:#e2e8f0; border-radius:6px; margin-bottom:8px;"></div>
+            <div style="height:32px; background:#e2e8f0; border-radius:6px; margin-bottom:8px;"></div>
+            <div style="height:32px; background:#e2e8f0; border-radius:6px; margin-bottom:8px;"></div>
+          </div>
+
+          <!-- Modal (z-50) overlapping where the header will sit -->
+          <div style="position:absolute; top:20px; right:24px; background:white; border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,.12); padding:16px 18px; width:240px; z-index: 50; border:1px solid #e2e8f0;">
+            <div style="font-weight:700; font-size:14px; padding-bottom:6px;">Confirm delete?</div>
+            <div style="color:#475569; font-size:13px; padding-bottom:12px;">This action can't be undone.</div>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+              <button style="font-size:13px; padding:6px 10px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px;">Cancel</button>
+              <button style="font-size:13px; padding:6px 10px; background:#dc2626; color:white; border:none; border-radius:6px;">Delete</button>
+            </div>
+          </div>
+
+          <!-- Header (z-100) LAID OVER the modal to show the z-conflict visually -->
+          <div style="position:absolute; top:0; left:0; right:0; z-index: 100; background:#0f172a; color:#f8fafc; padding:14px 24px; font-weight:700;">
+            Acme Dashboard
+          </div>
+        </div>
+      </div>
+      <div class="caption"><code>z-[9999]</code> on the modal was clamped to <code>z-50</code>. Portal is now behind the app header — users can't interact with the top of it.</div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="pairCard">
+      <div class="lane">
+        <div class="lane-title good">After — modal floats on top</div>
+        <div class="body" style="padding:0; min-height: 360px; background:#f8fafc; position: relative;">
+          <div style="padding: 58px 24px 24px; background:#f8fafc; color:#334155; font-size:14px;">
+            <div style="padding-bottom:10px;">Orders · Q2</div>
+            <div style="height:32px; background:#e2e8f0; border-radius:6px; margin-bottom:8px;"></div>
+            <div style="height:32px; background:#e2e8f0; border-radius:6px; margin-bottom:8px;"></div>
+            <div style="height:32px; background:#e2e8f0; border-radius:6px; margin-bottom:8px;"></div>
+          </div>
+
+          <!-- Modal (z-9999 preserved — ABOVE header) -->
+          <div style="position:absolute; top:20px; right:24px; background:white; border-radius:12px; box-shadow: 0 18px 48px rgba(0,0,0,.18); padding:16px 18px; width:240px; z-index: 9999; border:1px solid #e2e8f0;">
+            <div style="font-weight:700; font-size:14px; padding-bottom:6px;">Confirm delete?</div>
+            <div style="color:#475569; font-size:13px; padding-bottom:12px;">This action can't be undone.</div>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+              <button style="font-size:13px; padding:6px 10px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px;">Cancel</button>
+              <button style="font-size:13px; padding:6px 10px; background:#dc2626; color:white; border:none; border-radius:6px;">Delete</button>
+            </div>
+          </div>
+
+          <div style="position:absolute; top:0; left:0; right:0; z-index: 100; background:#0f172a; color:#f8fafc; padding:14px 24px; font-weight:700;">
+            Acme Dashboard
+          </div>
+        </div>
+      </div>
+      <div class="caption">Large portal z-indices (999, 1000, 9999) are allowlisted by default. <code>z-[9999]</code> stays intact.</div>
+    </div>
+  </div>
+
+  <!-- ── Bug 3: animate-spin wrapped in motion-safe, loader stops for reduced-motion users ── -->
+  <div class="sectionHeader">3. Loading spinner keeps spinning for every user</div>
+  <div class="pairWrap">
+    <!-- BEFORE -->
+    <div class="pairCard">
+      <div class="lane">
+        <div class="lane-title bad">Before — static spinner</div>
+        <div class="body" style="display:flex; align-items:center; justify-content:center; min-height: 360px; background:#ffffff;">
+          <div style="display:flex; align-items:center; gap:14px; padding:14px 22px; border:1px solid #e2e8f0; border-radius:12px; background:#f8fafc;">
+            <!-- Static "spinner" — rendering as-if motion-reduce active -->
+            <div style="width:28px; height:28px; border:3px solid #e2e8f0; border-top-color:#3b82f6; border-radius:50%;"></div>
+            <div style="font-size:14px; color:#334155;">Loading orders…</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">deslint wrapped <code>animate-spin</code> with <code>motion-safe:</code>. Users with <code>prefers-reduced-motion</code> now see a <b>frozen</b> circle — no visual cue that loading is in progress.</div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="pairCard">
+      <div class="lane">
+        <div class="lane-title good">After — spinning</div>
+        <div class="body" style="display:flex; align-items:center; justify-content:center; min-height: 360px; background:#ffffff;">
+          <div style="display:flex; align-items:center; gap:14px; padding:14px 22px; border:1px solid #e2e8f0; border-radius:12px; background:#f8fafc;">
+            <!-- Actual spinning CSS animation -->
+            <div class="spinner" style="width:28px; height:28px; border:3px solid #e2e8f0; border-top-color:#3b82f6; border-radius:50%; animation: spin 0.8s linear infinite;"></div>
+            <div style="font-size:14px; color:#334155;">Loading orders…</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption"><code>animate-spin</code> and <code>animate-ping</code> are exempt by default — their motion IS the signal. Decorative animations still get wrapped.</div>
+    </div>
+  </div>
+
+  <div style="padding: 30px 0 50px; text-align:center; color:#64748b; font-size: 13px;">
+    deslint · autofix preserves your design · opt-in for riskier transforms
+  </div>
+
+  <style>
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  </style>
+</body>
+</html>

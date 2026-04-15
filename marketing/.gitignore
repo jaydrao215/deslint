@@ -1,0 +1,5 @@
+# Regenerate via `node marketing/capture.mjs`. PNGs and the walkthrough
+# video are checked in as-is so marketing can grab them without running
+# playwright locally; the `*.webm` path is regex-loose so re-runs don't
+# leave orphaned hashes committed.
+output/*.webm.tmp
