@@ -14,8 +14,19 @@ import { resolve } from 'node:path';
 import { writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { dirname } from 'node:path';
 import chalk from 'chalk';
-import { safeParseConfig, evaluateQualityGate, formatGateResult } from '@deslint/shared';
-import type { DeslintConfig, GateScanSnapshot } from '@deslint/shared';
+import {
+  safeParseConfig,
+  evaluateQualityGate,
+  formatGateResult,
+  loadBudget,
+  evaluateBudget,
+  formatBudgetResult,
+} from '@deslint/shared';
+import type {
+  DeslintConfig,
+  GateScanSnapshot,
+  BudgetScanSnapshot,
+} from '@deslint/shared';
 import { readFileSync } from 'node:fs';
 
 import { discoverFiles } from './discover.js';
@@ -64,8 +75,16 @@ export { generateAgentsMd } from './templates/agents-md.js';
 export { calculateScore } from './score.js';
 export type { ScoreResult, CategoryScore, HistoryEntry } from './score.js';
 export { discoverFiles } from './discover.js';
-export { runLint } from './lint-runner.js';
-export type { LintResult, RuleCategory } from './lint-runner.js';
+export { runLint, aggregateResults } from './lint-runner.js';
+export type { LintResult, LintFileResult, LintMessage, RuleCategory } from './lint-runner.js';
+export {
+  gitDiffAddedRanges,
+  parseUnifiedDiff,
+  filterLintResultByHunks,
+  messageInScope,
+  lineInRanges,
+} from './git-diff.js';
+export type { DiffScope, AddedRange } from './git-diff.js';
 
 /**
  * Walk from `startDir` up to the filesystem root looking for `.deslintrc.json`.
@@ -79,8 +98,6 @@ export type { LintResult, RuleCategory } from './lint-runner.js';
  */
 export function findConfigFile(startDir: string): string | undefined {
   let current = resolve(startDir);
-  // dirname('/') === '/', so loop terminates at the root.
-  // Cap at a sane depth to avoid pathological symlink loops.
   for (let i = 0; i < 64; i++) {
     const candidate = resolve(current, '.deslintrc.json');
     if (existsSync(candidate)) return candidate;
@@ -92,15 +109,13 @@ export function findConfigFile(startDir: string): string | undefined {
 }
 
 /**
- * Load .deslintrc.json. Searches `projectDir` first, then walks up ancestors
- * (matching ESLint/Prettier/TS behaviour). Returns undefined if nothing found.
+ * Load .deslintrc.json. Searches `projectDir` first, then walks up ancestors.
  */
 function loadConfig(projectDir: string): DeslintConfig | undefined {
   const configPath = findConfigFile(projectDir);
   if (!configPath) return undefined;
 
   try {
-    // Security: limit config file size to 1 MB to prevent memory exhaustion
     const { size } = statSync(configPath);
     if (size > 1024 * 1024) {
       console.error(chalk.red('  .deslintrc.json exceeds 1 MB size limit'));
@@ -116,24 +131,16 @@ function loadConfig(projectDir: string): DeslintConfig | undefined {
   return undefined;
 }
 
-/**
- * Resolve rule overrides from config, applying profile if specified.
- */
 function resolveRules(
   config: DeslintConfig | undefined,
   profile?: string,
 ): Record<string, any> | undefined {
   if (!config) return undefined;
-
-  // If a profile is specified, use its rules
   if (profile && config.profiles?.[profile]) {
     return config.profiles[profile].rules;
   }
-
   return config.rules;
 }
-
-// ── CLI Setup ────────────────────────────────────────────────────────
 
 const program = new Command();
 
@@ -142,18 +149,6 @@ program
   .description('Design quality gate for AI-generated frontend code')
   .version(VERSION);
 
-// Trust footer shown at the end of the help output for the root command
-// and every subcommand (`afterAll`). This is the user-visible reinforcement
-// of the local-first promise — every inbound privacy-conscious developer
-// running `deslint --help` sees it. Kept off `--version` deliberately so
-// that scripts that parse version output (`deslint --version | grep 0.3`)
-// continue to work.
-//
-// Callback form so chalk's color detection (including `NO_COLOR`) is
-// evaluated at render time, not module-load time — a wrapper script that
-// sets NO_COLOR after import but before parse still suppresses dim styling.
-// No trailing `\n`: commander's help renderer adds a terminating newline,
-// so an extra one would produce a blank line after the footer.
 program.addHelpText(
   'afterAll',
   () =>
@@ -163,8 +158,6 @@ program.addHelpText(
     ),
 );
 
-// ── scan command ─────────────────────────────────────────────────────
-
 program
   .command('scan')
   .description('Scan project for design quality violations and report Design Health Score')
@@ -173,32 +166,58 @@ program
   .option('--min-score <score>', 'Fail if score is below this threshold')
   .option('--profile <name>', 'Use a named severity profile from .deslintrc.json')
   .option('--no-history', 'Do not save score to history file')
-  .action(async (dir: string, opts: { format: string; minScore?: string; profile?: string; history: boolean }) => {
+  .option(
+    '--diff <ref>',
+    'Only report violations on lines changed since <ref> (e.g. origin/main, HEAD~1). Requires git.',
+  )
+  .option(
+    '--budget <path>',
+    'Evaluate against an error budget file (defaults to .deslint/budget.yml, falls back to .deslint/budget.json).',
+  )
+  .action(async (dir: string, opts: { format: string; minScore?: string; profile?: string; history: boolean; diff?: string; budget?: string }) => {
     try {
       const cwd = resolve(dir);
       const config = loadConfig(cwd);
       const rules = resolveRules(config, opts.profile);
 
-      const files = await discoverFiles({
+      const { gitDiffAddedRanges, filterLintResultByHunks } = await import('./git-diff.js');
+      const diffScope = opts.diff ? gitDiffAddedRanges(opts.diff, cwd) : undefined;
+
+      const allFiles = await discoverFiles({
         cwd,
         ignorePatterns: config?.ignore,
       });
 
+      const files = diffScope
+        ? allFiles.filter((f) => diffScope.files.has(f))
+        : allFiles;
+
       if (files.length === 0) {
-        console.log(chalk.yellow('\n  No files found to scan.\n'));
+        if (diffScope) {
+          console.log(chalk.yellow(`\n  No frontend files changed since ${opts.diff}.\n`));
+        } else {
+          console.log(chalk.yellow('\n  No files found to scan.\n'));
+        }
         process.exit(0);
       }
 
-      const lintResult = await runLint({ files, ruleOverrides: rules, cwd });
+      const rawLintResult = await runLint({ files, ruleOverrides: rules, cwd });
+      const lintResult = diffScope
+        ? filterLintResultByHunks(rawLintResult, diffScope)
+        : rawLintResult;
       const scoreResult = calculateScore(lintResult);
       const debtResult = calculateDebt(lintResult);
 
       const outputFormat = opts.format as OutputFormat;
+      if (diffScope && outputFormat === 'text') {
+        console.log(
+          chalk.cyan(
+            `\n  Diff mode: scoped to ${files.length} changed file(s) since ${opts.diff}.`,
+          ),
+        );
+      }
       console.log(format(outputFormat, lintResult, scoreResult, cwd));
 
-      // Quality gate evaluation (opt-in via .deslintrc.json `qualityGate`).
-      // Reads previous score from history (if any) for regression detection
-      // BEFORE the new entry is appended.
       let previousSnapshot: GateScanSnapshot | undefined;
       if (config?.qualityGate) {
         const historyPath = resolve(cwd, '.deslint', 'history.json');
@@ -211,7 +230,7 @@ program
                 overall: last.overall,
                 categories: last.categories,
                 totalViolations: last.totalViolations,
-                debtMinutes: 0, // pre-debt history entries lack this
+                debtMinutes: 0,
               };
             }
           } catch { /* ignore */ }
@@ -241,19 +260,76 @@ program
         console.log('');
       }
 
-      // Save history (unless --no-history)
-      if (opts.history && outputFormat === 'text') {
+      // Budget evaluation (opt-in via .deslint/budget.yml or --budget <path>).
+      // Diff mode intentionally skips budget evaluation — a partial scan cannot
+      // be meaningfully compared to full-repo caps.
+      const loaded = diffScope
+        ? undefined
+        : await loadBudget({ explicitPath: opts.budget, cwd }).catch((err) => {
+            console.error(
+              chalk.red(
+                `  Error loading budget: ${err instanceof Error ? err.message : String(err)}`,
+              ),
+            );
+            process.exit(1);
+          });
+
+      const budgetSnapshot: BudgetScanSnapshot = {
+        overall: scoreResult.overall,
+        categories: {
+          colors: scoreResult.categories.colors.score,
+          spacing: scoreResult.categories.spacing.score,
+          typography: scoreResult.categories.typography.score,
+          responsive: scoreResult.categories.responsive.score,
+          consistency: scoreResult.categories.consistency.score,
+        },
+        totalViolations: lintResult.totalViolations,
+        debtMinutes: debtResult.totalMinutes,
+        byRule: lintResult.byRule,
+      };
+
+      const previousBudgetSnapshot: BudgetScanSnapshot | undefined = previousSnapshot
+        ? {
+            ...previousSnapshot,
+            byRule: {},
+          }
+        : undefined;
+      if (previousBudgetSnapshot) {
+        try {
+          const historyPath = resolve(cwd, '.deslint', 'history.json');
+          if (existsSync(historyPath)) {
+            const history: HistoryEntry[] = JSON.parse(readFileSync(historyPath, 'utf-8'));
+            const last = history[history.length - 1];
+            if (last?.byRule) previousBudgetSnapshot.byRule = last.byRule;
+          }
+        } catch { /* ignore */ }
+      }
+
+      const budgetResult = evaluateBudget(
+        loaded?.budget,
+        budgetSnapshot,
+        previousBudgetSnapshot,
+      );
+
+      if (budgetResult.conditionsChecked > 0 && outputFormat === 'text') {
+        const colorFn = budgetResult.passed ? chalk.green : chalk.red;
+        console.log(colorFn(`  ${formatBudgetResult(budgetResult)}`));
+        if (loaded) {
+          console.log(chalk.gray(`  Budget file: ${loaded.path}`));
+        }
+        console.log('');
+      }
+
+      if (opts.history && outputFormat === 'text' && !diffScope) {
         saveHistory(cwd, lintResult, scoreResult);
       }
 
-      // Always generate HTML report (unless JSON/SARIF output — piping mode)
       if (outputFormat === 'text') {
         generateHtmlReport(lintResult, scoreResult, cwd);
         console.log(chalk.gray(`  Full report: .deslint/report.html`));
         console.log('');
       }
 
-      // Exit code logic
       if (opts.minScore) {
         const minScore = parseInt(opts.minScore, 10);
         if (scoreResult.overall < minScore) {
@@ -264,13 +340,14 @@ program
         }
       }
 
-      // Quality gate enforcement — only when opt-in `enforce: true` is set.
-      // Default behavior is warn-only so v0.1.0 users see no breaking change.
       if (gateResult.enforced && !gateResult.passed) {
         process.exit(1);
       }
 
-      // Exit with code 1 if any errors present
+      if (budgetResult.enforced && !budgetResult.passed) {
+        process.exit(1);
+      }
+
       if (lintResult.bySeverity.errors > 0) {
         process.exit(1);
       }
@@ -279,8 +356,6 @@ program
       process.exit(1);
     }
   });
-
-// ── fix command ──────────────────────────────────────────────────────
 
 program
   .command('fix')
@@ -311,7 +386,6 @@ program
       } else if (opts.all || opts.dryRun) {
         await fixAll({ files, ruleOverrides: rules, dryRun: opts.dryRun, cwd });
       } else {
-        // Default: interactive mode
         await fixInteractive({ files, ruleOverrides: rules, cwd });
       }
     } catch (err) {
@@ -319,8 +393,6 @@ program
       process.exit(1);
     }
   });
-
-// ── generate-config command ──────────────────────────────────────────
 
 program
   .command('generate-config')
@@ -356,8 +428,6 @@ program
       process.exit(1);
     }
   });
-
-// ── import-tokens command ───────────────────────────────────────────
 
 program
   .command('import-tokens')
@@ -395,8 +465,6 @@ program
     },
   );
 
-// ── init command ────────────────────────────────────────────────────
-
 program
   .command('init')
   .description('Set up Deslint in your project with an interactive wizard')
@@ -408,8 +476,6 @@ program
       process.exit(1);
     }
   });
-
-// ── suggest-tokens command ───────────────────────────────────────────
 
 program
   .command('suggest-tokens')
@@ -442,8 +508,6 @@ program
     }
   });
 
-// ── trend command ────────────────────────────────────────────────────
-
 program
   .command('trend')
   .description('Show Design Health Score trend over time from .deslint/history.json')
@@ -465,8 +529,6 @@ program
         console.log(formatTrendText(summary, history, { limit, alertThreshold }));
       }
 
-      // Non-zero exit if regressions were detected (informational — does not
-      // block CI unless user wires it into their pipeline explicitly).
       if (summary.regressions.length > 0) {
         process.exitCode = 1;
       }
@@ -475,8 +537,6 @@ program
       process.exit(1);
     }
   });
-
-// ── compliance command ──────────────────────────────────────────────
 
 program
   .command('compliance')
@@ -515,7 +575,6 @@ program
         return;
       }
 
-      // Default: HTML
       const html = renderComplianceHtml({
         projectName: basename(cwd),
         scannedAt: new Date(),
@@ -536,7 +595,52 @@ program
     }
   });
 
-// ── report command ──────────────────────────────────────────────────
+program
+  .command('attest')
+  .description(
+    'Emit a reproducible, committable attestation JSON for the current scan ' +
+      '(v0.6 OSS: unsigned; v0.7 Teams: Sigstore-signed).',
+  )
+  .argument('[dir]', 'Project directory to scan', '.')
+  .option('-o, --output <path>', 'Output file path', '.deslint/attestation.json')
+  .option('--budget <path>', 'Budget file to evaluate and include in the attestation')
+  .option('--stdout', 'Print the attestation to stdout instead of writing a file')
+  .action(
+    async (
+      dir: string,
+      opts: { output: string; budget?: string; stdout?: boolean },
+    ) => {
+      try {
+        const { buildAttestation, serializeAttestation, writeAttestation } =
+          await import('./attest.js');
+        const cwd = resolve(dir);
+        const attestation = await buildAttestation({
+          projectDir: cwd,
+          budgetPath: opts.budget,
+          now: process.env.DESLINT_ATTEST_NOW,
+        });
+
+        if (opts.stdout) {
+          process.stdout.write(serializeAttestation(attestation));
+          return;
+        }
+
+        const outputPath = resolve(cwd, opts.output);
+        writeAttestation(outputPath, attestation);
+        console.log(chalk.green(`  ✓ Wrote ${outputPath}`));
+        console.log(
+          chalk.gray(
+            `  Schema: ${attestation.schema} · ruleset: ${attestation.rulesetHash.slice(0, 16)} · files: ${attestation.files.length}`,
+          ),
+        );
+      } catch (err) {
+        console.error(
+          chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`),
+        );
+        process.exit(1);
+      }
+    },
+  );
 
 program
   .command('report')
@@ -551,8 +655,6 @@ program
       process.exit(1);
     }
 
-    // Open in default browser — use execFile (not exec) to avoid command injection
-    // via crafted directory names containing shell metacharacters.
     const { execFile } = await import('node:child_process');
     const platform = process.platform;
     const cmd = platform === 'darwin' ? 'open' : platform === 'win32' ? 'start' : 'xdg-open';
@@ -565,10 +667,6 @@ program
     });
   });
 
-// ── Parse and run ────────────────────────────────────────────────────
-
-// Only parse args when running as CLI binary (not when imported as library)
-// Check if we're being run directly via the deslint bin entry
 const runningAsCli =
   process.argv[1]?.endsWith('/dist/index.js') ||
   process.argv[1]?.endsWith('/cli/dist/index.js') ||
