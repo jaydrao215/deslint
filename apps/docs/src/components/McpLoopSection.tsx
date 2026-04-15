@@ -71,6 +71,10 @@ export function McpLoopSection() {
             , gets back structured violations with rule IDs and autofixes,
             and corrects its own output before you even see it.
           </p>
+          <p className="mt-4 text-sm text-gray-500 leading-relaxed">
+            Your AI stays on your terms. Deslint itself runs zero LLMs — it&apos;s
+            the deterministic check in the loop, not another model in the stack.
+          </p>
         </FadeIn>
 
         {/* Tab switcher */}

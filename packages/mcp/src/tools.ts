@@ -15,7 +15,7 @@
  * v0.3.0 additions: compliance_check, get_rule_details, suggest_fix_strategy
  */
 
-import { resolve, relative, dirname, basename, join, normalize } from 'node:path';
+import { resolve, relative, dirname, basename, join, normalize, isAbsolute, sep } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdtempSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
@@ -152,7 +152,12 @@ function resolveProjectDir(filePath: string, projectDir?: string): { projectDir:
   const requestedDir = resolve(projectDir ?? process.cwd());
   // Normalize to collapse any ../ sequences before comparison
   const absPath = normalize(resolve(requestedDir, filePath));
-  const insideRequested = absPath.startsWith(requestedDir + '/') || absPath === requestedDir;
+  // Use `path.relative` for a cross-platform containment check. A resolved
+  // path is inside the requested dir iff its relative path is empty, doesn't
+  // start with `..`, and is not itself absolute (Windows drive-letter escape).
+  // The old `absPath.startsWith(requestedDir + '/')` check was Linux-only.
+  const rel = relative(requestedDir, absPath);
+  const insideRequested = rel === '' || (!rel.startsWith('..' + sep) && rel !== '..' && !isAbsolute(rel));
   return {
     absPath,
     projectDir: insideRequested ? requestedDir : dirname(absPath),

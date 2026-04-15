@@ -8,9 +8,11 @@ import { Code2, Terminal, GitPullRequest, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 /**
- * "One engine, four surfaces" — but as actual product showcase, not icons
+ * "One engine, every surface" — but as actual product showcase, not icons
  * in boxes. Each surface gets a full-width alternating row with a live,
  * hand-coded mockup showing what the product actually looks like there.
+ * The MCP agent surface lives in its own dedicated section above; this
+ * component covers the three deterministic, developer-facing surfaces.
  */
 interface Surface {
   eyebrow: string;
@@ -67,16 +69,17 @@ export function ProductShowcase() {
       <div className="mx-auto max-w-6xl">
         <FadeIn className="mb-20 max-w-2xl">
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
-            One engine, everywhere you work
+            One engine, every surface
           </p>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 text-balance">
             Same rules in your editor, CI, and PR
           </h2>
           <p className="text-lg text-gray-500 leading-relaxed">
             Configure Deslint once in your flat config. Every surface — IDE,
-            terminal, GitHub Action, MCP agent — runs the same deterministic rule
-            engine against the same config. No duplicated rules, no divergent
-            results, no &quot;it passed locally&quot; drift.
+            terminal, GitHub Action, and the MCP agent loop above — runs the
+            same deterministic rule engine against the same config. No
+            duplicated rules, no divergent results, no &quot;it passed
+            locally&quot; drift.
           </p>
         </FadeIn>
 

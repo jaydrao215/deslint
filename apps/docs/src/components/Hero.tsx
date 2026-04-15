@@ -35,7 +35,7 @@ export function Hero({ stars }: HeroProps) {
             >
               <div className="inline-flex items-center gap-2.5 rounded-full border border-primary/15 bg-primary-50/60 backdrop-blur-sm px-4 py-1.5 text-sm font-medium text-primary mb-7">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                <span>Design quality + WCAG gate for AI-generated code</span>
+                <span>The deterministic design linter for AI-generated code</span>
               </div>
             </motion.div>
 
@@ -55,9 +55,10 @@ export function Hero({ stars }: HeroProps) {
               transition={{ duration: 0.6, delay: 0.35 }}
               className="text-base sm:text-lg text-gray-500 mb-8 max-w-xl leading-relaxed"
             >
-              AI ships design drift, dark-mode gaps, and WCAG failures at the
-              speed of autocomplete. Deslint catches them in your editor, your
-              CI, and every PR —{' '}
+              AI ships design drift, dark-mode gaps, and accessibility
+              failures at the speed of autocomplete. Deslint is the
+              deterministic check that runs in your editor, your CI, your PR,
+              and inside the agent loop itself —{' '}
               <span className="font-semibold text-gray-700">
                 without ever sending your code to a cloud.
               </span>
@@ -113,15 +114,15 @@ export function Hero({ stars }: HeroProps) {
               </span>
               <span className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-pass" />
-                WCAG 2.2 &amp; 2.1 AA mapped
+                0 false positives · 3,998 files tested
               </span>
               <span className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-pass" />
-                5 frameworks
+                5 frameworks, 1 config
               </span>
               <span className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-pass" />
-                Code never leaves your machine
+                Plugin · CLI · MCP · Action
               </span>
             </motion.div>
           </div>

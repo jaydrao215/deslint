@@ -2,6 +2,10 @@
 
 > Design quality CLI with scan, fix, and Design Health Score.
 
+<p align="center">
+  <img src="https://deslint.com/demo/cli-demo.gif" alt="deslint scan producing a Design Health Score with per-category breakdown and violation list" width="720">
+</p>
+
 ## Installation
 
 ```bash

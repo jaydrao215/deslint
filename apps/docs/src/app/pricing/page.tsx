@@ -51,15 +51,14 @@ const TIERS: Tier[] = [
     price: '$99',
     priceSuffix: '/ month · up to 5 devs',
     description:
-      'Cross-repo dashboards, trend tracking, Figma design-token sync, and team-wide quality baselines. $19/seat/month beyond 5 developers.',
+      'Cross-repo dashboards for the design debt AI is shipping into your PRs. Team-wide rule bundles, weekly drift digest, quality baselines. $19/seat/month beyond 5 developers.',
     features: [
       'Everything in Open Source',
       'Up to 5 developers included',
-      'Team dashboard with trend charts',
-      'Cross-repo design debt tracking',
-      'Figma design-token sync',
-      'Shared quality gate presets',
-      'Slack / Teams notifications',
+      'Cross-repo AI-PR design-debt dashboard',
+      'Weekly Slack digest of drift introduced by AI',
+      'Team-wide rule bundles + shared quality gates',
+      'Trend charts per repo, per rule, per author',
       'Priority rule-request voting',
       'Email support (< 24 h SLA)',
     ],
@@ -71,9 +70,10 @@ const TIERS: Tier[] = [
   {
     name: 'Enterprise',
     icon: Building2,
-    price: 'Custom',
+    price: 'From $10k',
+    priceSuffix: '/ year · 20+ seats',
     description:
-      'Self-hosted deployment, SSO, audit logs, custom rules, and dedicated onboarding for large engineering orgs.',
+      'Self-hosted deployment, SSO, audit logs, custom rules, and dedicated onboarding for large engineering orgs. Pricing is indicative; we scope to your stack and seat count.',
     features: [
       'Everything in Teams',
       'Self-hosted / air-gapped deployment',
@@ -364,7 +364,7 @@ const FAQS = [
   },
   {
     q: 'Can I self-host the paid features?',
-    a: 'The Enterprise tier includes self-hosted / air-gapped deployment. Teams is a managed service. Both keep your source code local — only aggregated scores and metadata leave your machine.',
+    a: 'The Enterprise tier includes self-hosted / air-gapped deployment. Teams is a managed service. Both keep your source code local — only aggregated scores, rule IDs, and violation counts leave your machine to power the dashboard.',
   },
   {
     q: 'How does pricing work for open source maintainers?',
