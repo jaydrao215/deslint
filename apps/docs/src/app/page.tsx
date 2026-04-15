@@ -7,7 +7,6 @@ import { McpLoopSection } from '@/components/McpLoopSection';
 import { ProductShowcase } from '@/components/ProductShowcase';
 import { WhatItCatches } from '@/components/WhatItCatches';
 import { ComparisonStrip } from '@/components/ComparisonStrip';
-import { QuickStart } from '@/components/QuickStart';
 import { Cta } from '@/components/Cta';
 import { Footer } from '@/components/Footer';
 
@@ -24,7 +23,6 @@ export default async function Home() {
         <ProductShowcase />
         <WhatItCatches />
         <ComparisonStrip />
-        <QuickStart />
         <Cta />
       </main>
       <Footer />

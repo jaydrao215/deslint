@@ -74,7 +74,7 @@ export function Cta() {
             href="/docs/getting-started"
             className="group inline-flex items-center gap-2 text-sm font-medium text-primary-200 hover:text-white transition-colors"
           >
-            Read the docs
+            Full setup in 2 minutes
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
           <a
