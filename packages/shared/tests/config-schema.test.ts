@@ -148,6 +148,48 @@ describe('DeslintConfigSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('rejects unknown keys inside a profile', () => {
+    // Regression: previously a stray `extends` or misspelt `ruls` was
+    // silently accepted, leaving the profile effectively empty at runtime.
+    const result = safeParseConfig({
+      profiles: {
+        strict: {
+          rules: { 'no-arbitrary-colors': 'error' },
+          extends: 'recommended',
+        },
+      },
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message);
+      expect(messages.some((m) => m.includes('Unrecognized key'))).toBe(true);
+    }
+  });
+
+  it('rejects misspelt `ruls` inside a profile', () => {
+    const result = safeParseConfig({
+      profiles: {
+        strict: { ruls: { 'no-arbitrary-colors': 'error' } },
+      },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects unknown keys inside qualityGate', () => {
+    // qualityGate is already strict but this guards the invariant.
+    const result = safeParseConfig({
+      qualityGate: { enforce: true, minScore: 90 },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects unknown nested keys inside qualityGate.minCategoryScores', () => {
+    const result = safeParseConfig({
+      qualityGate: { minCategoryScores: { a11y: 80 } },
+    });
+    expect(result.success).toBe(false);
+  });
+
   it('provides path info in error messages', () => {
     const result = safeParseConfig({
       rules: { 'no-arbitrary-colors': 42 },

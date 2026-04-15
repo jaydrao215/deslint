@@ -63,18 +63,81 @@ ruleTester.run('icon-accessibility', rule, {
   ],
 
   invalid: [
-    // ── Icon-only button → auto-fixed with aria-label ──
+    // ── Default: report-only + suggestion, NO top-level autofix ──
+    // A derived aria-label based on component name is a guess. It's often
+    // wrong (`<Search />` may actually be a "Clear filter" button).
+    // Keep the suggestion so IDE / interactive mode can still surface it.
     {
       code: '<button><SearchIcon /></button>',
-      output: '<button aria-label="Search"><SearchIcon /></button>',
-      errors: [{ messageId: 'iconOnlyInteractive' }],
+      output: null,
+      errors: [
+        {
+          messageId: 'iconOnlyInteractive',
+          suggestions: [
+            {
+              messageId: 'suggestIconLabel',
+              data: { label: 'Search' },
+              output: '<button aria-label="Search"><SearchIcon /></button>',
+            },
+          ],
+        },
+      ],
     },
-
-    // ── Icon-only link → auto-fixed with aria-label ──
     {
       code: '<a href="/close"><CloseIcon /></a>',
-      output: '<a aria-label="Close" href="/close"><CloseIcon /></a>',
-      errors: [{ messageId: 'iconOnlyInteractive' }],
+      output: null,
+      errors: [
+        {
+          messageId: 'iconOnlyInteractive',
+          suggestions: [
+            {
+              messageId: 'suggestIconLabel',
+              data: { label: 'Close' },
+              output: '<a aria-label="Close" href="/close"><CloseIcon /></a>',
+            },
+          ],
+        },
+      ],
+    },
+
+    // ── Opt-in globally via `autofix: true` ──
+    {
+      code: '<button><SearchIcon /></button>',
+      options: [{ autofix: true }],
+      output: '<button aria-label="Search"><SearchIcon /></button>',
+      errors: [
+        {
+          messageId: 'iconOnlyInteractive',
+          suggestions: [
+            {
+              messageId: 'suggestIconLabel',
+              data: { label: 'Search' },
+              output: '<button aria-label="Search"><SearchIcon /></button>',
+            },
+          ],
+        },
+      ],
+    },
+
+    // ── Per-component mapping via `iconLabels` — author supplies the
+    // correct label, so autofix applies even without the global toggle ──
+    {
+      code: '<button><SearchIcon /></button>',
+      options: [{ iconLabels: { SearchIcon: 'Search products' } }],
+      output: '<button aria-label="Search products"><SearchIcon /></button>',
+      errors: [
+        {
+          messageId: 'iconOnlyInteractive',
+          suggestions: [
+            {
+              messageId: 'suggestIconLabel',
+              data: { label: 'Search products' },
+              output:
+                '<button aria-label="Search products"><SearchIcon /></button>',
+            },
+          ],
+        },
+      ],
     },
   ],
 });

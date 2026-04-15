@@ -11,10 +11,28 @@ export type Options = [
   {
     /** Additional class prefixes to check beyond animate/transition. */
     additionalPrefixes?: string[];
+    /**
+     * Classes that carry meaning through motion and should be exempt from
+     * the rule — wrapping them with `motion-safe:` turns the animation off
+     * for users with reduced-motion, which also turns off the signal.
+     * `animate-spin` is the canonical loading indicator in React apps; if a
+     * spinner stops spinning the user has no idea whether the page is still
+     * loading. `animate-ping` is the same story for notification pulses.
+     * Users who want to override can pass `exemptClasses: []`.
+     */
+    exemptClasses?: string[];
   },
 ];
 
 export type MessageIds = 'missingMotionSafe';
+
+/**
+ * Motion classes where the animation IS the information. Wrapping these in
+ * `motion-safe:` silently degrades UX (silent spinner, static "new" badge).
+ * Kept as a default opt-out; users can override via the `exemptClasses`
+ * option or configure strict enforcement project-wide.
+ */
+const DEFAULT_EXEMPT_CLASSES = ['animate-spin', 'animate-ping'];
 
 /**
  * Animation and transition class prefixes that require motion-safe/motion-reduce
@@ -63,6 +81,10 @@ export default createRule<Options, MessageIds>({
             type: 'array',
             items: { type: 'string' },
           },
+          exemptClasses: {
+            type: 'array',
+            items: { type: 'string' },
+          },
         },
         additionalProperties: false,
       },
@@ -72,6 +94,7 @@ export default createRule<Options, MessageIds>({
   create(context) {
     const options = context.options[0] ?? {};
     const prefixes = [...MOTION_PREFIXES, ...(options.additionalPrefixes ?? [])];
+    const exemptClasses = new Set(options.exemptClasses ?? DEFAULT_EXEMPT_CLASSES);
 
     return createClassVisitor((classes, node) => {
       try {
@@ -103,6 +126,11 @@ export default createRule<Options, MessageIds>({
           // Strip responsive/state variants to get the base utility
           const parts = cls.split(':');
           const baseUtility = parts[parts.length - 1];
+
+          // Skip classes where the motion carries meaning (loading spinners,
+          // notification pings). Silencing them for reduced-motion users
+          // would silence the signal, not just the decoration.
+          if (exemptClasses.has(baseUtility)) continue;
 
           // Check if this is a motion class
           const matchedPrefix = prefixes.find((p) => baseUtility.startsWith(p));

@@ -47,19 +47,64 @@ ruleTester.run('lang-attribute', rule, {
   ],
 
   invalid: [
-    // ── Missing lang entirely — autofix adds default "en" ──
+    // ── Missing lang — default config: REPORT only, no autofix ──
+    // We must not silently stamp `lang="en"` onto every page: French,
+    // Spanish, and German codebases would then announce themselves as
+    // English to screen readers across the whole page. Suggestion still
+    // offers "en" so IDE users can accept it deliberately.
     {
       code: '<html><body /></html>',
-      errors: [{ messageId: 'missingLang' as const }],
-      output: '<html lang="en"><body /></html>',
+      output: null,
+      errors: [
+        {
+          messageId: 'missingLang' as const,
+          suggestions: [
+            {
+              messageId: 'suggestLang' as const,
+              data: { lang: 'en' },
+              output: '<html lang="en"><body /></html>',
+            },
+          ],
+        },
+      ],
     },
 
-    // ── Missing lang with configured defaultLang ──
+    // ── Explicit defaultLang: "fr" → autofix AND suggest with "fr" ──
     {
       code: '<html><body /></html>',
       options: [{ defaultLang: 'fr' }],
-      errors: [{ messageId: 'missingLang' as const }],
       output: '<html lang="fr"><body /></html>',
+      errors: [
+        {
+          messageId: 'missingLang' as const,
+          suggestions: [
+            {
+              messageId: 'suggestLang' as const,
+              data: { lang: 'fr' },
+              output: '<html lang="fr"><body /></html>',
+            },
+          ],
+        },
+      ],
+    },
+
+    // ── Explicit defaultLang: "en" also autofixes (user owns the choice) ──
+    {
+      code: '<html><body /></html>',
+      options: [{ defaultLang: 'en' }],
+      output: '<html lang="en"><body /></html>',
+      errors: [
+        {
+          messageId: 'missingLang' as const,
+          suggestions: [
+            {
+              messageId: 'suggestLang' as const,
+              data: { lang: 'en' },
+              output: '<html lang="en"><body /></html>',
+            },
+          ],
+        },
+      ],
     },
 
     // ── Empty lang attribute ──

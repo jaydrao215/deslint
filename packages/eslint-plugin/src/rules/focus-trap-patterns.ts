@@ -13,6 +13,24 @@ export type Options = [
   {
     /** Custom dialog component names beyond the defaults. */
     dialogComponents?: string[];
+    /**
+     * When `true`, also flag PascalCase components whose names LOOK like
+     * dialogs (`<Modal>`, `<Dialog>`, `<Drawer>`, ...) when they lack an
+     * explicit `role`. Default `false`.
+     *
+     * Why opt-in: the overwhelming majority of `<Dialog>` / `<Modal>`
+     * components in the wild come from Radix, Headless UI, MUI, Chakra, Ark,
+     * Ariakit, React Aria, or shadcn/ui — all of which render the correct
+     * role/aria-modal/focus-trap internally OR are context providers with no
+     * DOM output. Slapping `role="dialog" aria-modal="true"` onto them at
+     * best duplicates attributes and at worst conflicts with the library's
+     * own a11y tree (e.g. Radix's Dialog.Root is a provider — adding
+     * role="dialog" to it silently invalidates the generated HTML).
+     *
+     * The `role="dialog"` check (case 1) is still on by default — that's a
+     * clear author-declared signal regardless of the tag.
+     */
+    flagComponentNames?: boolean;
   },
 ];
 
@@ -87,6 +105,9 @@ export default createRule<Options, MessageIds>({
             type: 'array',
             items: { type: 'string' },
           },
+          flagComponentNames: {
+            type: 'boolean',
+          },
         },
         additionalProperties: false,
       },
@@ -96,6 +117,7 @@ export default createRule<Options, MessageIds>({
   create(context) {
     const options = context.options[0] ?? {};
     const customDialogs = options.dialogComponents ?? [];
+    const flagComponentNames = options.flagComponentNames === true;
 
     function isDialogComponent(name: string): boolean {
       if (customDialogs.includes(name)) return true;
@@ -148,7 +170,16 @@ export default createRule<Options, MessageIds>({
             return;
           }
 
-          // Case 2: Component name looks like a dialog but has no role
+          // Case 2: Component name looks like a dialog but has no role.
+          //
+          // Opt-in only: most <Dialog>/<Modal>/<Drawer> elements in the wild
+          // are from component libraries that manage role/aria-modal/focus
+          // internally (Radix, Headless UI, MUI, shadcn/ui). Patching them
+          // here either duplicates attributes or breaks the library's
+          // internal a11y tree. Users who have their OWN raw wrappers and
+          // want this check can opt in with `flagComponentNames: true`.
+          if (!flagComponentNames) return;
+
           if (tag[0] === tag[0].toUpperCase() && tag[0] !== tag[0].toLowerCase()) {
             if (isDialogComponent(tag) && !role) {
               context.report({

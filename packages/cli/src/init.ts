@@ -7,12 +7,12 @@
  * 3. Asks for strictness profile
  * 4. Writes .deslintrc.json
  * 5. Writes eslint.config.js (framework-aware)
- * 6. Adds npm scripts (deslint / deslint:fix) to package.json
+ * 6. Adds npm scripts (deslint / deslint:tokens) to package.json
  * 7. Runs a quick-scan preview
  *
  * After init, the user only needs two commands:
- *   npm run deslint       — see violations
- *   npm run deslint:fix   — auto-fix everything fixable
+ *   npm run deslint            — see violations
+ *   npx deslint fix --interactive — review fixes one at a time
  */
 
 import { existsSync, writeFileSync, readFileSync } from 'node:fs';
@@ -55,6 +55,65 @@ const PROFILES: Record<string, { description: string; rules: Record<string, Seve
     },
   },
 };
+
+/**
+ * Attempt to inject `deslint.configs.recommended` into an existing
+ * `eslint.config.js` source string without clobbering user-defined rules,
+ * parsers, or plugins.
+ *
+ * Returns `{ merged, changed }`:
+ *   - `changed: false` — file already imports `@deslint/eslint-plugin`
+ *     (idempotent: nothing to do).
+ *   - `changed: true`, `merged` non-null — successfully added the import and
+ *     injected `deslint.configs.recommended` into the default export array.
+ *   - `merged: null` — file uses a syntactic shape we refuse to edit
+ *     blindly (no ES `import`, no top-level `export default [`, CommonJS,
+ *     etc.). Caller should fall back to showing the manual snippet.
+ *
+ * This is intentionally conservative: we would rather ask the user to edit by
+ * hand than silently corrupt a file we can't fully parse textually.
+ *
+ * Exported for tests.
+ */
+export function mergeEslintConfig(
+  source: string,
+): { merged: string | null; changed: boolean } {
+  // Already wired up — be idempotent.
+  if (/@deslint\/eslint-plugin/.test(source)) {
+    return { merged: source, changed: false };
+  }
+
+  // We support the common flat-config shape: ESM imports at the top, then
+  // `export default [ ... ];`. Anything else (CommonJS, named exports,
+  // `defineConfig()` wrappers, TS `satisfies`) we leave alone.
+  const hasEsmImport = /^\s*import\s+/m.test(source);
+  const exportArrayMatch = /export\s+default\s*\[/.exec(source);
+  if (!hasEsmImport || !exportArrayMatch) {
+    return { merged: null, changed: false };
+  }
+
+  // Insert the import after the last existing `import ... from '...'` line so
+  // we don't split off imports from their block.
+  const importLineRegex = /^\s*import[^\n]*\n/gm;
+  let lastImportEnd = 0;
+  let m: RegExpExecArray | null;
+  while ((m = importLineRegex.exec(source)) !== null) {
+    lastImportEnd = m.index + m[0].length;
+  }
+
+  const deslintImport = `import deslint from '@deslint/eslint-plugin';\n`;
+  const before = source.slice(0, lastImportEnd);
+  const after = source.slice(lastImportEnd);
+
+  // Insert `deslint.configs.recommended,` immediately after `export default [`.
+  const injectAt = exportArrayMatch.index + exportArrayMatch[0].length - before.length;
+  const patchedAfter =
+    after.slice(0, injectAt) +
+    `\n  deslint.configs.recommended,` +
+    after.slice(injectAt);
+
+  return { merged: before + deslintImport + patchedAfter, changed: true };
+}
 
 /**
  * Generate eslint.config.js content for the detected framework.
@@ -150,8 +209,22 @@ export default [
 
 /**
  * Add deslint scripts to package.json without touching existing scripts.
+ *
+ * Historically this function also wrote `"deslint:fix": "deslint fix . --all"`.
+ * We no longer do that: running `fix . --all` non-interactively across a whole
+ * codebase will silently apply every autofix including accessibility wrappers,
+ * dark-mode class inversion, arbitrary-colour rewrites and z-index clamping.
+ * Those have caused real visual regressions for users. The interactive path
+ * (`deslint fix --interactive`) stays available and is documented as the
+ * intended workflow.
+ *
+ * What we still add:
+ *   - `deslint`         — safe, read-only scan
+ *   - `deslint:tokens`  — advisory, does not modify source files
+ *
+ * Exported for tests.
  */
-function addNpmScripts(cwd: string): boolean {
+export function addNpmScripts(cwd: string): boolean {
   const pkgPath = resolve(cwd, 'package.json');
   if (!existsSync(pkgPath)) return false;
 
@@ -162,10 +235,6 @@ function addNpmScripts(cwd: string): boolean {
     let changed = false;
     if (!pkg.scripts['deslint']) {
       pkg.scripts['deslint'] = 'deslint scan .';
-      changed = true;
-    }
-    if (!pkg.scripts['deslint:fix']) {
-      pkg.scripts['deslint:fix'] = 'deslint fix . --all';
       changed = true;
     }
     if (!pkg.scripts['deslint:tokens']) {
@@ -281,24 +350,54 @@ export async function initWizard(options: InitOptions): Promise<void> {
   writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
   prompts.log.success(`Created ${chalk.cyan('.deslintrc.json')}`);
 
-  // ── Step 6: Write eslint.config.js ──
+  // ── Step 6: Write or merge eslint.config.js ──
+  //
+  // Historically this step offered to OVERWRITE an existing eslint.config.js,
+  // which was catastrophic for projects with hand-tuned rules, parsers, or
+  // plugins. The new flow is additive:
+  //   1. If no config exists: write our template.
+  //   2. If a config exists and already imports @deslint/eslint-plugin: no-op.
+  //   3. If a config exists and mergeEslintConfig can safely inject: ask, then
+  //      patch in place — keeping every line of the user's config intact.
+  //   4. If we can't parse the shape textually (CommonJS, defineConfig(),
+  //      named exports): show a copy-paste snippet. NEVER overwrite.
   const eslintConfigPath = resolve(cwd, 'eslint.config.js');
   const eslintExists = existsSync(eslintConfigPath);
 
-  if (eslintExists) {
-    const overwriteEslint = await prompts.confirm({
-      message: 'eslint.config.js already exists. Overwrite with Deslint config?',
-      initialValue: false,
-    });
-    if (!prompts.isCancel(overwriteEslint) && overwriteEslint) {
-      writeFileSync(eslintConfigPath, generateEslintConfig(frameworkLabel));
-      prompts.log.success(`Updated ${chalk.cyan('eslint.config.js')}`);
+  if (!eslintExists) {
+    writeFileSync(eslintConfigPath, generateEslintConfig(frameworkLabel));
+    prompts.log.success(`Created ${chalk.cyan('eslint.config.js')}`);
+  } else {
+    const existingSource = readFileSync(eslintConfigPath, 'utf-8');
+    const { merged, changed } = mergeEslintConfig(existingSource);
+
+    if (merged !== null && !changed) {
+      // Already wired up — idempotent, nothing to do.
+      prompts.log.info(
+        `${chalk.cyan('eslint.config.js')} already imports ${chalk.cyan('@deslint/eslint-plugin')} — leaving it alone.`,
+      );
+    } else if (merged !== null && changed) {
+      const appendOk = await prompts.confirm({
+        message: 'Append Deslint to your existing eslint.config.js? (no rules will be removed)',
+        initialValue: true,
+      });
+      if (!prompts.isCancel(appendOk) && appendOk) {
+        writeFileSync(eslintConfigPath, merged);
+        prompts.log.success(
+          `Merged ${chalk.cyan('deslint.configs.recommended')} into ${chalk.cyan('eslint.config.js')}`,
+        );
+      } else {
+        prompts.log.info(
+          `Skipped eslint.config.js — your existing config is unchanged. Run ${chalk.cyan('npx deslint scan')} anyway; deslint uses its own parser internally.`,
+        );
+      }
     } else {
+      // Shape we refuse to edit blindly — show a manual snippet.
       const isTypeScript = existsSync(resolve(cwd, 'tsconfig.json'));
       if (isTypeScript) {
         prompts.log.warn(
-          `Skipped eslint.config.js — your existing config will be used by other tools, but ${chalk.bold('deslint scan')} runs its own parser config independently.\n` +
-          `  Your project has TypeScript (${chalk.cyan('tsconfig.json')} detected). Add this block to your ${chalk.cyan('eslint.config.js')} so the ESLint extension and ${chalk.cyan('npx eslint')} also parse .ts/.tsx correctly:\n\n` +
+          `Could not safely merge into ${chalk.cyan('eslint.config.js')} (CommonJS, ${chalk.cyan('defineConfig()')}, or non-standard shape).\n` +
+          `  ${chalk.bold('deslint scan')} runs its own parser config and will still work. To also wire it into the ESLint extension and ${chalk.cyan('npx eslint')}, add this by hand:\n\n` +
           chalk.dim(
             `  import deslint from '@deslint/eslint-plugin';\n` +
             `  import tsParser from '@typescript-eslint/parser';\n\n` +
@@ -311,20 +410,17 @@ export async function initWizard(options: InitOptions): Promise<void> {
         );
       } else {
         prompts.log.warn(
-          `Skipped eslint.config.js — add ${chalk.cyan("import deslint from '@deslint/eslint-plugin'")} and spread ${chalk.cyan('deslint.configs.recommended')} into your config manually.`,
+          `Could not safely merge into ${chalk.cyan('eslint.config.js')} — add ${chalk.cyan("import deslint from '@deslint/eslint-plugin'")} and spread ${chalk.cyan('deslint.configs.recommended')} into your default export manually.`,
         );
       }
     }
-  } else {
-    writeFileSync(eslintConfigPath, generateEslintConfig(frameworkLabel));
-    prompts.log.success(`Created ${chalk.cyan('eslint.config.js')}`);
   }
 
   // ── Step 7: Add npm scripts ──
   const scriptsAdded = addNpmScripts(cwd);
   if (scriptsAdded) {
     prompts.log.success(
-      `Added scripts to ${chalk.cyan('package.json')}: ${chalk.dim('deslint')}, ${chalk.dim('deslint:fix')}`,
+      `Added scripts to ${chalk.cyan('package.json')}: ${chalk.dim('deslint')}, ${chalk.dim('deslint:tokens')}`,
     );
   } else {
     prompts.log.info(
@@ -361,7 +457,7 @@ export async function initWizard(options: InitOptions): Promise<void> {
 
         if (result.totalViolations > 0) {
           prompts.log.info(
-            `${chalk.yellow(String(result.totalViolations))} violations found — run ${chalk.cyan('npm run deslint:fix')} to auto-fix the easy ones.`,
+            `${chalk.yellow(String(result.totalViolations))} violations found — run ${chalk.cyan('npx deslint fix --interactive')} to review fixes one at a time.`,
           );
         }
       }
@@ -375,9 +471,9 @@ export async function initWizard(options: InitOptions): Promise<void> {
     [
       chalk.bold('All set! Three commands to know:'),
       '',
-      `  ${chalk.cyan('npm run deslint')}        — see all violations`,
-      `  ${chalk.cyan('npm run deslint:fix')}    — auto-fix everything fixable`,
-      `  ${chalk.cyan('npm run deslint:tokens')} — design guidance for custom values`,
+      `  ${chalk.cyan('npm run deslint')}             — see all violations`,
+      `  ${chalk.cyan('npx deslint fix --interactive')} — review each fix before applying`,
+      `  ${chalk.cyan('npm run deslint:tokens')}      — design guidance for custom values`,
     ].join('\n'),
   );
 }

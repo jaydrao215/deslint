@@ -12,6 +12,20 @@ export type Options = [
   {
     ignoredPrefixes?: string[];
     ignoredColors?: string[];
+    /**
+     * When `true`, restores the legacy behaviour of automatically adding
+     * `dark:bg-…` classes via `eslint --fix` / `deslint fix --all`.
+     *
+     * Default `false` (suggest-only). The autofix flips shades blindly — it has
+     * no way to know whether the component is meant to be light-on-dark, uses
+     * a semantic token system, or lives on a marketing page that never
+     * participates in dark mode. Running it site-wide has produced real
+     * visual regressions (white-on-white blocks, inverted brand colours,
+     * unreadable text). Default suggest-only so IDE/interactive flows still
+     * surface the fix per-occurrence with user review, but `--all` and
+     * `--fix` leave the file untouched.
+     */
+    autofix?: boolean;
   },
 ];
 
@@ -100,7 +114,7 @@ export default createRule<Options, MessageIds>({
     type: 'suggestion',
     docs: {
       description:
-        'Flag components with background color classes that lack corresponding dark: variants. Auto-fixes by adding inverted shade.',
+        'Flag bg-* classes that lack a dark: variant. Suggests an inverted shade; autofix is opt-in via `autofix: true`.',
     },
     fixable: 'code',
     hasSuggestions: true,
@@ -118,6 +132,11 @@ export default createRule<Options, MessageIds>({
             items: { type: 'string' },
             description: 'Specific bg classes to ignore (e.g., ["bg-transparent"])',
           },
+          autofix: {
+            type: 'boolean',
+            description:
+              'Enable automatic insertion of dark: variants via --fix. Default false (suggest-only).',
+          },
         },
         additionalProperties: false,
       },
@@ -128,10 +147,11 @@ export default createRule<Options, MessageIds>({
       suggestDarkVariant: 'Add `{{suggested}}`',
     },
   },
-  defaultOptions: [{ ignoredPrefixes: [], ignoredColors: [] }],
+  defaultOptions: [{ ignoredPrefixes: [], ignoredColors: [], autofix: false }],
   create(context, [options]) {
     const ignoredPrefixes = new Set(options.ignoredPrefixes ?? []);
     const ignoredColors = new Set(options.ignoredColors ?? []);
+    const autofixEnabled = options.autofix === true;
 
     function checkClassString(value: string, node: TSESTree.Node) {
       try {
@@ -188,30 +208,35 @@ export default createRule<Options, MessageIds>({
           const darkInversion = getDarkInversion(baseClass);
           const suggested = darkInversion ? `dark:${darkInversion}` : `dark:${baseClass}`;
 
+          // Shared fix body: replace the matched class with `${cls} ${suggested}`
+          // inside the original attribute text. Used by both the top-level
+          // autofix (only when `autofix: true`) and the suggestion path.
+          const applyFix = (fixer: Parameters<NonNullable<Parameters<typeof context.report>[0]['fix']>>[0]) => {
+            const src = safeGetText(context.sourceCode, node);
+            const range = safeGetRange(context.sourceCode, node);
+            if (!src || !range) return null;
+            const replacement = src.replace(cls, `${cls} ${suggested}`);
+            return fixer.replaceTextRange(range, replacement);
+          };
+
           context.report({
             node,
             messageId: 'missingDarkVariant',
             data: { className: cls, suggested },
             ...(darkInversion
               ? {
-                  fix(fixer) {
-                    const src = safeGetText(context.sourceCode, node);
-                    const range = safeGetRange(context.sourceCode, node);
-                    if (!src || !range) return null;
-                    const replacement = src.replace(cls, `${cls} ${suggested}`);
-                    return fixer.replaceTextRange(range, replacement);
-                  },
+                  // Top-level autofix is opt-in: adding dark: variants blindly
+                  // across a codebase has caused real visual regressions
+                  // (unreadable text, inverted brand colours, marketing pages
+                  // flipped). Users who want site-wide inversion set
+                  // `autofix: true`; everyone else still sees the IDE
+                  // suggestion.
+                  ...(autofixEnabled ? { fix: applyFix } : {}),
                   suggest: [
                     {
                       messageId: 'suggestDarkVariant',
                       data: { suggested },
-                      fix(fixer) {
-                        const src = safeGetText(context.sourceCode, node);
-                        const range = safeGetRange(context.sourceCode, node);
-                        if (!src || !range) return null;
-                        const replacement = src.replace(cls, `${cls} ${suggested}`);
-                        return fixer.replaceTextRange(range, replacement);
-                      },
+                      fix: applyFix,
                     },
                   ],
                 }

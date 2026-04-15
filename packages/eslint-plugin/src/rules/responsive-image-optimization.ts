@@ -122,9 +122,34 @@ export default createRule<Options, MessageIds>({
           const src = getStaticAttributeValue(element, 'src');
           if (src?.startsWith('data:')) return;
 
+          // ── Is this an above-the-fold / LCP-critical image? ──
+          // If so, we must NOT auto-insert `loading="lazy"` — doing so
+          // delays LCP and regresses Core Web Vitals (the exact opposite
+          // of what this rule is for). We still report missing
+          // width/height/srcset because those prevent CLS regardless of
+          // priority.
+          //
+          //   fetchpriority="high"  — native HTML attribute (Chromium 101+)
+          //   priority / priority={true} — Next.js <Image> boolean, also
+          //                                common pass-through on wrappers
+          //   loading="eager"       — author has already opted out of lazy
+          //   data-priority         — custom marker seen in the wild
+          const fetchPriority = getStaticAttributeValue(element, 'fetchpriority');
+          const loadingValue = getStaticAttributeValue(element, 'loading');
+          const isHighPriority =
+            fetchPriority === 'high' ||
+            loadingValue === 'eager' ||
+            getAttribute(element, 'priority') !== null ||
+            getAttribute(element, 'data-priority') !== null;
+
           // 1. Check for loading attribute — auto-fixable (loading="lazy")
-          const loading = getAttribute(element, 'loading');
-          if (!loading) {
+          //
+          // Skip entirely when the image is high-priority; also skip if the
+          // `loading` attribute exists but has a non-static value
+          // (`loading={isAboveFold ? 'eager' : 'lazy'}`) — inserting a
+          // second `loading="lazy"` would produce duplicate attributes.
+          const loadingAttr = getAttribute(element, 'loading');
+          if (!loadingAttr && !isHighPriority) {
             context.report({
               node: element.node as any,
               messageId: 'missingLoading',

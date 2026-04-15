@@ -45,6 +45,21 @@ ruleTester.run('focus-trap-patterns', rule, {
     {
       code: '<div {...props} role="dialog">Content</div>',
     },
+
+    // ── PascalCase library components are NOT flagged by default ──
+    // (Radix/HeadlessUI/MUI/shadcn manage role and focus internally.)
+    { code: '<Modal>Content</Modal>' },
+    { code: '<Dialog>Content</Dialog>' },
+    { code: '<Drawer>Content</Drawer>' },
+    { code: '<Sheet>Content</Sheet>' },
+    { code: '<AlertDialog>Content</AlertDialog>' },
+    { code: '<DialogContent>Body</DialogContent>' },
+
+    // ── Even custom dialogComponents are ignored without flagComponentNames ──
+    {
+      code: '<MyCustomDialog>Content</MyCustomDialog>',
+      options: [{ dialogComponents: ['MyCustomDialog'] }],
+    },
   ],
 
   invalid: [
@@ -82,32 +97,41 @@ ruleTester.run('focus-trap-patterns', rule, {
       errors: [{ messageId: 'dialogMissingAriaModal' }],
     },
 
-    // ── Dialog component without role → multi-pass fix (role+modal, then label) ──
+    // ── Opt-in via flagComponentNames: <Modal> etc. get flagged ──
     {
       code: '<Modal>Content</Modal>',
+      options: [{ flagComponentNames: true }],
       output: [
         '<Modal role="dialog" aria-modal="true">Content</Modal>',
         '<Modal aria-label="Dialog" role="dialog" aria-modal="true">Content</Modal>',
       ],
       errors: [{ messageId: 'dialogMissingRole' }],
     },
-
-    // ── Drawer component without role → multi-pass fix ──
     {
       code: '<Drawer>Content</Drawer>',
+      options: [{ flagComponentNames: true }],
       output: [
         '<Drawer role="dialog" aria-modal="true">Content</Drawer>',
         '<Drawer aria-label="Dialog" role="dialog" aria-modal="true">Content</Drawer>',
       ],
       errors: [{ messageId: 'dialogMissingRole' }],
     },
-
-    // ── Sheet component without role → multi-pass fix ──
     {
       code: '<Sheet>Content</Sheet>',
+      options: [{ flagComponentNames: true }],
       output: [
         '<Sheet role="dialog" aria-modal="true">Content</Sheet>',
         '<Sheet aria-label="Dialog" role="dialog" aria-modal="true">Content</Sheet>',
+      ],
+      errors: [{ messageId: 'dialogMissingRole' }],
+    },
+    // ── Custom component via both opts ──
+    {
+      code: '<MyCustomDialog>Content</MyCustomDialog>',
+      options: [{ dialogComponents: ['MyCustomDialog'], flagComponentNames: true }],
+      output: [
+        '<MyCustomDialog role="dialog" aria-modal="true">Content</MyCustomDialog>',
+        '<MyCustomDialog aria-label="Dialog" role="dialog" aria-modal="true">Content</MyCustomDialog>',
       ],
       errors: [{ messageId: 'dialogMissingRole' }],
     },

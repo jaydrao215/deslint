@@ -14,15 +14,52 @@ const ruleTester = new RuleTester({
   },
 });
 
-/** Helper for invalid test with fix + suggestion */
-function zErr(output: string, suggested: string) {
+/**
+ * Small off-scale value → autofix AND suggestion.
+ * Values like z-[5], z-[15], z-[25] are typos / off-by-one scale choices
+ * where clamping to the nearest Tailwind step is safe. Preserved from the
+ * original rule behaviour.
+ */
+function zAutofixed(code: string, output: string, suggested: string) {
   return {
-    messageId: 'arbitraryZIndex' as const,
-    suggestions: [
+    code,
+    output,
+    errors: [
       {
-        messageId: 'suggestScale' as const,
-        data: { suggested },
-        output,
+        messageId: 'arbitraryZIndex' as const,
+        suggestions: [
+          {
+            messageId: 'suggestScale' as const,
+            data: { suggested },
+            output,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * Large portal/overlay value → REPORT-ONLY (no top-level fix), but the
+ * suggestion path still offers the replacement for users who explicitly want
+ * it. This guards against the original bug where `z-[9999]` on a modal
+ * backdrop was silently rewritten to `z-50`, putting the backdrop behind
+ * sticky headers and toasts.
+ */
+function zReportOnly(code: string, suggestedOutput: string, suggested: string) {
+  return {
+    code,
+    output: null,
+    errors: [
+      {
+        messageId: 'arbitraryZIndexNoFix' as const,
+        suggestions: [
+          {
+            messageId: 'suggestScale' as const,
+            data: { suggested },
+            output: suggestedOutput,
+          },
+        ],
       },
     ],
   };
@@ -38,92 +75,90 @@ ruleTester.run('no-arbitrary-zindex', rule, {
     { code: '<div className="z-40" />' },
     { code: '<div className="z-50" />' },
     { code: '<div className="z-auto" />' },
-
-    // ── z-index with other classes ──
     { code: '<div className="z-10 relative p-4" />' },
-
-    // ── No z-index class ──
     { code: '<div className="p-4 m-2 flex" />' },
-
-    // ── Allowlisted arbitrary value ──
-    {
-      code: '<div className="z-[9999]" />',
-      options: [{ allowlist: [9999] }],
-    },
-
-    // ── Responsive variant with valid z-index ──
     { code: '<div className="md:z-50" />' },
+
+    // ── Default portal allowlist: 999, 1000, 9999 are never flagged ──
+    // These are the canonical "on top of everything" values used by
+    // react-hot-toast, Radix portal, Headless UI Dialog, etc. Flagging them
+    // by default produced the original `z-[9999] → z-50` regression.
+    { code: '<div className="z-[9999]" />' },
+    { code: '<div className="z-[1000]" />' },
+    { code: '<div className="z-[999]" />' },
+
+    // ── User-supplied allowlist still works ──
+    {
+      code: '<div className="z-[8000]" />',
+      options: [{ allowlist: [8000] }],
+    },
   ],
 
   invalid: [
-    // ── z-[999] → z-50 ──
-    {
-      code: '<div className="z-[999] relative" />',
-      output: '<div className="z-50 relative" />',
-      errors: [zErr('<div className="z-50 relative" />', 'z-50')],
-    },
+    // ── Small off-scale values: safe to clamp ──
+    zAutofixed(
+      '<div className="z-[5]" />',
+      '<div className="z-0" />',
+      'z-0',
+    ),
+    zAutofixed(
+      '<div className="z-[15]" />',
+      '<div className="z-10" />',
+      'z-10',
+    ),
+    zAutofixed(
+      '<div className="z-[25]" />',
+      '<div className="z-20" />',
+      'z-20',
+    ),
+    zAutofixed(
+      '<div className="z-[-1]" />',
+      '<div className="z-0" />',
+      'z-0',
+    ),
+    zAutofixed(
+      '<div className="z-[0]" />',
+      '<div className="z-0" />',
+      'z-0',
+    ),
+    zAutofixed(
+      '<div className="z-[55]" />',
+      '<div className="z-50" />',
+      'z-50',
+    ),
 
-    // ── z-[100] → z-50 ──
-    {
-      code: '<div className="z-[100]" />',
-      output: '<div className="z-50" />',
-      errors: [zErr('<div className="z-50" />', 'z-50')],
-    },
-
-    // ── z-[5] → z-0 (dist to 0 is 5, dist to 10 is 5, prefer smaller) ──
-    {
-      code: '<div className="z-[5]" />',
-      output: '<div className="z-0" />',
-      errors: [zErr('<div className="z-0" />', 'z-0')],
-    },
-
-    // ── z-[15] → z-10 (equidistant, prefer smaller) ──
-    {
-      code: '<div className="z-[15]" />',
-      output: '<div className="z-10" />',
-      errors: [zErr('<div className="z-10" />', 'z-10')],
-    },
-
-    // ── z-[25] → z-20 ──
-    {
-      code: '<div className="z-[25]" />',
-      output: '<div className="z-20" />',
-      errors: [zErr('<div className="z-20" />', 'z-20')],
-    },
-
-    // ── z-[-1] → z-0 ──
-    {
-      code: '<div className="z-[-1]" />',
-      output: '<div className="z-0" />',
-      errors: [zErr('<div className="z-0" />', 'z-0')],
-    },
-
-    // ── z-[0] arbitrary → z-0 ──
-    {
-      code: '<div className="z-[0]" />',
-      output: '<div className="z-0" />',
-      errors: [zErr('<div className="z-0" />', 'z-0')],
-    },
-
-    // ── Preserves responsive variants ──
-    {
-      code: '<div className="sm:z-[999]" />',
-      output: '<div className="sm:z-50" />',
-      errors: [zErr('<div className="sm:z-50" />', 'sm:z-50')],
-    },
-
-    // ── Inside cn() wrapper ──
-    {
-      code: '<div className={cn("z-[999] p-4")} />',
-      output: '<div className={cn("z-50 p-4")} />',
-      errors: [zErr('<div className={cn("z-50 p-4")} />', 'z-50')],
-    },
-
-    // ── Hover variant with arbitrary z-index ──
-    {
-      code: '<div className="hover:z-[200]" />',
-      output: '<div className="hover:z-50" />',
-      errors: [zErr('<div className="hover:z-50" />', 'hover:z-50')],
-    },
+    // ── Large values: report but DO NOT clamp (regression guards) ──
+    zReportOnly(
+      '<div className="z-[100]" />',
+      '<div className="z-50" />',
+      'z-50',
+    ),
+    zReportOnly(
+      '<div className="z-[200] relative" />',
+      '<div className="z-50 relative" />',
+      'z-50',
+    ),
+    zReportOnly(
+      // Not in the default portal allowlist (we keep that to the canonical
+      // handful), but still clearly a portal value — must not be autofixed.
+      '<div className="z-[5000]" />',
+      '<div className="z-50" />',
+      'z-50',
+    ),
+    zReportOnly(
+      '<div className={cn("z-[200] p-4")} />',
+      '<div className={cn("z-50 p-4")} />',
+      'z-50',
+    ),
+    zReportOnly(
+      '<div className="hover:z-[200]" />',
+      '<div className="hover:z-50" />',
+      'hover:z-50',
+    ),
+    zReportOnly(
+      '<div className="sm:z-[5000]" />',
+      '<div className="sm:z-50" />',
+      'sm:z-50',
+    ),
   ],
 });
