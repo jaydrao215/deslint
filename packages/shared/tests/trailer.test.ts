@@ -44,6 +44,26 @@ describe('computeRulesetHash', () => {
     const b = computeRulesetHash({ 'deslint/x': '1' });
     expect(a).toBe(b);
   });
+
+  it('distinguishes different rule option objects', () => {
+    const a = computeRulesetHash({
+      'deslint/x': ['warn', { allow: ['red'] }],
+    });
+    const b = computeRulesetHash({
+      'deslint/x': ['warn', { deny: ['blue'] }],
+    });
+    expect(a).not.toBe(b);
+  });
+
+  it('is key-order independent for nested option objects', () => {
+    const a = computeRulesetHash({
+      'deslint/x': ['warn', { alpha: 1, beta: { z: 2, a: 3 } }],
+    });
+    const b = computeRulesetHash({
+      'deslint/x': ['warn', { beta: { a: 3, z: 2 }, alpha: 1 }],
+    });
+    expect(a).toBe(b);
+  });
 });
 
 describe('computeTrailer', () => {

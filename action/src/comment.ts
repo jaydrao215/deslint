@@ -98,9 +98,9 @@ export function formatComment(
     lines.push('|----------|-------|------------|');
 
     for (const cat of result.categories) {
-      const status = categoryStatus(cat.score, 20);
+      const status = categoryStatus(cat.score, 100);
       const name = cat.name.charAt(0).toUpperCase() + cat.name.slice(1);
-      lines.push(`| ${status} ${name} | ${cat.score}/20 | ${cat.violations} |`);
+      lines.push(`| ${status} ${name} | ${cat.score}/100 | ${cat.violations} |`);
     }
 
     lines.push('');

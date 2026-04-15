@@ -60,11 +60,32 @@ export function gitDiffAddedRanges(
     );
   }
 
+  let mergeBase: string;
+  try {
+    mergeBase = execFileSync(
+      'git',
+      ['merge-base', baseRef, 'HEAD'],
+      { cwd, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1024 * 1024 },
+    ).trim();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    try {
+      execFileSync('git', ['--version'], { cwd, stdio: 'ignore' });
+    } catch {
+      throw new Error(
+        'git is not available on PATH. `deslint scan --diff` requires git; install it or drop the flag.',
+      );
+    }
+    throw new Error(
+      `git merge-base ${baseRef} HEAD failed. Is the ref reachable in this checkout? (Shallow clones often do not contain older refs.) Original error: ${msg}`,
+    );
+  }
+
   let raw: string;
   try {
     raw = execFileSync(
       'git',
-      ['diff', '--unified=0', '--no-color', '--find-renames', baseRef],
+      ['diff', '--unified=0', '--no-color', '--find-renames', mergeBase],
       { cwd, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 },
     );
   } catch (err) {
@@ -78,7 +99,7 @@ export function gitDiffAddedRanges(
       );
     }
     throw new Error(
-      `git diff ${baseRef} failed. Is the ref reachable in this checkout? (Shallow clones often do not contain older refs.) Original error: ${msg}`,
+      `git diff ${mergeBase} failed after resolving merge-base for ${baseRef}. Original error: ${msg}`,
     );
   }
 

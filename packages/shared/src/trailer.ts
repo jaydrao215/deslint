@@ -21,13 +21,13 @@ export interface TrailerInput {
 }
 
 export function computeRulesetHash(rules: Record<string, unknown>): string {
-  const normalized: Record<string, string> = {};
+  const normalized: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(rules)) {
     const key = k.startsWith('deslint/') ? k : `deslint/${k}`;
-    normalized[key] = String(v);
+    normalized[key] = canonicalizeRuleValue(v);
   }
   const keys = Object.keys(normalized).sort();
-  const canonical: Array<[string, string]> = keys.map((k) => [k, normalized[k]]);
+  const canonical: Array<[string, unknown]> = keys.map((k) => [k, normalized[k]]);
   const serialized = JSON.stringify(canonical);
   return createHash('sha256').update(serialized).digest('hex');
 }
@@ -67,4 +67,21 @@ export function parseTrailer(commitMessage: string): ParsedTrailer | undefined {
 function clampScore(n: number): number {
   if (!Number.isFinite(n)) return 0;
   return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function canonicalizeRuleValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => canonicalizeRuleValue(item));
+  }
+  if (value && typeof value === 'object') {
+    const sortedKeys = Object.keys(value as Record<string, unknown>).sort();
+    const normalized: Record<string, unknown> = {};
+    for (const key of sortedKeys) {
+      normalized[key] = canonicalizeRuleValue(
+        (value as Record<string, unknown>)[key],
+      );
+    }
+    return normalized;
+  }
+  return String(value);
 }

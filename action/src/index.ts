@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { evaluateQualityGate, formatGateResult } from '@deslint/shared';
 import { getChangedFiles } from './changed-files.js';
-import { runScan } from './scan.js';
+import { runProjectScan, runScan } from './scan.js';
 import { formatComment } from './comment.js';
 import { postInlineReview } from './review.js';
 import { verifyTrailer, formatTrailerSection } from './trailer.js';
@@ -79,11 +79,12 @@ async function run(): Promise<void> {
         ref: headSha,
       });
       const commitMessage = headCommit.commit.message ?? '';
+      const projectScan = await runProjectScan(workingDirectory, configPath);
       const verification = verifyTrailer({
         commitMessage,
-        rules: result.userRules,
-        score: result.score,
-        fileCount: result.filesScanned,
+        rules: projectScan.userRules,
+        score: projectScan.score,
+        fileCount: projectScan.filesScanned,
       });
       trailerSection = formatTrailerSection(verification);
       trailerVerified = verification.status === 'verified';
