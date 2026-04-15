@@ -1,5 +1,76 @@
 # Changelog
 
+## [0.5.0] — 2026-04-15
+
+**MCP-first release.** Brings the `@deslint/mcp` server in line with the
+current Anthropic MCP spec (2025-06-18), making Deslint a first-class
+self-correction surface for Claude Code, Cursor, and Claude Desktop. The
+core ESLint plugin and CLI are unchanged at the rule level — every existing
+0.4.x project keeps the same lint output — so this is a safe, additive
+upgrade for everyone, and the headline win for AI-assisted workflows.
+
+### `@deslint/mcp`
+
+- **MCP 2025-06-18 spec compliance.** Server now uses the modern
+  `registerTool` API, advertises capabilities correctly, and returns typed
+  `structuredContent` alongside the human-readable text block so agents
+  can parse results without scraping stringified JSON.
+  (`packages/mcp/src/server.ts`)
+- **Tool annotations on every tool.** Each tool declares `readOnlyHint`,
+  `destructiveHint`, `idempotentHint`, and `openWorldHint`, so MCP clients
+  can surface accurate consent prompts and skip redundant approvals for
+  read-only operations. (`packages/mcp/src/tools.ts`)
+- **`server.json` manifest** for MCP Registry submission. Lets the package
+  be discovered and installed via the official MCP Registry under the
+  reverse-DNS identifier `io.github.jaydrao215/deslint`.
+  (`packages/mcp/server.json`)
+- **Hardened path handling.** Path-traversal containment now uses
+  `path.relative` instead of separator-string prefix matching, so it
+  behaves correctly across macOS, Linux, and Windows.
+  (`packages/mcp/src/server.ts`)
+- **Resource caps.** Files > 10 MB are rejected; `analyze_project`,
+  `compliance_check`, and `suggest_fix_strategy` clamp `maxFiles` to ≤ 5000
+  per request. Prevents accidental memory exhaustion in large monorepos.
+
+### Documentation & marketing
+
+- **Landing reframe** around the AI-coding wedge. Hero is now "AI writes
+  fast. Deslint keeps it clean.", subhead and proof chips emphasise the
+  deterministic-check-in-the-agent-loop posture, and a new MCP loop section
+  surfaces the self-correction story above the ESLint/CLI/Action lineup.
+  (`apps/docs/src/components/{Hero,McpLoopSection,ProductShowcase}.tsx`)
+- **Demo GIFs on every published README.** `@deslint/mcp`,
+  `@deslint/cli`, and `@deslint/eslint-plugin` now show the product in
+  motion at the top of their npm listing, served from the deslint.com CDN
+  to keep tarball sizes flat.
+  (`apps/docs/public/demo/{mcp-loop,cli-demo,vscode-squiggle}.gif`)
+- **Pricing reframe.** Teams tier drops the misleading "Figma sync"
+  marketing claim (the real Figma Variables → DTCG transform remains shipped
+  in the free OSS CLI) and leads with the AI-PR design-debt dashboard wedge.
+  Enterprise tier shifts from "Custom" to "From $10k / year · 20+ seats" so
+  the page filters self-disqualifying conversations earlier.
+  (`apps/docs/src/app/pricing/page.tsx`)
+
+### `@deslint/eslint-plugin`, `@deslint/cli`, `@deslint/shared`
+
+No rule-level changes. Versions bump in lockstep with `@deslint/mcp` per
+the changeset `linked` config so the four packages always publish as a
+matched set.
+
+### Verification
+
+- 1,480 tests passing (shared 125 · plugin 1,140 · cli 173 · mcp 25 ·
+  action 17), zero regressions vs 0.4.0.
+- End-to-end smoke against the compiled binaries on a dirty React sample:
+  `deslint scan` correctly scored 40/100 with 8 violations; `deslint fix
+  --all` applied 6 autofixes (`p-[7px]→p-1.5`, `mt-[19px]→mt-5`,
+  `loading="lazy"` on `<img>`) and refused the 10 fixes that need human
+  judgement.
+- `node packages/mcp/demo/self-correction-loop.mjs` exercised the real
+  stdio JSON-RPC path: `initialize` → `tools/list` (6 tools) → `analyze_file`
+  (4 violations + autofix suggestions) → `analyze_and_fix` (corrected file
+  returned, 2 fixed / 2 flagged for review).
+
 ## [0.4.0] — 2026-04-15
 
 **Autofix that preserves your design.** A batch of 13 fixes that turn every
