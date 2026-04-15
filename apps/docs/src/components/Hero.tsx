@@ -80,18 +80,18 @@ export function Hero({ stars }: HeroProps) {
             >
               <Link
                 href="/docs/getting-started"
-                className="group inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-light transition-all duration-300 hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5"
+                className="group inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-light motion-safe:transition-all motion-safe:duration-300 hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5"
               >
                 Install in 30 seconds
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                <ArrowRight className="h-4 w-4 motion-safe:transition-transform group-hover:translate-x-0.5" />
               </Link>
               <a
                 href={GITHUB_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                className="group inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 motion-safe:transition-all motion-safe:duration-300 hover:shadow-md hover:-translate-y-0.5"
               >
-                <Star className="h-4 w-4 text-warn group-hover:fill-warn transition-colors" aria-hidden />
+                <Star className="h-4 w-4 text-warn group-hover:fill-warn motion-safe:transition-colors" aria-hidden />
                 <span>Star on GitHub</span>
                 {stars !== null && (
                   <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-mono font-semibold text-gray-700 tabular-nums">
@@ -158,7 +158,7 @@ function InstallCommand() {
   return (
     <button
       onClick={copy}
-      className="group relative inline-flex items-center gap-4 rounded-xl bg-gray-950 px-5 py-3.5 font-mono text-sm text-gray-300 transition-all hover:bg-gray-900 glow-border hover:glow-border-hover cursor-pointer"
+      className="group relative inline-flex items-center gap-4 rounded-xl bg-gray-950 px-5 py-3.5 font-mono text-sm text-gray-300 motion-safe:transition-all hover:bg-gray-900 glow-border hover:glow-border-hover cursor-pointer"
       aria-label="Copy install command"
     >
       <span className="text-gray-500 select-none">$</span>
@@ -167,7 +167,7 @@ function InstallCommand() {
         <span className="text-gray-400">install -D</span>{' '}
         <span className="text-white font-medium">@deslint/eslint-plugin</span>
       </span>
-      <span className="flex items-center gap-1.5 text-gray-500 group-hover:text-gray-300 transition-colors">
+      <span className="flex items-center gap-1.5 text-gray-500 group-hover:text-gray-300 motion-safe:transition-colors">
         {copied ? (
           <Check className="h-4 w-4 text-pass" />
         ) : (
@@ -182,16 +182,17 @@ function HeroBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-full pointer-events-none"
         style={{
+          height: '600px',
           background:
             'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(83, 74, 183, 0.09), transparent)',
         }}
       />
       <div className="absolute inset-0 dot-grid opacity-50" />
-      <div className="absolute top-20 left-[10%] w-72 h-72 rounded-full bg-primary-200/10 blur-3xl animate-float" />
+      <div className="absolute top-20 left-[10%] w-72 h-72 rounded-full bg-primary-200/10 blur-3xl motion-safe:animate-float" />
       <div
-        className="absolute top-40 right-[10%] w-96 h-96 rounded-full bg-primary-300/8 blur-3xl animate-float"
+        className="absolute top-40 right-[10%] w-96 h-96 rounded-full bg-primary-300/8 blur-3xl motion-safe:animate-float"
         style={{ animationDelay: '-3s' }}
       />
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />

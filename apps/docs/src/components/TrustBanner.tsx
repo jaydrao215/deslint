@@ -112,11 +112,12 @@ export function TrustBanner() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
-              className="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm transition-all hover:shadow-lg hover:shadow-primary/5"
+              className="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm motion-safe:transition-all hover:shadow-lg hover:shadow-primary/5"
             >
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -right-4 -top-6 select-none text-[120px] font-bold leading-none text-primary/[0.04]"
+                className="pointer-events-none absolute -right-4 -top-6 select-none font-bold leading-none text-primary/[0.04]"
+                style={{ fontSize: '120px' }}
               >
                 0
               </div>
