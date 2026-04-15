@@ -18,6 +18,51 @@ export interface FixInteractiveOptions {
   cwd: string;
 }
 
+/** An ESLint-style fix: a byte range in the ORIGINAL source + replacement text. */
+export interface Fix {
+  range: [number, number];
+  text: string;
+}
+
+/**
+ * Apply one or more ESLint fixes to a source string.
+ *
+ * The key invariant: `fix.range` is always measured against the ORIGINAL source
+ * that ESLint parsed. Applying fix #1 shifts every byte after it, which is why
+ * the old "readFileSync → slice/splice → writeFileSync per fix" loop silently
+ * corrupted files when more than one fix landed in the same file.
+ *
+ * Correct algorithm:
+ *   1. Sort ascending by range start.
+ *   2. Drop any fix that overlaps an earlier (already-kept) fix. ESLint uses the
+ *      same rule internally: conservative, never mangle bytes twice.
+ *   3. Walk in REVERSE so each splice only shifts bytes that no later fix
+ *      references.
+ *
+ * Exported for unit testing.
+ */
+export function applyFixesToSource(source: string, fixes: Fix[]): string {
+  if (fixes.length === 0) return source;
+
+  const sorted = [...fixes].sort((a, b) => a.range[0] - b.range[0]);
+  const nonOverlapping: Fix[] = [];
+  let lastEnd = -1;
+  for (const fix of sorted) {
+    // Only keep fixes that start at or after the last kept fix's end.
+    if (fix.range[0] >= lastEnd) {
+      nonOverlapping.push(fix);
+      lastEnd = fix.range[1];
+    }
+  }
+
+  let out = source;
+  for (let i = nonOverlapping.length - 1; i >= 0; i--) {
+    const fix = nonOverlapping[i];
+    out = out.slice(0, fix.range[0]) + fix.text + out.slice(fix.range[1]);
+  }
+  return out;
+}
+
 /**
  * Apply all auto-fixable violations at once.
  * With --dry-run, shows a diff preview without modifying files.
@@ -178,6 +223,26 @@ export async function fixInteractive(options: FixInteractiveOptions): Promise<vo
   let applied = 0;
   let skipped = 0;
 
+  // ── Per-file fix accumulator ─────────────────────────────────────────
+  // ESLint fix ranges are always measured against the file's ORIGINAL parsed
+  // source. Writing each fix immediately means the NEXT fix's range is stale.
+  // Instead we snapshot each file's original source once, append fixes to a
+  // per-file queue, and on every apply we rewrite the whole file by replaying
+  // the queue against the original via applyFixesToSource.
+  const originals = new Map<string, string>();
+  const queued = new Map<string, Fix[]>();
+
+  const commitFix = (filePath: string, fix: Fix): void => {
+    if (!originals.has(filePath)) {
+      originals.set(filePath, readFileSync(filePath, 'utf-8'));
+    }
+    const list = queued.get(filePath) ?? [];
+    list.push(fix);
+    queued.set(filePath, list);
+    const patched = applyFixesToSource(originals.get(filePath) as string, list);
+    writeFileSync(filePath, patched);
+  };
+
   for (const v of violations) {
     const ruleId = v.message.ruleId ?? 'unknown';
 
@@ -190,7 +255,7 @@ export async function fixInteractive(options: FixInteractiveOptions): Promise<vo
     // Auto-apply if user chose "apply all similar"
     if (applyAllRules.has(ruleId)) {
       if (v.message.fix) {
-        applyFix(v.filePath, v.message.fix);
+        commitFix(v.filePath, v.message.fix);
         applied++;
       }
       continue;
@@ -235,7 +300,7 @@ export async function fixInteractive(options: FixInteractiveOptions): Promise<vo
     switch (action) {
       case 'apply':
         if (v.message.fix) {
-          applyFix(v.filePath, v.message.fix);
+          commitFix(v.filePath, v.message.fix);
           applied++;
         }
         break;
@@ -247,7 +312,7 @@ export async function fixInteractive(options: FixInteractiveOptions): Promise<vo
       case 'apply-all':
         applyAllRules.add(ruleId);
         if (v.message.fix) {
-          applyFix(v.filePath, v.message.fix);
+          commitFix(v.filePath, v.message.fix);
           applied++;
         }
         break;
@@ -263,13 +328,4 @@ export async function fixInteractive(options: FixInteractiveOptions): Promise<vo
   prompts.outro(
     `${chalk.green(`${applied} fixed`)}${chalk.gray(', ')}${chalk.yellow(`${skipped} skipped`)}`,
   );
-}
-
-/**
- * Apply a single ESLint fix to a file.
- */
-function applyFix(filePath: string, fix: { range: [number, number]; text: string }): void {
-  const source = readFileSync(filePath, 'utf-8');
-  const patched = source.slice(0, fix.range[0]) + fix.text + source.slice(fix.range[1]);
-  writeFileSync(filePath, patched);
 }
