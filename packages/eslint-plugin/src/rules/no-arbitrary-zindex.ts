@@ -14,7 +14,7 @@ export type Options = [
   },
 ];
 
-export type MessageIds = 'arbitraryZIndex' | 'suggestScale';
+export type MessageIds = 'arbitraryZIndex' | 'arbitraryZIndexNoFix' | 'suggestScale';
 
 /**
  * Tailwind default z-index scale values.
@@ -37,6 +37,24 @@ const VALID_Z_CLASSES = new Set([
  * Matches z-[N] arbitrary z-index values.
  */
 const Z_ARBITRARY_PATTERN = /^z-\[(-?\d+)\]$/;
+
+/**
+ * Values above this threshold are assumed to be intentional portal/overlay
+ * escape-hatches (modals, toasts, tooltips, command palettes). We still
+ * report them so the user can choose to move them into `allowlist`, but we
+ * REFUSE to autofix: silently rewriting `z-[9999]` to `z-50` drops modal
+ * backdrops below sticky headers, fixed nav, and react-hot-toast, producing
+ * invisible click-throughs. The old rule did exactly this — we no longer do.
+ */
+const AUTOFIX_UPPER_BOUND = 60;
+
+/**
+ * Default allowlist of well-known "always on top" z-index values used by
+ * popular libraries (react-hot-toast, Radix portal, Headless UI Dialog,
+ * MUI modals, sonner, cmdk). These are intentional and we should not even
+ * report them in the default config.
+ */
+const DEFAULT_PORTAL_ALLOWLIST = [999, 1000, 9999];
 
 /**
  * Find the nearest z-index scale value.
@@ -85,12 +103,19 @@ export default createRule<Options, MessageIds>({
     messages: {
       arbitraryZIndex:
         'Arbitrary z-index `{{className}}` detected. Use scale value `{{suggested}}` instead.',
+      arbitraryZIndexNoFix:
+        'Arbitrary z-index `{{className}}` looks intentional (portal/modal value). If correct, add {{zValue}} to `allowlist`; otherwise replace with a scale value manually.',
       suggestScale: 'Replace with `{{suggested}}`',
     },
   },
   defaultOptions: [{ allowlist: [] }],
   create(context, [options]) {
-    const allowlist = new Set(options.allowlist ?? []);
+    // Merge user's allowlist with the default portal values so common modal
+    // z-indexes (9999 et al.) aren't reported out of the box.
+    const allowlist = new Set<number>([
+      ...DEFAULT_PORTAL_ALLOWLIST,
+      ...(options.allowlist ?? []),
+    ]);
 
     function checkClassString(value: string, node: TSESTree.Node) {
       try {
@@ -107,7 +132,7 @@ export default createRule<Options, MessageIds>({
 
           const zValue = parseInt(match[1], 10);
 
-          // Skip allowlisted values
+          // Skip allowlisted values (including defaults for portals)
           if (allowlist.has(zValue)) continue;
 
           const nearest = findNearestZIndex(zValue);
@@ -116,33 +141,51 @@ export default createRule<Options, MessageIds>({
             ? [...variants, suggestedBase].join(':')
             : suggestedBase;
 
-          context.report({
-            node,
-            messageId: 'arbitraryZIndex',
-            data: { className: cls, suggested },
-            ...(suggested
-              ? {
-                  fix(fixer) {
-                    const src = safeGetText(context.sourceCode, node);
-                    const range = safeGetRange(context.sourceCode, node);
-                    if (!src || !range) return null;
-                    return fixer.replaceTextRange(range, src.replace(cls, suggested));
-                  },
-                  suggest: [
-                    {
-                      messageId: 'suggestScale',
-                      data: { suggested },
-                      fix(fixer) {
-                        const src = safeGetText(context.sourceCode, node);
-                        const range = safeGetRange(context.sourceCode, node);
-                        if (!src || !range) return null;
-                        return fixer.replaceTextRange(range, src.replace(cls, suggested));
-                      },
-                    },
-                  ],
-                }
-              : {}),
-          });
+          // Shared fix body.
+          const applyFix = (fixer: Parameters<NonNullable<Parameters<typeof context.report>[0]['fix']>>[0]) => {
+            const src = safeGetText(context.sourceCode, node);
+            const range = safeGetRange(context.sourceCode, node);
+            if (!src || !range) return null;
+            return fixer.replaceTextRange(range, src.replace(cls, suggested));
+          };
+
+          // If the declared value is clearly off-scale (e.g. typoed z-[55],
+          // z-[5]), clamping to the nearest Tailwind value is usually safe.
+          // If it's clearly an escape hatch (z-[9999], z-[200]), clamping
+          // to z-50 wrecks modal/backdrop layering. Report-only in that case.
+          const safeToAutofix = Math.abs(zValue) <= AUTOFIX_UPPER_BOUND;
+
+          if (safeToAutofix) {
+            context.report({
+              node,
+              messageId: 'arbitraryZIndex',
+              data: { className: cls, suggested },
+              fix: applyFix,
+              suggest: [
+                {
+                  messageId: 'suggestScale',
+                  data: { suggested },
+                  fix: applyFix,
+                },
+              ],
+            });
+          } else {
+            // No top-level fix: this is almost certainly a portal/overlay
+            // value and silently clamping to z-50 hides modals behind sticky
+            // headers. Keep the suggestion for users who want to accept.
+            context.report({
+              node,
+              messageId: 'arbitraryZIndexNoFix',
+              data: { className: cls, suggested, zValue: String(zValue) },
+              suggest: [
+                {
+                  messageId: 'suggestScale',
+                  data: { suggested },
+                  fix: applyFix,
+                },
+              ],
+            });
+          }
         }
       } catch (err) {
         debugLog('no-arbitrary-zindex', err);
