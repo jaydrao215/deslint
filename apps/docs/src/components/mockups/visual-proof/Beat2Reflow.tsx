@@ -59,7 +59,7 @@ export function Beat2Reflow({ isActive, autoPlay }: Beat2Props) {
                 onClick={() => setWidthFromUser(p.width)}
                 aria-label={`Set viewport to ${p.label} (${p.width} pixels)`}
                 aria-pressed={active}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium motion-safe:transition-all ${
                   active
                     ? 'bg-primary text-white shadow-sm'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -81,7 +81,7 @@ export function Beat2Reflow({ isActive, autoPlay }: Beat2Props) {
             step={10}
             value={width}
             onChange={(e) => setWidthFromUser(Number(e.target.value))}
-            className="vp-slider h-1 flex-1 cursor-ew-resize rounded-full bg-gray-200 accent-primary"
+            className="vp-slider h-6 flex-1 cursor-ew-resize bg-transparent accent-primary"
             aria-label="Viewport width"
           />
           <span className="text-[10px] font-mono text-gray-400">{MAX_WIDTH}</span>
