@@ -31,6 +31,8 @@ pnpm-debug.log*
 
 # Coverage
 coverage/
+# …but not the Next.js /coverage marketing route
+!apps/docs/src/app/coverage/
 
 # Deslint scan artifacts
 .deslint/
