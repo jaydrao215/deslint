@@ -1,10 +1,8 @@
 import { ESLint } from 'eslint';
 import { dirname } from 'node:path';
 
-/** Rule categories used for Design Health Score sub-scores */
 export type RuleCategory = 'colors' | 'spacing' | 'typography' | 'responsive' | 'consistency';
 
-/** Map Deslint rule IDs to their score category */
 export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'deslint/no-arbitrary-colors': 'colors',
   'deslint/no-arbitrary-spacing': 'spacing',
@@ -59,47 +57,29 @@ export interface LintFileResult {
 }
 
 export interface LintResult {
-  /** ESLint results per file */
   results: LintFileResult[];
-  /** Total files scanned */
   totalFiles: number;
-  /** Total violations */
   totalViolations: number;
-  /** Violations grouped by severity */
   bySeverity: { errors: number; warnings: number };
-  /** Violations grouped by rule */
   byRule: Record<string, number>;
-  /** Violations grouped by category (for scoring) */
   byCategory: Record<RuleCategory, number>;
-  /** Files with violations */
   filesWithViolations: number;
-  /** Number of files that failed to parse (ruleId === null messages) */
   parseErrors: number;
+  /** Effective rule map used for the scan. Used by trailer computation. */
+  effectiveRules?: Record<string, unknown>;
 }
 
 export interface LintRunnerOptions {
-  /** Files to lint */
   files: string[];
-  /** Rule overrides from .deslintrc.json */
   ruleOverrides?: Record<string, any>;
-  /** Whether to compute fixes. When true, each result's `output` holds the
-   *  fixed source so callers can preview or apply the change themselves. */
   fix?: boolean;
-  /** Whether to write the computed fixes back to disk. Defaults to the value
-   *  of `fix`, which preserves the historical "fix means write" contract.
-   *  Pass `false` alongside `fix: true` to get a true dry-run (proposed
-   *  fixes in `output` without touching the filesystem). */
+  /** Defaults to the value of `fix`. Pass `false` with `fix: true` for a
+   *  true dry-run (proposed fixes in `output` without touching disk). */
   writeFixes?: boolean;
-  /** Working directory (base path for ESLint). Defaults to process.cwd(). */
   cwd?: string;
 }
 
-/**
- * Run Deslint ESLint rules on a set of files.
- * Returns structured results for scoring and reporting.
- */
 export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
-  // Dynamic import to get the plugin — it's an ESM workspace package
   const deslintPlugin = await import('@deslint/eslint-plugin');
   const plugin = deslintPlugin.default ?? deslintPlugin;
 
@@ -139,7 +119,6 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     'deslint/spacing-rhythm-consistency': 'off',
   };
 
-  // Apply user overrides
   if (options.ruleOverrides) {
     for (const [rule, config] of Object.entries(options.ruleOverrides)) {
       const ruleId = rule.startsWith('deslint/') ? rule : `deslint/${rule}`;
@@ -147,124 +126,68 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     }
   }
 
-  // Determine cwd so ESLint treats all target files as within its base path.
-  // If not provided, derive from the first file's directory.
   const cwd = options.cwd ?? (options.files.length > 0 ? dirname(options.files[0]) : process.cwd());
 
-  // Load TypeScript parser (required for .tsx/.ts files with type annotations)
   let typescriptParser: any;
-  try {
-    typescriptParser = await import('@typescript-eslint/parser');
-  } catch {
-    // Not installed — TypeScript files may fail to parse
-  }
+  try { typescriptParser = await import('@typescript-eslint/parser'); } catch {}
 
-  // Load framework-specific parsers (optional peer deps of @deslint/eslint-plugin)
   let angularTemplateParser: any;
-  try {
-    angularTemplateParser = await import('@angular-eslint/template-parser');
-  } catch {
-    // Not installed — Angular template files will be skipped
-  }
+  try { angularTemplateParser = await import('@angular-eslint/template-parser'); } catch {}
 
   let vueParser: any;
-  try {
-    vueParser = await import('vue-eslint-parser');
-  } catch {
-    // Not installed — Vue files will use default parser
-  }
+  try { vueParser = await import('vue-eslint-parser'); } catch {}
 
   let svelteParser: any;
-  try {
-    svelteParser = await import('svelte-eslint-parser');
-  } catch {
-    // Not installed — Svelte files will use default parser
-  }
+  try { svelteParser = await import('svelte-eslint-parser'); } catch {}
 
-  // Plain HTML parser. When present, it takes precedence over Angular for
-  // vanilla `.html` files; Angular then only claims `.component.html` (the
-  // standard Angular convention). When absent, Angular parser still handles
-  // `.html` so existing Angular users keep working.
   let htmlParser: any;
-  try {
-    htmlParser = await import('@html-eslint/parser');
-  } catch {
-    // Not installed — plain HTML files will fall back to Angular parser
-    // (if available) or be skipped entirely.
-  }
+  try { htmlParser = await import('@html-eslint/parser'); } catch {}
 
   const baseConfig = {
     plugins: { deslint: plugin } as any,
     rules,
-    // Don't report eslint-disable comments for rules not in our config
-    linterOptions: {
-      reportUnusedDisableDirectives: false,
-    },
+    linterOptions: { reportUnusedDisableDirectives: false },
   };
 
   const configs: any[] = [];
 
-  // TypeScript/TSX files — use @typescript-eslint/parser if available (handles TS syntax + JSX)
   if (typescriptParser) {
     configs.push({
       ...baseConfig,
       files: ['**/*.tsx', '**/*.ts'],
       languageOptions: {
         parser: typescriptParser,
-        parserOptions: {
-          ecmaFeatures: { jsx: true },
-          // No project needed — we only do AST pattern matching, no type info
-          project: false,
-        },
+        parserOptions: { ecmaFeatures: { jsx: true }, project: false },
       },
     });
   }
 
-  // JSX/JS files — default Espree parser with JSX enabled (no TS syntax)
   configs.push({
     ...baseConfig,
     files: typescriptParser
       ? ['**/*.jsx', '**/*.js', '**/*.mjs', '**/*.cjs']
       : ['**/*.tsx', '**/*.jsx', '**/*.js', '**/*.ts', '**/*.mjs', '**/*.cjs'],
-    languageOptions: {
-      parserOptions: {
-        ecmaFeatures: { jsx: true },
-      },
-    },
+    languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
   });
 
-  // Plain HTML files — use @html-eslint/parser when available.
-  // Comes FIRST so that if both html-eslint and Angular parsers are installed,
-  // plain `.html` gets html-eslint by default. Angular still owns
-  // `**/*.component.html` below (added after — later config wins in ESLint
-  // flat config merge order).
+  // html-eslint owns plain `.html` when installed; Angular parser narrows
+  // to `**/*.component.html` so both coexist cleanly.
   if (htmlParser) {
     configs.push({
       ...baseConfig,
       files: ['**/*.html'],
-      languageOptions: {
-        parser: htmlParser,
-      },
+      languageOptions: { parser: htmlParser },
     });
   }
 
-  // Angular HTML templates
   if (angularTemplateParser) {
     configs.push({
       ...baseConfig,
-      // When html-eslint is also installed, narrow Angular's claim to the
-      // `.component.html` convention so plain `.html` files don't get routed
-      // to the Angular template parser. When html-eslint is NOT installed,
-      // Angular parser keeps its historical `**/*.html` claim so existing
-      // Angular users don't regress.
       files: htmlParser ? ['**/*.component.html'] : ['**/*.html'],
-      languageOptions: {
-        parser: angularTemplateParser,
-      },
+      languageOptions: { parser: angularTemplateParser },
     });
   }
 
-  // Vue SFC files
   if (vueParser) {
     configs.push({
       ...baseConfig,
@@ -272,7 +195,6 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
       languageOptions: {
         parser: vueParser,
         parserOptions: {
-          // vue-eslint-parser needs a sub-parser for <script> blocks
           parser: typescriptParser ?? undefined,
           ecmaFeatures: { jsx: true },
         },
@@ -280,14 +202,11 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     });
   }
 
-  // Svelte files
   if (svelteParser) {
     configs.push({
       ...baseConfig,
       files: ['**/*.svelte'],
-      languageOptions: {
-        parser: svelteParser,
-      },
+      languageOptions: { parser: svelteParser },
     });
   }
 
@@ -300,21 +219,18 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
 
   const results = await eslint.lintFiles(options.files);
 
-  // Write fixes to disk only when explicitly requested. Default preserves
-  // the historical "fix implies write" contract for backwards compatibility,
-  // but callers can pass `writeFixes: false` for a genuine dry-run.
   const shouldWrite = options.writeFixes ?? options.fix ?? false;
   if (shouldWrite) {
     await ESLint.outputFixes(results);
   }
 
-  return aggregateResults(results as unknown as LintFileResult[]);
+  const aggregated = aggregateResults(results as unknown as LintFileResult[]);
+  return { ...aggregated, effectiveRules: rules };
 }
 
-/**
- * Aggregate ESLint results into structured summary.
- */
-function aggregateResults(results: LintFileResult[]): LintResult {
+/** Aggregate results into a LintResult. Exported so diff-scoping can
+ *  re-run after filtering messages to changed hunks. */
+export function aggregateResults(results: LintFileResult[]): LintResult {
   let totalViolations = 0;
   let errors = 0;
   let warnings = 0;
@@ -330,33 +246,22 @@ function aggregateResults(results: LintFileResult[]): LintResult {
   };
 
   for (const result of results) {
-    // Filter to only deslint/* violations and parse errors (ruleId null = parse error)
-    // This prevents third-party eslint-disable comments from leaking into our results
     const deslintMessages = result.messages.filter(
       (msg) => msg.ruleId === null || msg.ruleId.startsWith('deslint/'),
     );
 
-    if (deslintMessages.length > 0) {
-      filesWithViolations++;
-    }
+    if (deslintMessages.length > 0) filesWithViolations++;
 
     for (const msg of deslintMessages) {
       totalViolations++;
-
-      if (msg.severity === 2) {
-        errors++;
-      } else {
-        warnings++;
-      }
+      if (msg.severity === 2) errors++;
+      else warnings++;
 
       if (msg.ruleId === null) {
-        // Parse error — counted in totals but not mapped to a design category
         parseErrors++;
       } else {
         const category = RULE_CATEGORY_MAP[msg.ruleId];
-        if (category) {
-          byCategory[category]++;
-        }
+        if (category) byCategory[category]++;
       }
 
       const ruleId = msg.ruleId ?? 'unknown';
@@ -364,7 +269,6 @@ function aggregateResults(results: LintFileResult[]): LintResult {
     }
   }
 
-  // Return results with non-deslint messages stripped for clean output
   const filteredResults = results.map((r) => ({
     ...r,
     messages: r.messages.filter(
