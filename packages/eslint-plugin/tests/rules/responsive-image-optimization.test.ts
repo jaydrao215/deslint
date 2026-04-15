@@ -65,6 +65,19 @@ ruleTester.run('responsive-image-optimization', rule, {
     {
       code: '<NuxtImg src="/photo.jpg" alt="Photo" />',
     },
+
+    // ── Fully optimized above-the-fold hero (fetchpriority) ──
+    {
+      code: '<img src="/hero.jpg" fetchpriority="high" width="1200" height="600" srcSet="hero-800.jpg 800w" alt="Hero" />',
+    },
+    // ── Fully optimized priority image ──
+    {
+      code: '<img src="/hero.jpg" priority width="1200" height="600" srcSet="hero-800.jpg 800w" alt="Hero" />',
+    },
+    // ── Fully optimized loading="eager" hero ──
+    {
+      code: '<img src="/hero.jpg" loading="eager" width="1200" height="600" srcSet="hero-800.jpg 800w" alt="Hero" />',
+    },
   ],
 
   invalid: [
@@ -93,6 +106,55 @@ ruleTester.run('responsive-image-optimization', rule, {
       output: '<img loading="lazy" src="/photo.jpg" alt="Photo" />',
       errors: [
         { messageId: 'missingLoading' },
+        { messageId: 'missingWidthHeight' },
+        { messageId: 'missingSrcset' },
+      ],
+    },
+
+    // ── High-priority hero missing width/height/srcset ──
+    // CLS + srcset are still reported (both are good practice regardless of
+    // priority) but `loading="lazy"` must NOT be auto-inserted — doing so
+    // regresses LCP for the LCP candidate itself.
+    {
+      code: '<img src="/hero.jpg" fetchpriority="high" alt="Hero" />',
+      output: null,
+      errors: [
+        { messageId: 'missingWidthHeight' },
+        { messageId: 'missingSrcset' },
+      ],
+    },
+    {
+      code: '<img src="/hero.jpg" priority alt="Hero" />',
+      output: null,
+      errors: [
+        { messageId: 'missingWidthHeight' },
+        { messageId: 'missingSrcset' },
+      ],
+    },
+    {
+      code: '<img src="/hero.jpg" data-priority alt="Hero" />',
+      output: null,
+      errors: [
+        { messageId: 'missingWidthHeight' },
+        { messageId: 'missingSrcset' },
+      ],
+    },
+    {
+      code: '<img src="/hero.jpg" loading="eager" alt="Hero" />',
+      output: null,
+      errors: [
+        { messageId: 'missingWidthHeight' },
+        { messageId: 'missingSrcset' },
+      ],
+    },
+
+    // ── Dynamic loading expression: do NOT insert duplicate attribute ──
+    // Rule skips the loading check (attribute is present) but still
+    // reports width/height and srcset.
+    {
+      code: '<img src="/photo.jpg" loading={isAboveFold ? "eager" : "lazy"} alt="Photo" />',
+      output: null,
+      errors: [
         { messageId: 'missingWidthHeight' },
         { messageId: 'missingSrcset' },
       ],
