@@ -3,7 +3,7 @@
 import { FadeIn } from './motion';
 import { EditorMockup } from './mockups/EditorMockup';
 import { TerminalMockup } from './mockups/TerminalMockup';
-import { PRReviewMockup } from './mockups/PRReviewMockup';
+import { PrReviewVideo } from './mockups/PrReviewVideo';
 import { Code2, Terminal, GitPullRequest, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -58,7 +58,7 @@ export function ProductShowcase() {
         { icon: <WcagIcon />, text: 'Every violation linked to its WCAG criterion' },
         { icon: <GateIcon />, text: 'Configurable gate: min-score, per-category, fail-on a11y' },
       ],
-      visual: <PRReviewMockup />,
+      visual: <PrReviewVideo />,
     },
   ];
 
