@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.jaydrao215/deslint",
+  "description": "Local-first MCP server for design-quality feedback: detects hardcoded colors, arbitrary spacing, missing a11y attributes, and more. Auto-fixes fixable violations and scores project design health. Zero network calls.",
+  "status": "active",
+  "repository": {
+    "url": "https://github.com/jaydrao215/deslint",
+    "source": "github",
+    "subfolder": "packages/mcp"
+  },
+  "version": "0.5.0",
+  "websiteUrl": "https://deslint.com",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@deslint/mcp",
+      "version": "0.5.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeHint": "npx",
+      "runtimeArguments": [
+        { "type": "positional", "value": "-y" },
+        { "type": "positional", "value": "@deslint/mcp" },
+        { "type": "positional", "value": "serve" }
+      ]
+    }
+  ]
+}
