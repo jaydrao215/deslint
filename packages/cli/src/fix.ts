@@ -76,9 +76,16 @@ export async function fixAll(options: FixAllOptions): Promise<LintResult> {
   // numbers. ESLint's post-fix `messages` only contains what remains, and
   // `fixableErrorCount`/`fixableWarningCount` on those results are zeros
   // once the fixes have been applied — so we need a separate pre-scan.
+  //
+  // IMPORTANT: we must forward `cwd` to runLint. Without it runLint falls back
+  // to `dirname(options.files[0])`, which silently fails on paths that contain
+  // glob-special characters — notably Next.js route groups like
+  // `app/(auth)/page.tsx`. The parens trip up ESLint's internal micromatch when
+  // the derived cwd IS the parent folder literally containing the parens.
   const preFix = await runLint({
     files: options.files,
     ruleOverrides: options.ruleOverrides,
+    cwd: options.cwd,
   });
   const fixableBefore = preFix.results.reduce(
     (sum, r) => sum + r.messages.filter((m) => m.fix).length,
@@ -90,6 +97,7 @@ export async function fixAll(options: FixAllOptions): Promise<LintResult> {
     files: options.files,
     ruleOverrides: options.ruleOverrides,
     fix: true,
+    cwd: options.cwd,
   });
 
   // A file was actually modified iff ESLint produced `output` for it.
@@ -130,6 +138,7 @@ async function fixAllDryRun(options: FixAllOptions): Promise<LintResult> {
     ruleOverrides: options.ruleOverrides,
     fix: true,
     writeFixes: false,
+    cwd: options.cwd,
   });
 
   console.log('');
@@ -183,11 +192,13 @@ async function fixAllDryRun(options: FixAllOptions): Promise<LintResult> {
  * User chooses per-violation: apply, skip, apply-all-similar, ignore-rule, quit.
  */
 export async function fixInteractive(options: FixInteractiveOptions): Promise<void> {
-  // First, scan to find all violations
+  // First, scan to find all violations. Forward cwd so route-group paths
+  // like `app/(auth)/...` resolve correctly (see fixAll for details).
   const lintResult = await runLint({
     files: options.files,
     ruleOverrides: options.ruleOverrides,
     fix: false,
+    cwd: options.cwd,
   });
 
   if (lintResult.totalViolations === 0) {
