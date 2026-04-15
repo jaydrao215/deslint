@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>deslint — GitHub Action PR review</title>
+<style>
+  /* GitHub-like */
+  html, body {
+    margin: 0; padding: 0; background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 14px;
+  }
+  .stage {
+    width: 1200px; height: 800px; margin: 0 auto; overflow: hidden;
+    background: #0d1117; position: relative;
+  }
+
+  /* Repo header */
+  .repohead {
+    background: #010409; border-bottom: 1px solid #21262d; padding: 14px 24px;
+    display: flex; align-items: center; gap: 10px; font-size: 14px;
+  }
+  .repohead .owner { color: #8b949e; }
+  .repohead .slash { color: #8b949e; }
+  .repohead .repo { color: #58a6ff; font-weight: 600; }
+  .repohead .pr { color: #8b949e; margin-left: 8px; }
+  .repohead .pr b { color: #e6edf3; }
+  .repohead .prnum { color: #8b949e; }
+
+  /* PR title row */
+  .prtitle { padding: 14px 24px 10px; border-bottom: 1px solid #21262d; }
+  .prtitle h1 { margin: 0; font-size: 22px; font-weight: 600; color: #e6edf3; letter-spacing: -0.01em; }
+  .prmeta { margin-top: 6px; display: flex; align-items: center; gap: 10px; color: #8b949e; font-size: 13px; }
+  .prmeta .state {
+    background: #238636; color: white; padding: 3px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .prmeta .state::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 999px; background: white; }
+
+  /* Tabs */
+  .tabs {
+    padding: 0 24px; display: flex; gap: 14px; border-bottom: 1px solid #21262d; align-items: flex-end;
+  }
+  .tab {
+    padding: 10px 6px; color: #8b949e; font-size: 13px; border-bottom: 2px solid transparent;
+  }
+  .tab.active { color: #e6edf3; border-bottom-color: #f78166; font-weight: 600; }
+  .tab .n { margin-left: 4px; background: #21262d; padding: 1px 6px; border-radius: 999px; font-size: 11px; }
+
+  /* Diff file */
+  .file {
+    margin: 18px 24px 0; background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+    overflow: hidden;
+  }
+  .filehead {
+    background: #161b22; padding: 8px 14px; font-size: 13px; display: flex; align-items: center; gap: 8px;
+    color: #e6edf3; border-bottom: 1px solid #30363d;
+  }
+  .filehead .path { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #58a6ff; }
+  .filehead .pill {
+    margin-left: auto; background: rgba(248,81,73,.15); color: #ff7b72; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  }
+  .code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px; line-height: 1.45;
+  }
+  .line {
+    display: grid; grid-template-columns: 48px 48px 1fr; border-top: 1px solid transparent;
+  }
+  .line .gut { color: #484f58; text-align: right; padding: 0 10px; user-select: none; }
+  .line .src { padding: 0 12px; white-space: pre; color: #e6edf3; }
+  .line.add { background: rgba(46,160,67,.15); }
+  .line.add .src { background: rgba(46,160,67,.08); }
+  .line.del { background: rgba(248,81,73,.15); }
+  .line.del .src { background: rgba(248,81,73,.08); }
+  .line.hunk { background: #0d1117; color: #8b949e; }
+  .line.hunk .src { color: #8b949e; }
+
+  .kw { color: #ff7b72; }
+  .str { color: #a5d6ff; }
+  .attr { color: #d2a8ff; }
+  .tag { color: #7ee787; }
+  .cls { color: #d2a8ff; }
+  .sym { color: #ffa657; }
+
+  /* Inline review comment box */
+  .review {
+    margin: 6px 24px 12px; border: 1px solid #30363d; border-radius: 6px;
+    background: #0d1117; overflow: hidden;
+    opacity: 0; transform: translateY(8px); transition: opacity 500ms ease, transform 500ms ease;
+  }
+  .review.show { opacity: 1; transform: translateY(0); }
+
+  .review .rhead {
+    padding: 10px 14px; background: #161b22; border-bottom: 1px solid #30363d;
+    display: flex; align-items: center; gap: 8px; font-size: 13px;
+  }
+  .review .avatar {
+    width: 22px; height: 22px; border-radius: 999px; background: #1f6feb;
+    display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: white;
+  }
+  .review .who { color: #e6edf3; font-weight: 600; }
+  .review .bot { color: #8b949e; font-weight: 400; background: #21262d; padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+  .review .when { color: #8b949e; margin-left: auto; font-size: 12px; }
+
+  .review .body { padding: 12px 14px 14px; }
+  .review .body .title { font-weight: 600; color: #e6edf3; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+  .review .severity.err { color: #ff7b72; font-weight: 700; font-size: 12px; background: rgba(248,81,73,.15); padding: 2px 6px; border-radius: 4px; }
+  .review .body .msg { color: #c9d1d9; margin: 0 0 10px; font-size: 13px; line-height: 1.55; max-width: 780px; }
+  .review .body code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: rgba(110,118,129,.2); padding: 1px 5px; border-radius: 4px; font-size: 12px; color: #e6edf3; }
+
+  .suggest {
+    border: 1px solid #30363d; border-radius: 6px; background: #010409; margin-bottom: 10px; overflow: hidden;
+  }
+  .suggest .shead {
+    padding: 6px 10px; background: #161b22; font-size: 12px; color: #8b949e; border-bottom: 1px solid #30363d;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .suggest .shead b { color: #e6edf3; font-weight: 600; }
+  .suggest .sbody { padding: 8px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; white-space: pre; }
+  .suggest .sbody .old { color: #ff7b72; background: rgba(248,81,73,.1); display: block; padding: 0 6px; }
+  .suggest .sbody .new { color: #7ee787; background: rgba(46,160,67,.1); display: block; padding: 0 6px; }
+
+  .review .actions { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+    padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .btn.primary { background: #238636; border-color: #2ea043; color: white; }
+  .btn.primary.hover { background: #2ea043; }
+  .btn .ic { font-weight: 900; }
+  .cursor-arrow {
+    position: absolute; width: 22px; height: 22px; pointer-events: none; z-index: 200;
+    background: radial-gradient(circle at 30% 30%, #ffffff 40%, #000000 42%, transparent 58%);
+    border-radius: 2px; transform: rotate(-18deg);
+    opacity: 0; transition: opacity 200ms ease, left 700ms cubic-bezier(.3,.1,.2,1), top 700ms cubic-bezier(.3,.1,.2,1);
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.6));
+  }
+  .cursor-arrow.on { opacity: 1; }
+
+  /* Applied state: swap out bad line → good line */
+  .line .oldbit { display: inline; }
+  .line .newbit { display: none; }
+  .line.applied .oldbit { display: none; }
+  .line.applied .newbit { display: inline; }
+  .line.applied { background: rgba(46,160,67,.15); border-top: 1px solid rgba(46,160,67,.3); }
+  .line.applied .src { background: rgba(46,160,67,.08); }
+  .line.applied .gut { color: #484f58; }
+
+  /* Pulse highlight on the newly-applied line */
+  .pulse {
+    animation: pulse 900ms ease-out;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(46,160,67,.6) inset; }
+    50% { box-shadow: 0 0 0 4px rgba(46,160,67,.25) inset; }
+    100% { box-shadow: 0 0 0 0 rgba(46,160,67,0) inset; }
+  }
+
+  .checks-done {
+    position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%);
+    background: rgba(35, 134, 54, .18); border: 1px solid rgba(46,160,67,.4);
+    color: #7ee787; padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: 13px;
+    display: flex; align-items: center; gap: 8px;
+    opacity: 0; transition: opacity 500ms ease;
+  }
+  .checks-done.on { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="stage" class="stage">
+  <div class="repohead">
+    <span class="owner">jaydrao215</span>
+    <span class="slash">/</span>
+    <span class="repo">customer-app</span>
+    <span class="pr">· <b>pull request</b></span>
+    <span class="prnum">#428</span>
+  </div>
+
+  <div class="prtitle">
+    <h1>feat(ui): dark mode switcher + toast polish</h1>
+    <div class="prmeta">
+      <span class="state">Open</span>
+      <span>sofia-park wants to merge 4 commits into <b style="color:#e6edf3">main</b> from <b style="color:#e6edf3">feat/dark-mode</b></span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab">Conversation<span class="n">12</span></div>
+    <div class="tab">Commits<span class="n">4</span></div>
+    <div class="tab active">Files changed<span class="n">3</span></div>
+  </div>
+
+  <div class="file">
+    <div class="filehead">
+      <span class="path">components/CartToast.tsx</span>
+      <span class="pill">deslint · 2 issues</span>
+    </div>
+    <div class="code">
+      <div class="line hunk"><span class="gut"></span><span class="gut"></span><span class="src">@@ -22,7 +22,7 @@ export function CartToast({ title, onDismiss }: Props) {</span></div>
+      <div class="line"><span class="gut">22</span><span class="gut">22</span><span class="src">  return (</span></div>
+      <div class="line"><span class="gut">23</span><span class="gut">23</span><span class="src">    <span class="kw">&lt;</span><span class="tag">div</span></span></div>
+      <div class="line del" id="lineZ"><span class="gut">24</span><span class="gut"> </span><span class="src"><span class="oldbit">      <span class="attr">className</span>=<span class="str">"fixed top-4 right-4 z-[9999] rounded-xl bg-white p-4 shadow-xl"</span></span><span class="newbit">      <span class="attr">className</span>=<span class="str">"fixed top-4 right-4 z-[9999] rounded-xl bg-white p-4 shadow-xl"</span></span></span></div>
+      <div class="line add" id="lineZadd" style="display:none"><span class="gut"> </span><span class="gut">24</span><span class="src">      <span class="attr">className</span>=<span class="str">"fixed top-4 right-4 z-[9999] rounded-xl bg-white p-4 shadow-xl"</span></span></div>
+      <div class="line"><span class="gut">25</span><span class="gut">25</span><span class="src">      <span class="attr">role</span>=<span class="str">"status"</span></span></div>
+      <div class="line"><span class="gut">26</span><span class="gut">26</span><span class="src">      <span class="attr">aria-live</span>=<span class="str">"polite"</span></span></div>
+      <div class="line"><span class="gut">27</span><span class="gut">27</span><span class="src">    ></span></div>
+      <div class="line hunk"><span class="gut"></span><span class="gut"></span><span class="src">@@ -41,7 +41,7 @@ export function CartToast({ title, onDismiss }: Props) {</span></div>
+      <div class="line"><span class="gut">41</span><span class="gut">41</span><span class="src">      <span class="kw">&lt;</span><span class="tag">svg</span></span></div>
+      <div class="line del" id="lineMotion"><span class="gut">42</span><span class="gut"> </span><span class="src"><span class="oldbit">        <span class="attr">className</span>=<span class="str">"h-4 w-4 animate-spin text-emerald-500"</span></span><span class="newbit">        <span class="attr">className</span>=<span class="str">"h-4 w-4 animate-spin text-emerald-500"</span></span></span></div>
+      <div class="line"><span class="gut">43</span><span class="gut">43</span><span class="src">        <span class="attr">viewBox</span>=<span class="str">"0 0 24 24"</span></span></div>
+    </div>
+  </div>
+
+  <!-- Review 1: z-index -->
+  <div class="review" id="rev1" style="margin-top:-4px;">
+    <div class="rhead">
+      <div class="avatar">d</div>
+      <span class="who">deslint[bot]</span>
+      <span class="bot">bot</span>
+      <span class="when">now</span>
+    </div>
+    <div class="body">
+      <div class="title"><span class="severity err">error</span> <code>no-arbitrary-zindex</code> would clamp this portal value</div>
+      <p class="msg">
+        <code>z-[9999]</code> looks arbitrary, but it's a standard portal layer. Clamping it to <code>z-50</code> would sink this toast behind your sticky header. Keeping the class as-is — no change needed.
+      </p>
+      <div class="actions">
+        <span class="btn" style="background:transparent;border-color:#30363d;">✓ suggest-only · safe</span>
+        <span class="btn" style="background:transparent;border-color:#30363d;">Resolve</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review 2: motion-safe autofix suggestion -->
+  <div class="review" id="rev2">
+    <div class="rhead">
+      <div class="avatar">d</div>
+      <span class="who">deslint[bot]</span>
+      <span class="bot">bot</span>
+      <span class="when">now</span>
+    </div>
+    <div class="body">
+      <div class="title"><span class="severity err">error</span> <code>prefers-reduced-motion</code> — <code>animate-spin</code> is signal, not decoration</div>
+      <p class="msg">
+        This spinner conveys loading state. Wrapping it in <code>motion-safe:</code> would leave reduced-motion users staring at a frozen circle. Skipping the autofix; keeping <code>animate-spin</code> exempt.
+      </p>
+      <div class="suggest">
+        <div class="shead">⚡ Suggested change · <b>no autofix applied</b></div>
+        <div class="sbody"><span class="old">- className="h-4 w-4 motion-safe:animate-spin text-emerald-500"</span><span class="new">+ className="h-4 w-4 animate-spin text-emerald-500"</span></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="applyBtn">
+          <span class="ic">✓</span> Apply suggestion
+        </button>
+        <span class="btn" style="background:transparent;border-color:#30363d;">Add more suggestions</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="checks-done" id="done"><span>●</span> deslint · all 2 suggestions resolved · safe to merge</div>
+
+  <div class="cursor-arrow" id="cur"></div>
+</div>
+
+<script>
+  const sleep = (ms) => new Promise(r=>setTimeout(r,ms));
+  const cur = document.getElementById('cur');
+  const rev1 = document.getElementById('rev1');
+  const rev2 = document.getElementById('rev2');
+  const applyBtn = document.getElementById('applyBtn');
+  const done = document.getElementById('done');
+  const lineMotion = document.getElementById('lineMotion');
+
+  async function moveCursor(x, y) {
+    cur.style.left = (x - 4) + 'px';
+    cur.style.top  = (y - 4) + 'px';
+  }
+
+  async function run() {
+    // Opening: cursor comes in
+    await sleep(400);
+    cur.style.left = '1000px';
+    cur.style.top  = '760px';
+    cur.classList.add('on');
+    await sleep(150);
+
+    // Review 1 appears
+    rev1.classList.add('show');
+    await sleep(1400);
+
+    // Review 2 appears
+    rev2.classList.add('show');
+    await sleep(1200);
+
+    // Cursor sweeps toward "Apply suggestion" button
+    const btnRect = applyBtn.getBoundingClientRect();
+    await moveCursor(btnRect.left + 26, btnRect.top + 16);
+    await sleep(900);
+
+    // Hover state
+    applyBtn.classList.add('hover');
+    await sleep(400);
+
+    // Click pulse
+    applyBtn.style.transform = 'scale(0.97)';
+    await sleep(120);
+    applyBtn.style.transform = '';
+
+    // Applied: swap motion line, show success + hide suggestion box
+    lineMotion.classList.add('applied', 'pulse');
+    applyBtn.innerHTML = '<span class="ic">✓</span> Applied';
+    applyBtn.style.background = '#1a7f37';
+    applyBtn.style.borderColor = '#238636';
+    await sleep(900);
+
+    // Cursor drifts away
+    await moveCursor(780, 760);
+    await sleep(400);
+
+    // "All checks resolved" chip
+    done.classList.add('on');
+    await sleep(2200);
+
+    window.__done = true;
+  }
+  run();
+</script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>deslint — safe-autofix comparison</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #07090e; color: #e2e8f0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+  .stage {
+    width: 1200px; height: 675px; margin: 0 auto; position: relative; overflow: hidden;
+    background: radial-gradient(1100px 700px at 50% -10%, rgba(99,102,241,.20), transparent 60%),
+                radial-gradient(900px 600px at 110% 110%, rgba(16,185,129,.12), transparent 60%),
+                #07090e;
+  }
+  /* Subtle grid texture */
+  .stage::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(148,163,184,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148,163,184,.06) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(1000px 600px at 50% 50%, #000 60%, transparent 100%);
+    -webkit-mask-image: radial-gradient(1000px 600px at 50% 50%, #000 60%, transparent 100%);
+    pointer-events: none;
+  }
+
+  /* Eyebrow + title */
+  .eyebrow {
+    position: absolute; left: 60px; top: 52px; font-size: 12px; letter-spacing: .2em;
+    text-transform: uppercase; color: #a5b4fc; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow .dot { width: 8px; height: 8px; border-radius: 999px; background: #6366f1; box-shadow: 0 0 12px #6366f1; }
+  .title {
+    position: absolute; left: 60px; top: 84px;
+    font-size: 44px; font-weight: 800; letter-spacing: -0.02em; color: #f8fafc;
+    line-height: 1.08; max-width: 920px;
+  }
+  .title .hi { color: #a5b4fc; }
+  .sub {
+    position: absolute; left: 60px; top: 180px;
+    font-size: 16px; color: #94a3b8; max-width: 760px; line-height: 1.45;
+  }
+
+  /* Table */
+  table.cmp {
+    position: absolute; left: 60px; right: 60px; top: 240px;
+    border-collapse: separate; border-spacing: 0; width: calc(100% - 120px);
+    font-size: 15px;
+  }
+  .cmp thead th {
+    text-align: left; font-size: 12px; color: #64748b; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase;
+    padding: 10px 14px; border-bottom: 1px solid rgba(148,163,184,.14);
+  }
+  .cmp thead th.brand {
+    color: #e2e8f0;
+  }
+  .cmp thead th.brand.us {
+    color: #a5b4fc;
+    position: relative;
+  }
+  .cmp thead th.brand.us::after {
+    content: ''; position: absolute; left: 8px; right: 8px; bottom: 0;
+    height: 2px; background: linear-gradient(90deg, #6366f1, #22d3ee);
+    border-radius: 2px;
+  }
+  .cmp tbody td {
+    padding: 16px 14px; border-bottom: 1px solid rgba(148,163,184,.08);
+    color: #cbd5e1;
+  }
+  .cmp tbody td.scn { color: #f1f5f9; font-weight: 500; }
+  .cmp tbody td code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: rgba(148,163,184,.12); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #e2e8f0;
+  }
+  .cmp tbody td.cell { text-align: center; font-weight: 600; position: relative; }
+  .cmp tbody td.cell.us {
+    background: linear-gradient(180deg, rgba(99,102,241,.06), rgba(99,102,241,.02));
+  }
+
+  /* Cells are revealed progressively */
+  .cell .m {
+    display: inline-flex; align-items: center; gap: 6px;
+    opacity: 0; transform: translateY(4px);
+    transition: opacity 320ms ease, transform 320ms ease;
+  }
+  .cell.on .m { opacity: 1; transform: translateY(0); }
+
+  .bad { color: #fb7185; }
+  .meh { color: #64748b; }
+  .ok  { color: #34d399; }
+  .ok .note { color: #a7f3d0; font-weight: 500; font-size: 12px; }
+
+  /* Row reveal */
+  tbody tr {
+    opacity: 0; transform: translateY(6px);
+    transition: opacity 260ms ease, transform 260ms ease;
+  }
+  tbody tr.on { opacity: 1; transform: translateY(0); }
+
+  /* Typewriter for the scenario text */
+  .scn .t { border-right: 2px solid transparent; }
+  .scn.typing .t { border-right-color: #a5b4fc; animation: blink 1s steps(2, start) infinite; }
+  @keyframes blink { to { border-right-color: transparent; } }
+
+  /* Footer */
+  .foot {
+    position: absolute; left: 60px; right: 60px; bottom: 34px;
+    display: flex; align-items: center; justify-content: space-between; color: #64748b; font-size: 13px;
+  }
+  .foot .logo { font-weight: 800; letter-spacing: -0.01em; color: #f8fafc; font-size: 16px; }
+  .foot .logo .dot { display: inline-block; width: 8px; height: 8px; background: #6366f1; border-radius: 999px; margin-right: 8px; vertical-align: 2px; box-shadow: 0 0 10px #6366f1; }
+  .foot .cta {
+    background: rgba(99,102,241,.12); border: 1px solid rgba(99,102,241,.4);
+    color: #c7d2fe; padding: 8px 14px; border-radius: 999px; font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    opacity: 0; transition: opacity 500ms ease;
+  }
+  .foot .cta.on { opacity: 1; }
+
+  /* Final "trust" flourish across the us-column */
+  .highlight-col {
+    position: absolute; top: 240px; bottom: 80px;
+    border-radius: 14px; pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(99,102,241,.35), 0 20px 60px rgba(99,102,241,.12);
+    opacity: 0; transition: opacity 500ms ease;
+  }
+  .highlight-col.on { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="eyebrow"><span class="dot"></span><span>deslint · v0.4.0 release</span></div>
+  <h1 class="title">What does <span class="hi">"safe autofix"</span> actually mean?</h1>
+  <div class="sub">Every design-system linter will fix the easy stuff. The question is what they rewrite silently. Here's the same five scenarios, three tools deep.</div>
+
+  <div id="colHL" class="highlight-col"></div>
+
+  <table class="cmp">
+    <colgroup>
+      <col style="width: 42%" />
+      <col style="width: 18%" />
+      <col style="width: 18%" />
+      <col style="width: 22%" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Scenario</th>
+        <th class="brand" style="text-align:center">ESLint plugin X</th>
+        <th class="brand" style="text-align:center">deslint 0.3</th>
+        <th class="brand us" style="text-align:center">deslint 0.4</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr data-i="0">
+        <td class="scn"><span class="t">Adds <code>dark:</code> variants site-wide on --fix</span></td>
+        <td class="cell"><span class="m bad">✖ silent</span></td>
+        <td class="cell"><span class="m bad">✖ silent</span></td>
+        <td class="cell us"><span class="m ok">✓ <span class="note">suggest-only</span></span></td>
+      </tr>
+      <tr data-i="1">
+        <td class="scn"><span class="t">Clamps <code>z-[9999]</code> → <code>z-50</code></span></td>
+        <td class="cell"><span class="m meh">—</span></td>
+        <td class="cell"><span class="m bad">✖ silent</span></td>
+        <td class="cell us"><span class="m ok">✓ <span class="note">999/1000/9999 allowlisted</span></span></td>
+      </tr>
+      <tr data-i="2">
+        <td class="scn"><span class="t">Wraps <code>animate-spin</code> in <code>motion-safe:</code></span></td>
+        <td class="cell"><span class="m bad">✖ silent</span></td>
+        <td class="cell"><span class="m bad">✖ silent</span></td>
+        <td class="cell us"><span class="m ok">✓ <span class="note">motion-as-signal exempt</span></span></td>
+      </tr>
+      <tr data-i="3">
+        <td class="scn"><span class="t">Stamps <code>lang="en"</code> on foreign-language sites</span></td>
+        <td class="cell"><span class="m meh">—</span></td>
+        <td class="cell"><span class="m bad">✖ silent</span></td>
+        <td class="cell us"><span class="m ok">✓ <span class="note">opt-in only</span></span></td>
+      </tr>
+      <tr data-i="4">
+        <td class="scn"><span class="t">Lazy-loads your LCP hero image</span></td>
+        <td class="cell"><span class="m bad">✖ silent</span></td>
+        <td class="cell"><span class="m bad">✖ silent</span></td>
+        <td class="cell us"><span class="m ok">✓ <span class="note">priority-aware</span></span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="foot">
+    <div class="logo"><span class="dot"></span>deslint — lint without breaking production.</div>
+    <div class="cta" id="cta">$ npx deslint init</div>
+  </div>
+</div>
+
+<script>
+  const sleep = (ms) => new Promise(r=>setTimeout(r,ms));
+  const rows = Array.from(document.querySelectorAll('#tbody tr'));
+  const cta = document.getElementById('cta');
+  const colHL = document.getElementById('colHL');
+
+  function rowXY() {
+    const table = document.querySelector('table.cmp');
+    const tr = table;
+    return tr.getBoundingClientRect();
+  }
+
+  async function revealRow(row) {
+    row.classList.add('on');
+    // Type out scenario text (already present, but animate the caret)
+    const scn = row.querySelector('.scn');
+    scn.classList.add('typing');
+    await sleep(240);
+    scn.classList.remove('typing');
+
+    // Reveal cells left → right (column X → column 0.3 → column 0.4)
+    const cells = Array.from(row.querySelectorAll('.cell'));
+    for (const c of cells) {
+      c.classList.add('on');
+      await sleep(110);
+    }
+  }
+
+  async function run() {
+    // 1. Reveal highlight behind the "us" column
+    await sleep(300);
+    const th = document.querySelector('th.brand.us');
+    const r = th.getBoundingClientRect();
+    // Stage is centered and 1200 wide; use relative to stage
+    const stage = document.querySelector('.stage');
+    const sr = stage.getBoundingClientRect();
+    colHL.style.left = (r.left - sr.left - 8) + 'px';
+    colHL.style.width = (r.width + 16) + 'px';
+    colHL.classList.add('on');
+    await sleep(300);
+
+    // 2. Rows cascade in (fast pace keeps the 3s mp4 tight)
+    for (const row of rows) {
+      await revealRow(row);
+      await sleep(80);
+    }
+
+    // 3. CTA pill at bottom
+    await sleep(250);
+    cta.classList.add('on');
+
+    await sleep(1200);
+    window.__done = true;
+  }
+  run();
+</script>
+</body>
+</html>

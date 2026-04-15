@@ -17,6 +17,13 @@ customer apps, paired with the fix behaviour shipped on branch
 | `output/01-dark-mode.png`, `02-zindex.png`, `03-spinner.png` | 100–160 KB | Section crops for release notes |
 | `output/full.png` | 420 KB | Composite for the launch blog |
 | `output/walkthrough.webm` | 915 KB | Slow scroll — docs hero loop |
+| `output/pr-comment.mp4` | 690 KB · 10s · 1200×800 | GitHub Action PR-review teaser (marketplace listing, HN) |
+| `output/pr-comment.gif` | 2.3 MB | Drop-in for README / Reddit thread screenshots |
+| `output/vscode-squiggle.mp4` | 610 KB · 12s · 1200×800 | VSCode quick-fix teaser (extension marketplace, X/LinkedIn) |
+| `output/vscode-squiggle.gif` | 2.1 MB | Slack / Discord preview |
+| `output/comparison-table.mp4` | 325 KB · 4s · 1200×675 | "What does safe autofix mean?" typewriter reveal (tweet, HN lead) |
+| `output/comparison-table.gif` | 2.3 MB | Same, for pre-Reddit/X static feeds |
+| `output/comparison-table.png` | 295 KB | Final-frame tweet card / OG image / blog hero |
 | `IDEAS.md` | — | Launch playbook: channels, captions, partnerships |
 
 Each panel is a "before" (what the bad autofix produced) next to an "after"
@@ -42,6 +49,9 @@ node marketing/capture.mjs
 
 # CLI terminal demo (GIF) + three 15s social clips (MP4 + GIF)
 node marketing/capture-social.mjs
+
+# PR-review teaser + VSCode quick-fix teaser + comparison-table reveal
+node marketing/capture-followup.mjs
 ```
 
 Requires `ffmpeg` on `$PATH` (apt: `apt-get install -y ffmpeg`). The

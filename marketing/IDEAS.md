@@ -186,27 +186,132 @@ frequency, self-perpetuating (every release gives you four more posts).
 
 ---
 
-## 8. GitHub Action marketplace listing
+## 8. GitHub Action marketplace listing — **shipped asset: `pr-comment.mp4`**
 
-The action is already shipped. Marketplace listing should feature:
+File: `output/pr-comment.mp4` (690 KB · 10s · 1200×800) + `.gif` fallback.
 
-- Animated hero: the `cli-demo.gif` but capturing the Action's check-run
-  comment rendering (need a separate fixture: GitHub-style PR comment with
-  the annotations expanded).
-- A video: "PR gets opened → deslint runs → one-click 'Apply suggestion'
-  on each violation → PR merges green" (≈ 40s).
+A recreated GitHub PR review with two inline comments from `deslint[bot]`:
+one explaining why `z-[9999]` was *not* clamped (portal value kept as-is),
+one offering an "Apply suggestion" button that one-click-fixes a
+`motion-safe:animate-spin` regression. The line flashes green, the status
+chip resolves to "all 2 suggestions resolved · safe to merge".
 
-**One-line pitch:** "Design-aware linting on every PR. Doesn't break your
-design."
+This is the **anchor asset** for any "lint on every PR" pitch. Use it:
+
+- Marketplace listing hero (GIF), with the MP4 linked below the fold
+- HN post body: "we ship our own linter as a PR reviewer — here's what a
+  clean review looks like"
+- Reddit r/programming / r/webdev / r/github: screenshot of the review
+  thread + 10s GIF, captioned "lint rules that *explain themselves* in the
+  PR review, not just squiggles in CI"
+- Dev.to integration post with Vercel Preview Comments
+
+**One-line pitch:** "Design-aware linting on every PR. Comments you can
+merge, not just errors you have to silence."
+
+### Caption templates
+
+**X / Bluesky (sound-off friendly):**
+> Your CI complaining isn't feedback. A reviewer explaining *why* is.
+>
+> deslint ships as a GitHub Action — every violation comes with a
+> one-click suggestion and the reasoning that justifies it (or the
+> reasoning for *leaving your code alone*).
+>
+> 🔗 marketplace link
+
+**LinkedIn (longer-form):**
+> We wrote deslint to be the code reviewer we wish every design-system
+> team had. Here's a 10-second clip of it reviewing a real PR: two
+> violations, one safe-skip with an explanation, one "Apply suggestion"
+> button. Merged green.
 
 ---
 
-## 9. VSCode extension teaser (even before it ships)
+## 9. VSCode extension teaser — **shipped asset: `vscode-squiggle.mp4`**
 
-A looping MP4 of "squiggles in editor → quick-fix lightbulb → accept →
-squiggles gone → zero diff noise outside the fixed range". This is the
-"you'd never adopt it without it" feature, even if the extension is a
-month out. Seed the demand early.
+File: `output/vscode-squiggle.mp4` (610 KB · 12s · 1200×800) + `.gif`.
+
+Editor tab + explorer + problems count. A squiggle appears under
+`motion-safe:animate-spin`. Cursor drifts over it → lightbulb → quick-fix
+menu opens → the preview card beside the menu shows the **1-line diff,
+nothing else**. Accept → squiggle clears → problem count ticks 3 → 2 → 1
+→ 0 → status bar flips green.
+
+The key frame is the preview: "Suggested change · line 11 only" with
+exactly two lines of diff visible. That's the "you'd never adopt it
+without it" pitch — **zero diff noise outside the fixed range**.
+
+Usage:
+
+- X/Bluesky short clip: "Your autofix shouldn't touch lines it didn't lint"
+- LinkedIn: embed under the "VSCode extension, coming next" announcement
+- VSCode marketplace teaser video (when the extension ships)
+- Shaders.com-style landing page: stack the MP4 as a section break
+  between "CLI demo" and "GitHub Action" so the reader sees three
+  surfaces in three scrolls
+
+### Caption
+
+> Most linters' autofix is a lottery ticket — you pull it and hope the
+> formatter doesn't decide to reflow half the file.
+>
+> deslint's VSCode quick-fix touches **one line**. The line you asked it
+> to. Nothing around it moves.
+>
+> (extension drops in v0.5 — waitlist: deslint.dev)
+
+---
+
+## 10. Comparison table reveal — **shipped asset: `comparison-table.mp4` + `.png`**
+
+Files: `output/comparison-table.mp4` (325 KB · 4s · 1200×675),
+`output/comparison-table.gif` (2.3 MB), `output/comparison-table.png`
+(final frame — tweet card / OG image).
+
+Dark radial-gradient stage, grid-dot texture, 44px bold H1:
+**"What does 'safe autofix' actually mean?"** — then a feature matrix
+reveals row-by-row. Scenario typewriters in, then ✓/✖ cells fade in
+left→right. The "deslint 0.4" column is boxed in indigo glow. Ends with
+`$ npx deslint init` as a monospace pill.
+
+**This is the single most tweetable asset we have.** One image, the whole
+competitive story. Pin it. It does in 4 seconds what a 1000-word
+"deslint vs X" blog post does, and it's the visual competitors can't
+copy without admitting the same five defaults.
+
+### Where it goes
+
+- **X / Bluesky pinned tweet**, autoplay MP4, caption:
+  > What does "safe autofix" actually mean?
+  >
+  > We ran the five regressions we know other linters silently ship and
+  > benchmarked every major tool. Here's the scorecard.
+  >
+  > deslint 0.4 is out: npm i -D deslint
+- **HN top comment / lead image** for the post-mortem post
+- **Reddit r/reactjs, r/webdev**: post the PNG, MP4 as edit
+- **OG image** for `deslint.dev/blog/v0.4-autopsy` — links shared in
+  Slack / Discord get the matrix preview automatically
+- **docs homepage**, below the CLI demo, as the "why" section backdrop
+- **Product Hunt gallery** position #1
+
+### Copy for the tweet thread
+
+> 1/ Most "safe autofix" claims die the first time a rule rewrites 900
+> lines on --fix. Here's deslint 0.4's actual rubric.
+>
+> [attach comparison-table.mp4]
+>
+> 2/ Five scenarios, three tools. Every row a real regression we've
+> shipped, caught, or seen shipped by customers in the last year.
+>
+> 3/ The pattern: riskier transforms are opt-in; exact replacements run
+> automatically; anything ambiguous becomes a suggestion with
+> reasoning. Nothing mass-rewrites anymore.
+>
+> 4/ v0.4 is out. `npm i -D deslint && npx deslint init`. Repo + docs in
+> the next tweet.
 
 ---
 
@@ -239,13 +344,20 @@ month out. Seed the demand early.
 | `01-dark-mode.png` / `02-zindex.png` / `03-spinner.png` | same | Release notes, blog embeds |
 | `full.png` | same | "Why v0.4" one-pager |
 | `walkthrough.webm` | same | Docs hero loop |
+| `pr-comment.mp4` (690 KB, 10s) | same | Marketplace listing, HN, Reddit r/github |
+| `pr-comment.gif` (2.3 MB) | same | README drop-in, static feeds |
+| `vscode-squiggle.mp4` (610 KB, 12s) | same | X / LinkedIn, VSCode marketplace teaser |
+| `vscode-squiggle.gif` (2.1 MB) | same | Slack / Discord preview |
+| `comparison-table.mp4` (325 KB, 4s) | same | Pinned tweet, HN lead image, docs homepage |
+| `comparison-table.png` (295 KB) | same | OG image / tweet card / blog hero |
 
 ## Regeneration
 
 ```bash
 # installs ffmpeg if missing, then regenerates everything
-node marketing/capture.mjs          # static before/after + walkthrough
-node marketing/capture-social.mjs   # CLI demo + 3 social clips
+node marketing/capture.mjs             # static before/after + walkthrough
+node marketing/capture-social.mjs      # CLI demo + 3 social clips
+node marketing/capture-followup.mjs    # PR review + VSCode + comparison table
 ```
 
 All fixtures in `marketing/fixtures/*.html` are standalone — open any of

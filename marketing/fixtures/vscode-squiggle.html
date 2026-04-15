@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>deslint — VSCode quick-fix teaser</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #0b0d12; color: #cccccc;
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 13px; }
+  .stage { width: 1200px; height: 800px; margin: 0 auto; overflow: hidden; position: relative;
+    background: #0b0d12; }
+
+  /* VSCode shell */
+  .vs {
+    position: absolute; top: 40px; left: 40px; width: 1120px; height: 700px;
+    background: #1e1e1e; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 40px 100px rgba(0,0,0,.6), 0 0 0 1px #0f1013;
+    display: grid; grid-template-rows: 36px 36px 1fr 24px; grid-template-columns: 48px 240px 1fr;
+  }
+  /* Titlebar */
+  .tb { grid-column: 1 / -1; background: #3c3c3c; display: flex; align-items: center; padding: 0 14px; gap: 8px; color: #cccccc; font-size: 12px; }
+  .tb .dots { display: flex; gap: 6px; margin-right: 10px; }
+  .tb .dot { width: 12px; height: 12px; border-radius: 999px; }
+  .tb .dot.r { background: #ff5f57; } .tb .dot.y { background: #febc2e; } .tb .dot.g { background: #28c840; }
+  .tb .name { color: #a0a0a0; }
+  /* Activity bar */
+  .ab { grid-row: 2 / 5; grid-column: 1; background: #333333; display: flex; flex-direction: column; align-items: center; padding-top: 10px; gap: 18px; color: #858585; font-size: 20px; border-right: 1px solid #252526; }
+  .ab .ic { opacity: .8; }
+  .ab .ic.active { color: #ffffff; position: relative; }
+  .ab .ic.active::before { content: ''; position: absolute; left: -14px; top: 50%; transform: translateY(-50%); width: 2px; height: 22px; background: #ffffff; border-radius: 2px; }
+  /* Explorer */
+  .ex { grid-row: 2 / 5; grid-column: 2; background: #252526; border-right: 1px solid #1e1e1e; color: #cccccc; font-size: 12px; }
+  .ex .head { padding: 8px 14px; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; color: #cccccc; font-weight: 700; }
+  .ex .row { padding: 3px 14px; display: flex; align-items: center; gap: 6px; color: #cccccc; }
+  .ex .row .icon { color: #519aba; }
+  .ex .row.f { color: #e8c07d; }
+  .ex .row.active { background: #37373d; }
+  .ex .row.nested { padding-left: 28px; }
+  .ex .row.nested2 { padding-left: 42px; }
+  /* Tabs row */
+  .tabs { grid-row: 2; grid-column: 3; background: #252526; border-bottom: 1px solid #1e1e1e; display: flex; align-items: stretch; height: 36px; }
+  .tabs .tab { padding: 0 12px; color: #969696; display: flex; align-items: center; gap: 6px; font-size: 12px; border-right: 1px solid #1e1e1e; }
+  .tabs .tab.active { background: #1e1e1e; color: #ffffff; position: relative; }
+  .tabs .tab.active::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: #007acc; }
+  .tabs .tab .dot { width: 8px; height: 8px; border-radius: 999px; background: #cccccc; margin-left: 4px; }
+
+  /* Editor */
+  .edit { grid-row: 3; grid-column: 3; background: #1e1e1e; color: #d4d4d4;
+    font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; font-size: 14px; line-height: 1.6;
+    position: relative; overflow: hidden;
+  }
+  .edit .lines { padding: 10px 0 0; }
+  .edit .ln {
+    display: grid; grid-template-columns: 54px 14px 1fr;
+    padding: 0; white-space: pre;
+  }
+  .edit .ln .num { color: #858585; text-align: right; padding-right: 10px; user-select: none; }
+  .edit .ln .g { user-select: none; padding: 0 2px; text-align: center; }
+  .edit .ln .src { padding: 0 4px; }
+
+  /* Syntax tokens */
+  .kw { color: #c586c0; }
+  .kw2 { color: #569cd6; }
+  .fn { color: #dcdcaa; }
+  .str { color: #ce9178; }
+  .attr { color: #9cdcfe; }
+  .tag { color: #569cd6; }
+  .cls { color: #4ec9b0; }
+  .cmt { color: #6a9955; }
+  .pnc { color: #d4d4d4; }
+
+  /* Squiggle (wavy red underline) */
+  .sq {
+    position: relative;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='6' height='3' viewBox='0 0 6 3'><path d='M0 1.5 Q1.5 0 3 1.5 T6 1.5' stroke='%23f14c4c' stroke-width='1' fill='none'/></svg>");
+    background-repeat: repeat-x;
+    background-position: left bottom;
+    padding-bottom: 2px;
+    transition: background-image 300ms ease;
+  }
+  .sq.cleared { background-image: none; }
+
+  .marker {
+    position: absolute; left: 0; width: 3px; height: 22px; background: #f14c4c;
+    transition: opacity 300ms ease; opacity: 0;
+  }
+  .marker.on { opacity: 1; }
+
+  /* Lightbulb + gutter glyph */
+  .bulb {
+    position: absolute;
+    width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+    background: #2d2d30; border-radius: 4px; color: #ffcc00; font-size: 14px;
+    opacity: 0; transition: opacity 250ms ease, transform 250ms ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,.4);
+    cursor: pointer;
+  }
+  .bulb.on { opacity: 1; }
+
+  /* Quick-fix menu */
+  .qf {
+    position: absolute; background: #252526; border: 1px solid #454545; border-radius: 4px;
+    font-size: 13px; color: #cccccc; box-shadow: 0 8px 24px rgba(0,0,0,.6);
+    opacity: 0; transform: translateY(-4px); transition: opacity 220ms ease, transform 220ms ease;
+    min-width: 360px; z-index: 40;
+  }
+  .qf.on { opacity: 1; transform: translateY(0); }
+  .qf .it { padding: 7px 12px; display: flex; gap: 10px; align-items: center; cursor: pointer; }
+  .qf .it .ico { color: #ffcc00; }
+  .qf .it.sel { background: #094771; color: #ffffff; }
+  .qf .it .rule { color: #858585; font-size: 11px; margin-left: auto; font-family: "JetBrains Mono", monospace; }
+
+  /* Hover preview card (the "zero diff noise outside the fixed range" hint) */
+  .preview {
+    position: absolute; background: #1e1e1e; border: 1px solid #454545; border-radius: 4px;
+    padding: 8px 10px; font-family: "JetBrains Mono", monospace; font-size: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.6); z-index: 39;
+    opacity: 0; transition: opacity 200ms ease;
+    max-width: 520px;
+  }
+  .preview.on { opacity: 1; }
+  .preview .lbl { color: #858585; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; font-family: -apple-system, sans-serif; }
+  .preview .row { display: flex; gap: 6px; }
+  .preview .row.del { color: #f48771; }
+  .preview .row.add { color: #6a9955; }
+  .preview .row .mk { width: 12px; text-align: center; }
+
+  /* Cursor */
+  .cursor-arrow {
+    position: absolute; width: 20px; height: 20px; pointer-events: none; z-index: 200;
+    background: radial-gradient(circle at 30% 30%, #ffffff 40%, #000000 42%, transparent 58%);
+    border-radius: 2px; transform: rotate(-18deg);
+    opacity: 0; transition: opacity 200ms ease, left 650ms cubic-bezier(.3,.1,.2,1), top 650ms cubic-bezier(.3,.1,.2,1);
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.6));
+  }
+  .cursor-arrow.on { opacity: 1; }
+
+  /* Status bar */
+  .sb { grid-column: 1 / -1; grid-row: 4; background: #007acc; color: white; font-size: 12px; display: flex; align-items: center; padding: 0 12px; gap: 14px; transition: background 400ms ease; }
+  .sb.clean { background: #1a7f37; }
+  .sb .prob { display: inline-flex; gap: 6px; align-items: center; }
+
+  /* Pill "After" */
+  .pill {
+    position: absolute; top: -32px; left: 50%; transform: translateX(-50%);
+    padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    background: rgba(239,68,68,.15); color: #fca5a5; border: 1px solid rgba(239,68,68,.3);
+    transition: opacity 400ms ease, background 400ms ease, color 400ms ease, border-color 400ms ease;
+  }
+
+  /* Subtitle caption under VSCode */
+  .cap {
+    position: absolute; left: 0; right: 0; bottom: 12px; text-align: center;
+    color: #94a3b8; font-size: 15px; font-weight: 500; letter-spacing: -0.005em;
+  }
+  .cap b { color: #e2e8f0; }
+
+  /* The swap: old text hidden, new shown on .fixed */
+  .edit .old { display: inline; }
+  .edit .new { display: none; }
+  .edit .ln.fixed .old { display: none; }
+  .edit .ln.fixed .new { display: inline; }
+  .edit .ln.fixed .src { background: rgba(35,134,54,.12); animation: flash 1200ms ease-out; }
+  @keyframes flash {
+    0% { background: rgba(35,134,54,.45); }
+    100% { background: rgba(35,134,54,.12); }
+  }
+</style>
+</head>
+<body>
+<div id="stage" class="stage">
+  <div class="vs">
+    <div class="tb">
+      <div class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+      <span class="name">CartToast.tsx — customer-app</span>
+    </div>
+
+    <div class="ab">
+      <div class="ic active">📄</div>
+      <div class="ic">🔍</div>
+      <div class="ic">⎇</div>
+      <div class="ic">▶</div>
+      <div class="ic">⎔</div>
+    </div>
+
+    <div class="ex">
+      <div class="head">Explorer</div>
+      <div class="row f">▾ customer-app</div>
+      <div class="row nested f">▾ components</div>
+      <div class="row nested2 active"><span class="icon">⟨⟩</span> CartToast.tsx</div>
+      <div class="row nested2"><span class="icon">⟨⟩</span> Header.tsx</div>
+      <div class="row nested2"><span class="icon">⟨⟩</span> Spinner.tsx</div>
+      <div class="row nested f">▾ app</div>
+      <div class="row nested2"><span class="icon">⟨⟩</span> layout.tsx</div>
+      <div class="row nested2"><span class="icon">⟨⟩</span> page.tsx</div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active">⟨⟩ CartToast.tsx <span class="dot"></span></div>
+      <div class="tab">⟨⟩ Spinner.tsx</div>
+    </div>
+
+    <div class="edit" id="editor">
+      <div class="lines">
+        <div class="ln"><span class="num">1</span><span class="g"></span><span class="src"><span class="kw">import</span> <span class="pnc">{</span> <span class="attr">motion</span> <span class="pnc">}</span> <span class="kw">from</span> <span class="str">'framer-motion'</span>;</span></div>
+        <div class="ln"><span class="num">2</span><span class="g"></span><span class="src"></span></div>
+        <div class="ln"><span class="num">3</span><span class="g"></span><span class="src"><span class="kw">export function</span> <span class="fn">CartToast</span><span class="pnc">(</span><span class="pnc">{</span> <span class="attr">title</span><span class="pnc">,</span> <span class="attr">onDismiss</span> <span class="pnc">}</span><span class="pnc">)</span> <span class="pnc">{</span></span></div>
+        <div class="ln"><span class="num">4</span><span class="g"></span><span class="src">  <span class="kw">return</span> <span class="pnc">(</span></span></div>
+        <div class="ln"><span class="num">5</span><span class="g"></span><span class="src">    <span class="pnc">&lt;</span><span class="tag">div</span></span></div>
+        <div class="ln" id="ln6"><span class="num">6</span><span class="g"><span id="bulbSlot"></span></span><span class="src">      <span class="attr">className</span>=<span class="str">"<span class="sq" id="sq1">fixed top-4 right-4 z-[9999]</span> rounded-xl <span class="sq" id="sq2">bg-white</span> p-4 shadow-xl"</span></span></div>
+        <div class="ln"><span class="num">7</span><span class="g"></span><span class="src">      <span class="attr">role</span>=<span class="str">"status"</span></span></div>
+        <div class="ln"><span class="num">8</span><span class="g"></span><span class="src">      <span class="attr">aria-live</span>=<span class="str">"polite"</span></span></div>
+        <div class="ln"><span class="num">9</span><span class="g"></span><span class="src">    <span class="pnc">&gt;</span></span></div>
+        <div class="ln"><span class="num">10</span><span class="g"></span><span class="src">      <span class="pnc">&lt;</span><span class="tag">svg</span></span></div>
+        <div class="ln" id="ln11"><span class="num">11</span><span class="g"></span><span class="src">        <span class="attr">className</span>=<span class="str">"<span class="old">h-4 w-4 <span class="sq" id="sq3">motion-safe:animate-spin</span> text-emerald-500</span><span class="new">h-4 w-4 animate-spin text-emerald-500</span>"</span></span></div>
+        <div class="ln"><span class="num">12</span><span class="g"></span><span class="src">        <span class="attr">viewBox</span>=<span class="str">"0 0 24 24"</span> <span class="pnc">/&gt;</span></span></div>
+        <div class="ln"><span class="num">13</span><span class="g"></span><span class="src">      <span class="pnc">&lt;</span><span class="fn">span</span><span class="pnc">&gt;</span><span class="pnc">{</span><span class="attr">title</span><span class="pnc">}</span><span class="pnc">&lt;/</span><span class="fn">span</span><span class="pnc">&gt;</span></span></div>
+        <div class="ln"><span class="num">14</span><span class="g"></span><span class="src">    <span class="pnc">&lt;/</span><span class="tag">div</span><span class="pnc">&gt;</span></span></div>
+        <div class="ln"><span class="num">15</span><span class="g"></span><span class="src">  <span class="pnc">)</span>;</span></div>
+        <div class="ln"><span class="num">16</span><span class="g"></span><span class="src"><span class="pnc">}</span></span></div>
+      </div>
+
+      <!-- Lightbulb appears on hover -->
+      <div class="bulb" id="bulb">💡</div>
+
+      <!-- Quick-fix menu -->
+      <div class="qf" id="qf">
+        <div class="it sel"><span class="ico">💡</span> <span>Keep <code>motion-safe:animate-spin</code> — wait, spinner motion is the signal</span><span class="rule">prefers-reduced-motion</span></div>
+        <div class="it"><span class="ico">🔧</span> <span>Fix all auto-fixable issues in file</span><span class="rule">deslint</span></div>
+        <div class="it"><span class="ico">⚙</span> <span>Disable <code>prefers-reduced-motion</code> for this file</span><span class="rule">deslint</span></div>
+      </div>
+
+      <!-- Preview card -->
+      <div class="preview" id="preview" style="left: 540px; top: 260px;">
+        <div class="lbl">Suggested change · line 11 only</div>
+        <div class="row del"><span class="mk">-</span><span>motion-safe:animate-spin</span></div>
+        <div class="row add"><span class="mk">+</span><span>animate-spin</span></div>
+      </div>
+    </div>
+
+    <div class="sb" id="sb">
+      <span class="prob">⚠ <b id="probCount">3</b> problems</span>
+      <span>deslint</span>
+      <span style="margin-left:auto">TSX · UTF-8 · LF</span>
+    </div>
+  </div>
+
+  <div class="cap" id="cap"><b>Hover a squiggle → quick-fix → accept.</b> Only the exact range changes — no formatter drift, no collateral reflow.</div>
+  <div class="cursor-arrow" id="cur"></div>
+</div>
+
+<script>
+  const sleep = (ms) => new Promise(r=>setTimeout(r,ms));
+  const cur = document.getElementById('cur');
+  const bulb = document.getElementById('bulb');
+  const qf = document.getElementById('qf');
+  const preview = document.getElementById('preview');
+  const ln11 = document.getElementById('ln11');
+  const sq1 = document.getElementById('sq1');
+  const sq2 = document.getElementById('sq2');
+  const sq3 = document.getElementById('sq3');
+  const probCount = document.getElementById('probCount');
+  const sb = document.getElementById('sb');
+  const cap = document.getElementById('cap');
+
+  function moveCursor(x, y) {
+    cur.style.left = (x - 4) + 'px';
+    cur.style.top  = (y - 4) + 'px';
+  }
+
+  async function run() {
+    await sleep(300);
+    moveCursor(800, 760);
+    cur.classList.add('on');
+    await sleep(300);
+
+    // Sweep toward line 11 squiggle (motion-safe)
+    const sq3Rect = sq3.getBoundingClientRect();
+    moveCursor(sq3Rect.left + sq3Rect.width / 2, sq3Rect.top + sq3Rect.height);
+    await sleep(900);
+
+    // Lightbulb pops in on line 11 (left of the gutter)
+    const ln11Rect = ln11.getBoundingClientRect();
+    const editorRect = document.getElementById('editor').getBoundingClientRect();
+    bulb.style.left = (ln11Rect.left - editorRect.left + 38) + 'px';
+    bulb.style.top  = (ln11Rect.top  - editorRect.top + 1) + 'px';
+    bulb.classList.add('on');
+    await sleep(600);
+
+    // Cursor moves to lightbulb
+    const bulbRect = bulb.getBoundingClientRect();
+    moveCursor(bulbRect.left + 11, bulbRect.top + 11);
+    await sleep(500);
+
+    // Open the quick-fix menu below the bulb
+    qf.style.left = (bulbRect.left - editorRect.left + 18) + 'px';
+    qf.style.top  = (bulbRect.top  - editorRect.top + 22) + 'px';
+    qf.classList.add('on');
+    await sleep(350);
+
+    // Preview peeks
+    preview.style.left = (bulbRect.left - editorRect.left + 400) + 'px';
+    preview.style.top  = (bulbRect.top  - editorRect.top + 22) + 'px';
+    preview.classList.add('on');
+    await sleep(1400);
+
+    // Cursor hovers to the first menu item (already selected)
+    const itRect = qf.querySelector('.it.sel').getBoundingClientRect();
+    moveCursor(itRect.left + 20, itRect.top + 14);
+    await sleep(600);
+
+    // Click: close menus
+    qf.classList.remove('on');
+    preview.classList.remove('on');
+    bulb.classList.remove('on');
+    await sleep(120);
+
+    // Apply fix on line 11 only
+    ln11.classList.add('fixed');
+    sq3.classList.add('cleared');
+
+    // Problem count drops 3 → 2
+    probCount.textContent = '2';
+    await sleep(900);
+
+    // Now fade out other squiggles one at a time (show the "rule-is-safe" decisions)
+    moveCursor(640, 340);
+    await sleep(600);
+    sq1.classList.add('cleared');
+    probCount.textContent = '1';
+    await sleep(700);
+
+    // Hover the last one — bg-white (dark-mode-coverage, suggest-only)
+    const sq2Rect = sq2.getBoundingClientRect();
+    moveCursor(sq2Rect.left + sq2Rect.width / 2, sq2Rect.top + sq2Rect.height);
+    await sleep(600);
+    sq2.classList.add('cleared');
+    probCount.textContent = '0';
+    await sleep(300);
+
+    // Status bar flips green
+    sb.classList.add('clean');
+    sb.querySelector('.prob').innerHTML = '<span>✓ <b>0</b> problems — lint clean</span>';
+
+    // Caption swap
+    cap.innerHTML = '<b>Zero diff outside the fixed range.</b> No format-on-save drift, no mass rewrites — just the lines you asked for.';
+
+    await sleep(2500);
+    window.__done = true;
+  }
+  run();
+</script>
+</body>
+</html>
