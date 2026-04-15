@@ -27,6 +27,14 @@ inputs:
     description: 'Glob patterns for frontend files (comma-separated).'
     required: false
     default: '**/*.tsx,**/*.jsx,**/*.vue,**/*.svelte,**/*.html'
+  strict-trailer:
+    description: >-
+      When "true", fail the check if the head commit lacks a valid
+      `Deslint-Compliance:` trailer or its values do not match the
+      server-side re-scan. Default is "false" so enabling trailer
+      verification lands non-breaking.
+    required: false
+    default: 'false'
 
 outputs:
   score:
@@ -35,6 +43,15 @@ outputs:
     description: 'Total number of violations found'
   passed:
     description: 'Whether the score met the minimum threshold (true/false)'
+  trailer-verified:
+    description: >-
+      "true" when the Deslint-Compliance trailer on the head commit
+      matched the server-side re-scan, "false" otherwise.
+  trailer-status:
+    description: >-
+      One of: verified | missing | mismatched | malformed | skipped.
+      Useful for downstream workflows that want to react to the specific
+      failure mode.
 
 runs:
   using: 'node20'
