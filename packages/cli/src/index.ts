@@ -68,11 +68,36 @@ export { runLint } from './lint-runner.js';
 export type { LintResult, RuleCategory } from './lint-runner.js';
 
 /**
- * Load .deslintrc.json from project directory.
+ * Walk from `startDir` up to the filesystem root looking for `.deslintrc.json`.
+ * Returns the absolute path of the first match, or undefined if none found.
+ *
+ * Behaviour matches ESLint, Prettier, TypeScript, Biome etc.: developers expect
+ * to be able to run `deslint scan src/components` from a monorepo leaf and have
+ * the tool pick up the nearest `.deslintrc.json` in an ancestor.
+ *
+ * Exported for tests.
+ */
+export function findConfigFile(startDir: string): string | undefined {
+  let current = resolve(startDir);
+  // dirname('/') === '/', so loop terminates at the root.
+  // Cap at a sane depth to avoid pathological symlink loops.
+  for (let i = 0; i < 64; i++) {
+    const candidate = resolve(current, '.deslintrc.json');
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(current);
+    if (parent === current) return undefined;
+    current = parent;
+  }
+  return undefined;
+}
+
+/**
+ * Load .deslintrc.json. Searches `projectDir` first, then walks up ancestors
+ * (matching ESLint/Prettier/TS behaviour). Returns undefined if nothing found.
  */
 function loadConfig(projectDir: string): DeslintConfig | undefined {
-  const configPath = resolve(projectDir, '.deslintrc.json');
-  if (!existsSync(configPath)) return undefined;
+  const configPath = findConfigFile(projectDir);
+  if (!configPath) return undefined;
 
   try {
     // Security: limit config file size to 1 MB to prevent memory exhaustion
