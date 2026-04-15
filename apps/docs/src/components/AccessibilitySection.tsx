@@ -87,7 +87,7 @@ export function AccessibilitySection() {
                 {CRITERIA.map((c) => (
                   <li
                     key={c.id}
-                    className="flex items-center gap-2 sm:gap-4 px-3 sm:px-5 py-3 hover:bg-surface-50 transition-colors"
+                    className="flex items-center gap-2 sm:gap-4 px-3 sm:px-5 py-3 hover:bg-surface-50 motion-safe:transition-colors"
                   >
                     <code className="text-xs font-mono text-primary font-semibold w-12 flex-none">
                       {c.id}

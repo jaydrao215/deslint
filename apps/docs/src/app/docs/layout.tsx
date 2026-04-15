@@ -44,7 +44,7 @@ function SidebarLink({
       href={href}
       onClick={onClick}
       className={cn(
-        'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+        'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium motion-safe:transition-all',
         isActive
           ? 'bg-primary-50 text-primary border border-primary/10'
           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-transparent',
@@ -52,7 +52,7 @@ function SidebarLink({
     >
       <Icon
         className={cn(
-          'h-4 w-4 shrink-0 transition-colors',
+          'h-4 w-4 shrink-0 motion-safe:transition-colors',
           isActive ? 'text-primary' : 'text-gray-400 group-hover:text-gray-600',
         )}
       />
@@ -71,9 +71,9 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
       {/* Top bar */}
       <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
         <div className="flex h-full items-center px-6">
-          <Link href="/" aria-label="Deslint home" className="flex items-center gap-2 mr-8 group transition-transform hover:scale-[1.02]">
+          <Link href="/" aria-label="Deslint home" className="flex items-center gap-2 mr-8 group motion-safe:transition-transform hover:scale-[1.02]">
             <BrandLockup priority />
-            <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md ml-1">
+            <span className="text-xs font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md ml-1">
               Docs
             </span>
           </Link>
@@ -87,7 +87,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'px-3 py-1.5 text-sm rounded-md transition-colors',
+                    'px-3 py-1.5 text-sm rounded-md motion-safe:transition-colors',
                     isActive
                       ? 'text-primary font-medium bg-primary-50/50'
                       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50',
@@ -104,7 +104,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
               href="https://github.com/jaydrao215/deslint"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 motion-safe:transition-colors"
               aria-label="GitHub"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-4 w-4">

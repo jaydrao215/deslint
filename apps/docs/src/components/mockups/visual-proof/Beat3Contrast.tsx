@@ -40,7 +40,7 @@ export function Beat3Contrast({ isActive, autoPlay }: Beat3Props) {
         <button
           type="button"
           onClick={toggle}
-          className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-200 transition-all hover:bg-gray-200"
+          className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-200 motion-safe:transition-all hover:bg-gray-200"
           aria-pressed={lowVision}
           aria-label="Toggle simulated low-vision filter"
         >
@@ -59,7 +59,7 @@ export function Beat3Contrast({ isActive, autoPlay }: Beat3Props) {
       </div>
 
       {/* Side-by-side marketing cards */}
-      <div className={`grid gap-5 md:grid-cols-2 transition-all duration-500 ${lowVision ? 'vp-lowvision' : ''}`}>
+      <div className={`grid gap-5 md:grid-cols-2 motion-safe:transition-all motion-safe:duration-500 ${lowVision ? 'vp-lowvision' : ''}`}>
         <CardFrame label="Before" variant="fail">
           <BrokenCard />
           <ContrastBadge ratio="2.85" status="fail" />

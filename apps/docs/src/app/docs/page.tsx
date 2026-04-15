@@ -44,14 +44,14 @@ export default function DocsIndex() {
           <Link
             key={card.href}
             href={card.href}
-            className="group relative rounded-xl border border-gray-200 bg-white p-5 transition-all duration-300 hover:border-gray-300 hover:shadow-lg hover:shadow-gray-200/50 hover:-translate-y-0.5"
+            className="group relative rounded-xl border border-gray-200 bg-white p-5 motion-safe:transition-all motion-safe:duration-300 hover:border-gray-300 hover:shadow-lg hover:shadow-gray-200/50 hover:-translate-y-0.5"
           >
             <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border ${card.color} mb-4`}>
               <card.icon className="h-5 w-5" />
             </div>
             <h2 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
               {card.title}
-              <ArrowRight className="h-3.5 w-3.5 text-gray-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+              <ArrowRight className="h-3.5 w-3.5 text-gray-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 motion-safe:transition-all" />
             </h2>
             <p className="text-sm text-gray-500 leading-relaxed">
               {card.description}

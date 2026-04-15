@@ -122,7 +122,7 @@ function EditorPane({ variant }: { variant: 'before' | 'after' }) {
           <span className="text-[10px] text-gray-500 ml-2">Button.tsx</span>
           {variant === 'after' && (
             <span className="text-[10px] text-pass ml-auto flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-pass animate-pulse" />
+              <span className="h-1.5 w-1.5 rounded-full bg-pass motion-safe:animate-pulse" />
               clean
             </span>
           )}
@@ -314,7 +314,7 @@ function McpServerPane() {
           </svg>
           <span className="text-[10px] text-primary-light font-semibold">@deslint/mcp</span>
           <span className="text-[10px] text-gray-500 ml-auto flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-pass animate-pulse" />
+            <span className="h-1.5 w-1.5 rounded-full bg-pass motion-safe:animate-pulse" />
             listening
           </span>
         </div>

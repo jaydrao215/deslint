@@ -154,7 +154,7 @@ export function VisualProofSection() {
             <button
               type="button"
               onClick={togglePlay}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-gray-200 transition-all hover:bg-gray-200"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-gray-200 motion-safe:transition-all hover:bg-gray-200"
               aria-label={isPlaying ? 'Pause autoplay' : 'Resume autoplay'}
             >
               {isPlaying ? (
@@ -184,7 +184,7 @@ export function VisualProofSection() {
                 onClick={() => jumpTo(i)}
                 aria-current={isCurrent ? 'step' : undefined}
                 aria-label={`Jump to beat ${b.number}: ${b.title}`}
-                className={`group relative overflow-hidden rounded-xl border p-4 text-left transition-all ${
+                className={`group relative overflow-hidden rounded-xl border p-4 text-left motion-safe:transition-all ${
                   isCurrent
                     ? 'border-primary bg-primary-50 shadow-sm'
                     : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
