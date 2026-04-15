@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { ComparisonTable } from '@/components/ComparisonTable';
 
 interface Tier {
   name: string;
@@ -96,6 +97,9 @@ export default function PricingPage() {
       <main>
         <PricingHero />
         <PricingGrid />
+        <div id="how-we-compare">
+          <ComparisonTable />
+        </div>
         <FaqSection />
       </main>
       <Footer />

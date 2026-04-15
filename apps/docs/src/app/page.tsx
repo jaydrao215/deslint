@@ -6,7 +6,7 @@ import { VisualProofSection } from '@/components/VisualProofSection';
 import { McpLoopSection } from '@/components/McpLoopSection';
 import { ProductShowcase } from '@/components/ProductShowcase';
 import { WhatItCatches } from '@/components/WhatItCatches';
-import { ComparisonTable } from '@/components/ComparisonTable';
+import { ComparisonStrip } from '@/components/ComparisonStrip';
 import { AccessibilitySection } from '@/components/AccessibilitySection';
 import { FrameworkMatrix } from '@/components/FrameworkMatrix';
 import { PrivacyTrust } from '@/components/PrivacyTrust';
@@ -27,7 +27,7 @@ export default async function Home() {
         <McpLoopSection />
         <ProductShowcase />
         <WhatItCatches />
-        <ComparisonTable />
+        <ComparisonStrip />
         <AccessibilitySection />
         <FrameworkMatrix />
         <QuickStart />
