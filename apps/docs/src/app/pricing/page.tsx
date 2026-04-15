@@ -116,8 +116,8 @@ function PricingHero() {
       <div className="absolute inset-0 overflow-hidden">
         <div
           className="absolute top-0 left-1/2 -translate-x-1/2 w-full pointer-events-none"
-          style={{ height: '500px' }}
           style={{
+            height: '500px',
             background:
               'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(83, 74, 183, 0.07), transparent)',
           }}
