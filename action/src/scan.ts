@@ -1,7 +1,3 @@
-/**
- * Run deslint scan on the given files and compute the Design Health Score.
- */
-
 import { ESLint } from 'eslint';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
@@ -32,30 +28,24 @@ export interface InlineViolation {
 }
 
 export interface ScanResult {
-  /** Overall Design Health Score (0–100) */
   score: number;
-  /** Total violations found */
   totalViolations: number;
-  /** Violations by severity */
   errors: number;
   warnings: number;
-  /** Top violations grouped by rule */
   topViolations: ViolationSummary[];
-  /** Score breakdown by category */
   categories: CategoryScore[];
-  /** Number of files scanned */
   filesScanned: number;
-  /** Number of files with violations */
   filesWithViolations: number;
-  /** Estimated remediation effort, in minutes (Design Debt). */
   debtMinutes: number;
-  /** Quality gate config loaded from .deslintrc.json (undefined if not configured). */
   qualityGate?: QualityGate;
-  /** Per-file, per-line violations for inline review comments. */
   inlineViolations: InlineViolation[];
+  effectiveRules: Record<string, unknown>;
+  /** User-declared overrides from .deslintrc.json (or {} when absent).
+   *  Trailer hashes user-only overrides so the hash survives default
+   *  drift between CLI and Action. */
+  userRules: Record<string, unknown>;
 }
 
-/** Map rule IDs → score category */
 const RULE_CATEGORY_MAP: Record<string, string> = {
   'deslint/no-arbitrary-colors': 'colors',
   'deslint/a11y-color-contrast': 'colors',
@@ -93,25 +83,19 @@ const RULE_CATEGORY_MAP: Record<string, string> = {
 };
 
 const CATEGORY_NAMES = ['colors', 'spacing', 'typography', 'responsive', 'consistency'];
-const CATEGORY_WEIGHT = 100 / CATEGORY_NAMES.length; // 20% each
+const CATEGORY_WEIGHT = 100 / CATEGORY_NAMES.length;
 
-/**
- * Run ESLint with deslint plugin on the specified files.
- */
 export async function runScan(
   files: string[],
   workingDirectory: string,
   configPath?: string,
 ): Promise<ScanResult> {
-  // Load deslint plugin
   const deslintPlugin = await import('@deslint/eslint-plugin');
   const plugin = deslintPlugin.default ?? deslintPlugin;
 
-  // Load user config overrides
   let ruleOverrides: Record<string, unknown> = {};
   let qualityGate: QualityGate | undefined;
-  // Resolve config: explicit configPath, otherwise try ./.deslintrc.json
-  // Security: normalize to prevent path traversal via configPath input
+
   const resolvedConfigPath = configPath
     ? path.normalize(path.resolve(workingDirectory, configPath))
     : path.resolve(workingDirectory, '.deslintrc.json');
@@ -120,10 +104,9 @@ export async function runScan(
     !resolvedConfigPath.startsWith(resolvedCwd + path.sep) &&
     resolvedConfigPath !== resolvedCwd
   ) {
-    // Config path escapes the working directory — ignore it silently
+    // Config path escapes the working directory \u2014 ignore silently
   } else if (fs.existsSync(resolvedConfigPath)) {
     try {
-      // Security: limit config file size to 1 MB to prevent memory exhaustion
       const configStat = fs.statSync(resolvedConfigPath);
       if (configStat.size > 1024 * 1024) {
         throw new Error('Config file exceeds 1MB size limit');
@@ -134,16 +117,11 @@ export async function runScan(
         ruleOverrides = (parsed.data.rules ?? {}) as Record<string, unknown>;
         qualityGate = parsed.data.qualityGate;
       } else {
-        // Fall back to permissive parse so an unrecognized field doesn't
-        // break legacy users' configs.
         ruleOverrides = (raw.rules ?? {}) as Record<string, unknown>;
       }
-    } catch {
-      /* ignore — leave defaults */
-    }
+    } catch { /* leave defaults */ }
   }
 
-  // Build rule config — all rules on by default
   const rules: Record<string, any> = {
     'deslint/no-arbitrary-colors': 'warn',
     'deslint/no-arbitrary-spacing': 'warn',
@@ -180,7 +158,6 @@ export async function runScan(
     'deslint/spacing-rhythm-consistency': 'off',
   };
 
-  // Apply overrides
   for (const [rule, config] of Object.entries(ruleOverrides)) {
     const ruleId = rule.startsWith('deslint/') ? rule : `deslint/${rule}`;
     rules[ruleId] = config;
@@ -195,9 +172,7 @@ export async function runScan(
       plugins: { deslint: plugin } as any,
       rules,
       languageOptions: {
-        parserOptions: {
-          ecmaFeatures: { jsx: true },
-        },
+        parserOptions: { ecmaFeatures: { jsx: true } },
       },
     },
   });
@@ -206,10 +181,12 @@ export async function runScan(
   const results = await eslint.lintFiles(absoluteFiles);
 
   const aggregated = aggregateResults(results, cwd);
-  return { ...aggregated, qualityGate };
+  return { ...aggregated, qualityGate, effectiveRules: rules, userRules: ruleOverrides };
 }
 
-function aggregateResults(results: ESLint.LintResult[], cwd: string): ScanResult {
+type AggregatedScan = Omit<ScanResult, 'qualityGate' | 'effectiveRules' | 'userRules'>;
+
+function aggregateResults(results: ESLint.LintResult[], cwd: string): AggregatedScan {
   let totalViolations = 0;
   let errors = 0;
   let warnings = 0;
@@ -227,7 +204,6 @@ function aggregateResults(results: ESLint.LintResult[], cwd: string): ScanResult
   for (const result of results) {
     if (result.messages.length > 0) filesWithViolations++;
 
-    // Compute relative path for inline review comments
     const relPath = path.relative(cwd, result.filePath);
 
     for (const msg of result.messages) {
@@ -262,8 +238,6 @@ function aggregateResults(results: ESLint.LintResult[], cwd: string): ScanResult
     }
   }
 
-  // Compute score: each category starts at 20, loses points per violation
-  // Each violation costs 2 points within its category, minimum 0 per category
   const categories: CategoryScore[] = CATEGORY_NAMES.map((name) => {
     const violations = byCategory.get(name) ?? 0;
     const categoryScore = Math.max(0, CATEGORY_WEIGHT - violations * 2);
@@ -272,7 +246,6 @@ function aggregateResults(results: ESLint.LintResult[], cwd: string): ScanResult
 
   const score = Math.round(categories.reduce((sum, c) => sum + c.score, 0));
 
-  // Top violations sorted by count
   const topViolations: ViolationSummary[] = [...byRule.entries()]
     .map(([ruleId, data]) => ({
       ruleId,
