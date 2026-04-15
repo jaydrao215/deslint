@@ -22,18 +22,40 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Close the mobile menu on Escape, and when the viewport grows past the
+  // md breakpoint (user rotated the device / resized to desktop).
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    const mql = window.matchMedia('(min-width: 768px)');
+    const onChange = (e: MediaQueryListEvent) => {
+      if (e.matches) setMobileOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    mql.addEventListener('change', onChange);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      mql.removeEventListener('change', onChange);
+    };
+  }, [mobileOpen]);
+
   return (
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        scrolled
-          ? 'bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm'
+        'fixed top-0 left-0 right-0 z-50 motion-safe:transition-all motion-safe:duration-300',
+        // Solid backdrop when scrolled OR when mobile menu is open — prevents
+        // hero / page content from bleeding through the translucent nav and
+        // floating menu items on first paint at the top of the page.
+        scrolled || mobileOpen
+          ? 'bg-white/90 backdrop-blur-xl border-b border-gray-200/50 shadow-sm'
           : 'bg-transparent',
       )}
     >
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/" aria-label="Deslint home" className="group transition-transform hover:scale-[1.02]">
+          <Link href="/" aria-label="Deslint home" className="group motion-safe:transition-transform hover:scale-[1.02]">
             <BrandLockup priority />
           </Link>
 
@@ -43,7 +65,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-3.5 py-2 text-sm text-gray-600 hover:text-primary rounded-lg hover:bg-primary-50/50 transition-colors"
+                className="px-3.5 py-2 text-sm text-gray-600 hover:text-primary rounded-lg hover:bg-primary-50/50 motion-safe:transition-colors"
               >
                 {link.label}
               </Link>
@@ -54,7 +76,7 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/pricing"
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-gray-700 rounded-lg ring-1 ring-gray-200 hover:ring-primary/30 hover:text-primary hover:bg-primary-50/40 transition-all"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-gray-700 rounded-lg ring-1 ring-gray-200 hover:ring-primary/30 hover:text-primary hover:bg-primary-50/40 motion-safe:transition-all"
             >
               <CreditCard className="h-4 w-4" />
               <span>Pricing</span>
@@ -63,14 +85,14 @@ export function Navbar() {
               href="https://github.com/jaydrao215/deslint"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-3.5 py-2 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-2 px-3.5 py-2 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 motion-safe:transition-colors"
             >
               <GitHubIcon />
               <span>GitHub</span>
             </a>
             <Link
               href="/docs/getting-started"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-light transition-all hover:shadow-lg hover:shadow-primary/20"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-light motion-safe:transition-all hover:shadow-lg hover:shadow-primary/20"
             >
               Get Started
             </Link>
@@ -78,17 +100,25 @@ export function Navbar() {
 
           {/* Mobile Toggle */}
           <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 text-gray-600 hover:text-gray-900"
-            aria-label="Toggle menu"
+            type="button"
+            onClick={() => setMobileOpen((v) => !v)}
+            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
+            aria-controls="primary-mobile-menu"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu — solid background so items are readable even when
+            the page is scrolled to the top (header would otherwise be
+            transparent and the menu would float over hero copy). */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-gray-200/50 py-4 space-y-1">
+          <div
+            id="primary-mobile-menu"
+            className="md:hidden -mx-6 px-6 border-t border-gray-200/60 bg-white/95 backdrop-blur-xl py-4 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto shadow-lg"
+          >
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
