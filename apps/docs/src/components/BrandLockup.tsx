@@ -1,4 +1,13 @@
 import Image from 'next/image';
+import localFont from 'next/font/local';
+
+const satoshi = localFont({
+  src: '../../public/fonts/Satoshi-Bold.woff2',
+  weight: '700',
+  style: 'normal',
+  display: 'swap',
+  variable: '--font-brand',
+});
 
 interface BrandLockupProps {
   size?: 'nav' | 'footer';
@@ -14,10 +23,6 @@ export function BrandLockup({
   priority = false,
 }: BrandLockupProps) {
   const iconSize = size === 'footer' ? 36 : 32;
-  const wordmarkClass =
-    size === 'footer'
-      ? 'text-lg font-semibold tracking-tight text-gray-900'
-      : 'text-lg font-semibold tracking-tight text-gray-900';
 
   return (
     <span className="inline-flex items-center gap-2.5">
@@ -31,7 +36,13 @@ export function BrandLockup({
         className={size === 'footer' ? 'h-9 w-9' : 'h-8 w-8'}
       />
       <span className="flex flex-col leading-none">
-        <span className={wordmarkClass}>Deslint</span>
+        <span
+          className={`${satoshi.className} text-[19px] tracking-[-0.025em] lowercase`}
+          aria-label="deslint"
+        >
+          <span className="text-gray-900">des</span>
+          <span className="text-primary">lint</span>
+        </span>
         {showTagline && (
           <span
             className={`mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400 ${taglineClassName}`}

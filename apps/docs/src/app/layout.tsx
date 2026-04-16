@@ -25,14 +25,21 @@ export const metadata: Metadata = {
     url: 'https://deslint.com',
     siteName: 'Deslint',
     type: 'website',
-    images: [{ url: '/icons/og-icon-512.png', width: 512, height: 512, alt: 'Deslint' }],
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'Deslint homepage hero preview',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Deslint — Design Quality Gate for AI-Generated Code',
     description:
       'Catch design drift, broken responsive layouts, and WCAG failures in AI-generated frontend code.',
-    images: ['/icons/og-icon-512.png'],
+    images: ['/opengraph-image'],
   },
 };
 

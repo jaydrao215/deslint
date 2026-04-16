@@ -12,7 +12,7 @@ export default function RulesReference() {
       {/* ── Colors ─────────────────────────────────────── */}
       <h2>Colors</h2>
 
-      <h3>no-arbitrary-colors</h3>
+      <h3 id="no-arbitrary-colors">no-arbitrary-colors</h3>
       <p>
         Disallow arbitrary color values in Tailwind classes. Flags patterns like{' '}
         <code>bg-[#FF0000]</code> and suggests design tokens instead.
@@ -37,7 +37,7 @@ export default function RulesReference() {
 <div className="bg-red-500 text-gray-700" />`}</code>
       </pre>
 
-      <h3>a11y-color-contrast</h3>
+      <h3 id="a11y-color-contrast">a11y-color-contrast</h3>
       <p>
         Flag text/background color combinations with insufficient WCAG AA contrast ratio.
         Requires a minimum 4.5:1 ratio for normal text and 3:1 for large text.
@@ -61,7 +61,7 @@ export default function RulesReference() {
 <div className="bg-gray-100 text-gray-900" />`}</code>
       </pre>
 
-      <h3>dark-mode-coverage</h3>
+      <h3 id="dark-mode-coverage">dark-mode-coverage</h3>
       <p>
         Flag components with background color classes that lack corresponding{' '}
         <code>dark:</code> variants. Auto-fixes by adding the inverted shade.
@@ -88,7 +88,7 @@ export default function RulesReference() {
 // Auto-fix: bg-blue-100 → bg-blue-100 dark:bg-blue-900`}</code>
       </pre>
 
-      <h3>consistent-color-palette</h3>
+      <h3 id="consistent-color-palette">consistent-color-palette</h3>
       <p>
         Flag files using too many unique color families in Tailwind classes. AI-generated
         code often introduces colors outside the project&apos;s design system, leading to
@@ -120,7 +120,7 @@ export default function RulesReference() {
       {/* ── Spacing ────────────────────────────────────── */}
       <h2>Spacing</h2>
 
-      <h3>no-arbitrary-spacing</h3>
+      <h3 id="no-arbitrary-spacing">no-arbitrary-spacing</h3>
       <p>
         Disallow arbitrary spacing values in Tailwind classes. Flags patterns like{' '}
         <code>p-[13px]</code> and suggests the nearest scale value.
@@ -145,7 +145,7 @@ export default function RulesReference() {
 <div className="p-3 mt-2" />`}</code>
       </pre>
 
-      <h3>no-magic-numbers-layout</h3>
+      <h3 id="no-magic-numbers-layout">no-magic-numbers-layout</h3>
       <p>
         Disallow arbitrary (bracket) values in grid/flex layout Tailwind classes.
         Flags classes like <code>gap-[16px]</code> and suggests scale tokens.
@@ -166,7 +166,7 @@ export default function RulesReference() {
       {/* ── Typography ─────────────────────────────────── */}
       <h2>Typography</h2>
 
-      <h3>no-arbitrary-typography</h3>
+      <h3 id="no-arbitrary-typography">no-arbitrary-typography</h3>
       <p>
         Disallow arbitrary typography values in Tailwind classes. Covers font-size,
         font-weight, line-height, and letter-spacing.
@@ -193,7 +193,7 @@ export default function RulesReference() {
 <p className="text-base font-medium" />`}</code>
       </pre>
 
-      <h3>heading-hierarchy</h3>
+      <h3 id="heading-hierarchy">heading-hierarchy</h3>
       <p>
         Enforce sequential heading levels and at most one <code>&lt;h1&gt;</code>{' '}
         per file. Maps to WCAG 1.3.1 and 2.4.6.
@@ -217,7 +217,7 @@ export default function RulesReference() {
       {/* ── Responsive ─────────────────────────────────── */}
       <h2>Responsive</h2>
 
-      <h3>responsive-required</h3>
+      <h3 id="responsive-required">responsive-required</h3>
       <p>
         Require responsive breakpoints on fixed-width layout containers to prevent
         broken mobile layouts. Flags elements with fixed widths that lack responsive variants.
@@ -243,7 +243,7 @@ export default function RulesReference() {
 <div className="w-full md:w-[800px]" />`}</code>
       </pre>
 
-      <h3>touch-target-size</h3>
+      <h3 id="touch-target-size">touch-target-size</h3>
       <p>
         Flag interactive elements with explicit dimensions smaller than 24×24 px.
         AI-generated code often creates small icon buttons without adequate touch
@@ -262,7 +262,7 @@ export default function RulesReference() {
 <button className="w-6 h-6">×</button>`}</code>
       </pre>
 
-      <h3>focus-visible-style</h3>
+      <h3 id="focus-visible-style">focus-visible-style</h3>
       <p>
         Detect elements with <code>outline-none</code> / <code>outline-0</code>{' '}
         that lack a replacement focus indicator. Removing focus outlines without
@@ -284,7 +284,7 @@ export default function RulesReference() {
       {/* ── Accessibility ──────────────────────────────── */}
       <h2>Accessibility</h2>
 
-      <h3>image-alt-text</h3>
+      <h3 id="image-alt-text">image-alt-text</h3>
       <p>
         Require meaningful <code>alt</code> text on <code>&lt;img&gt;</code>{' '}
         elements. AI-generated code frequently omits alt text, harming
@@ -303,7 +303,7 @@ export default function RulesReference() {
 <img src="hero.png" alt="Product screenshot showing dashboard" />`}</code>
       </pre>
 
-      <h3>form-labels</h3>
+      <h3 id="form-labels">form-labels</h3>
       <p>
         Every <code>&lt;input&gt;</code>, <code>&lt;select&gt;</code>, and{' '}
         <code>&lt;textarea&gt;</code> must have an associated label via{' '}
@@ -324,7 +324,7 @@ export default function RulesReference() {
 <input id="email" type="email" />`}</code>
       </pre>
 
-      <h3>autocomplete-attribute</h3>
+      <h3 id="autocomplete-attribute">autocomplete-attribute</h3>
       <p>
         Require <code>autocomplete</code> on identity and payment form fields.
         AI-generated forms frequently omit autocomplete, violating WCAG 1.3.5
@@ -343,7 +343,7 @@ export default function RulesReference() {
 <input type="email" name="email" autoComplete="email" />`}</code>
       </pre>
 
-      <h3>aria-validation</h3>
+      <h3 id="aria-validation">aria-validation</h3>
       <p>
         Forbid invalid ARIA roles and unknown <code>aria-*</code> attributes.
         Validates against WAI-ARIA 1.2 and catches common typos. Maps to
@@ -362,7 +362,7 @@ export default function RulesReference() {
 <div role="button" tabIndex={0} />`}</code>
       </pre>
 
-      <h3>link-text</h3>
+      <h3 id="link-text">link-text</h3>
       <p>
         Forbid empty anchors and generic anchor text like &quot;click here&quot; or
         &quot;read more&quot;. Maps to WCAG 2.4.4 (Link Purpose, In Context).
@@ -380,7 +380,7 @@ export default function RulesReference() {
 <a href="/pricing">View pricing plans</a>`}</code>
       </pre>
 
-      <h3>lang-attribute</h3>
+      <h3 id="lang-attribute">lang-attribute</h3>
       <p>
         Require a valid <code>lang</code> attribute on the{' '}
         <code>&lt;html&gt;</code> element. Maps to WCAG 3.1.1 (Language of Page).
@@ -398,7 +398,7 @@ export default function RulesReference() {
 <html lang="en">...</html>`}</code>
       </pre>
 
-      <h3>viewport-meta</h3>
+      <h3 id="viewport-meta">viewport-meta</h3>
       <p>
         Forbid disabling user scaling on the viewport meta tag. Maps to
         WCAG 1.4.4 (Resize Text). Detects <code>user-scalable=no</code> and{' '}
@@ -417,7 +417,7 @@ export default function RulesReference() {
 <meta name="viewport" content="width=device-width, initial-scale=1" />`}</code>
       </pre>
 
-      <h3>prefer-semantic-html</h3>
+      <h3 id="prefer-semantic-html">prefer-semantic-html</h3>
       <p>
         Prefer semantic HTML elements over generic <code>&lt;div&gt;</code> and{' '}
         <code>&lt;span&gt;</code> with click handlers or ARIA roles. AI-generated
@@ -454,7 +454,7 @@ export default function RulesReference() {
       {/* ── Consistency ─────────────────────────────────── */}
       <h2>Consistency</h2>
 
-      <h3>consistent-component-spacing</h3>
+      <h3 id="consistent-component-spacing">consistent-component-spacing</h3>
       <p>
         Detect inconsistent spacing patterns across similar components (e.g., Cards, Buttons).
         Reports the dominant spacing pattern as the suggested standard.
@@ -471,7 +471,7 @@ export default function RulesReference() {
 }]`}</code>
       </pre>
 
-      <h3>consistent-border-radius</h3>
+      <h3 id="consistent-border-radius">consistent-border-radius</h3>
       <p>
         Detect inconsistent border-radius patterns across similar components.
         Reports the dominant pattern as the suggested standard.
@@ -491,7 +491,7 @@ export default function RulesReference() {
 <div className="rounded-xl p-4">Card B</div>`}</code>
       </pre>
 
-      <h3>max-component-lines</h3>
+      <h3 id="max-component-lines">max-component-lines</h3>
       <p>
         Flag single-file components exceeding a configurable line count. Large components
         should be decomposed for maintainability.
@@ -509,7 +509,7 @@ export default function RulesReference() {
 }]`}</code>
       </pre>
 
-      <h3>missing-states</h3>
+      <h3 id="missing-states">missing-states</h3>
       <p>
         Detect form elements missing error, disabled, or required state handling.
         Ensures interactive elements handle edge cases properly.
@@ -536,7 +536,7 @@ export default function RulesReference() {
 <input type="text" disabled={isDisabled} aria-invalid={hasError} aria-required />`}</code>
       </pre>
 
-      <h3>no-arbitrary-zindex</h3>
+      <h3 id="no-arbitrary-zindex">no-arbitrary-zindex</h3>
       <p>
         Disallow arbitrary z-index values like <code>z-[999]</code>. Use Tailwind
         scale values (<code>z-0</code>, <code>z-10</code>, <code>z-20</code>,{' '}
@@ -563,7 +563,7 @@ export default function RulesReference() {
 // Auto-fix: z-[25] → z-20 (nearest scale value)`}</code>
       </pre>
 
-      <h3>no-inline-styles</h3>
+      <h3 id="no-inline-styles">no-inline-styles</h3>
       <p>
         Disallow inline <code>style</code> attributes. Use Tailwind utility
         classes instead for consistency and maintainability.
@@ -581,7 +581,7 @@ export default function RulesReference() {
 <div className="text-red-500 p-4" />`}</code>
       </pre>
 
-      <h3>no-conflicting-classes</h3>
+      <h3 id="no-conflicting-classes">no-conflicting-classes</h3>
       <p>
         Detect contradictory Tailwind utility classes on the same element. AI code
         generators frequently produce conflicting utilities like{' '}
@@ -613,7 +613,7 @@ export default function RulesReference() {
 <div className="flex sm:hidden" />`}</code>
       </pre>
 
-      <h3>no-duplicate-class-strings</h3>
+      <h3 id="no-duplicate-class-strings">no-duplicate-class-strings</h3>
       <p>
         Flag identical class strings appearing 3+ times in a single file. Repeated
         class strings indicate a missing component extraction or shared style.
@@ -641,7 +641,7 @@ const cardClasses = "flex items-center gap-4 p-4 rounded-lg";
 <div className={cardClasses} />`}</code>
       </pre>
 
-      <h3>max-tailwind-classes</h3>
+      <h3 id="max-tailwind-classes">max-tailwind-classes</h3>
       <p>
         Flag elements with too many Tailwind utility classes. Overly long class
         strings reduce readability and usually indicate that the element should be
@@ -671,7 +671,7 @@ const cardClasses = "flex items-center gap-4 p-4 rounded-lg";
       {/* ── Motion & Animation ─────────────────────────── */}
       <h2>Motion &amp; Animation</h2>
 
-      <h3>prefers-reduced-motion</h3>
+      <h3 id="prefers-reduced-motion">prefers-reduced-motion</h3>
       <p>
         Require animations and transitions to respect the user&apos;s{' '}
         <code>prefers-reduced-motion</code> preference. AI-generated code often
@@ -693,7 +693,7 @@ const cardClasses = "flex items-center gap-4 p-4 rounded-lg";
 <div className="animate-spin motion-reduce:animate-none transition-all motion-reduce:transition-none" />`}</code>
       </pre>
 
-      <h3>icon-accessibility</h3>
+      <h3 id="icon-accessibility">icon-accessibility</h3>
       <p>
         Require icons (Lucide, Heroicons, Radix) to carry an accessible name or be
         marked decorative. Standalone icon-only buttons need{' '}
@@ -714,7 +714,7 @@ const cardClasses = "flex items-center gap-4 p-4 rounded-lg";
 <button aria-label="Close dialog"><X aria-hidden /></button>`}</code>
       </pre>
 
-      <h3>focus-trap-patterns</h3>
+      <h3 id="focus-trap-patterns">focus-trap-patterns</h3>
       <p>
         Detect modal / dialog / drawer components that don&apos;t establish a focus
         trap. AI-generated overlays frequently lack <code>role=&quot;dialog&quot;</code>,{' '}
@@ -734,7 +734,7 @@ const cardClasses = "flex items-center gap-4 p-4 rounded-lg";
 <div role="dialog" aria-modal="true" className="fixed inset-0">...</div>`}</code>
       </pre>
 
-      <h3>responsive-image-optimization</h3>
+      <h3 id="responsive-image-optimization">responsive-image-optimization</h3>
       <p>
         Flag <code>&lt;img&gt;</code> elements missing <code>loading</code>,{' '}
         <code>width</code>/<code>height</code>, or <code>srcset</code>. These
@@ -754,7 +754,7 @@ const cardClasses = "flex items-center gap-4 p-4 rounded-lg";
 <img src="hero.jpg" alt="Hero" width="1200" height="630" loading="lazy" decoding="async" />`}</code>
       </pre>
 
-      <h3>spacing-rhythm-consistency</h3>
+      <h3 id="spacing-rhythm-consistency">spacing-rhythm-consistency</h3>
       <p>
         Detect stacks that mix spacing tokens from different sub-scales (e.g.{' '}
         <code>mt-3</code> next to <code>mt-5</code> next to <code>mt-7</code>) inside
