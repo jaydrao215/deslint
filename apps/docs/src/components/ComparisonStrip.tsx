@@ -1,32 +1,33 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useRef } from 'react';
-import { Film } from 'lucide-react';
-import { useAutoplayWhenVisible } from '@/lib/useAutoplayWhenVisible';
+import type { LucideIcon } from 'lucide-react';
+import {
+  Palette,
+  ShieldCheck,
+  Smartphone,
+  Moon,
+  MousePointerClick,
+  Wand2,
+} from 'lucide-react';
 
 /**
- * Compressed homepage replacement for the full ComparisonTable.
+ * Homepage differentiator section.
  *
- * The full 5-tool / 8-row matrix lives on `/pricing`, where it informs
- * purchase intent. On the homepage we show a 4-second pre-rendered loop of
- * the same matrix typewriter-revealing — visually richer than a dense table
- * and ~250 lines lighter on the homepage bundle.
- *
- * Three textual callouts sit below the video as a safety net for users who
- * scroll past mid-loop or browse with reduced-motion enabled.
+ * Shown to visitors scrolling below the hero — the job is to establish what
+ * deslint actually inspects without getting into a head-to-head with other
+ * linters (those claims are hard to verify and age badly as competitors
+ * change). Each tile maps 1:1 to rules documented at /docs/rules, so every
+ * assertion is auditable by reading the rule source.
  */
 export function ComparisonStrip() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  useAutoplayWhenVisible(videoRef);
-
   return (
     <section
       id="how-we-compare"
       className="relative overflow-hidden bg-white px-6 py-24"
     >
       <div className="mx-auto max-w-6xl">
-        <div className="mb-10 max-w-3xl">
+        <div className="mb-12 max-w-3xl">
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -34,7 +35,7 @@ export function ComparisonStrip() {
             transition={{ duration: 0.4 }}
             className="mb-3 text-sm font-semibold uppercase tracking-wider text-primary"
           >
-            How we compare
+            What deslint checks
           </motion.p>
           <motion.h2
             initial={{ opacity: 0, y: 12 }}
@@ -43,8 +44,8 @@ export function ComparisonStrip() {
             transition={{ duration: 0.5, delay: 0.05 }}
             className="mb-4 text-balance text-3xl font-bold leading-tight text-gray-900 sm:text-4xl lg:text-5xl"
           >
-            One column has every check.{' '}
-            <span className="gradient-text-hero">It isn’t SonarQube’s.</span>
+            Design-quality checks that{' '}
+            <span className="gradient-text-hero">generic linters skip.</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 12 }}
@@ -53,90 +54,48 @@ export function ComparisonStrip() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="max-w-2xl text-lg leading-relaxed text-gray-500"
           >
-            Design drift, WCAG 2.2 mapping, framework coverage, autofix, and
-            local-first execution — graded across Deslint, jsx-a11y,
-            tailwindcss-eslint, SonarQube, and CodeRabbit.
+            Six dimensions of design quality that ESLint, type-checkers, and
+            accessibility audits don’t cover on their own — enforced in-editor,
+            in CI, and deterministically from a single config.
           </motion.p>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.5 }}
-          aria-label="4-second loop of the design-tooling comparison matrix"
-        >
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-50 text-primary ring-1 ring-primary/15">
-                <Film className="h-3.5 w-3.5" />
-              </span>
-              <div>
-                <div className="text-sm font-semibold text-gray-900">
-                  Watch the matrix fill in
-                </div>
-                <div className="text-xs text-gray-500">
-                  Same 8 capability rows as the full matrix on{' '}
-                  <a href="/pricing" className="text-primary hover:text-primary-light">
-                    /pricing
-                  </a>
-                  .
-                </div>
-              </div>
-            </div>
-            <div className="hidden items-center gap-3 text-[10px] text-gray-400 sm:flex">
-              <span className="font-mono">1200×675 · H.264</span>
-              <span className="h-3 w-px bg-gray-200" aria-hidden />
-              <a
-                href="/demo/comparison-table.mp4"
-                download
-                className="font-medium text-primary hover:text-primary-light"
-              >
-                Download MP4
-              </a>
-            </div>
-          </div>
-          <div className="overflow-hidden rounded-2xl bg-gray-950 shadow-xl ring-1 ring-gray-200">
-            <video
-              ref={videoRef}
-              className="block h-auto w-full"
-              poster="/demo/comparison-table-poster.jpg"
-              muted
-              loop
-              playsInline
-              preload="none"
-              aria-label="4-second recorded loop of the comparison matrix"
-            >
-              <source src="/demo/comparison-table.webm" type="video/webm" />
-              <source src="/demo/comparison-table.mp4" type="video/mp4" />
-              Your browser doesn’t support embedded video. Download the{' '}
-              <a href="/demo/comparison-table.mp4">MP4</a>.
-            </video>
-          </div>
-        </motion.div>
-
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          {CALLOUTS.map((c, i) => (
-            <motion.div
-              key={c.label}
-              initial={{ opacity: 0, y: 12 }}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {CAPABILITIES.map((c, i) => (
+            <motion.article
+              key={c.title}
+              initial={{ opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.4, delay: 0.05 + i * 0.05 }}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-3"
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.4, delay: 0.04 * i }}
+              className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-6 transition-colors hover:border-primary/30"
             >
-              <div className="text-sm font-semibold text-gray-900">{c.label}</div>
-              <div className="mt-0.5 text-xs text-gray-500">{c.detail}</div>
-            </motion.div>
+              <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary ring-1 ring-primary/10">
+                <c.Icon className="h-5 w-5" />
+              </span>
+              <h3 className="mb-1.5 text-base font-semibold text-gray-900">
+                {c.title}
+              </h3>
+              <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-500">
+                {c.body}
+              </p>
+              <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 font-mono text-[12px] text-gray-600 ring-1 ring-gray-200/60">
+                <span className="text-gray-400" aria-hidden>
+                  ›
+                </span>
+                <span className="truncate">{c.example}</span>
+              </div>
+            </motion.article>
           ))}
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-gray-500">
+          <span>Every check maps to a documented rule.</span>
           <a
-            href="/pricing#how-we-compare"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-light"
+            href="/docs/rules"
+            className="inline-flex items-center gap-1.5 font-medium text-primary hover:text-primary-light"
           >
-            See the full 5-tool matrix on /pricing
+            Browse all 33 rules
             <span aria-hidden>→</span>
           </a>
         </div>
@@ -145,8 +104,48 @@ export function ComparisonStrip() {
   );
 }
 
-const CALLOUTS = [
-  { label: 'Design drift · covered', detail: 'Arbitrary colors, spacing, z-index, typography.' },
-  { label: 'WCAG 2.2 AA · mapped', detail: 'Every violation cites the success criterion.' },
-  { label: 'Framework-agnostic · 5', detail: 'React, Vue, Svelte, Angular, plain HTML.' },
+interface Capability {
+  title: string;
+  body: string;
+  example: string;
+  Icon: LucideIcon;
+}
+
+const CAPABILITIES: Capability[] = [
+  {
+    title: 'Design-token drift',
+    body: 'Arbitrary hex colors, spacing, radius, z-index, and type scale get flagged and rewritten to your design tokens.',
+    example: 'bg-[#FF5733]  →  bg-red-500',
+    Icon: Palette,
+  },
+  {
+    title: 'WCAG 2.2 AA · mapped',
+    body: 'Every accessibility violation cites the exact success criterion it fails — no guessing which spec line applies.',
+    example: 'WCAG 2.2 · 1.4.3 · contrast 3.7:1',
+    Icon: ShieldCheck,
+  },
+  {
+    title: 'Responsive integrity',
+    body: 'Fixed widths, missing breakpoints, and unhandled overflow get caught before they break on a real phone.',
+    example: 'w-[600px]  →  flag mobile overflow',
+    Icon: Smartphone,
+  },
+  {
+    title: 'Dark-mode parity',
+    body: 'Every surface color is checked for its paired dark: variant, so themes don’t ship half-finished.',
+    example: 'bg-white  →  add dark:bg-gray-900',
+    Icon: Moon,
+  },
+  {
+    title: 'Interactive states',
+    body: 'Buttons, inputs, and form controls are audited for hover, focus-visible, disabled, and error-state coverage.',
+    example: '<button>  →  missing hover/focus',
+    Icon: MousePointerClick,
+  },
+  {
+    title: 'Safe autofix tiers',
+    body: 'Deterministic rewrites auto-apply; anything context-dependent becomes a suggestion, not a silent edit to your code.',
+    example: 'deterministic  →  auto · risky  →  suggest',
+    Icon: Wand2,
+  },
 ];
