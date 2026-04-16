@@ -3,7 +3,6 @@ import {
   getNpmDownloads,
   getGitHubStars,
   type WaitlistEntry,
-  type NpmDownloads,
 } from '@/lib/admin-data';
 import { formatStarCount } from '@/lib/github-stars';
 import { SignOutButton } from './sign-out-button';
