@@ -1,387 +1,180 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-
-export const size = {
-  width: 1200,
-  height: 630,
-};
-
+export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
+export const alt = 'Deslint — catch design drift, broken responsive layouts, and WCAG failures in AI-generated frontend code';
 
+// All top-level and nested <div>s declare `display: 'flex'` explicitly.
+// Satori (the renderer next/og uses) rejects multi-child divs without it,
+// and has no support for inline-flex, grid, br, or pseudo-elements.
 export default function OpenGraphImage() {
   return new ImageResponse(
-    <div
+    (
+      <div
         style={{
           display: 'flex',
           width: '100%',
           height: '100%',
-          position: 'relative',
-          overflow: 'hidden',
+          padding: '64px',
           background:
-            'linear-gradient(135deg, #08070f 0%, #121126 45%, #191736 100%)',
-          color: '#ffffff',
+            'linear-gradient(135deg, #0B0A18 0%, #161434 46%, #1E1A3F 100%)',
+          color: '#FAFAFB',
           fontFamily: 'Inter, Arial, sans-serif',
         }}
       >
         <div
           style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'radial-gradient(circle at 20% 20%, rgba(83, 74, 183, 0.40), transparent 26%), radial-gradient(circle at 82% 20%, rgba(17, 185, 129, 0.22), transparent 18%), radial-gradient(circle at 70% 82%, rgba(123, 109, 199, 0.24), transparent 24%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            opacity: 0.18,
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px)',
-            backgroundSize: '52px 52px',
-            maskImage:
-              'linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.35) 76%, transparent)',
-          }}
-        />
-
-        <div
-          style={{
-            position: 'relative',
-            zIndex: 1,
             display: 'flex',
-            width: '100%',
-            height: '100%',
-            padding: '60px',
-            gap: '48px',
+            flexDirection: 'column',
+            width: '620px',
+            paddingRight: '40px',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              flex: 1,
-              maxWidth: '560px',
-            }}
-          >
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '10px',
-                width: 'fit-content',
-                borderRadius: '999px',
-                border: '1px solid rgba(123, 109, 199, 0.38)',
-                background: 'rgba(123, 109, 199, 0.12)',
-                padding: '12px 18px',
-                fontSize: '24px',
-                fontWeight: 600,
-                color: '#e9e7ff',
-                marginBottom: '28px',
-                boxShadow: '0 12px 40px rgba(83, 74, 183, 0.12)',
-              }}
-            >
-              The deterministic design linter for AI-generated code
-            </div>
-
-            <div
-              style={{
-                fontSize: '74px',
-                lineHeight: 1.02,
-                fontWeight: 800,
-                letterSpacing: '-0.05em',
-                marginBottom: '22px',
-              }}
-            >
-              AI writes fast.
-              <br />
-              <span
-                style={{
-                  background:
-                    'linear-gradient(135deg, #8f83ff 0%, #c1bbff 50%, #f4f2ff 100%)',
-                  WebkitBackgroundClip: 'text',
-                  color: 'transparent',
-                }}
-              >
-                Deslint keeps it clean.
-              </span>
-            </div>
-
-            <div
-              style={{
-                fontSize: '28px',
-                lineHeight: 1.45,
-                color: 'rgba(255,255,255,0.76)',
-                maxWidth: '520px',
-                marginBottom: '28px',
-              }}
-            >
-              Catch design drift, broken responsive layouts, and WCAG failures
-              in AI-generated frontend code.
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                fontSize: '22px',
-                color: 'rgba(255,255,255,0.66)',
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '999px',
-                    background: '#10B981',
-                  }}
-                />
-                Plugin
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '999px',
-                    background: '#10B981',
-                  }}
-                />
-                CLI
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '999px',
-                    background: '#10B981',
-                  }}
-                />
-                MCP
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '999px',
-                    background: '#10B981',
-                  }}
-                />
-                Action
-              </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <svg width="54" height="54" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <rect width="32" height="32" rx="6.66" fill="#534AB7" />
+              <rect x="4.48" y="4.32" width="23.04" height="23.68" rx="3.01" fill="#ffffff" opacity="0.07" />
+              <rect x="7.33" y="8.64" width="10.66" height="1.66" rx="0.83" fill="#ffffff" opacity="0.5" />
+              <rect x="7.33" y="12.64" width="14.66" height="1.66" rx="0.83" fill="#ffffff" opacity="0.85" />
+              <rect x="7.33" y="16.64" width="8" height="1.66" rx="0.83" fill="#1D9E75" />
+              <circle cx="24" cy="17.47" r="2.34" fill="#1D9E75" />
+              <path
+                d="M22.95 17.47 L23.88 18.64 L25.22 16.18"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="0.61"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <div style={{ display: 'flex', fontSize: '40px', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>
+              <span style={{ color: '#FAFAFB' }}>des</span>
+              <span style={{ color: '#9B91D4' }}>lint</span>
             </div>
           </div>
 
-          <div
-            style={{
-              position: 'relative',
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                inset: '8% 8% 14% 12%',
-                borderRadius: '36px',
-                background:
-                  'linear-gradient(135deg, rgba(83, 74, 183, 0.18), rgba(17, 185, 129, 0.08))',
-                filter: 'blur(24px)',
-              }}
-            />
+          <div style={{ display: 'flex', marginTop: '40px', fontSize: '66px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.02, color: '#FAFAFB' }}>
+            AI writes fast.
+          </div>
+          <div style={{ display: 'flex', marginTop: '4px', fontSize: '66px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.02, color: '#C2BCE9' }}>
+            Deslint keeps it clean.
+          </div>
 
-            <div
-              style={{
-                width: '100%',
-                maxWidth: '520px',
-                borderRadius: '28px',
-                background: 'rgba(255,255,255,0.96)',
-                boxShadow: '0 28px 80px rgba(0,0,0,0.35)',
-                overflow: 'hidden',
-                color: '#111827',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '18px 22px',
-                  background: '#f3f4f6',
-                  borderBottom: '1px solid rgba(17,24,39,0.08)',
-                }}
-              >
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <span
-                    style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '999px',
-                      background: '#ff5f56',
-                    }}
-                  />
-                  <span
-                    style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '999px',
-                      background: '#ffbd2e',
-                    }}
-                  />
-                  <span
-                    style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '999px',
-                      background: '#27c93f',
-                    }}
-                  />
-                </div>
-                <div
-                  style={{
-                    flex: 1,
-                    marginLeft: '12px',
-                    borderRadius: '12px',
-                    background: '#ffffff',
-                    border: '1px solid rgba(17,24,39,0.08)',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    color: '#6b7280',
-                    fontFamily: 'monospace',
-                  }}
-                >
-                  deslint.com
-                </div>
-              </div>
+          <div style={{ display: 'flex', marginTop: '28px', fontSize: '24px', lineHeight: 1.45, color: 'rgba(250,250,251,0.75)', maxWidth: '540px' }}>
+            Catch design drift, broken responsive layouts, and WCAG failures in AI-generated frontend code.
+          </div>
 
-              <div style={{ padding: '24px' }}>
-                <div
-                  style={{
-                    fontSize: '24px',
-                    fontWeight: 800,
-                    letterSpacing: '-0.03em',
-                    color: '#534AB7',
-                    marginBottom: '10px',
-                  }}
-                >
-                  Design Quality Gate
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '14px',
-                    marginBottom: '18px',
-                  }}
-                >
-                  <StatLine label="Colors" value="100" fill="#10B981" />
-                  <StatLine label="Typography" value="100" fill="#10B981" />
-                  <StatLine label="Responsive" value="100" fill="#10B981" />
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '20px',
-                    borderRadius: '22px',
-                    background:
-                      'linear-gradient(135deg, rgba(83,74,183,0.10), rgba(83,74,183,0.04))',
-                    border: '1px solid rgba(83,74,183,0.12)',
-                    padding: '20px 22px',
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div
-                      style={{
-                        fontSize: '18px',
-                        fontWeight: 700,
-                        color: '#111827',
-                      }}
-                    >
-                      Hero section
-                    </div>
-                    <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                      The page-level visual people should see first.
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      width: '92px',
-                      height: '92px',
-                      borderRadius: '999px',
-                      background: '#10B981',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 18px 30px rgba(16,185,129,0.28)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '38px',
-                        height: '18px',
-                        borderLeft: '12px solid #ffffff',
-                        borderBottom: '12px solid #ffffff',
-                        transform: 'rotate(-45deg) translateY(-4px)',
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div style={{ display: 'flex', marginTop: '36px', gap: '10px' }}>
+            <Pill>ESLint</Pill>
+            <Pill>CLI</Pill>
+            <Pill>MCP</Pill>
+            <Pill>GitHub Action</Pill>
           </div>
         </div>
-      </div>,
-    {
-      ...size,
-    }
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            background: '#FAFAFB',
+            borderRadius: '20px',
+            padding: '28px 30px',
+            color: '#111827',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.4)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', fontSize: '13px', fontWeight: 700, letterSpacing: '0.12em', color: '#6B7280' }}>
+              QUALITY GATE
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#D1FAE5', color: '#065F46', padding: '5px 12px', borderRadius: '999px', fontSize: '14px', fontWeight: 700 }}>
+              <div style={{ display: 'flex', width: '9px', height: '9px', borderRadius: '999px', background: '#10B981' }} />
+              PASSED
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', marginTop: '16px' }}>
+            <div style={{ display: 'flex', fontSize: '94px', fontWeight: 800, letterSpacing: '-0.04em', color: '#10B981', lineHeight: 1 }}>
+              92
+            </div>
+            <div style={{ display: 'flex', marginLeft: '8px', fontSize: '22px', color: '#9CA3AF' }}>
+              /100
+            </div>
+            <div style={{ display: 'flex', marginLeft: '16px', fontSize: '18px', fontWeight: 600, color: '#111827' }}>
+              Grade A
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', marginTop: '18px', gap: '10px' }}>
+            <Stat label="Colors"       score={100} color="#10B981" />
+            <Stat label="Spacing"      score={100} color="#10B981" />
+            <Stat label="Typography"   score={96}  color="#10B981" />
+            <Stat label="Responsive"   score={84}  color="#F59E0B" />
+            <Stat label="Consistency"  score={80}  color="#F59E0B" />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '22px', fontSize: '16px', color: '#4B5563' }}>
+            <span style={{ display: 'flex', fontFamily: 'monospace', background: '#F4F4F5', padding: '4px 10px', borderRadius: '6px', color: '#111827' }}>
+              deslint.com
+            </span>
+            <span style={{ display: 'flex', color: '#6B7280' }}>· 1 command. CI-ready.</span>
+          </div>
+        </div>
+      </div>
+    ),
+    { ...size },
   );
 }
 
-function StatLine({
-  label,
-  value,
-  fill,
-}: {
-  label: string;
-  value: string;
-  fill: string;
-}) {
+function Pill({ children }: { children: string }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '8px 14px',
+        borderRadius: '999px',
+        border: '1px solid rgba(194, 188, 233, 0.35)',
+        background: 'rgba(123, 109, 199, 0.15)',
+        color: '#DDDAF5',
+        fontSize: '18px',
+        fontWeight: 600,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Stat({ label, score, color }: { label: string; score: number; color: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-      <div style={{ width: '120px', fontSize: '18px', fontWeight: 600, color: '#374151' }}>
+      <div style={{ display: 'flex', width: '130px', fontSize: '16px', fontWeight: 600, color: '#4B5563' }}>
         {label}
       </div>
       <div
         style={{
+          display: 'flex',
           flex: 1,
-          height: '14px',
+          height: '10px',
           borderRadius: '999px',
-          background: '#e5e7eb',
-          overflow: 'hidden',
+          background: '#E5E7EB',
         }}
       >
         <div
           style={{
-            width: '100%',
+            display: 'flex',
+            width: `${score}%`,
             height: '100%',
             borderRadius: '999px',
-            background: fill,
+            background: color,
           }}
         />
       </div>
-      <div style={{ width: '44px', textAlign: 'right', fontSize: '18px', fontWeight: 800, color: '#111827' }}>
-        {value}
+      <div style={{ display: 'flex', width: '40px', justifyContent: 'flex-end', fontSize: '16px', fontWeight: 700, color: '#111827' }}>
+        {score}
       </div>
     </div>
   );
