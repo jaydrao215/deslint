@@ -22,7 +22,6 @@ import type { ScoreResult, HistoryEntry } from './score.js';
 import { calculateDebt } from './debt.js';
 import {
   RULE_CATEGORIES,
-  FIXABLE_RULES,
   type ViolationEntry,
   type RuleSummary,
 } from './report-html/types.js';
@@ -43,10 +42,15 @@ export function generateHtmlReport(
     mkdirSync(reportDir, { recursive: true });
   }
 
+  // A rule is "fixable" if ESLint attached a `fix` to any of its messages
+  // during the scan — this avoids keeping a hardcoded list in sync with the
+  // plugin's `meta.fixable` declarations.
+  const fixableRules = new Set<string>();
   const violations: ViolationEntry[] = [];
   for (const result of lintResult.results) {
     for (const msg of result.messages) {
       if (!msg.ruleId || !msg.ruleId.startsWith('deslint/')) continue;
+      if (msg.fix) fixableRules.add(msg.ruleId);
       violations.push({
         file: relative(cwd, result.filePath),
         line: msg.line,
@@ -66,7 +70,7 @@ export function generateHtmlReport(
         shortName: v.ruleId.replace('deslint/', ''),
         count: 0,
         category: RULE_CATEGORIES[v.ruleId] ?? 'Other',
-        fixable: FIXABLE_RULES.has(v.ruleId),
+        fixable: fixableRules.has(v.ruleId),
         files: new Set(),
       });
     }

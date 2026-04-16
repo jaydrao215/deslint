@@ -1,5 +1,6 @@
 import type { ScoreResult, HistoryEntry } from '../score.js';
 import type { DebtResult } from '../debt.js';
+import { RULE_CATEGORY_MAP, type RuleCategory } from '../lint-runner.js';
 
 export interface ViolationEntry {
   file: string;
@@ -48,31 +49,24 @@ export interface ReportData {
   history: HistoryEntry[];
 }
 
-export const RULE_CATEGORIES: Record<string, string> = {
-  'deslint/no-arbitrary-colors': 'Colors',
-  'deslint/a11y-color-contrast': 'Colors',
-  'deslint/dark-mode-coverage': 'Colors',
-  'deslint/no-arbitrary-spacing': 'Spacing',
-  'deslint/no-magic-numbers-layout': 'Spacing',
-  'deslint/no-arbitrary-typography': 'Typography',
-  'deslint/responsive-required': 'Responsive',
-  'deslint/consistent-component-spacing': 'Consistency',
-  'deslint/consistent-border-radius': 'Consistency',
-  'deslint/no-arbitrary-zindex': 'Consistency',
-  'deslint/no-inline-styles': 'Consistency',
-  'deslint/max-component-lines': 'Consistency',
-  'deslint/missing-states': 'Responsive',
-  'deslint/image-alt-text': 'Responsive',
+const CATEGORY_LABEL: Record<RuleCategory, string> = {
+  colors: 'Colors',
+  spacing: 'Spacing',
+  typography: 'Typography',
+  responsive: 'Responsive',
+  consistency: 'Consistency',
 };
 
-export const FIXABLE_RULES = new Set([
-  'deslint/no-arbitrary-colors',
-  'deslint/no-arbitrary-spacing',
-  'deslint/no-arbitrary-typography',
-  'deslint/dark-mode-coverage',
-  'deslint/no-arbitrary-zindex',
-  'deslint/no-magic-numbers-layout',
-]);
+// Derive the display map from lint-runner's authoritative rule → category
+// table so new rules stay correctly categorised without a second source to
+// keep in sync.
+export const RULE_CATEGORIES: Record<string, string> = Object.fromEntries(
+  Object.entries(RULE_CATEGORY_MAP).map(([rule, cat]) => [rule, CATEGORY_LABEL[cat]]),
+);
+
+export function categoryLabel(cat: RuleCategory): string {
+  return CATEGORY_LABEL[cat];
+}
 
 export function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

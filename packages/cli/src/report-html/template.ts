@@ -1,6 +1,6 @@
 import { formatDebt } from '../debt.js';
-import type { RuleCategory } from '../lint-runner.js';
-import { esc } from './types.js';
+import { RULE_CATEGORY_MAP, type RuleCategory } from '../lint-runner.js';
+import { categoryLabel, esc } from './types.js';
 import type { ReportData } from './types.js';
 import { REPORT_STYLESHEET } from './styles.js';
 import { extractPatterns } from './patterns.js';
@@ -26,13 +26,10 @@ import {
 } from './previews.js';
 
 const CATEGORY_KEYS: RuleCategory[] = ['colors', 'spacing', 'typography', 'responsive', 'consistency'];
-const CATEGORY_LABEL: Record<RuleCategory, string> = {
-  colors: 'Colors',
-  spacing: 'Spacing',
-  typography: 'Typography',
-  responsive: 'Responsive',
-  consistency: 'Consistency',
-};
+
+function violationCategoryKey(ruleId: string): RuleCategory | 'other' {
+  return RULE_CATEGORY_MAP[ruleId] ?? 'other';
+}
 
 export function buildHtml(data: ReportData): string {
   const cats = data.score.categories;
@@ -72,7 +69,9 @@ export function buildHtml(data: ReportData): string {
   // Only the remaining (paginated) violations need to be serialized into the
   // page — the first 80 are already rendered server-side. Rule summaries and
   // hotspots aren't re-rendered by the client so they're omitted from PENDING.
-  const pendingJson = JSON.stringify(data.violations.slice(80)).replace(/</g, '\\u003c');
+  const pendingJson = JSON.stringify(
+    data.violations.slice(80).map(v => ({ ...v, category: violationCategoryKey(v.ruleId) })),
+  ).replace(/</g, '\\u003c');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -143,38 +142,48 @@ export function buildHtml(data: ReportData): string {
 
 <section id="categories" class="section">
   <div class="section-head">Categories <span class="sh-count">${data.summary.totalViolations} violation${data.summary.totalViolations === 1 ? '' : 's'} across 5 dimensions</span></div>
+  <div class="section-desc">Click a category to jump to the matching violations below.</div>
   <div class="cat-grid">
     ${CATEGORY_KEYS.map(k => {
       const c = cats[k];
       const cc = gradeColor(c.score);
       const lg = letterGrade(c.score);
-      return `<div class="cat-card">
+      const interactive = c.violations > 0;
+      const linkAttrs = interactive
+        ? `href="#violations" data-jump-cat="${k}"`
+        : `href="#violations" aria-disabled="true" tabindex="-1" style="pointer-events:none;opacity:.7"`;
+      return `<a class="cat-card" ${linkAttrs}>
         <div class="cat-card-head">
-          <span class="cat-card-name">${esc(CATEGORY_LABEL[k])}</span>
+          <span class="cat-card-name">${esc(categoryLabel(k))}</span>
           <span class="cat-card-grade" style="color:${cc};background:${cc}1a">${lg}</span>
         </div>
         <div class="cat-card-score" style="color:${cc}">${c.score}</div>
         <div class="cat-card-sub">${c.violations} violation${c.violations !== 1 ? 's' : ''}</div>
         <div class="cat-card-bar"><div class="cat-card-bar-fill" style="width:${c.score}%;background:${cc}"></div></div>
-      </div>`;
+      </a>`;
     }).join('')}
   </div>
 </section>
 
 <section id="rules" class="section">
   <div class="section-head">Top rules to fix <span class="sh-count">${data.ruleSummaries.length} rule${data.ruleSummaries.length === 1 ? '' : 's'} triggered</span></div>
-  <div class="section-desc">Sorted by violation count. Auto-fixable rules can be resolved with <span class="mono" style="background:var(--bg3);padding:.1rem .35rem;border-radius:4px;color:var(--text2)">deslint fix --all</span>.</div>
+  ${fixableCount > 0 ? `<div class="fix-hint" role="note">
+    <strong>${fixableCount}</strong> violation${fixableCount === 1 ? '' : 's'} across <strong>${data.ruleSummaries.filter(r => r.fixable).length}</strong> rule${data.ruleSummaries.filter(r => r.fixable).length === 1 ? '' : 's'} can be auto-fixed. Run:
+    <code class="fix-hint-cmd">deslint fix --all</code>
+  </div>` : '<div class="section-desc">No auto-fixable rules triggered — every rule here requires a manual change.</div>'}
   ${data.ruleSummaries.length === 0
     ? '<div class="empty-state"><div class="es-icon">&#10003;</div>No rules triggered. Every configured rule passed.</div>'
     : `<table class="tbl">
-      <thead><tr><th>Rule</th><th>Category</th><th style="text-align:right">Violations</th><th style="text-align:right">Files</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>Rule</th><th>Category</th><th style="text-align:right">Violations</th><th style="text-align:right">Files</th><th>Fix</th><th></th></tr></thead>
       <tbody>
         ${data.ruleSummaries.slice(0, 15).map(r => `<tr>
           <td><span class="mono" style="color:var(--primary);font-weight:500">${esc(r.shortName)}</span></td>
           <td><span class="pill pill-cat">${esc(r.category)}</span></td>
           <td style="text-align:right;font-weight:600;color:var(--text)">${r.count}</td>
           <td style="text-align:right;color:var(--text3)">${r.files.size}</td>
-          <td>${r.fixable ? '<span class="pill pill-fix">Auto-fixable</span>' : '<span class="pill pill-cat">Manual</span>'}</td>
+          <td>${r.fixable
+            ? `<span class="pill pill-fix">Auto-fix</span> <code class="mono fix-cmd">deslint fix --rule ${esc(r.shortName)}</code>`
+            : '<span class="pill pill-cat">Manual</span>'}</td>
           <td style="text-align:right"><a href="https://deslint.com/docs/rules#${esc(r.shortName)}" target="_blank" rel="noopener">View rule &rarr;</a></td>
         </tr>`).join('')}
       </tbody>
@@ -236,21 +245,30 @@ ${allPatterns.length > 0 ? `<section id="previews" class="section">
   <div class="section-desc">Grouped by file. ${data.summary.errors > 0 ? `<strong style="color:var(--fail-deep)">${data.summary.errors} error${data.summary.errors === 1 ? '' : 's'}</strong> must be fixed before shipping. ` : ''}${data.summary.warnings > 0 ? `${data.summary.warnings} warning${data.summary.warnings === 1 ? '' : 's'} to review.` : ''}</div>
   ${data.violations.length === 0
     ? '<div class="empty-state"><div class="es-icon">&#10003;</div>No violations across the scanned project.</div>'
-    : `<div class="v-filters" role="group" aria-label="Filter by rule">
-      <button class="on" data-f="all">All (${data.summary.totalViolations})</button>
-      ${ruleFilterKeys.map(r => `<button data-f="${esc(r)}">${esc(r)}</button>`).join('')}
+    : `<div class="v-filters v-filters-cat" role="group" aria-label="Filter by category">
+      <span class="v-filter-label">Category:</span>
+      <button class="on" data-cat="all">All (${data.summary.totalViolations})</button>
+      ${CATEGORY_KEYS.map(k => `<button data-cat="${k}">${esc(categoryLabel(k))} (${cats[k].violations})</button>`).join('')}
+    </div>
+    <div class="v-filters v-filters-rule" role="group" aria-label="Filter by rule">
+      <span class="v-filter-label">Rule:</span>
+      <button class="on" data-r="all">All</button>
+      ${ruleFilterKeys.map(r => `<button data-r="${esc(r)}">${esc(r)}</button>`).join('')}
     </div>
     <div class="v-list" id="v-list">
       ${violationsByFile.map(g => `<div class="v-file-group">
         <div class="v-file-head">${formatFilePath(g.file)} <span class="v-file-count">${g.items.length} issue${g.items.length === 1 ? '' : 's'}</span></div>
-        ${g.items.map(v => `<div class="v-item sev-${esc(v.severity)}" data-r="${esc(v.ruleId.replace('deslint/', ''))}">
+        ${g.items.map(v => {
+          const short = v.ruleId.replace('deslint/', '');
+          return `<div class="v-item sev-${esc(v.severity)}" data-r="${esc(short)}" data-cat="${violationCategoryKey(v.ruleId)}">
           <span class="v-sev" aria-label="${esc(v.severity)}"></span>
           <div class="v-body">
             <div class="v-msg">${esc(v.message)}</div>
             <div class="v-loc"><b>line ${v.line}</b>, col ${v.column}</div>
           </div>
-          <a class="v-rule-link" href="https://deslint.com/docs/rules#${esc(v.ruleId.replace('deslint/', ''))}" target="_blank" rel="noopener">${esc(v.ruleId.replace('deslint/', ''))} &rarr;</a>
-        </div>`).join('')}
+          <a class="v-rule-link" href="https://deslint.com/docs/rules#${esc(short)}" target="_blank" rel="noopener">${esc(short)} &rarr;</a>
+        </div>`;
+        }).join('')}
       </div>`).join('')}
     </div>
     ${data.violations.length > 80 ? `<button class="more-btn" id="more-btn">Show ${data.violations.length - 80} more</button>` : ''}`}
@@ -271,19 +289,53 @@ ${allPatterns.length > 0 ? `<section id="previews" class="section">
   var PENDING = ${pendingJson};
   var escHtml = function (s) { var d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; };
 
-  var buttons = document.querySelectorAll('.v-filters button');
-  buttons.forEach(function (btn) {
+  var state = { cat: 'all', rule: 'all' };
+
+  function applyFilters() {
+    document.querySelectorAll('.v-item').forEach(function (el) {
+      var catOk = state.cat === 'all' || el.dataset.cat === state.cat;
+      var ruleOk = state.rule === 'all' || el.dataset.r === state.rule;
+      el.style.display = (catOk && ruleOk) ? '' : 'none';
+    });
+    document.querySelectorAll('.v-file-group').forEach(function (g) {
+      var visible = g.querySelectorAll('.v-item:not([style*="display: none"])').length;
+      g.style.display = visible > 0 ? '' : 'none';
+    });
+  }
+
+  function setActive(group, attr, value) {
+    document.querySelectorAll('.v-filters-' + group + ' button').forEach(function (b) {
+      b.classList.toggle('on', b.dataset[attr] === value);
+    });
+  }
+
+  document.querySelectorAll('.v-filters-cat button').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      buttons.forEach(function (b) { b.classList.remove('on'); });
-      btn.classList.add('on');
-      var f = btn.dataset.f;
-      document.querySelectorAll('.v-item').forEach(function (el) {
-        el.style.display = (f === 'all' || el.dataset.r === f) ? '' : 'none';
-      });
-      document.querySelectorAll('.v-file-group').forEach(function (g) {
-        var visible = g.querySelectorAll('.v-item:not([style*="display: none"])').length;
-        g.style.display = visible > 0 ? '' : 'none';
-      });
+      state.cat = btn.dataset.cat;
+      setActive('cat', 'cat', state.cat);
+      applyFilters();
+    });
+  });
+
+  document.querySelectorAll('.v-filters-rule button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      state.rule = btn.dataset.r;
+      setActive('rule', 'r', state.rule);
+      applyFilters();
+    });
+  });
+
+  // Category cards jump to #violations via their href; before the browser
+  // scrolls we activate the matching filter so the list is already pruned
+  // by the time the user lands.
+  document.querySelectorAll('[data-jump-cat]').forEach(function (card) {
+    card.addEventListener('click', function () {
+      var cat = card.dataset.jumpCat;
+      state.cat = cat;
+      state.rule = 'all';
+      setActive('cat', 'cat', cat);
+      setActive('rule', 'r', 'all');
+      applyFilters();
     });
   });
 
@@ -300,8 +352,9 @@ ${allPatterns.length > 0 ? `<section id="previews" class="section">
       PENDING.forEach(function (v) {
         var d = document.createElement('div');
         d.className = 'v-item sev-' + v.severity;
-        d.dataset.r = v.ruleId.replace('deslint/', '');
         var short = v.ruleId.replace('deslint/', '');
+        d.dataset.r = short;
+        d.dataset.cat = v.category || 'other';
         d.innerHTML =
           '<span class="v-sev"></span>' +
           '<div class="v-body">' +
@@ -313,6 +366,7 @@ ${allPatterns.length > 0 ? `<section id="previews" class="section">
       });
       list.appendChild(g);
       moreBtn.remove();
+      applyFilters();
     });
   }
 })();
