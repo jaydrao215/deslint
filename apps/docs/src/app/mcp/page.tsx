@@ -11,6 +11,16 @@ export const metadata: Metadata = {
   description:
     'Deslint ships a Model Context Protocol (MCP) server that runs as a local subprocess of your AI coding agent. Deterministic design-system and accessibility lint, zero LLM, zero cloud. Works with Claude Code, Cursor, Codex, and Windsurf.',
   alternates: { canonical: '/mcp' },
+  keywords: [
+    'deslint mcp',
+    'mcp server design lint',
+    'local mcp linting for cursor',
+    'local mcp linting for claude code',
+    'design linter mcp server',
+    'ai coding agent design drift',
+    'eslint plugin for design systems ai',
+    'deterministic design linter',
+  ],
   openGraph: {
     title: 'Deslint MCP — Design Linter Inside Your AI Coding Agent',
     description:

@@ -11,6 +11,15 @@ export const metadata: Metadata = {
   description:
     'Install Deslint\'s MCP server in Claude Code. Deterministic design-system and WCAG lint that runs before Claude writes code. Zero LLM, zero cloud, zero egress.',
   alternates: { canonical: '/mcp/claude-code' },
+  keywords: [
+    'deslint mcp',
+    'local mcp linting for claude code',
+    'claude code mcp server',
+    'mcp server design lint',
+    'design linter for claude code',
+    'ai coding agent design drift',
+    'deterministic design linter',
+  ],
   openGraph: {
     title: 'Deslint for Claude Code — MCP Design Linter',
     description:
