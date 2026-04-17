@@ -23,8 +23,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/docs/getting-started',    priority: 0.75, changeFrequency: 'weekly' },
     { path: '/docs/configuration',      priority: 0.6,  changeFrequency: 'monthly' },
     { path: '/docs/rules',              priority: 0.6,  changeFrequency: 'weekly' },
-    { path: '/case-studies/shadcn',     priority: 0.75, changeFrequency: 'monthly' },
-    { path: '/reports/ai-coded-oss-drift', priority: 0.85, changeFrequency: 'monthly' },
   ];
 
   return routes.map((r) => ({
