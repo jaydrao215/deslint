@@ -21,6 +21,23 @@ const JSON_LD = {
   '@context': 'https://schema.org',
   '@graph': [
     {
+      '@type': 'Organization',
+      '@id': 'https://deslint.com/#organization',
+      name: 'Deslint',
+      url: 'https://deslint.com',
+      logo: 'https://deslint.com/icons/icon-192.png',
+      description:
+        'Deterministic design-system and accessibility lint for AI-generated frontend code.',
+      sameAs: ['https://github.com/jaydrao215/deslint'],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://deslint.com/#website',
+      url: 'https://deslint.com',
+      name: 'Deslint',
+      publisher: { '@id': 'https://deslint.com/#organization' },
+    },
+    {
       '@type': 'SoftwareApplication',
       name: 'Deslint',
       applicationCategory: 'DeveloperApplication',

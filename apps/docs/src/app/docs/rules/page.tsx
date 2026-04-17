@@ -1,3 +1,19 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Rules Reference — 33 Design, Accessibility & Token Lint Rules',
+  description:
+    'All 33 Deslint rules with examples, options, and auto-fix behavior. Design-token rules (no-arbitrary-colors, consistent-border-radius), accessibility (a11y-color-contrast, aria-validation), responsive-layout, dark-mode coverage, and more.',
+  alternates: { canonical: '/docs/rules' },
+  openGraph: {
+    title: 'Deslint Rules Reference — 33 Design & A11y Lint Rules',
+    description:
+      'Every Deslint rule — examples, options, auto-fix support. Tailwind token drift, WCAG contrast, dark-mode, responsive, and consistency categories.',
+    url: 'https://deslint.com/docs/rules',
+    type: 'article',
+  },
+};
+
 export default function RulesReference() {
   return (
     <div>

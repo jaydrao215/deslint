@@ -14,7 +14,13 @@ export const metadata: Metadata = {
     description:
       'Deterministic design and a11y lint inside Claude Code. Local MCP server, no cloud, no LLM in the hot path.',
     url: 'https://deslint.com/mcp/claude-code',
-    type: 'article',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Deslint for Claude Code — MCP Design Linter',
+    description:
+      'Install the Deslint MCP server in Claude Code. Deterministic design-system and WCAG lint that runs before Claude writes code.',
   },
 };
 
@@ -123,7 +129,7 @@ export default function ClaudeCodePage() {
           </p>
         </section>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Link
             href="/mcp"
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-primary-light"
@@ -134,7 +140,19 @@ export default function ClaudeCodePage() {
             href="/mcp/cursor"
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50"
           >
-            Using Cursor instead?
+            Cursor setup
+          </Link>
+          <Link
+            href="/mcp/codex"
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+          >
+            OpenAI Codex setup
+          </Link>
+          <Link
+            href="/mcp/windsurf"
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+          >
+            Windsurf setup
           </Link>
         </div>
       </main>

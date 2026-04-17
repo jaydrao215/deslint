@@ -1,3 +1,19 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Configuration — .deslintrc.json Schema, Design Tokens, Profiles',
+  description:
+    "Complete .deslintrc.json reference for Deslint. Configure design-system tokens (colors, spacing, radii, typography), rule severities, ignore patterns, and profiles for AI-generated frontend code.",
+  alternates: { canonical: '/docs/configuration' },
+  openGraph: {
+    title: 'Deslint Configuration Reference',
+    description:
+      '.deslintrc.json schema, design-system token config, rule severities, and ignore patterns for the Deslint design linter.',
+    url: 'https://deslint.com/docs/configuration',
+    type: 'article',
+  },
+};
+
 export default function Configuration() {
   return (
     <div>
