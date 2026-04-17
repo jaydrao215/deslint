@@ -49,6 +49,7 @@ import { initWizard } from './init.js';
 import {
   runImportTokens,
   runImportStyleDictionary,
+  runImportStitch,
 } from './import-tokens.js';
 import { buildTokenSuggestions, formatSuggestTokens } from './suggest-tokens.js';
 import { computeTokenCoverage } from './token-coverage.js';
@@ -474,15 +475,20 @@ program
 program
   .command('import-tokens')
   .description(
-    'Import design tokens from a Figma file or a Style Dictionary source',
+    'Import design tokens from a Figma file, a Style Dictionary source, or a Stitch / Material 3 export',
   )
   .option('--figma <file-id>', 'Figma file key (from the file URL)')
   .option(
     '--style-dictionary <path>',
     'Path to a Style Dictionary JSON file or directory',
   )
+  .option(
+    '--stitch <path>',
+    'Path to a Google Stitch / Material 3 tokens JSON file',
+  )
   .option('--token <token>', 'Figma personal access token (or set FIGMA_TOKEN env var)')
   .option('--mode <name>', 'Mode name to read (e.g. "Light", "Dark"). Case-insensitive.')
+  .option('--tier <tier>', 'For --stitch: restrict to md.sys | md.ref | md.comp')
   .option('-o, --output <path>', 'Output file path', 'tokens.json')
   .option('--format <format>', 'Output format: dtcg (W3C tokens) or deslintrc', 'dtcg')
   .option('--include-hidden', 'Include variables marked hidden-from-publishing')
@@ -490,8 +496,10 @@ program
     async (opts: {
       figma?: string;
       styleDictionary?: string;
+      stitch?: string;
       token?: string;
       mode?: string;
+      tier?: string;
       output: string;
       format: string;
       includeHidden?: boolean;
@@ -504,21 +512,45 @@ program
       }
       // Exactly one source must be chosen. Mutually exclusive so the
       // CLI stays predictable — no silent precedence rules.
-      if (opts.figma && opts.styleDictionary) {
+      const sources = [opts.figma, opts.styleDictionary, opts.stitch].filter(
+        Boolean,
+      );
+      if (sources.length > 1) {
         console.error(
           chalk.red(
-            '  --figma and --style-dictionary are mutually exclusive. Choose one source.',
+            '  --figma, --style-dictionary, and --stitch are mutually exclusive. Choose one source.',
           ),
         );
         process.exit(1);
       }
-      if (!opts.figma && !opts.styleDictionary) {
+      if (sources.length === 0) {
         console.error(
           chalk.red(
-            '  One of --figma <file-id> or --style-dictionary <path> is required.',
+            '  One of --figma <file-id>, --style-dictionary <path>, or --stitch <path> is required.',
           ),
         );
         process.exit(1);
+      }
+      if (opts.stitch) {
+        if (
+          opts.tier !== undefined &&
+          opts.tier !== 'sys' &&
+          opts.tier !== 'ref' &&
+          opts.tier !== 'comp'
+        ) {
+          console.error(
+            chalk.red(`  Invalid --tier "${opts.tier}". Use: sys, ref, comp`),
+          );
+          process.exit(1);
+        }
+        runImportStitch({
+          source: opts.stitch,
+          output: opts.output,
+          format: opts.format,
+          tier: opts.tier as 'sys' | 'ref' | 'comp' | undefined,
+          cwd: process.cwd(),
+        });
+        return;
       }
       if (opts.styleDictionary) {
         runImportStyleDictionary({

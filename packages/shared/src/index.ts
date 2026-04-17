@@ -64,6 +64,7 @@ export {
   findW3CTokensFile,
   figmaVariablesToDTCG,
   styleDictionaryToDTCG,
+  stitchTokensToDTCG,
 } from './tokens/index.js';
 export type {
   W3CToken,
@@ -75,6 +76,8 @@ export type {
   FigmaTransformResult,
   StyleDictionaryTransformOptions,
   StyleDictionaryTransformResult,
+  StitchTransformOptions,
+  StitchTransformResult,
 } from './tokens/index.js';
 
 export {

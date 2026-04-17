@@ -24,6 +24,12 @@ export type {
   StyleDictionaryTransformResult,
 } from './style-dictionary.js';
 
+export { stitchTokensToDTCG } from './stitch.js';
+export type {
+  StitchTransformOptions,
+  StitchTransformResult,
+} from './stitch.js';
+
 /**
  * Load and parse a W3C DTCG tokens file from disk.
  * Returns undefined if the file does not exist.

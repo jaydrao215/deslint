@@ -34,9 +34,11 @@ import {
   figmaVariablesToDTCG,
   parseW3CTokens,
   styleDictionaryToDTCG,
+  stitchTokensToDTCG,
   type FigmaVariablesResponse,
   type FigmaTransformResult,
   type StyleDictionaryTransformResult,
+  type StitchTransformResult,
 } from '@deslint/shared';
 
 export interface ImportTokensOptions {
@@ -272,7 +274,10 @@ function sleep(ms: number): Promise<void> {
  * into their existing `.deslintrc.json` by hand, or pipe it in.
  */
 function toDeslintRcFragment(
-  transform: FigmaTransformResult | StyleDictionaryTransformResult,
+  transform:
+    | FigmaTransformResult
+    | StyleDictionaryTransformResult
+    | StitchTransformResult,
 ): string {
   const parsed = parseW3CTokens(transform.dtcg);
   const fragment = {
@@ -615,3 +620,167 @@ export function runImportStyleDictionary(
     process.exit(1);
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// Google Stitch / Material 3 tokens importer
+// ─────────────────────────────────────────────────────────────────────
+
+/**
+ * `deslint import-tokens --stitch <path>`
+ *
+ * Reads a Google Stitch (Material 3) tokens JSON file and writes the
+ * equivalent DTCG document to disk. Stitch emits the Material 3 token
+ * shape — flat dotted keys like `md.sys.color.primary` wrapping a
+ * `{ value, type }` leaf. The adapter expands those into a nested tree
+ * and hands off to the Style Dictionary pipeline, whose leaf
+ * normalisation is already identical.
+ *
+ * Local-only: no network, no telemetry, identical privacy stance to
+ * the Figma and Style Dictionary paths.
+ */
+
+export interface ImportStitchOptions {
+  /** Path to a Stitch / MD3 tokens JSON file. */
+  source: string;
+  /** Output file path. Defaults to ./tokens.json. */
+  output?: string;
+  /** Output format. */
+  format?: 'dtcg' | 'deslintrc';
+  /** Restrict to an MD3 tier (`sys`, `ref`, `comp`). Imports all if unset. */
+  tier?: 'sys' | 'ref' | 'comp';
+  /** Normalise legacy type labels. Defaults to true. */
+  normalizeTypes?: boolean;
+  /** Override the working directory (for tests). */
+  cwd?: string;
+}
+
+export interface ImportStitchResult {
+  outputPath: string;
+  transform: StitchTransformResult;
+  sourcePath: string;
+}
+
+export function importStitch(
+  options: ImportStitchOptions,
+): ImportStitchResult {
+  const cwd = options.cwd ?? process.cwd();
+  const format = options.format ?? 'dtcg';
+  const outputPath = resolve(cwd, options.output ?? 'tokens.json');
+  const sourcePath = resolve(cwd, options.source);
+
+  if (!existsSync(sourcePath)) {
+    throw new ImportTokensError(
+      `Stitch tokens source not found: ${options.source}`,
+      'source_not_found',
+    );
+  }
+
+  // Stitch export is always a single JSON file (not a directory of
+  // files like Style Dictionary). If the user hands us a directory,
+  // refuse rather than silently grabbing the first json we find.
+  const st = statSync(sourcePath);
+  if (st.isDirectory()) {
+    throw new ImportTokensError(
+      `--stitch expects a single JSON file, not a directory. Got: ${options.source}`,
+      'source_invalid_shape',
+    );
+  }
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(sourcePath, 'utf-8'));
+  } catch (err) {
+    throw new ImportTokensError(
+      `${options.source}: not valid JSON (${err instanceof Error ? err.message : String(err)}).`,
+      'source_not_json',
+    );
+  }
+  if (raw == null || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new ImportTokensError(
+      `Stitch tokens source must be a JSON object at the top level.`,
+      'source_invalid_shape',
+    );
+  }
+
+  const transform = stitchTokensToDTCG(raw, {
+    tier: options.tier,
+    normalizeTypes: options.normalizeTypes,
+  });
+
+  if (transform.tokenCount === 0) {
+    throw new ImportTokensError(
+      options.tier
+        ? `No tokens found under md.${options.tier}.*. Try --tier sys (or omit --tier for all tiers).`
+        : 'No tokens found in the Stitch source. Confirm the file contains leaves with `value` or `$value`.',
+      'no_variables',
+    );
+  }
+
+  const serialized =
+    format === 'deslintrc'
+      ? toDeslintRcFragment(transform)
+      : JSON.stringify(transform.dtcg, null, 2) + '\n';
+
+  mkdirSync(dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, serialized, 'utf-8');
+
+  return { outputPath, transform, sourcePath };
+}
+
+/** CLI-facing wrapper for `importStitch`. */
+export function runImportStitch(options: ImportStitchOptions): void {
+  const cwd = options.cwd ?? process.cwd();
+  console.log(
+    chalk.gray('  Reading Stitch / Material 3 tokens (local file)…'),
+  );
+
+  try {
+    const result = importStitch(options);
+    const relSource = relative(cwd, result.sourcePath);
+    const sourceDisplay =
+      relSource && !relSource.startsWith('..') && !isAbsolute(relSource)
+        ? relSource
+        : result.sourcePath;
+    console.log(
+      chalk.green(
+        `  ✓ Imported ${result.transform.tokenCount} token(s) from ${sourceDisplay}`,
+      ),
+    );
+    if (result.transform.skipped.length > 0) {
+      console.log(
+        chalk.gray(
+          `  ${result.transform.skipped.length} leaf/leaves skipped (empty value or unsupported shape).`,
+        ),
+      );
+      const preview = result.transform.skipped.slice(0, 5);
+      for (const s of preview) {
+        console.log(chalk.gray(`    - ${s.path} (${s.reason})`));
+      }
+      if (result.transform.skipped.length > preview.length) {
+        console.log(
+          chalk.gray(
+            `    … and ${result.transform.skipped.length - preview.length} more`,
+          ),
+        );
+      }
+    }
+    const relPath = relative(cwd, result.outputPath);
+    const display =
+      relPath && !relPath.startsWith('..') && !isAbsolute(relPath)
+        ? relPath
+        : result.outputPath;
+    console.log(chalk.green(`  ✓ Wrote ${display}`));
+  } catch (err) {
+    if (err instanceof ImportTokensError) {
+      console.error(chalk.red(`  Error: ${err.message}`));
+    } else {
+      console.error(
+        chalk.red(
+          `  Error: ${err instanceof Error ? err.message : String(err)}`,
+        ),
+      );
+    }
+    process.exit(1);
+  }
+}
+
