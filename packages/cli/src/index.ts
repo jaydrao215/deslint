@@ -48,6 +48,8 @@ import {
 import { initWizard } from './init.js';
 import { runImportTokens } from './import-tokens.js';
 import { buildTokenSuggestions, formatSuggestTokens } from './suggest-tokens.js';
+import { computeTokenCoverage } from './token-coverage.js';
+import { renderCoverageHtml } from './token-coverage-html.js';
 import {
   loadHistory,
   analyzeTrend,
@@ -78,6 +80,14 @@ export type { ScoreResult, CategoryScore, HistoryEntry } from './score.js';
 export { discoverFiles } from './discover.js';
 export { runLint, aggregateResults } from './lint-runner.js';
 export type { LintResult, LintFileResult, LintMessage, RuleCategory } from './lint-runner.js';
+export { computeTokenCoverage } from './token-coverage.js';
+export type {
+  TokenCoverageResult,
+  CategoryCoverage,
+  CoverageCategory,
+  ComputeCoverageInput,
+} from './token-coverage.js';
+export { renderCoverageHtml } from './token-coverage-html.js';
 export {
   gitDiffAddedRanges,
   parseUnifiedDiff,
@@ -670,6 +680,116 @@ program
       }
     },
   );
+
+program
+  .command('coverage')
+  .description(
+    'Token Coverage Report: measure how much of your Tailwind usage comes ' +
+      'from imported design-system tokens vs. default scale vs. arbitrary ' +
+      'drift. Renders HTML at .deslint/coverage.html (print to PDF).',
+  )
+  .argument('[dir]', 'Project directory to scan', '.')
+  .option('-f, --format <format>', 'Output format: html, json, text', 'html')
+  .option('-o, --output <path>', 'Output file path (default: .deslint/coverage.html)')
+  .action(async (dir: string, opts: { format: string; output?: string }) => {
+    try {
+      const cwd = resolve(dir);
+      const config = loadConfig(cwd);
+
+      const files = await discoverFiles({ cwd, ignorePatterns: config?.ignore });
+      if (files.length === 0) {
+        console.log(chalk.yellow('\n  No files found to scan.\n'));
+        process.exit(0);
+      }
+
+      const result = computeTokenCoverage({
+        files,
+        designSystem: config?.designSystem,
+      });
+
+      if (opts.format === 'json') {
+        const out = opts.output
+          ? resolve(cwd, opts.output)
+          : resolve(cwd, '.deslint', 'coverage.json');
+        mkdirSync(dirname(out), { recursive: true });
+        writeFileSync(out, JSON.stringify(result, null, 2));
+        console.log(chalk.green(`  ✓ Wrote ${out}`));
+        return;
+      }
+
+      if (opts.format === 'text') {
+        console.log('');
+        console.log(chalk.bold(`  Token Coverage — ${basename(cwd)}`));
+        console.log(
+          chalk.gray(
+            `  ${result.totalClassUsages.toLocaleString()} class usages across ${result.totalFiles} files`,
+          ),
+        );
+        console.log('');
+        const pctColor = (p: number) =>
+          p >= 70 ? chalk.green : p >= 40 ? chalk.yellow : chalk.red;
+        console.log(
+          `  On scale:  ${pctColor(result.overallOnScalePct)(result.overallOnScalePct.toFixed(1) + '%')}`,
+        );
+        console.log(
+          `  Tokens:    ${chalk.cyan(result.overallTokenPct.toFixed(1) + '%')}`,
+        );
+        if (!result.hasDesignSystem) {
+          console.log(
+            chalk.yellow(
+              '\n  No designSystem in .deslintrc.json — token % will be 0. ' +
+                'Run `deslint import-tokens` to populate it.',
+            ),
+          );
+        }
+        console.log('');
+        for (const cat of ['colors', 'spacing', 'typography', 'borderRadius'] as const) {
+          const c = result.categories[cat];
+          const label = cat.padEnd(14);
+          console.log(
+            `  ${label} ${pctColor(c.onScalePct)(c.onScalePct.toFixed(1).padStart(5) + '%')} on scale  ` +
+              chalk.gray(
+                `(${c.token} token / ${c.default} default / ${c.arbitrary} arbitrary)`,
+              ),
+          );
+        }
+        console.log('');
+        return;
+      }
+
+      if (opts.format !== 'html') {
+        console.error(
+          chalk.red(`  Invalid --format "${opts.format}". Use: html, json, text`),
+        );
+        process.exit(1);
+      }
+
+      const html = renderCoverageHtml(result, {
+        projectName: basename(cwd),
+        version: VERSION,
+      });
+      const out = opts.output
+        ? resolve(cwd, opts.output)
+        : resolve(cwd, '.deslint', 'coverage.html');
+      mkdirSync(dirname(out), { recursive: true });
+      writeFileSync(out, html);
+
+      console.log('');
+      const pctColor = (p: number) =>
+        p >= 70 ? chalk.green : p >= 40 ? chalk.yellow : chalk.red;
+      console.log(
+        `  On scale: ${pctColor(result.overallOnScalePct)(result.overallOnScalePct.toFixed(1) + '%')} · ` +
+          `Tokens: ${chalk.cyan(result.overallTokenPct.toFixed(1) + '%')} · ` +
+          chalk.gray(`${result.totalClassUsages.toLocaleString()} class usages`),
+      );
+      console.log(chalk.gray(`  Report: ${out}`));
+      console.log(chalk.gray('  Print to PDF via your browser (Ctrl/Cmd+P).'));
+      console.log('');
+    } catch (err) {
+      console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
+      process.exit(1);
+    }
+  });
 
 program
   .command('report')

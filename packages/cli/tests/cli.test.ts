@@ -36,6 +36,7 @@ describe('CLI commands', () => {
     expect(names).toEqual([
       'attest',
       'compliance',
+      'coverage',
       'fix',
       'generate-config',
       'import-tokens',
