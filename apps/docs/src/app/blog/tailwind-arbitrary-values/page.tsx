@@ -835,6 +835,19 @@ npx deslint coverage`}</code>
               <ul className="space-y-3">
                 <li>
                   <Link
+                    href="/blog/fix-design-drift-ai-generated-code"
+                    className="group inline-flex items-center gap-2 text-primary hover:underline"
+                  >
+                    <span className="font-semibold">
+                      How to fix design drift in AI-generated code
+                    </span>
+                    <span className="text-gray-500 text-sm">
+                      · the deterministic playbook — ESLint + MCP + CI
+                    </span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     href="/docs/rules"
                     className="group inline-flex items-center gap-2 text-primary hover:underline"
                   >

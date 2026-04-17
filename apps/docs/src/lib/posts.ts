@@ -21,6 +21,15 @@ export interface Post {
 
 export const POSTS: Post[] = [
   {
+    slug: 'fix-design-drift-ai-generated-code',
+    title: 'How to fix design drift in AI-generated code',
+    description:
+      'AI coding agents rewrite UI faster than any team can review it. A practical, deterministic playbook for catching design-system drift at generation time — with an ESLint plugin and a local MCP server — instead of chasing it in CI.',
+    date: '2026-04-17',
+    readingMinutes: 11,
+    tags: ['AI coding', 'Design systems', 'MCP', 'ESLint'],
+  },
+  {
     slug: 'tailwind-arbitrary-values',
     title: 'The hidden cost of Tailwind arbitrary values',
     description:

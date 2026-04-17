@@ -11,6 +11,15 @@ export const metadata: Metadata = {
   description:
     'Install Deslint\'s MCP server in Cursor. Deterministic design-system, token, and WCAG lint that Cursor calls before it writes code. Local-only. No LLM. No egress.',
   alternates: { canonical: '/mcp/cursor' },
+  keywords: [
+    'deslint mcp',
+    'local mcp linting for cursor',
+    'cursor mcp server',
+    'mcp server design lint',
+    'design linter for cursor',
+    'ai coding agent design drift',
+    'deterministic design linter',
+  ],
   openGraph: {
     title: 'Deslint for Cursor — MCP Design Linter',
     description:
@@ -172,6 +181,15 @@ export default function CursorPage() {
             Windsurf setup
           </Link>
         </div>
+        <p className="mt-6 text-sm text-gray-600">
+          Further reading:{' '}
+          <Link
+            href="/blog/fix-design-drift-ai-generated-code"
+            className="text-primary hover:underline"
+          >
+            How to fix design drift in AI-generated code →
+          </Link>
+        </p>
       </main>
       <Footer />
     </>
