@@ -25,6 +25,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/docs/rules',              priority: 0.7,  changeFrequency: 'weekly' },
     { path: '/blog',                    priority: 0.85, changeFrequency: 'weekly' },
     { path: '/blog/tailwind-arbitrary-values', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/compare/deslint-vs-stylelint', priority: 0.7, changeFrequency: 'monthly' },
   ];
 
   return routes.map((r) => ({

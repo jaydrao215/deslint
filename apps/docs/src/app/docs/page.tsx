@@ -80,6 +80,25 @@ export default function DocsIndex() {
         </Link>
       </div>
 
+      {/* Comparison */}
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+          Evaluating linters?
+        </p>
+        <Link
+          href="/compare/deslint-vs-stylelint"
+          className="group block"
+        >
+          <h3 className="text-base font-semibold text-gray-900 mb-1 group-hover:text-primary motion-safe:transition-colors flex items-center gap-2">
+            Deslint vs. stylelint — honest comparison
+            <ArrowRight className="h-3.5 w-3.5 text-gray-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 motion-safe:transition-all" />
+          </h3>
+          <p className="text-sm text-gray-500 leading-relaxed">
+            Different jobs, not rivals. Side-by-side on six real questions — authored CSS, JSX drift, Tailwind arbitrary values, design tokens, CI, and AI agents.
+          </p>
+        </Link>
+      </div>
+
       {/* Quick install */}
       <div className="mt-6 rounded-xl border border-gray-200 bg-gray-950 p-5">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
