@@ -289,6 +289,109 @@ function toDeslintRcFragment(
   return JSON.stringify(fragment, null, 2) + '\n';
 }
 
+/**
+ * Print an install-to-value summary after a successful import: count
+ * the tokens per DesignSystem bucket and tell the user which rules now
+ * enforce those tokens, plus the literal next command to run. The goal
+ * is that a first-time user never has to read the docs to know what
+ * they just unlocked.
+ *
+ * `format === 'deslintrc'` means the output file is ready to merge;
+ * DTCG needs one more step (the user points their `.deslintrc.json` at
+ * the tokens file, or re-runs with `--format deslintrc`).
+ */
+function printPostImportSummary(
+  transform:
+    | FigmaTransformResult
+    | StyleDictionaryTransformResult
+    | StitchTransformResult,
+  outputDisplay: string,
+  format: 'dtcg' | 'deslintrc',
+): void {
+  const ds = parseW3CTokens(transform.dtcg).designSystem;
+  const rows: { label: string; count: number; rules: string[] }[] = [];
+
+  const colorCount = Object.keys(ds.colors ?? {}).length;
+  if (colorCount > 0) {
+    rows.push({
+      label: 'colors',
+      count: colorCount,
+      rules: ['no-arbitrary-colors', 'no-legacy-color', 'consistent-color-semantics'],
+    });
+  }
+  const spacingCount = Object.keys(ds.spacing ?? {}).length;
+  if (spacingCount > 0) {
+    rows.push({
+      label: 'spacing',
+      count: spacingCount,
+      rules: ['no-arbitrary-spacing', 'consistent-component-spacing'],
+    });
+  }
+  const radiusCount = Object.keys(ds.borderRadius ?? {}).length;
+  if (radiusCount > 0) {
+    rows.push({
+      label: 'radii',
+      count: radiusCount,
+      rules: ['no-arbitrary-border-radius', 'consistent-border-radius'],
+    });
+  }
+  const fontCount = Object.keys(ds.fonts ?? {}).length;
+  if (fontCount > 0) {
+    rows.push({
+      label: 'fonts',
+      count: fontCount,
+      rules: ['no-arbitrary-font-family'],
+    });
+  }
+  const typography = ds.typography ?? {};
+  const typeCount =
+    Object.keys(typography.fontSize ?? {}).length +
+    Object.keys(typography.fontWeight ?? {}).length +
+    Object.keys(typography.leading ?? {}).length +
+    Object.keys(typography.tracking ?? {}).length;
+  if (typeCount > 0) {
+    rows.push({
+      label: 'typography',
+      count: typeCount,
+      rules: ['no-arbitrary-typography'],
+    });
+  }
+
+  if (rows.length === 0) return;
+
+  console.log('');
+  console.log(chalk.bold('  Your design system is ready:'));
+  const pad = Math.max(...rows.map((r) => String(r.count).length));
+  for (const r of rows) {
+    const n = String(r.count).padStart(pad);
+    console.log(
+      `    ${chalk.cyan(n)} ${r.label.padEnd(11)} ${chalk.gray('→ ' + r.rules.join(', '))}`,
+    );
+  }
+
+  console.log('');
+  console.log(chalk.bold('  Next:'));
+  if (format === 'deslintrc') {
+    console.log(
+      chalk.gray(`    1. Merge ${outputDisplay} into your .deslintrc.json`),
+    );
+    console.log(chalk.gray('    2. Run `npx deslint scan` to see drift'));
+  } else {
+    console.log(
+      chalk.gray(
+        `    1. Re-run with \`--format deslintrc\` to emit a .deslintrc fragment, or`,
+      ),
+    );
+    console.log(
+      chalk.gray(
+        `       point your .deslintrc.json \`designSystem\` at ${outputDisplay}`,
+      ),
+    );
+    console.log(chalk.gray('    2. Run `npx deslint scan` to see drift'));
+  }
+  console.log('');
+}
+
 // ── CLI action ───────────────────────────────────────────────────────
 
 /**
@@ -344,6 +447,11 @@ export async function runImportTokens(
         ? relPath
         : result.outputPath;
     console.log(chalk.green(`  ✓ Wrote ${display}`));
+    printPostImportSummary(
+      result.transform,
+      display,
+      (options.format ?? 'dtcg') as 'dtcg' | 'deslintrc',
+    );
   } catch (err) {
     if (err instanceof ImportTokensError) {
       console.error(chalk.red(`  Error: ${err.message}`));
@@ -607,6 +715,11 @@ export function runImportStyleDictionary(
         ? relPath
         : result.outputPath;
     console.log(chalk.green(`  ✓ Wrote ${display}`));
+    printPostImportSummary(
+      result.transform,
+      display,
+      (options.format ?? 'dtcg') as 'dtcg' | 'deslintrc',
+    );
   } catch (err) {
     if (err instanceof ImportTokensError) {
       console.error(chalk.red(`  Error: ${err.message}`));
@@ -770,6 +883,11 @@ export function runImportStitch(options: ImportStitchOptions): void {
         ? relPath
         : result.outputPath;
     console.log(chalk.green(`  ✓ Wrote ${display}`));
+    printPostImportSummary(
+      result.transform,
+      display,
+      (options.format ?? 'dtcg') as 'dtcg' | 'deslintrc',
+    );
   } catch (err) {
     if (err instanceof ImportTokensError) {
       console.error(chalk.red(`  Error: ${err.message}`));

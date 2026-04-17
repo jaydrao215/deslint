@@ -6,7 +6,7 @@ const CARDS = [
     href: '/docs/getting-started',
     icon: Rocket,
     title: 'Getting Started',
-    description: 'Install, configure, and run your first scan in under 2 minutes.',
+    description: 'The complete happy path — zero to an enforced design system in six steps.',
     color: 'text-pass bg-pass/10 border-pass/20',
   },
   {

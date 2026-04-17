@@ -371,6 +371,48 @@ program
         generateHtmlReport(lintResult, scoreResult, cwd);
         console.log(chalk.gray(`  Full report: .deslint/report.html`));
         console.log('');
+
+        // Install-to-value: tell the user the literal next command to
+        // run. Without this, a first-time user finishes `scan` with no
+        // idea whether to fix, gate in CI, or re-import tokens.
+        const fixableCount = lintResult.results.reduce(
+          (sum, r) =>
+            sum + (r.fixableErrorCount ?? 0) + (r.fixableWarningCount ?? 0),
+          0,
+        );
+        if (lintResult.totalViolations === 0) {
+          console.log(chalk.bold('  Next:'));
+          console.log(
+            chalk.gray(
+              '    Ship it. Gate this in CI with ' +
+                '`npx deslint scan --min-score 85 --format sarif`',
+            ),
+          );
+          console.log('');
+        } else {
+          console.log(chalk.bold('  Next:'));
+          if (fixableCount > 0) {
+            console.log(
+              chalk.gray(
+                `    ${fixableCount} auto-fixable. Review with ` +
+                  '`npx deslint fix --interactive`',
+              ),
+            );
+            console.log(
+              chalk.gray(
+                '    Or apply every safe fix: `npx deslint fix --all`',
+              ),
+            );
+          } else {
+            console.log(
+              chalk.gray(
+                '    Walk the remaining violations with ' +
+                  '`npx deslint fix --interactive`',
+              ),
+            );
+          }
+          console.log('');
+        }
       }
 
       if (opts.minScore) {
