@@ -184,6 +184,15 @@ export default function ClaudeCodePage() {
             Windsurf setup
           </Link>
         </div>
+        <p className="mt-6 text-sm text-gray-600">
+          Further reading:{' '}
+          <Link
+            href="/blog/fix-design-drift-ai-generated-code"
+            className="text-primary hover:underline"
+          >
+            How to fix design drift in AI-generated code →
+          </Link>
+        </p>
       </main>
       <Footer />
     </>
