@@ -50,6 +50,7 @@ async function bench() {
         'deslint/no-arbitrary-zindex': 'error',
         'deslint/no-inline-styles': 'error',
         'deslint/consistent-border-radius': 'error',
+        'deslint/no-arbitrary-border-radius': 'error',
         'deslint/image-alt-text': 'error',
         'deslint/no-magic-numbers-layout': 'error',
       },

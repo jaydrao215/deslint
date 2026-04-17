@@ -1,6 +1,19 @@
 import type { DesignSystem, RuleConfig, Severity } from './config-schema.js';
 
 /**
+ * Parse an em string to integer milli-em (e.g. "-0.02em" → -20).
+ * Returns null for anything else — tracking tokens must be expressed in
+ * em to line up with the rule's internal representation.
+ */
+export function parseEmToMilliEm(value: string): number | null {
+  const match = value.trim().match(/^(-?\d+(?:\.\d+)?)em$/);
+  if (!match) return null;
+  const num = parseFloat(match[1]);
+  if (!Number.isFinite(num)) return null;
+  return Math.round(num * 1000);
+}
+
+/**
  * Parse a CSS length value to pixels.
  *
  * Accepts px, rem, em. rem/em assume a 16px root — this matches
@@ -54,18 +67,20 @@ export interface BridgeResult {
  * Translate a `DesignSystem` config into per-rule ESLint options so the
  * imported tokens actually drive enforcement.
  *
- * Today the bridge wires two fields:
- *   - `colors`  → `deslint/no-arbitrary-colors`.customTokens
- *   - `spacing` → `deslint/no-arbitrary-spacing`.customScale (px)
+ * The bridge wires four fields:
+ *   - `colors`       → `deslint/no-arbitrary-colors`.customTokens
+ *   - `spacing`      → `deslint/no-arbitrary-spacing`.customScale (px)
+ *   - `typography`   → `deslint/no-arbitrary-typography`.customScale
+ *                      (px for fontSize/leading, milli-em for tracking,
+ *                      numeric passthrough for fontWeight)
+ *   - `borderRadius` → `deslint/no-arbitrary-border-radius`.customScale (px)
  *
- * `fonts` and `borderRadius` are intentionally not bridged: the existing
- * rules for typography / border-radius don't consume those shapes yet.
- * That wiring is tracked as a schema-extension follow-up so the bridge
- * can stay small and well-tested.
+ * `fonts` is deliberately not bridged — there is no lint rule that
+ * consumes font-family tokens today, so wiring would be noise.
  *
- * Precedence rules:
- *   - user rule explicitly sets `customTokens`/`customScale` → bridge
- *     makes no change for that key.
+ * Precedence rules (per rule):
+ *   - user rule explicitly sets the conflict key (`customTokens` /
+ *     `customScale`) → bridge makes no change for that rule.
  *   - user rule severity is `'off'` → bridge makes no change.
  *   - user rule severity is `'warn'`/`'error'` (plain or tupled without
  *     the conflict option) → bridge uses user severity, merges injected
@@ -118,7 +133,121 @@ export function applyDesignSystemToRules(
     }
   }
 
+  // ── Typography ──────────────────────────────────────────────────────
+  if (designSystem.typography && hasAnyTypographyToken(designSystem.typography)) {
+    const ruleId = 'deslint/no-arbitrary-typography';
+    const existing = pickRuleConfig(existingRules, ruleId);
+    if (existing?.severity !== 'off' && !hasOptionKey(existing, 'customScale')) {
+      const customScale: {
+        fontSize?: Record<string, number>;
+        fontWeight?: Record<string, number>;
+        leading?: Record<string, number>;
+        tracking?: Record<string, number>;
+      } = {};
+
+      if (designSystem.typography.fontSize) {
+        const out: Record<string, number> = {};
+        for (const [name, raw] of Object.entries(designSystem.typography.fontSize)) {
+          const px = parseCssLengthToPx(raw);
+          if (px === null) {
+            warnings.push(
+              `designSystem.typography.fontSize.${name}: "${raw}" is not a px/rem/em value; token skipped.`,
+            );
+            continue;
+          }
+          out[name] = px;
+        }
+        if (Object.keys(out).length > 0) customScale.fontSize = out;
+      }
+
+      if (designSystem.typography.fontWeight) {
+        const out: Record<string, number> = {};
+        for (const [name, raw] of Object.entries(designSystem.typography.fontWeight)) {
+          if (!Number.isFinite(raw) || raw < 1 || raw > 1000) {
+            warnings.push(
+              `designSystem.typography.fontWeight.${name}: "${raw}" is not a numeric 1–1000 weight; token skipped.`,
+            );
+            continue;
+          }
+          out[name] = raw;
+        }
+        if (Object.keys(out).length > 0) customScale.fontWeight = out;
+      }
+
+      if (designSystem.typography.leading) {
+        const out: Record<string, number> = {};
+        for (const [name, raw] of Object.entries(designSystem.typography.leading)) {
+          const px = parseCssLengthToPx(raw);
+          if (px === null) {
+            warnings.push(
+              `designSystem.typography.leading.${name}: "${raw}" is not a px/rem/em value; token skipped.`,
+            );
+            continue;
+          }
+          out[name] = px;
+        }
+        if (Object.keys(out).length > 0) customScale.leading = out;
+      }
+
+      if (designSystem.typography.tracking) {
+        const out: Record<string, number> = {};
+        for (const [name, raw] of Object.entries(designSystem.typography.tracking)) {
+          const milliEm = parseEmToMilliEm(raw);
+          if (milliEm === null) {
+            warnings.push(
+              `designSystem.typography.tracking.${name}: "${raw}" is not an em value; token skipped.`,
+            );
+            continue;
+          }
+          out[name] = milliEm;
+        }
+        if (Object.keys(out).length > 0) customScale.tracking = out;
+      }
+
+      if (Object.keys(customScale).length > 0) {
+        rules[ruleId] = [
+          existing?.severity ?? 'warn',
+          { ...(existing?.options ?? {}), customScale },
+        ];
+      }
+    }
+  }
+
+  // ── Border radius (rem/em/px string → px number) ────────────────────
+  if (designSystem.borderRadius && Object.keys(designSystem.borderRadius).length > 0) {
+    const ruleId = 'deslint/no-arbitrary-border-radius';
+    const existing = pickRuleConfig(existingRules, ruleId);
+    if (existing?.severity !== 'off' && !hasOptionKey(existing, 'customScale')) {
+      const customScale: Record<string, number> = {};
+      for (const [name, raw] of Object.entries(designSystem.borderRadius)) {
+        const px = parseCssLengthToPx(raw);
+        if (px === null) {
+          warnings.push(
+            `designSystem.borderRadius.${name}: "${raw}" is not a px/rem/em value; token skipped.`,
+          );
+          continue;
+        }
+        customScale[name] = px;
+      }
+      if (Object.keys(customScale).length > 0) {
+        rules[ruleId] = [
+          existing?.severity ?? 'warn',
+          { ...(existing?.options ?? {}), customScale },
+        ];
+      }
+    }
+  }
+
   return { rules, warnings };
+}
+
+function hasAnyTypographyToken(t: NonNullable<DesignSystem['typography']>): boolean {
+  return Boolean(
+    (t.fontSize && Object.keys(t.fontSize).length > 0) ||
+      (t.fontWeight && Object.keys(t.fontWeight).length > 0) ||
+      (t.leading && Object.keys(t.leading).length > 0) ||
+      (t.tracking && Object.keys(t.tracking).length > 0),
+  );
 }
 
 interface ResolvedRule {

@@ -12,6 +12,28 @@ export const RuleConfigSchema = z.union([
 export type RuleConfig = z.infer<typeof RuleConfigSchema>;
 
 // ── Design System (Control Level 3) ──────────────────────────────────
+export const TypographyTokensSchema = z
+  .object({
+    fontSize: z
+      .record(z.string())
+      .optional()
+      .describe('Font size tokens, e.g. { "body": "1rem", "h1": "2.25rem" }'),
+    fontWeight: z
+      .record(z.number())
+      .optional()
+      .describe('Font weight tokens, e.g. { "regular": 400, "bold": 700 }'),
+    leading: z
+      .record(z.string())
+      .optional()
+      .describe('Line-height tokens in px/rem/em, e.g. { "tight": "1.25rem" }'),
+    tracking: z
+      .record(z.string())
+      .optional()
+      .describe('Letter-spacing tokens in em, e.g. { "tight": "-0.02em" }'),
+  })
+  .strict()
+  .describe('Typography scale tokens (the shape no-arbitrary-typography consumes)');
+
 export const DesignSystemSchema = z
   .object({
     colors: z
@@ -27,6 +49,7 @@ export const DesignSystemSchema = z
       .catchall(z.string())
       .optional()
       .describe('Font family tokens'),
+    typography: TypographyTokensSchema.optional(),
     spacing: z
       .record(z.string())
       .optional()

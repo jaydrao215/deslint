@@ -201,4 +201,93 @@ describe('designSystem → rule bridge (CLI e2e)', () => {
     const rules = buildEffectiveRules(undefined);
     expect(rules).toBeUndefined();
   });
+
+  // ── Typography (M1.5) ──────────────────────────────────────────────
+
+  it('surfaces designSystem.typography.fontSize to no-arbitrary-typography.customScale', async () => {
+    await writeProject({
+      // body=1rem=16px. Without the bridge, text-[36px] suggests text-4xl
+      // (the Tailwind default). With the bridge, it suggests text-h1 (the
+      // imported token name).
+      '.deslintrc.json': JSON.stringify({
+        designSystem: {
+          typography: { fontSize: { body: '1rem', h1: '2.25rem' } },
+        },
+      }),
+      'Heading.tsx': `const H = () => <h1 className="text-[36px]">Hi</h1>;\nexport default H;\n`,
+    });
+
+    const config = loadConfig(tmpDir);
+    const rules = buildEffectiveRules(config);
+    expect(rules?.['deslint/no-arbitrary-typography']).toEqual([
+      'warn',
+      { customScale: { fontSize: { body: 16, h1: 36 } } },
+    ]);
+
+    const result = await runLint({
+      files: [join(tmpDir, 'Heading.tsx')],
+      ruleOverrides: rules,
+      cwd: tmpDir,
+    });
+    const violations = result.results[0].messages.filter(
+      (m) => m.ruleId === 'deslint/no-arbitrary-typography',
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].message).toContain('text-h1');
+  });
+
+  // ── Border radius (M1.5) ────────────────────────────────────────────
+
+  it('surfaces designSystem.borderRadius to no-arbitrary-border-radius.customScale', async () => {
+    await writeProject({
+      '.deslintrc.json': JSON.stringify({
+        designSystem: { borderRadius: { card: '0.75rem' } }, // 12px
+      }),
+      'Card.tsx':
+        `const Card = () => <div className="rounded-[12px]">card</div>;\nexport default Card;\n`,
+    });
+
+    const config = loadConfig(tmpDir);
+    const rules = buildEffectiveRules(config);
+    expect(rules?.['deslint/no-arbitrary-border-radius']).toEqual([
+      'warn',
+      { customScale: { card: 12 } },
+    ]);
+
+    const result = await runLint({
+      files: [join(tmpDir, 'Card.tsx')],
+      ruleOverrides: rules,
+      cwd: tmpDir,
+    });
+    const violations = result.results[0].messages.filter(
+      (m) => m.ruleId === 'deslint/no-arbitrary-border-radius',
+    );
+    expect(violations).toHaveLength(1);
+    // Custom token name 'card' wins over default Tailwind 'xl'
+    expect(violations[0].message).toContain('rounded-card');
+  });
+
+  it('falls back to default radius scale when designSystem.borderRadius is absent', async () => {
+    await writeProject({
+      '.deslintrc.json': JSON.stringify({}),
+      'Card.tsx':
+        `const Card = () => <div className="rounded-[12px]">card</div>;\nexport default Card;\n`,
+    });
+
+    const config = loadConfig(tmpDir);
+    const rules = buildEffectiveRules(config);
+    expect(rules?.['deslint/no-arbitrary-border-radius']).toBeUndefined();
+
+    const result = await runLint({
+      files: [join(tmpDir, 'Card.tsx')],
+      ruleOverrides: rules,
+      cwd: tmpDir,
+    });
+    const violations = result.results[0].messages.filter(
+      (m) => m.ruleId === 'deslint/no-arbitrary-border-radius',
+    );
+    expect(violations).toHaveLength(1);
+    // 12px → Tailwind 'xl'
+    expect(violations[0].message).toContain('rounded-xl');
+  });
 });

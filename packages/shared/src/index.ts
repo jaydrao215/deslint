@@ -2,6 +2,7 @@ export {
   SeveritySchema,
   RuleConfigSchema,
   DesignSystemSchema,
+  TypographyTokensSchema,
   IgnorePatternsSchema,
   ProfileSchema,
   QualityGateSchema,
@@ -104,5 +105,6 @@ export type { Framework } from './detect-framework.js';
 export {
   applyDesignSystemToRules,
   parseCssLengthToPx,
+  parseEmToMilliEm,
 } from './design-system-bridge.js';
 export type { BridgeOptions, BridgeResult } from './design-system-bridge.js';

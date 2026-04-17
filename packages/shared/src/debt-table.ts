@@ -15,6 +15,7 @@ export const RULE_EFFORT_MINUTES: Record<string, number> = {
   'deslint/no-arbitrary-colors': 2,
   'deslint/no-arbitrary-typography': 2,
   'deslint/no-arbitrary-zindex': 2,
+  'deslint/no-arbitrary-border-radius': 2,
 
   // Small — minor decision, auto-fixable
   'deslint/no-magic-numbers-layout': 3,
