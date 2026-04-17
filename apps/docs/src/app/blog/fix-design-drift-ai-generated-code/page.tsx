@@ -145,8 +145,97 @@ export default function FixDesignDriftAiGeneratedCodePost() {
             </p>
           </FadeIn>
 
-          {/* Subsequent batches fill in: definition, why post-PR fails,
-              three install surfaces (MCP/ESLint/CI), and rollout plan. */}
+          <FadeIn>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-5">
+              What design drift actually looks like
+            </h2>
+            <p className="text-lg text-gray-700 leading-relaxed mb-5">
+              Drift is rarely a single dramatic change. It is a long tail of
+              small, locally-defensible choices — each of which makes sense
+              in isolation, and together dissolve the design system.
+              Agent-generated code exhibits a handful of recognisable
+              archetypes:
+            </p>
+            <ul className="space-y-3 text-gray-700 leading-relaxed mb-6 list-disc pl-6">
+              <li>
+                <strong>Arbitrary colour values.</strong>{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  bg-[#1a5276]
+                </code>{' '}
+                instead of{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  bg-brand-primary
+                </code>
+                . Looks brand-correct today; does not update when the token
+                moves tomorrow.
+              </li>
+              <li>
+                <strong>Off-scale spacing.</strong>{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  p-[17px]
+                </code>
+                ,{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  gap-[11px]
+                </code>
+                . Misses the 4-px rhythm your designer spent a week
+                establishing.
+              </li>
+              <li>
+                <strong>Missing accessibility attributes.</strong> Icon-only
+                buttons without an accessible name, inputs without labels,
+                images without alt text, regions without landmarks.
+              </li>
+              <li>
+                <strong>Silent responsive gaps.</strong> A card grid that
+                looks fine in the agent&apos;s preview and breaks at the
+                first real viewport it hits.
+              </li>
+              <li>
+                <strong>Duplicated component shapes.</strong> Three
+                near-identical button variants, all one-off, none derived
+                from the canonical primitive.
+              </li>
+            </ul>
+            <p className="text-lg text-gray-700 leading-relaxed">
+              Individually, each of these is a one-line finding. Cumulatively,
+              they are what &ldquo;the design system feels off&rdquo; means
+              when a PM says it six months after adopting an AI coding
+              agent.
+            </p>
+          </FadeIn>
+
+          <FadeIn>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-5">
+              Why post-PR review cannot keep up
+            </h2>
+            <p className="text-lg text-gray-700 leading-relaxed mb-5">
+              The conventional answer to drift is a CI linter plus a
+              human reviewer. Both are still necessary. Neither is
+              sufficient once an AI coding agent is the primary author.
+            </p>
+            <p className="text-lg text-gray-700 leading-relaxed mb-5">
+              CI linters fire minutes to hours after the agent has already
+              moved on to the next task. The developer riding the agent is
+              now reviewing a five-file diff, and CI is flagging drift in
+              the previous two. Context has shifted; the cheap fix window
+              has closed.
+            </p>
+            <p className="text-lg text-gray-700 leading-relaxed mb-5">
+              Human reviewers, meanwhile, were never the bottleneck for
+              finding arbitrary hex values — they were the bottleneck for
+              finding architectural issues, logic bugs, and product-fit
+              questions. Asking a reviewer to also catch a missed token in a
+              40-line Tailwind string is both a waste of a reviewer&apos;s
+              attention and a task they are demonstrably bad at.
+            </p>
+            <p className="text-lg text-gray-700 leading-relaxed">
+              The category of check that stops drift — &ldquo;does this
+              value exist in our design system?&rdquo; — is deterministic.
+              It belongs to a machine. The only real question is{' '}
+              <em>which</em> machine, and <em>when</em> in the loop it runs.
+            </p>
+          </FadeIn>
         </article>
 
         <div className="mt-16 flex flex-wrap gap-3">
