@@ -4,6 +4,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { FadeIn } from '@/components/motion';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+import { POSTS } from '@/lib/posts';
 
 export const metadata: Metadata = {
   title: 'Blog — Design Systems, AI Coding Agents, and Deterministic Lint',
@@ -24,27 +25,6 @@ export const metadata: Metadata = {
       'Long-form writing on design systems, AI coding agents, and deterministic lint.',
   },
 };
-
-type Post = {
-  slug: string;
-  title: string;
-  description: string;
-  date: string;
-  readingMinutes: number;
-  tags: string[];
-};
-
-const POSTS: Post[] = [
-  {
-    slug: 'tailwind-arbitrary-values',
-    title: 'The hidden cost of Tailwind arbitrary values',
-    description:
-      'An escape hatch, three archetypes of drift, and why linting them deterministically matters more now that AI writes most of your markup.',
-    date: '2026-04-17',
-    readingMinutes: 9,
-    tags: ['Tailwind', 'Design tokens', 'AI coding'],
-  },
-];
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
