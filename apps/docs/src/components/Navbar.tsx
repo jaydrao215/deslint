@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Menu, X, BookOpen, Zap, CreditCard, Terminal } from 'lucide-react';
+import { Menu, X, BookOpen, Zap, CreditCard, Terminal, FileText } from 'lucide-react';
 import { BrandLockup } from './BrandLockup';
 
 const NAV_LINKS = [
@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { href: '/docs', label: 'Docs', icon: BookOpen },
   { href: '/docs/getting-started', label: 'Get Started', icon: Zap },
   { href: '/docs/rules', label: 'Rules', icon: BookOpen },
+  { href: '/blog', label: 'Blog', icon: FileText },
 ];
 
 export function Navbar() {
