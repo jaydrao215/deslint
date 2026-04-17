@@ -489,6 +489,153 @@ export default function FixDesignDriftAiGeneratedCodePost() {
               </div>
             </div>
           </FadeIn>
+
+          <FadeIn>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-5">
+              A one-week rollout plan
+            </h2>
+            <p className="text-lg text-gray-700 leading-relaxed mb-6">
+              This does not have to be a quarter-long design-system
+              initiative. The whole chain — tokens imported, rules
+              configured, MCP wired into the agent, CI gated — is a
+              one-week project for a single engineer. Here is the order
+              that works.
+            </p>
+
+            <ol className="space-y-5 text-gray-700 leading-relaxed list-decimal pl-6 marker:text-primary marker:font-semibold">
+              <li>
+                <strong>Day 1 — import tokens.</strong> Run{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  npx @deslint/cli import-tokens
+                </code>{' '}
+                with{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  --figma
+                </code>
+                ,{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  --style-dictionary
+                </code>
+                , or{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  --stitch
+                </code>{' '}
+                — whichever matches your source of truth. Commit the
+                resulting{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  .deslintrc.json
+                </code>
+                . Now the linter knows which colours, fonts, spacings, and
+                radii your design system actually sanctions.
+              </li>
+              <li>
+                <strong>Day 2 — baseline scan.</strong> Run{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  deslint scan
+                </code>{' '}
+                and read the report. Expect a non-zero number — that is
+                your current drift baseline, not a crisis. The{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  coverage
+                </code>{' '}
+                subcommand shows how much of your code already uses tokens,
+                giving you a concrete &ldquo;before&rdquo; number to improve
+                against.
+              </li>
+              <li>
+                <strong>Day 3 — wire the MCP server into your agent.</strong>{' '}
+                Drop the snippet from the relevant install page (
+                <Link
+                  href="/mcp/cursor"
+                  className="text-primary hover:underline"
+                >
+                  Cursor
+                </Link>
+                ,{' '}
+                <Link
+                  href="/mcp/claude-code"
+                  className="text-primary hover:underline"
+                >
+                  Claude Code
+                </Link>
+                ) into the agent&apos;s MCP config. Restart. From the next
+                session, the agent can call{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  analyze_and_fix
+                </code>{' '}
+                on each touched file before it declares itself done.
+              </li>
+              <li>
+                <strong>Day 4 — prompt the contract.</strong> Update your
+                team&apos;s agent prompt or system rule with a single line:
+                &ldquo;After each file edit, call{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  deslint.analyze_and_fix
+                </code>
+                . Before finishing, call{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  deslint.enforce_budget
+                </code>
+                .&rdquo; This turns the linter from optional into
+                contractual — the agent cannot mark the task done if the
+                budget fails.
+              </li>
+              <li>
+                <strong>Day 5 — gate CI.</strong> Add the GitHub Action
+                (or{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  deslint scan
+                </code>{' '}
+                in whatever CI you run) with a conservative{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  min-score
+                </code>{' '}
+                based on the baseline. Ratchet it up over following
+                sprints. Enable{' '}
+                <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                  strict-trailer
+                </code>{' '}
+                once the team is comfortable, so server-side re-scans
+                verify the score the agent reported.
+              </li>
+            </ol>
+
+            <p className="text-lg text-gray-700 leading-relaxed mt-8">
+              At the end of that week, drift is no longer something you
+              discover on Friday for the code that landed on Monday. It is
+              caught, measured, and either auto-fixed or rejected at the
+              moment it is being introduced — which is the only point in
+              the loop cheap enough to do it at AI-generation speeds.
+            </p>
+          </FadeIn>
+
+          <FadeIn>
+            <div className="rounded-2xl border border-primary/20 bg-primary-50/30 px-6 py-6">
+              <h2 className="text-xl font-semibold tracking-tight text-gray-900 mb-3">
+                The bottom line
+              </h2>
+              <p className="text-gray-700 leading-relaxed mb-3">
+                AI coding agents are not the cause of design drift — they
+                are an amplifier. The underlying problem (humans pick
+                arbitrary values when there is no friction to doing so)
+                predates them by a decade. Agents just turn a slow leak
+                into a fire hose.
+              </p>
+              <p className="text-gray-700 leading-relaxed mb-3">
+                The only intervention that scales is a deterministic
+                check, installed at the point of generation, speaking the
+                agent&apos;s protocol. That is what deslint&apos;s MCP
+                server is for; the ESLint plugin and the CI gate are the
+                belt-and-braces layers behind it.
+              </p>
+              <p className="text-gray-700 leading-relaxed">
+                If you are shipping with an AI coding agent today and you
+                have no deterministic design-system check in the loop, the
+                drift is already happening. The earlier you install the
+                gate, the less history you have to repair.
+              </p>
+            </div>
+          </FadeIn>
         </article>
 
         <div className="mt-16 flex flex-wrap gap-3">
