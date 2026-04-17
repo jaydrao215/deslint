@@ -34,6 +34,11 @@ export const metadata: Metadata = {
   publisher: 'Deslint',
   alternates: {
     canonical: '/',
+    types: {
+      'application/rss+xml': [
+        { url: '/blog/rss.xml', title: 'Deslint Blog' },
+      ],
+    },
   },
   robots: {
     index: true,

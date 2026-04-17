@@ -4,6 +4,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { McpConfigSnippet } from '@/components/mcp/McpConfigSnippet';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+import { mcpAgentTechArticle } from '@/lib/mcp-jsonld';
 
 export const metadata: Metadata = {
   title: 'Deslint for Codex — MCP Design Linter for OpenAI\'s Coding Agent',
@@ -25,9 +26,21 @@ export const metadata: Metadata = {
   },
 };
 
+const JSON_LD = mcpAgentTechArticle({
+  agentName: 'OpenAI Codex',
+  headline: 'Deslint for Codex — MCP Design Linter',
+  description:
+    "Wire Deslint's MCP server into Codex. Deterministic design-system and a11y lint that Codex can call as a tool. Local-only, no extra LLM, no network egress.",
+  url: 'https://deslint.com/mcp/codex',
+});
+
 export default function CodexPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <Navbar />
       <BreadcrumbJsonLd
         trail={[

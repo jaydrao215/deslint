@@ -1,12 +1,27 @@
+import type { Metadata } from 'next';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { AccessibilitySection } from '@/components/AccessibilitySection';
 import { FrameworkMatrix } from '@/components/FrameworkMatrix';
 
-export const metadata = {
-  title: 'Framework & WCAG Coverage · Deslint',
+export const metadata: Metadata = {
+  title: 'Framework & WCAG 2.2 Coverage — React, Vue, Svelte, Astro, Angular',
   description:
-    'Every framework Deslint parses and every WCAG 2.2 AA criterion it statically detects, side by side. The reference cards previously embedded on the homepage.',
+    'Exactly which frameworks Deslint parses (React, Vue, Svelte, Astro, Angular) and every WCAG 2.2 AA criterion it statically detects. The full coverage matrix for AI-generated frontend code.',
+  alternates: { canonical: '/coverage' },
+  openGraph: {
+    title: 'Deslint Coverage — Frameworks & WCAG 2.2 AA',
+    description:
+      'Every framework Deslint parses and every WCAG 2.2 AA criterion it statically detects, side by side.',
+    url: 'https://deslint.com/coverage',
+    type: 'article',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Deslint Coverage — Frameworks & WCAG 2.2 AA',
+    description:
+      'React, Vue, Svelte, Astro, Angular × every WCAG 2.2 AA criterion Deslint statically detects.',
+  },
 };
 
 export default function CoveragePage() {

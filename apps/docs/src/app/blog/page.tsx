@@ -4,6 +4,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { FadeIn } from '@/components/motion';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+import { POSTS } from '@/lib/posts';
 
 export const metadata: Metadata = {
   title: 'Blog — Design Systems, AI Coding Agents, and Deterministic Lint',
@@ -25,27 +26,6 @@ export const metadata: Metadata = {
   },
 };
 
-type Post = {
-  slug: string;
-  title: string;
-  description: string;
-  date: string;
-  readingMinutes: number;
-  tags: string[];
-};
-
-const POSTS: Post[] = [
-  {
-    slug: 'tailwind-arbitrary-values',
-    title: 'The hidden cost of Tailwind arbitrary values',
-    description:
-      'An escape hatch, three archetypes of drift, and why linting them deterministically matters more now that AI writes most of your markup.',
-    date: '2026-04-17',
-    readingMinutes: 9,
-    tags: ['Tailwind', 'Design tokens', 'AI coding'],
-  },
-];
-
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -54,9 +34,33 @@ function formatDate(iso: string): string {
   });
 }
 
+// ItemList JSON-LD describing the posts in the order they're rendered.
+// Helps Google generate sitelinks and list-style rich results for the
+// /blog index. Each ListItem references the canonical post URL; the
+// full post metadata lives on the individual post page.
+const JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Deslint Blog',
+  description:
+    'Long-form writing on design systems, AI coding agents, MCP, and deterministic lint.',
+  url: 'https://deslint.com/blog',
+  numberOfItems: POSTS.length,
+  itemListElement: POSTS.map((post, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    url: `https://deslint.com/blog/${post.slug}`,
+    name: post.title,
+  })),
+};
+
 export default function BlogIndex() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <Navbar />
       <BreadcrumbJsonLd trail={[{ name: 'Blog', path: '/blog' }]} />
       <main className="mx-auto max-w-3xl px-6 pt-32 pb-20">

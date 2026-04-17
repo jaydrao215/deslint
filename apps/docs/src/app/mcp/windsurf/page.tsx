@@ -4,6 +4,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { McpConfigSnippet } from '@/components/mcp/McpConfigSnippet';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+import { mcpAgentTechArticle } from '@/lib/mcp-jsonld';
 
 export const metadata: Metadata = {
   title: 'Deslint for Windsurf — MCP Design Linter for Codeium\'s Agent IDE',
@@ -25,9 +26,21 @@ export const metadata: Metadata = {
   },
 };
 
+const JSON_LD = mcpAgentTechArticle({
+  agentName: 'Windsurf',
+  headline: 'Deslint for Windsurf — MCP Design Linter',
+  description:
+    "Install Deslint's MCP server in Windsurf. Deterministic design-token, accessibility, and responsive-layout lint the Cascade agent calls pre-commit. Local, no cloud.",
+  url: 'https://deslint.com/mcp/windsurf',
+});
+
 export default function WindsurfPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <Navbar />
       <BreadcrumbJsonLd
         trail={[

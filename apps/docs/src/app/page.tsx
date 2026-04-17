@@ -1,7 +1,9 @@
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
+import { AgentCompatStrip } from '@/components/AgentCompatStrip';
 import { TrustBanner } from '@/components/TrustBanner';
 import { getGitHubStars } from '@/lib/github-stars';
+import { getNpmWeeklyDownloads } from '@/lib/npm-downloads';
 import { VisualProofSection } from '@/components/VisualProofSection';
 import { McpLoopSection } from '@/components/McpLoopSection';
 import { ProductShowcase } from '@/components/ProductShowcase';
@@ -107,7 +109,10 @@ const JSON_LD = {
 };
 
 export default async function Home() {
-  const stars = await getGitHubStars();
+  const [stars, weeklyDownloads] = await Promise.all([
+    getGitHubStars(),
+    getNpmWeeklyDownloads(),
+  ]);
   return (
     <>
       <script
@@ -117,6 +122,7 @@ export default async function Home() {
       <Navbar />
       <main>
         <Hero stars={stars} />
+        <AgentCompatStrip weeklyDownloads={weeklyDownloads} />
         <TrustBanner />
         <VisualProofSection />
         <McpLoopSection />

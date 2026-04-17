@@ -453,7 +453,22 @@ export default function TailwindArbitraryValuesPost() {
               the component knew the token scale by heart.
             </p>
             <p className="text-lg text-gray-700 leading-relaxed mb-5">
-              That constraint is gone. Claude Code, Cursor, Windsurf, and Codex
+              That constraint is gone.{' '}
+              <Link href="/mcp/claude-code" className="text-primary font-semibold hover:underline">
+                Claude Code
+              </Link>
+              ,{' '}
+              <Link href="/mcp/cursor" className="text-primary font-semibold hover:underline">
+                Cursor
+              </Link>
+              ,{' '}
+              <Link href="/mcp/windsurf" className="text-primary font-semibold hover:underline">
+                Windsurf
+              </Link>
+              , and{' '}
+              <Link href="/mcp/codex" className="text-primary font-semibold hover:underline">
+                Codex
+              </Link>{' '}
               know Tailwind&apos;s syntax perfectly and know your design system
               not at all. Ask any of them to &quot;add a card component with a
               subtle accent border&quot; and you get back fluent, runnable
@@ -608,7 +623,11 @@ export default function TailwindArbitraryValuesPost() {
             </div>
 
             <p className="text-lg text-gray-700 leading-relaxed mt-8">
-              Keep stylelint. Keep Prettier. They do their jobs well. They
+              Keep{' '}
+              <Link href="/compare/deslint-vs-stylelint" className="text-primary font-semibold hover:underline">
+                stylelint
+              </Link>
+              . Keep Prettier. They do their jobs well. They
               just do not see what an agent is generating into your JSX at
               commit time. That is the layer that needs its own check.
             </p>

@@ -122,8 +122,15 @@ export default function DeslintVsStylelint() {
           </h1>
           <p className="text-xl text-gray-600 leading-relaxed">
             Stylelint is the mature, de-facto linter for authored CSS.
-            Deslint lints the design-system surface that AI agents like
-            Cursor and Claude Code actually touch — JSX className drift,
+            Deslint lints the design-system surface that AI agents like{' '}
+            <Link href="/mcp/cursor" className="text-primary font-semibold hover:underline">
+              Cursor
+            </Link>{' '}
+            and{' '}
+            <Link href="/mcp/claude-code" className="text-primary font-semibold hover:underline">
+              Claude Code
+            </Link>{' '}
+            actually touch — JSX className drift,
             arbitrary Tailwind values, design-token violations. Most
             teams shipping modern frontend should run both.
           </p>
