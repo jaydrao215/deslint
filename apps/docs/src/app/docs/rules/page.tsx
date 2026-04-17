@@ -15,9 +15,69 @@ export const metadata: Metadata = {
   },
 };
 
+// Mirrors the <h3 id="..."> anchors rendered below, in the same order.
+// Used to emit an ItemList JSON-LD block so Google can enumerate the 33
+// rules and surface them in list-style SERP results. If a rule is added,
+// removed, or re-ordered in the markup, update this list to match.
+const RULE_SLUGS = [
+  'no-arbitrary-colors',
+  'a11y-color-contrast',
+  'dark-mode-coverage',
+  'consistent-color-palette',
+  'no-arbitrary-spacing',
+  'no-magic-numbers-layout',
+  'no-arbitrary-typography',
+  'heading-hierarchy',
+  'responsive-required',
+  'touch-target-size',
+  'focus-visible-style',
+  'image-alt-text',
+  'form-labels',
+  'autocomplete-attribute',
+  'aria-validation',
+  'link-text',
+  'lang-attribute',
+  'viewport-meta',
+  'prefer-semantic-html',
+  'consistent-component-spacing',
+  'consistent-border-radius',
+  'max-component-lines',
+  'missing-states',
+  'no-arbitrary-zindex',
+  'no-inline-styles',
+  'no-conflicting-classes',
+  'no-duplicate-class-strings',
+  'max-tailwind-classes',
+  'prefers-reduced-motion',
+  'icon-accessibility',
+  'focus-trap-patterns',
+  'responsive-image-optimization',
+  'spacing-rhythm-consistency',
+];
+
+const JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Deslint Rules Reference',
+  description:
+    'All 33 deterministic rules shipped by Deslint for design-token, accessibility, responsive-layout, dark-mode, and consistency coverage.',
+  url: 'https://deslint.com/docs/rules',
+  numberOfItems: RULE_SLUGS.length,
+  itemListElement: RULE_SLUGS.map((slug, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    url: `https://deslint.com/docs/rules#${slug}`,
+    name: slug,
+  })),
+};
+
 export default function RulesReference() {
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <BreadcrumbJsonLd
         trail={[
           { name: 'Documentation', path: '/docs' },

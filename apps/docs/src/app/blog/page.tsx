@@ -34,9 +34,33 @@ function formatDate(iso: string): string {
   });
 }
 
+// ItemList JSON-LD describing the posts in the order they're rendered.
+// Helps Google generate sitelinks and list-style rich results for the
+// /blog index. Each ListItem references the canonical post URL; the
+// full post metadata lives on the individual post page.
+const JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Deslint Blog',
+  description:
+    'Long-form writing on design systems, AI coding agents, MCP, and deterministic lint.',
+  url: 'https://deslint.com/blog',
+  numberOfItems: POSTS.length,
+  itemListElement: POSTS.map((post, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    url: `https://deslint.com/blog/${post.slug}`,
+    name: post.title,
+  })),
+};
+
 export default function BlogIndex() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <Navbar />
       <BreadcrumbJsonLd trail={[{ name: 'Blog', path: '/blog' }]} />
       <main className="mx-auto max-w-3xl px-6 pt-32 pb-20">
