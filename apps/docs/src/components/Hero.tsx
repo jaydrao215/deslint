@@ -1,10 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Copy, Check, ShieldCheck, Star } from 'lucide-react';
+import { ArrowRight, Copy, Check, Terminal, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ComplianceReportMockup } from './mockups/ComplianceReportMockup';
+import { AgentLoopMockup } from './mockups/AgentLoopMockup';
 import { formatStarCount } from '@/lib/github-stars';
 
 const GITHUB_URL = 'https://github.com/jaydrao215/deslint';
@@ -15,9 +15,16 @@ interface HeroProps {
 
 /**
  * Split hero — copy on the left, live product visual on the right.
- * The visual is NOT a static screenshot — it's a hand-coded inline mockup
- * of the actual HTML compliance report that `deslint compliance` produces,
- * with motion accents that play on mount.
+ *
+ * The right pane is a hand-coded mockup of deslint's MCP server answering
+ * an AI agent's tool call over stdio. Every string (rule name, finding
+ * count, fix) matches what the real `@deslint/mcp` server returns — the
+ * visual is the product, not a pitch for it.
+ *
+ * The copy is deliberately vendor-neutral. We don't name Cursor, Claude
+ * Code, Windsurf, or Copilot. The promise ("the deterministic check
+ * inside your AI coding loop") holds across all of them and every future
+ * agent, without dating the copy.
  */
 export function Hero({ stars }: HeroProps) {
   return (
@@ -34,8 +41,8 @@ export function Hero({ stars }: HeroProps) {
               transition={{ duration: 0.5, delay: 0.1 }}
             >
               <div className="inline-flex items-center gap-2.5 rounded-full border border-primary/15 bg-primary-50/60 backdrop-blur-sm px-4 py-1.5 text-sm font-medium text-primary mb-7">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <span>The deterministic design linter for AI-generated code</span>
+                <Terminal className="h-3.5 w-3.5" />
+                <span>Local · Deterministic · Runs inside the agent loop</span>
               </div>
             </motion.div>
 
@@ -46,7 +53,7 @@ export function Hero({ stars }: HeroProps) {
               className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-[1.06] mb-6 text-balance"
             >
               AI writes fast.{' '}
-              <span className="gradient-text-hero">Deslint keeps it clean.</span>
+              <span className="gradient-text-hero">Deslint keeps it shippable.</span>
             </motion.h1>
 
             <motion.p
@@ -55,13 +62,14 @@ export function Hero({ stars }: HeroProps) {
               transition={{ duration: 0.6, delay: 0.35 }}
               className="text-base sm:text-lg text-gray-500 mb-8 max-w-xl leading-relaxed"
             >
-              AI ships design drift, dark-mode gaps, and accessibility
-              failures at the speed of autocomplete. Deslint is the
-              deterministic check that runs in your editor, your CI, your PR,
-              and inside the agent loop itself —{' '}
+              Design drift. Token breakage. Accessibility failures.
+              Dark-mode gaps. Bundle bloat. Autocomplete ships them all.
+              Deslint is the deterministic check that runs wherever AI
+              writes — your editor, your CI, every PR, and{' '}
               <span className="font-semibold text-gray-700">
-                without ever sending your code to a cloud.
+                inside the agent loop itself
               </span>
+              . Local. No LLM. Zero bytes ever leave your machine.
             </motion.p>
 
             <motion.div
@@ -134,7 +142,7 @@ export function Hero({ stars }: HeroProps) {
             transition={{ duration: 0.8, delay: 0.35, ease: [0.21, 0.47, 0.32, 0.98] }}
             className="lg:col-span-6 relative"
           >
-            <ComplianceReportMockup />
+            <AgentLoopMockup />
           </motion.div>
         </div>
       </div>

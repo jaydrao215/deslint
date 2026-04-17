@@ -21,6 +21,7 @@ import {
   loadBudget,
   evaluateBudget,
   formatBudgetResult,
+  applyDesignSystemToRules,
 } from '@deslint/shared';
 import type {
   DeslintConfig,
@@ -45,8 +46,14 @@ import {
   isValidTarget,
 } from './generate-config.js';
 import { initWizard } from './init.js';
-import { runImportTokens } from './import-tokens.js';
+import {
+  runImportTokens,
+  runImportStyleDictionary,
+  runImportStitch,
+} from './import-tokens.js';
 import { buildTokenSuggestions, formatSuggestTokens } from './suggest-tokens.js';
+import { computeTokenCoverage } from './token-coverage.js';
+import { renderCoverageHtml } from './token-coverage-html.js';
 import {
   loadHistory,
   analyzeTrend,
@@ -77,6 +84,14 @@ export type { ScoreResult, CategoryScore, HistoryEntry } from './score.js';
 export { discoverFiles } from './discover.js';
 export { runLint, aggregateResults } from './lint-runner.js';
 export type { LintResult, LintFileResult, LintMessage, RuleCategory } from './lint-runner.js';
+export { computeTokenCoverage } from './token-coverage.js';
+export type {
+  TokenCoverageResult,
+  CategoryCoverage,
+  CoverageCategory,
+  ComputeCoverageInput,
+} from './token-coverage.js';
+export { renderCoverageHtml } from './token-coverage-html.js';
 export {
   gitDiffAddedRanges,
   parseUnifiedDiff,
@@ -110,8 +125,9 @@ export function findConfigFile(startDir: string): string | undefined {
 
 /**
  * Load .deslintrc.json. Searches `projectDir` first, then walks up ancestors.
+ * Exported for tests.
  */
-function loadConfig(projectDir: string): DeslintConfig | undefined {
+export function loadConfig(projectDir: string): DeslintConfig | undefined {
   const configPath = findConfigFile(projectDir);
   if (!configPath) return undefined;
 
@@ -140,6 +156,33 @@ function resolveRules(
     return config.profiles[profile].rules;
   }
   return config.rules;
+}
+
+/**
+ * Resolve the rule map used for a scan: user rules (from `.deslintrc.json`
+ * or a profile) plus the design-system bridge that wires
+ * `config.designSystem.colors`/`spacing` into the rules that consume those
+ * tokens. The bridge preserves user severity and any hand-authored options
+ * — see `applyDesignSystemToRules` — so explicit `customTokens`/
+ * `customScale` always win.
+ *
+ * Warnings (unparseable spacing tokens etc.) are surfaced to stderr so
+ * they're visible without polluting stdout formats like `--format json`.
+ */
+export function buildEffectiveRules(
+  config: DeslintConfig | undefined,
+  profile?: string,
+): Record<string, any> | undefined {
+  const userRules = resolveRules(config, profile);
+  const { rules: bridged, warnings } = applyDesignSystemToRules(
+    config?.designSystem,
+    { existingRules: userRules },
+  );
+  for (const msg of warnings) {
+    console.error(chalk.yellow(`  [deslint] ${msg}`));
+  }
+  if (!userRules && Object.keys(bridged).length === 0) return undefined;
+  return { ...(userRules ?? {}), ...bridged };
 }
 
 const program = new Command();
@@ -178,7 +221,7 @@ program
     try {
       const cwd = resolve(dir);
       const config = loadConfig(cwd);
-      const rules = resolveRules(config, opts.profile);
+      const rules = buildEffectiveRules(config, opts.profile);
 
       const { gitDiffAddedRanges, filterLintResultByHunks } = await import('./git-diff.js');
       const diffScope = opts.diff ? gitDiffAddedRanges(opts.diff, cwd) : undefined;
@@ -328,6 +371,48 @@ program
         generateHtmlReport(lintResult, scoreResult, cwd);
         console.log(chalk.gray(`  Full report: .deslint/report.html`));
         console.log('');
+
+        // Install-to-value: tell the user the literal next command to
+        // run. Without this, a first-time user finishes `scan` with no
+        // idea whether to fix, gate in CI, or re-import tokens.
+        const fixableCount = lintResult.results.reduce(
+          (sum, r) =>
+            sum + (r.fixableErrorCount ?? 0) + (r.fixableWarningCount ?? 0),
+          0,
+        );
+        if (lintResult.totalViolations === 0) {
+          console.log(chalk.bold('  Next:'));
+          console.log(
+            chalk.gray(
+              '    Ship it. Gate this in CI with ' +
+                '`npx deslint scan --min-score 85 --format sarif`',
+            ),
+          );
+          console.log('');
+        } else {
+          console.log(chalk.bold('  Next:'));
+          if (fixableCount > 0) {
+            console.log(
+              chalk.gray(
+                `    ${fixableCount} auto-fixable. Review with ` +
+                  '`npx deslint fix --interactive`',
+              ),
+            );
+            console.log(
+              chalk.gray(
+                '    Or apply every safe fix: `npx deslint fix --all`',
+              ),
+            );
+          } else {
+            console.log(
+              chalk.gray(
+                '    Walk the remaining violations with ' +
+                  '`npx deslint fix --interactive`',
+              ),
+            );
+          }
+          console.log('');
+        }
       }
 
       if (opts.minScore) {
@@ -369,7 +454,7 @@ program
     try {
       const cwd = resolve(dir);
       const config = loadConfig(cwd);
-      const rules = resolveRules(config, opts.profile);
+      const rules = buildEffectiveRules(config, opts.profile);
 
       const files = await discoverFiles({
         cwd,
@@ -431,18 +516,32 @@ program
 
 program
   .command('import-tokens')
-  .description('Import design tokens from a Figma file (read-only Variables API)')
-  .requiredOption('--figma <file-id>', 'Figma file key (from the file URL)')
+  .description(
+    'Import design tokens from a Figma file, a Style Dictionary source, or a Stitch / Material 3 export',
+  )
+  .option('--figma <file-id>', 'Figma file key (from the file URL)')
+  .option(
+    '--style-dictionary <path>',
+    'Path to a Style Dictionary JSON file or directory',
+  )
+  .option(
+    '--stitch <path>',
+    'Path to a Google Stitch / Material 3 tokens JSON file',
+  )
   .option('--token <token>', 'Figma personal access token (or set FIGMA_TOKEN env var)')
   .option('--mode <name>', 'Mode name to read (e.g. "Light", "Dark"). Case-insensitive.')
+  .option('--tier <tier>', 'For --stitch: restrict to md.sys | md.ref | md.comp')
   .option('-o, --output <path>', 'Output file path', 'tokens.json')
   .option('--format <format>', 'Output format: dtcg (W3C tokens) or deslintrc', 'dtcg')
   .option('--include-hidden', 'Include variables marked hidden-from-publishing')
   .action(
     async (opts: {
-      figma: string;
+      figma?: string;
+      styleDictionary?: string;
+      stitch?: string;
       token?: string;
       mode?: string;
+      tier?: string;
       output: string;
       format: string;
       includeHidden?: boolean;
@@ -453,8 +552,59 @@ program
         );
         process.exit(1);
       }
+      // Exactly one source must be chosen. Mutually exclusive so the
+      // CLI stays predictable — no silent precedence rules.
+      const sources = [opts.figma, opts.styleDictionary, opts.stitch].filter(
+        Boolean,
+      );
+      if (sources.length > 1) {
+        console.error(
+          chalk.red(
+            '  --figma, --style-dictionary, and --stitch are mutually exclusive. Choose one source.',
+          ),
+        );
+        process.exit(1);
+      }
+      if (sources.length === 0) {
+        console.error(
+          chalk.red(
+            '  One of --figma <file-id>, --style-dictionary <path>, or --stitch <path> is required.',
+          ),
+        );
+        process.exit(1);
+      }
+      if (opts.stitch) {
+        if (
+          opts.tier !== undefined &&
+          opts.tier !== 'sys' &&
+          opts.tier !== 'ref' &&
+          opts.tier !== 'comp'
+        ) {
+          console.error(
+            chalk.red(`  Invalid --tier "${opts.tier}". Use: sys, ref, comp`),
+          );
+          process.exit(1);
+        }
+        runImportStitch({
+          source: opts.stitch,
+          output: opts.output,
+          format: opts.format,
+          tier: opts.tier as 'sys' | 'ref' | 'comp' | undefined,
+          cwd: process.cwd(),
+        });
+        return;
+      }
+      if (opts.styleDictionary) {
+        runImportStyleDictionary({
+          source: opts.styleDictionary,
+          output: opts.output,
+          format: opts.format,
+          cwd: process.cwd(),
+        });
+        return;
+      }
       await runImportTokens({
-        figma: opts.figma,
+        figma: opts.figma!,
         token: opts.token,
         mode: opts.mode,
         output: opts.output,
@@ -486,7 +636,7 @@ program
     try {
       const cwd = resolve(dir);
       const config = loadConfig(cwd);
-      const rules = resolveRules(config, opts.profile);
+      const rules = buildEffectiveRules(config, opts.profile);
 
       const files = await discoverFiles({
         cwd,
@@ -549,7 +699,7 @@ program
     try {
       const cwd = resolve(dir);
       const config = loadConfig(cwd);
-      const rules = resolveRules(config, opts.profile);
+      const rules = buildEffectiveRules(config, opts.profile);
 
       const files = await discoverFiles({ cwd, ignorePatterns: config?.ignore });
       if (files.length === 0) {
@@ -641,6 +791,116 @@ program
       }
     },
   );
+
+program
+  .command('coverage')
+  .description(
+    'Token Coverage Report: measure how much of your Tailwind usage comes ' +
+      'from imported design-system tokens vs. default scale vs. arbitrary ' +
+      'drift. Renders HTML at .deslint/coverage.html (print to PDF).',
+  )
+  .argument('[dir]', 'Project directory to scan', '.')
+  .option('-f, --format <format>', 'Output format: html, json, text', 'html')
+  .option('-o, --output <path>', 'Output file path (default: .deslint/coverage.html)')
+  .action(async (dir: string, opts: { format: string; output?: string }) => {
+    try {
+      const cwd = resolve(dir);
+      const config = loadConfig(cwd);
+
+      const files = await discoverFiles({ cwd, ignorePatterns: config?.ignore });
+      if (files.length === 0) {
+        console.log(chalk.yellow('\n  No files found to scan.\n'));
+        process.exit(0);
+      }
+
+      const result = computeTokenCoverage({
+        files,
+        designSystem: config?.designSystem,
+      });
+
+      if (opts.format === 'json') {
+        const out = opts.output
+          ? resolve(cwd, opts.output)
+          : resolve(cwd, '.deslint', 'coverage.json');
+        mkdirSync(dirname(out), { recursive: true });
+        writeFileSync(out, JSON.stringify(result, null, 2));
+        console.log(chalk.green(`  ✓ Wrote ${out}`));
+        return;
+      }
+
+      if (opts.format === 'text') {
+        console.log('');
+        console.log(chalk.bold(`  Token Coverage — ${basename(cwd)}`));
+        console.log(
+          chalk.gray(
+            `  ${result.totalClassUsages.toLocaleString()} class usages across ${result.totalFiles} files`,
+          ),
+        );
+        console.log('');
+        const pctColor = (p: number) =>
+          p >= 70 ? chalk.green : p >= 40 ? chalk.yellow : chalk.red;
+        console.log(
+          `  On scale:  ${pctColor(result.overallOnScalePct)(result.overallOnScalePct.toFixed(1) + '%')}`,
+        );
+        console.log(
+          `  Tokens:    ${chalk.cyan(result.overallTokenPct.toFixed(1) + '%')}`,
+        );
+        if (!result.hasDesignSystem) {
+          console.log(
+            chalk.yellow(
+              '\n  No designSystem in .deslintrc.json — token % will be 0. ' +
+                'Run `deslint import-tokens` to populate it.',
+            ),
+          );
+        }
+        console.log('');
+        for (const cat of ['colors', 'spacing', 'typography', 'borderRadius'] as const) {
+          const c = result.categories[cat];
+          const label = cat.padEnd(14);
+          console.log(
+            `  ${label} ${pctColor(c.onScalePct)(c.onScalePct.toFixed(1).padStart(5) + '%')} on scale  ` +
+              chalk.gray(
+                `(${c.token} token / ${c.default} default / ${c.arbitrary} arbitrary)`,
+              ),
+          );
+        }
+        console.log('');
+        return;
+      }
+
+      if (opts.format !== 'html') {
+        console.error(
+          chalk.red(`  Invalid --format "${opts.format}". Use: html, json, text`),
+        );
+        process.exit(1);
+      }
+
+      const html = renderCoverageHtml(result, {
+        projectName: basename(cwd),
+        version: VERSION,
+      });
+      const out = opts.output
+        ? resolve(cwd, opts.output)
+        : resolve(cwd, '.deslint', 'coverage.html');
+      mkdirSync(dirname(out), { recursive: true });
+      writeFileSync(out, html);
+
+      console.log('');
+      const pctColor = (p: number) =>
+        p >= 70 ? chalk.green : p >= 40 ? chalk.yellow : chalk.red;
+      console.log(
+        `  On scale: ${pctColor(result.overallOnScalePct)(result.overallOnScalePct.toFixed(1) + '%')} · ` +
+          `Tokens: ${chalk.cyan(result.overallTokenPct.toFixed(1) + '%')} · ` +
+          chalk.gray(`${result.totalClassUsages.toLocaleString()} class usages`),
+      );
+      console.log(chalk.gray(`  Report: ${out}`));
+      console.log(chalk.gray('  Print to PDF via your browser (Ctrl/Cmd+P).'));
+      console.log('');
+    } catch (err) {
+      console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
+      process.exit(1);
+    }
+  });
 
 program
   .command('report')

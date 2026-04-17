@@ -2,6 +2,7 @@ export {
   SeveritySchema,
   RuleConfigSchema,
   DesignSystemSchema,
+  TypographyTokensSchema,
   IgnorePatternsSchema,
   ProfileSchema,
   QualityGateSchema,
@@ -62,6 +63,8 @@ export {
   loadW3CTokensFile,
   findW3CTokensFile,
   figmaVariablesToDTCG,
+  styleDictionaryToDTCG,
+  stitchTokensToDTCG,
 } from './tokens/index.js';
 export type {
   W3CToken,
@@ -71,6 +74,10 @@ export type {
   FigmaVariableCollection,
   FigmaTransformOptions,
   FigmaTransformResult,
+  StyleDictionaryTransformOptions,
+  StyleDictionaryTransformResult,
+  StitchTransformOptions,
+  StitchTransformResult,
 } from './tokens/index.js';
 
 export {
@@ -100,3 +107,10 @@ export type { ImportResult } from './tailwind/index.js';
 
 export { detectFramework } from './detect-framework.js';
 export type { Framework } from './detect-framework.js';
+
+export {
+  applyDesignSystemToRules,
+  parseCssLengthToPx,
+  parseEmToMilliEm,
+} from './design-system-bridge.js';
+export type { BridgeOptions, BridgeResult } from './design-system-bridge.js';
