@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 export const metadata: Metadata = {
   title: 'Getting Started — Deslint Setup for Claude Code, Cursor, Codex & Windsurf',
@@ -17,6 +18,12 @@ export const metadata: Metadata = {
 export default function GettingStarted() {
   return (
     <div>
+      <BreadcrumbJsonLd
+        trail={[
+          { name: 'Documentation', path: '/docs' },
+          { name: 'Getting Started', path: '/docs/getting-started' },
+        ]}
+      />
       <h1>Getting Started</h1>
 
       <p>

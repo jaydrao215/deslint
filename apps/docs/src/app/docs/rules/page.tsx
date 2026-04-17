@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 export const metadata: Metadata = {
   title: 'Rules Reference — 33 Design, Accessibility & Token Lint Rules',
@@ -17,6 +18,12 @@ export const metadata: Metadata = {
 export default function RulesReference() {
   return (
     <div>
+      <BreadcrumbJsonLd
+        trail={[
+          { name: 'Documentation', path: '/docs' },
+          { name: 'Rules Reference', path: '/docs/rules' },
+        ]}
+      />
       <h1>Rules Reference</h1>
       <p>
         Deslint ships with 33 rules across six scoring categories. Each rule can

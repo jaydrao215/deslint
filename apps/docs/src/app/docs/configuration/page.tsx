@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 export const metadata: Metadata = {
   title: 'Configuration — .deslintrc.json Schema, Design Tokens, Profiles',
@@ -17,6 +18,12 @@ export const metadata: Metadata = {
 export default function Configuration() {
   return (
     <div>
+      <BreadcrumbJsonLd
+        trail={[
+          { name: 'Documentation', path: '/docs' },
+          { name: 'Configuration', path: '/docs/configuration' },
+        ]}
+      />
       <h1>Configuration Reference</h1>
 
       <p>

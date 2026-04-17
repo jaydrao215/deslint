@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { McpConfigSnippet } from '@/components/mcp/McpConfigSnippet';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 export const metadata: Metadata = {
   title: 'Deslint for Claude Code — MCP Design Linter (2 min install)',
@@ -28,6 +29,12 @@ export default function ClaudeCodePage() {
   return (
     <>
       <Navbar />
+      <BreadcrumbJsonLd
+        trail={[
+          { name: 'MCP', path: '/mcp' },
+          { name: 'Claude Code', path: '/mcp/claude-code' },
+        ]}
+      />
       <main className="mx-auto max-w-3xl px-6 pt-32 pb-20">
         <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
           MCP · Claude Code

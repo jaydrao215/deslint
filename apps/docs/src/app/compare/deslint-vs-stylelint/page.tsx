@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { FadeIn } from '@/components/motion';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 const UPDATED = '2026-04-17';
 
@@ -103,6 +104,12 @@ export default function DeslintVsStylelint() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
+      <BreadcrumbJsonLd
+        trail={[
+          { name: 'Compare', path: '/compare/deslint-vs-stylelint' },
+          { name: 'Deslint vs. stylelint', path: '/compare/deslint-vs-stylelint' },
+        ]}
       />
       <main className="mx-auto max-w-3xl px-6 pt-32 pb-20">
         <FadeIn className="mb-10">

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { FadeIn } from '@/components/motion';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 const PUBLISHED = '2026-04-17';
 const UPDATED = '2026-04-17';
@@ -160,6 +161,12 @@ export default function TailwindArbitraryValuesPost() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
+      <BreadcrumbJsonLd
+        trail={[
+          { name: 'Blog', path: '/blog' },
+          { name: 'Tailwind arbitrary values', path: '/blog/tailwind-arbitrary-values' },
+        ]}
       />
       <Navbar />
       <main className="mx-auto max-w-3xl px-6 pt-32 pb-20">

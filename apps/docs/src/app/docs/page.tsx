@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Rocket, Settings, Shield, ArrowRight } from 'lucide-react';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 const CARDS = [
   {
@@ -28,6 +29,7 @@ const CARDS = [
 export default function DocsIndex() {
   return (
     <div className="not-prose">
+      <BreadcrumbJsonLd trail={[{ name: 'Documentation', path: '/docs' }]} />
       <div className="mb-10">
         <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-3">
           Deslint Documentation

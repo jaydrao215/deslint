@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { FadeIn } from '@/components/motion';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 export const metadata: Metadata = {
   title: 'Blog — Design Systems, AI Coding Agents, and Deterministic Lint',
@@ -57,6 +58,7 @@ export default function BlogIndex() {
   return (
     <>
       <Navbar />
+      <BreadcrumbJsonLd trail={[{ name: 'Blog', path: '/blog' }]} />
       <main className="mx-auto max-w-3xl px-6 pt-32 pb-20">
         <FadeIn className="mb-12">
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-4">
