@@ -23,6 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/docs/getting-started',    priority: 0.75, changeFrequency: 'weekly' },
     { path: '/docs/configuration',      priority: 0.65, changeFrequency: 'monthly' },
     { path: '/docs/rules',              priority: 0.7,  changeFrequency: 'weekly' },
+    { path: '/blog/tailwind-arbitrary-values', priority: 0.8, changeFrequency: 'monthly' },
   ];
 
   return routes.map((r) => ({

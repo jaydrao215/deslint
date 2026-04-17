@@ -25,6 +25,20 @@ export default function RulesReference() {
         when you run <code>eslint --fix</code>.
       </p>
 
+      <p className="not-prose rounded-xl border border-primary/20 bg-primary-50/40 px-5 py-4 text-sm text-gray-700 leading-relaxed">
+        <strong className="text-gray-900">Deep dive: </strong>
+        for the full story on why arbitrary Tailwind values drift — the three
+        archetypes, how AI coding agents amplify them, and how deslint
+        catches each — read{' '}
+        <a
+          href="/blog/tailwind-arbitrary-values"
+          className="text-primary font-semibold hover:underline"
+        >
+          The hidden cost of Tailwind arbitrary values
+        </a>
+        .
+      </p>
+
       {/* ── Colors ─────────────────────────────────────── */}
       <h2>Colors</h2>
 
