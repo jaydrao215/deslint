@@ -100,3 +100,9 @@ export type { ImportResult } from './tailwind/index.js';
 
 export { detectFramework } from './detect-framework.js';
 export type { Framework } from './detect-framework.js';
+
+export {
+  applyDesignSystemToRules,
+  parseCssLengthToPx,
+} from './design-system-bridge.js';
+export type { BridgeOptions, BridgeResult } from './design-system-bridge.js';

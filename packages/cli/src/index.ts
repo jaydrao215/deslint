@@ -21,6 +21,7 @@ import {
   loadBudget,
   evaluateBudget,
   formatBudgetResult,
+  applyDesignSystemToRules,
 } from '@deslint/shared';
 import type {
   DeslintConfig,
@@ -110,8 +111,9 @@ export function findConfigFile(startDir: string): string | undefined {
 
 /**
  * Load .deslintrc.json. Searches `projectDir` first, then walks up ancestors.
+ * Exported for tests.
  */
-function loadConfig(projectDir: string): DeslintConfig | undefined {
+export function loadConfig(projectDir: string): DeslintConfig | undefined {
   const configPath = findConfigFile(projectDir);
   if (!configPath) return undefined;
 
@@ -140,6 +142,33 @@ function resolveRules(
     return config.profiles[profile].rules;
   }
   return config.rules;
+}
+
+/**
+ * Resolve the rule map used for a scan: user rules (from `.deslintrc.json`
+ * or a profile) plus the design-system bridge that wires
+ * `config.designSystem.colors`/`spacing` into the rules that consume those
+ * tokens. The bridge preserves user severity and any hand-authored options
+ * — see `applyDesignSystemToRules` — so explicit `customTokens`/
+ * `customScale` always win.
+ *
+ * Warnings (unparseable spacing tokens etc.) are surfaced to stderr so
+ * they're visible without polluting stdout formats like `--format json`.
+ */
+export function buildEffectiveRules(
+  config: DeslintConfig | undefined,
+  profile?: string,
+): Record<string, any> | undefined {
+  const userRules = resolveRules(config, profile);
+  const { rules: bridged, warnings } = applyDesignSystemToRules(
+    config?.designSystem,
+    { existingRules: userRules },
+  );
+  for (const msg of warnings) {
+    console.error(chalk.yellow(`  [deslint] ${msg}`));
+  }
+  if (!userRules && Object.keys(bridged).length === 0) return undefined;
+  return { ...(userRules ?? {}), ...bridged };
 }
 
 const program = new Command();
@@ -178,7 +207,7 @@ program
     try {
       const cwd = resolve(dir);
       const config = loadConfig(cwd);
-      const rules = resolveRules(config, opts.profile);
+      const rules = buildEffectiveRules(config, opts.profile);
 
       const { gitDiffAddedRanges, filterLintResultByHunks } = await import('./git-diff.js');
       const diffScope = opts.diff ? gitDiffAddedRanges(opts.diff, cwd) : undefined;
@@ -369,7 +398,7 @@ program
     try {
       const cwd = resolve(dir);
       const config = loadConfig(cwd);
-      const rules = resolveRules(config, opts.profile);
+      const rules = buildEffectiveRules(config, opts.profile);
 
       const files = await discoverFiles({
         cwd,
@@ -486,7 +515,7 @@ program
     try {
       const cwd = resolve(dir);
       const config = loadConfig(cwd);
-      const rules = resolveRules(config, opts.profile);
+      const rules = buildEffectiveRules(config, opts.profile);
 
       const files = await discoverFiles({
         cwd,
@@ -549,7 +578,7 @@ program
     try {
       const cwd = resolve(dir);
       const config = loadConfig(cwd);
-      const rules = resolveRules(config, opts.profile);
+      const rules = buildEffectiveRules(config, opts.profile);
 
       const files = await discoverFiles({ cwd, ignorePatterns: config?.ignore });
       if (files.length === 0) {
