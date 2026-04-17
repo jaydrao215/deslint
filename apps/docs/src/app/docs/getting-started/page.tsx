@@ -146,6 +146,22 @@ npx deslint import-tokens --stitch ./stitch-tokens.json --format deslintrc`}</co
         <code>.deslint/report.html</code>. Open it with{' '}
         <code>npx deslint report</code>.
       </p>
+      <p>
+        For a design-system-focused view — how much of your UI is on-token
+        vs. drifting into arbitrary values — run the Token Drift Score
+        report alongside <code>scan</code>:
+      </p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
+        <code>npx deslint coverage</code>
+      </pre>
+      <p>
+        This writes a shareable HTML report to{' '}
+        <code>.deslint/coverage.html</code> breaking every class usage into
+        three buckets: design-system tokens, default Tailwind scale, and
+        arbitrary <code>prefix-[value]</code> drift. It&apos;s the artifact
+        to send your design-system lead — no violations list, just the
+        adoption curve.
+      </p>
 
       <h2 id="step-5">Step 5 — Fix what&apos;s auto-fixable</h2>
       <p>Two common ways to work through the violations:</p>

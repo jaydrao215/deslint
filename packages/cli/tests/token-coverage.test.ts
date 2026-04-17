@@ -251,7 +251,7 @@ describe('renderCoverageHtml', () => {
       version: '0.5.0',
     });
     expect(html).toContain('<!doctype html>');
-    expect(html).toContain('Token Coverage');
+    expect(html).toContain('Token Drift Score');
     expect(html).toContain('demo');
     expect(html).toContain('deslint 0.5.0');
     expect(html).toContain('Colors');

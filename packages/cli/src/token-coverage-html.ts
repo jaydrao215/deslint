@@ -278,13 +278,13 @@ export function renderCoverageHtml(
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Token Coverage — ${esc(opts.projectName)}</title>
+<title>Token Drift Score — ${esc(opts.projectName)}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>${STYLES}</style>
 </head>
 <body>
 <main>
-  <h1>Token Coverage — ${esc(opts.projectName)}</h1>
+  <h1>Token Drift Score — ${esc(opts.projectName)}</h1>
   <p class="subtitle">Generated ${esc(date)} · deslint ${esc(opts.version)}</p>
 
   ${renderHeadline(result)}
