@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { McpConfigSnippet } from '@/components/mcp/McpConfigSnippet';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 export const metadata: Metadata = {
   title: 'Deslint for Windsurf — MCP Design Linter for Codeium\'s Agent IDE',
@@ -14,7 +15,13 @@ export const metadata: Metadata = {
     description:
       'Cascade calls deslint\'s MCP tools before shipping UI. Zero egress, zero LLM in the check path.',
     url: 'https://deslint.com/mcp/windsurf',
-    type: 'article',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Deslint for Windsurf — MCP Design Linter',
+    description:
+      'Install the Deslint MCP server in Windsurf. Deterministic design-system, accessibility, and responsive-layout lint the Cascade agent calls pre-commit.',
   },
 };
 
@@ -22,6 +29,12 @@ export default function WindsurfPage() {
   return (
     <>
       <Navbar />
+      <BreadcrumbJsonLd
+        trail={[
+          { name: 'MCP', path: '/mcp' },
+          { name: 'Windsurf', path: '/mcp/windsurf' },
+        ]}
+      />
       <main className="mx-auto max-w-3xl px-6 pt-32 pb-20">
         <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
           MCP · Windsurf
@@ -112,7 +125,7 @@ export default function WindsurfPage() {
           </p>
         </section>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Link
             href="/mcp"
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-primary-light"
@@ -120,10 +133,22 @@ export default function WindsurfPage() {
             See all MCP tools
           </Link>
           <Link
+            href="/mcp/claude-code"
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+          >
+            Claude Code setup
+          </Link>
+          <Link
             href="/mcp/cursor"
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50"
           >
             Cursor setup
+          </Link>
+          <Link
+            href="/mcp/codex"
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+          >
+            OpenAI Codex setup
           </Link>
         </div>
       </main>

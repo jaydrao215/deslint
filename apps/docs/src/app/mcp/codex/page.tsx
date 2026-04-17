@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { McpConfigSnippet } from '@/components/mcp/McpConfigSnippet';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 export const metadata: Metadata = {
   title: 'Deslint for Codex — MCP Design Linter for OpenAI\'s Coding Agent',
@@ -14,7 +15,13 @@ export const metadata: Metadata = {
     description:
       'Deterministic design and accessibility lint inside OpenAI Codex. Local MCP server, zero cloud.',
     url: 'https://deslint.com/mcp/codex',
-    type: 'article',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Deslint for Codex — MCP Design Linter',
+    description:
+      'Wire the Deslint MCP server into Codex. Deterministic design-system and WCAG lint Codex can call as a tool.',
   },
 };
 
@@ -22,6 +29,12 @@ export default function CodexPage() {
   return (
     <>
       <Navbar />
+      <BreadcrumbJsonLd
+        trail={[
+          { name: 'MCP', path: '/mcp' },
+          { name: 'Codex', path: '/mcp/codex' },
+        ]}
+      />
       <main className="mx-auto max-w-3xl px-6 pt-32 pb-20">
         <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
           MCP · OpenAI Codex
@@ -134,7 +147,7 @@ export default function CodexPage() {
           </p>
         </section>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Link
             href="/mcp"
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-primary-light"
@@ -146,6 +159,18 @@ export default function CodexPage() {
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50"
           >
             Claude Code setup
+          </Link>
+          <Link
+            href="/mcp/cursor"
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+          >
+            Cursor setup
+          </Link>
+          <Link
+            href="/mcp/windsurf"
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+          >
+            Windsurf setup
           </Link>
         </div>
       </main>

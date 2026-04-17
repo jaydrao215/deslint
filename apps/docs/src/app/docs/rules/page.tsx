@@ -1,12 +1,49 @@
+import type { Metadata } from 'next';
+import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+
+export const metadata: Metadata = {
+  title: 'Rules Reference — 33 Design, Accessibility & Token Lint Rules',
+  description:
+    'All 33 Deslint rules with examples, options, and auto-fix behavior. Design-token rules (no-arbitrary-colors, consistent-border-radius), accessibility (a11y-color-contrast, aria-validation), responsive-layout, dark-mode coverage, and more.',
+  alternates: { canonical: '/docs/rules' },
+  openGraph: {
+    title: 'Deslint Rules Reference — 33 Design & A11y Lint Rules',
+    description:
+      'Every Deslint rule — examples, options, auto-fix support. Tailwind token drift, WCAG contrast, dark-mode, responsive, and consistency categories.',
+    url: 'https://deslint.com/docs/rules',
+    type: 'article',
+  },
+};
+
 export default function RulesReference() {
   return (
     <div>
+      <BreadcrumbJsonLd
+        trail={[
+          { name: 'Documentation', path: '/docs' },
+          { name: 'Rules Reference', path: '/docs/rules' },
+        ]}
+      />
       <h1>Rules Reference</h1>
       <p>
         Deslint ships with 33 rules across six scoring categories. Each rule can
         be set to <code>&quot;error&quot;</code>, <code>&quot;warn&quot;</code>, or{' '}
         <code>&quot;off&quot;</code>. Rules marked <em>fixable</em> will auto-fix
         when you run <code>eslint --fix</code>.
+      </p>
+
+      <p className="not-prose rounded-xl border border-primary/20 bg-primary-50/40 px-5 py-4 text-sm text-gray-700 leading-relaxed">
+        <strong className="text-gray-900">Deep dive: </strong>
+        for the full story on why arbitrary Tailwind values drift — the three
+        archetypes, how AI coding agents amplify them, and how deslint
+        catches each — read{' '}
+        <a
+          href="/blog/tailwind-arbitrary-values"
+          className="text-primary font-semibold hover:underline"
+        >
+          The hidden cost of Tailwind arbitrary values
+        </a>
+        .
       </p>
 
       {/* ── Colors ─────────────────────────────────────── */}

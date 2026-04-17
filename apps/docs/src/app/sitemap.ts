@@ -19,10 +19,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/mcp/codex',               priority: 0.9,  changeFrequency: 'weekly' },
     { path: '/pricing',                 priority: 0.8,  changeFrequency: 'monthly' },
     { path: '/coverage',                priority: 0.7,  changeFrequency: 'monthly' },
-    { path: '/docs',                    priority: 0.7,  changeFrequency: 'weekly' },
+    { path: '/docs',                    priority: 0.8,  changeFrequency: 'weekly' },
     { path: '/docs/getting-started',    priority: 0.75, changeFrequency: 'weekly' },
-    { path: '/docs/configuration',      priority: 0.6,  changeFrequency: 'monthly' },
-    { path: '/docs/rules',              priority: 0.6,  changeFrequency: 'weekly' },
+    { path: '/docs/configuration',      priority: 0.65, changeFrequency: 'monthly' },
+    { path: '/docs/rules',              priority: 0.7,  changeFrequency: 'weekly' },
+    { path: '/blog',                    priority: 0.85, changeFrequency: 'weekly' },
+    { path: '/blog/tailwind-arbitrary-values', priority: 0.8, changeFrequency: 'monthly' },
+    { path: '/compare/deslint-vs-stylelint', priority: 0.7, changeFrequency: 'monthly' },
   ];
 
   return routes.map((r) => ({
