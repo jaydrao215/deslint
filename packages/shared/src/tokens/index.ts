@@ -18,6 +18,12 @@ export type {
   W3CTokensJson,
 } from './figma.js';
 
+export { styleDictionaryToDTCG } from './style-dictionary.js';
+export type {
+  StyleDictionaryTransformOptions,
+  StyleDictionaryTransformResult,
+} from './style-dictionary.js';
+
 /**
  * Load and parse a W3C DTCG tokens file from disk.
  * Returns undefined if the file does not exist.

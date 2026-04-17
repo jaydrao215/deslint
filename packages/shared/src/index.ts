@@ -63,6 +63,7 @@ export {
   loadW3CTokensFile,
   findW3CTokensFile,
   figmaVariablesToDTCG,
+  styleDictionaryToDTCG,
 } from './tokens/index.js';
 export type {
   W3CToken,
@@ -72,6 +73,8 @@ export type {
   FigmaVariableCollection,
   FigmaTransformOptions,
   FigmaTransformResult,
+  StyleDictionaryTransformOptions,
+  StyleDictionaryTransformResult,
 } from './tokens/index.js';
 
 export {

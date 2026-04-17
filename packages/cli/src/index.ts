@@ -46,7 +46,10 @@ import {
   isValidTarget,
 } from './generate-config.js';
 import { initWizard } from './init.js';
-import { runImportTokens } from './import-tokens.js';
+import {
+  runImportTokens,
+  runImportStyleDictionary,
+} from './import-tokens.js';
 import { buildTokenSuggestions, formatSuggestTokens } from './suggest-tokens.js';
 import { computeTokenCoverage } from './token-coverage.js';
 import { renderCoverageHtml } from './token-coverage-html.js';
@@ -470,8 +473,14 @@ program
 
 program
   .command('import-tokens')
-  .description('Import design tokens from a Figma file (read-only Variables API)')
-  .requiredOption('--figma <file-id>', 'Figma file key (from the file URL)')
+  .description(
+    'Import design tokens from a Figma file or a Style Dictionary source',
+  )
+  .option('--figma <file-id>', 'Figma file key (from the file URL)')
+  .option(
+    '--style-dictionary <path>',
+    'Path to a Style Dictionary JSON file or directory',
+  )
   .option('--token <token>', 'Figma personal access token (or set FIGMA_TOKEN env var)')
   .option('--mode <name>', 'Mode name to read (e.g. "Light", "Dark"). Case-insensitive.')
   .option('-o, --output <path>', 'Output file path', 'tokens.json')
@@ -479,7 +488,8 @@ program
   .option('--include-hidden', 'Include variables marked hidden-from-publishing')
   .action(
     async (opts: {
-      figma: string;
+      figma?: string;
+      styleDictionary?: string;
       token?: string;
       mode?: string;
       output: string;
@@ -492,8 +502,35 @@ program
         );
         process.exit(1);
       }
+      // Exactly one source must be chosen. Mutually exclusive so the
+      // CLI stays predictable — no silent precedence rules.
+      if (opts.figma && opts.styleDictionary) {
+        console.error(
+          chalk.red(
+            '  --figma and --style-dictionary are mutually exclusive. Choose one source.',
+          ),
+        );
+        process.exit(1);
+      }
+      if (!opts.figma && !opts.styleDictionary) {
+        console.error(
+          chalk.red(
+            '  One of --figma <file-id> or --style-dictionary <path> is required.',
+          ),
+        );
+        process.exit(1);
+      }
+      if (opts.styleDictionary) {
+        runImportStyleDictionary({
+          source: opts.styleDictionary,
+          output: opts.output,
+          format: opts.format,
+          cwd: process.cwd(),
+        });
+        return;
+      }
       await runImportTokens({
-        figma: opts.figma,
+        figma: opts.figma!,
         token: opts.token,
         mode: opts.mode,
         output: opts.output,
