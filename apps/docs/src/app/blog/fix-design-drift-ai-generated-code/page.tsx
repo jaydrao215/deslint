@@ -236,6 +236,259 @@ export default function FixDesignDriftAiGeneratedCodePost() {
               <em>which</em> machine, and <em>when</em> in the loop it runs.
             </p>
           </FadeIn>
+
+          <FadeIn>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-5">
+              Three places to install a deterministic design linter
+            </h2>
+            <p className="text-lg text-gray-700 leading-relaxed mb-8">
+              Deslint is a deterministic, open-source design linter for
+              web frontends. It ships the same rule set through three
+              surfaces — an ESLint plugin, a Node CLI, and a local MCP
+              server — so you can place the check wherever drift is
+              actually being introduced. For most teams adopting AI coding
+              agents, that means all three, with the MCP surface doing
+              most of the work.
+            </p>
+
+            <div className="space-y-6">
+              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+                <div className="flex items-baseline gap-3 mb-3">
+                  <span className="text-xs font-mono font-semibold text-primary bg-primary-50 px-2 py-1 rounded">
+                    01
+                  </span>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Local MCP server — the in-loop check
+                  </h3>
+                </div>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  The Model Context Protocol surface is the one that stops
+                  drift <em>before</em> it is written. Deslint&apos;s MCP
+                  server runs as a local stdio subprocess of your agent —
+                  Claude Code, Cursor, Windsurf, or an MCP-compatible Codex
+                  client — and exposes seven callable tools:
+                </p>
+                <ul className="text-sm text-gray-700 leading-relaxed mb-4 space-y-1.5 font-mono">
+                  <li>
+                    <code className="text-primary">analyze_file</code> — all
+                    violations for a single file
+                  </li>
+                  <li>
+                    <code className="text-primary">analyze_project</code> —
+                    aggregated scores across the workspace
+                  </li>
+                  <li>
+                    <code className="text-primary">analyze_and_fix</code> —
+                    scan, apply safe auto-fixes in place, report what remains
+                  </li>
+                  <li>
+                    <code className="text-primary">compliance_check</code> —
+                    full scorecard as a single structured payload
+                  </li>
+                  <li>
+                    <code className="text-primary">enforce_budget</code> —
+                    pass/fail gate against{' '}
+                    <code className="text-primary">.deslintrc.json</code>{' '}
+                    budgets
+                  </li>
+                  <li>
+                    <code className="text-primary">get_rule_details</code> —
+                    docs, examples, suggested fixes for any rule
+                  </li>
+                  <li>
+                    <code className="text-primary">suggest_fix_strategy</code>{' '}
+                    — structured fix plan for a given violation
+                  </li>
+                </ul>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  The agent calls these on every touched file. No LLM runs
+                  in the check path — each finding is the output of a
+                  deterministic ESLint rule. No bytes leave the machine.
+                  Same result every run.
+                </p>
+                <p className="text-sm text-gray-600">
+                  Install guides per agent:{' '}
+                  <Link
+                    href="/mcp/cursor"
+                    className="text-primary hover:underline"
+                  >
+                    Cursor
+                  </Link>
+                  ,{' '}
+                  <Link
+                    href="/mcp/claude-code"
+                    className="text-primary hover:underline"
+                  >
+                    Claude Code
+                  </Link>
+                  ,{' '}
+                  <Link
+                    href="/mcp/windsurf"
+                    className="text-primary hover:underline"
+                  >
+                    Windsurf
+                  </Link>
+                  ,{' '}
+                  <Link
+                    href="/mcp/codex"
+                    className="text-primary hover:underline"
+                  >
+                    Codex
+                  </Link>
+                  .
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+                <div className="flex items-baseline gap-3 mb-3">
+                  <span className="text-xs font-mono font-semibold text-primary bg-primary-50 px-2 py-1 rounded">
+                    02
+                  </span>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    ESLint plugin — the editor + pre-commit check
+                  </h3>
+                </div>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  The ESLint plugin is the same rule engine, wired into the
+                  tool every JavaScript/TypeScript team already runs. It
+                  powers the squiggles in the IDE, the{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    --fix
+                  </code>{' '}
+                  auto-fix pass in pre-commit, and the CI gate. Rules cover
+                  design-token adherence (
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    no-arbitrary-colors
+                  </code>
+                  ,{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    no-arbitrary-spacing
+                  </code>
+                  ,{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    no-arbitrary-typography
+                  </code>
+                  ,{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    no-arbitrary-border-radius
+                  </code>
+                  ), accessibility (
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    image-alt-text
+                  </code>
+                  ,{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    form-labels
+                  </code>
+                  ,{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    touch-target-size
+                  </code>
+                  ), and responsive-layout hygiene.
+                </p>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  Auto-fix is deliberately conservative — it runs only
+                  where a swap is structurally safe (JSX string literals,
+                  static attributes), and bails out on dynamic expressions
+                  rather than guessing. Breadth of auto-fix coverage is not
+                  the goal; trustworthy auto-fix coverage is.
+                </p>
+                <p className="text-sm text-gray-600">
+                  See every rule in{' '}
+                  <Link
+                    href="/docs/rules"
+                    className="text-primary hover:underline"
+                  >
+                    /docs/rules
+                  </Link>
+                  .
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-6">
+                <div className="flex items-baseline gap-3 mb-3">
+                  <span className="text-xs font-mono font-semibold text-primary bg-primary-50 px-2 py-1 rounded">
+                    03
+                  </span>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    CLI + GitHub Action — the backstop gate
+                  </h3>
+                </div>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  The Node CLI (
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    @deslint/cli
+                  </code>
+                  ) exposes{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    scan
+                  </code>
+                  ,{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    fix
+                  </code>
+                  ,{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    init
+                  </code>
+                  ,{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    coverage
+                  </code>
+                  , and{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    import-tokens
+                  </code>
+                  . The last one is the one design-system teams most
+                  underuse: it reads a Figma file (
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    --figma
+                  </code>
+                  ), a Style Dictionary export (
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    --style-dictionary
+                  </code>
+                  ), or a Stitch token file (
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    --stitch
+                  </code>
+                  ), and writes the corresponding{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    designSystem
+                  </code>{' '}
+                  block of{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    .deslintrc.json
+                  </code>
+                  . One command, and every rule is configured against the
+                  source of truth.
+                </p>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  In CI,{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    deslint scan
+                  </code>{' '}
+                  can emit SARIF for GitHub Advanced Security and any other
+                  SARIF-consuming tool. Or drop in the GitHub Action, which
+                  posts a score, gates on{' '}
+                  <code className="text-primary bg-primary-50/60 px-1.5 py-0.5 rounded-md text-sm font-mono">
+                    min-score
+                  </code>
+                  , and verifies a commit trailer on merges.
+                </p>
+                <p className="text-sm text-gray-600">
+                  CLI reference:{' '}
+                  <Link
+                    href="/docs/getting-started"
+                    className="text-primary hover:underline"
+                  >
+                    getting started
+                  </Link>
+                  .
+                </p>
+              </div>
+            </div>
+          </FadeIn>
         </article>
 
         <div className="mt-16 flex flex-wrap gap-3">
