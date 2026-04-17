@@ -4,6 +4,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { McpConfigSnippet } from '@/components/mcp/McpConfigSnippet';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+import { mcpAgentTechArticle } from '@/lib/mcp-jsonld';
 
 export const metadata: Metadata = {
   title: 'Deslint for Cursor — MCP Design Linter (2 min install)',
@@ -25,9 +26,21 @@ export const metadata: Metadata = {
   },
 };
 
+const JSON_LD = mcpAgentTechArticle({
+  agentName: 'Cursor',
+  headline: 'Deslint for Cursor — MCP Design Linter',
+  description:
+    "Install Deslint's MCP server in Cursor. Deterministic design-system, token, and WCAG lint that Cursor calls before it writes code. Local-only. No LLM. No egress.",
+  url: 'https://deslint.com/mcp/cursor',
+});
+
 export default function CursorPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <Navbar />
       <BreadcrumbJsonLd
         trail={[

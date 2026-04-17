@@ -4,6 +4,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { McpConfigSnippet } from '@/components/mcp/McpConfigSnippet';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+import { mcpAgentTechArticle } from '@/lib/mcp-jsonld';
 
 export const metadata: Metadata = {
   title: 'Deslint for Claude Code — MCP Design Linter (2 min install)',
@@ -25,9 +26,21 @@ export const metadata: Metadata = {
   },
 };
 
+const JSON_LD = mcpAgentTechArticle({
+  agentName: 'Claude Code',
+  headline: 'Deslint for Claude Code — MCP Design Linter',
+  description:
+    "Install Deslint's MCP server in Claude Code. Deterministic design-system and WCAG lint that runs before Claude writes code. Zero LLM, zero cloud, zero egress.",
+  url: 'https://deslint.com/mcp/claude-code',
+});
+
 export default function ClaudeCodePage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <Navbar />
       <BreadcrumbJsonLd
         trail={[

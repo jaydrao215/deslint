@@ -4,6 +4,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { McpConfigSnippet } from '@/components/mcp/McpConfigSnippet';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+import { MCP_SOFTWARE_APPLICATION } from '@/lib/mcp-jsonld';
 
 export const metadata: Metadata = {
   title: 'Deslint MCP — Design Linter for Claude Code, Cursor, Codex & Windsurf',
@@ -77,9 +78,18 @@ const TOOLS = [
   },
 ];
 
+const JSON_LD = {
+  '@context': 'https://schema.org',
+  ...MCP_SOFTWARE_APPLICATION,
+};
+
 export default function McpHubPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <Navbar />
       <BreadcrumbJsonLd trail={[{ name: 'MCP', path: '/mcp' }]} />
       <main className="mx-auto max-w-4xl px-6 pt-32 pb-20">
