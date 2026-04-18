@@ -5,8 +5,8 @@ export const size = OG_SIZE;
 export const contentType = 'image/png';
 export const alt = 'Deslint MCP server for Claude Code — deterministic design-system and WCAG enforcement inside the agent loop';
 
-export default function Image() {
-  return renderAgentOg({
+export default async function Image() {
+  return await renderAgentOg({
     agent: 'Claude Code',
     tagline:
       'Deterministic design-system and WCAG gates, exposed to Claude Code as MCP tools. Pre-generation, zero cloud.',
