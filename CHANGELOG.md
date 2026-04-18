@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-04-18
+
 ### Added
 
 - Shared budget primitives: budget schema, loader, evaluator, and
@@ -14,6 +16,11 @@ All notable changes to this project are documented in this file.
 - GitHub Action trailer verification controls:
   `strict-trailer`, `trailer-verified`, and `trailer-status`.
 - MCP `enforce_budget` plus the supporting agent-loop budget/trailer flow.
+- `scripts/validate-published-packages.sh` — reproducible harness that
+  builds, packs, rewrites `workspace:*`, installs tarballs into a sandbox
+  runner, and exercises every surface (CLI scan / `--budget` / `--diff` /
+  `attest`, ESLint flat-config, MCP `initialize` + `tools/list` +
+  `enforce_budget`) against real open-source projects.
 
 ### Changed
 
