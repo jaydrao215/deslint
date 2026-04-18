@@ -5,8 +5,8 @@ export const size = OG_SIZE;
 export const contentType = 'image/png';
 export const alt = 'Deslint MCP server for Windsurf — design system enforcement inside the Cascade coding loop';
 
-export default function Image() {
-  return renderAgentOg({
+export default async function Image() {
+  return await renderAgentOg({
     agent: 'Windsurf',
     tagline:
       'Deslint MCP tools inside the Windsurf Cascade loop. Design-token enforcement that runs before the agent commits a change.',

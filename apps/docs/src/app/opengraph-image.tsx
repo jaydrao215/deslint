@@ -8,7 +8,14 @@ export const alt = 'Deslint — catch design drift, broken responsive layouts, a
 // All top-level and nested <div>s declare `display: 'flex'` explicitly.
 // Satori (the renderer next/og uses) rejects multi-child divs without it,
 // and has no support for inline-flex, grid, br, or pseudo-elements.
-export default function OpenGraphImage() {
+export default async function OpenGraphImage() {
+  const [satoshiRegular, satoshiMedium, satoshiBold, jetbrainsMono] = await Promise.all([
+    fetch(new URL('./fonts/satoshi-regular.ttf', import.meta.url)).then((r) => r.arrayBuffer()),
+    fetch(new URL('./fonts/satoshi-medium.ttf', import.meta.url)).then((r) => r.arrayBuffer()),
+    fetch(new URL('./fonts/satoshi-bold.ttf', import.meta.url)).then((r) => r.arrayBuffer()),
+    fetch(new URL('./fonts/jetbrains-mono-medium.ttf', import.meta.url)).then((r) => r.arrayBuffer()),
+  ]);
+
   return new ImageResponse(
     (
       <div
@@ -20,7 +27,7 @@ export default function OpenGraphImage() {
           background:
             'linear-gradient(135deg, #0B0A18 0%, #161434 46%, #1E1A3F 100%)',
           color: '#FAFAFB',
-          fontFamily: 'Inter, Arial, sans-serif',
+          fontFamily: 'Satoshi',
         }}
       >
         <div
@@ -116,7 +123,7 @@ export default function OpenGraphImage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '22px', fontSize: '16px', color: '#4B5563' }}>
-            <span style={{ display: 'flex', fontFamily: 'monospace', background: '#F4F4F5', padding: '4px 10px', borderRadius: '6px', color: '#111827' }}>
+            <span style={{ display: 'flex', fontFamily: 'JetBrains Mono', background: '#F4F4F5', padding: '4px 10px', borderRadius: '6px', color: '#111827' }}>
               deslint.com
             </span>
             <span style={{ display: 'flex', color: '#6B7280' }}>· 1 command. CI-ready.</span>
@@ -124,7 +131,15 @@ export default function OpenGraphImage() {
         </div>
       </div>
     ),
-    { ...size },
+    {
+      ...size,
+      fonts: [
+        { name: 'Satoshi', data: satoshiRegular, weight: 400, style: 'normal' },
+        { name: 'Satoshi', data: satoshiMedium,  weight: 500, style: 'normal' },
+        { name: 'Satoshi', data: satoshiBold,    weight: 700, style: 'normal' },
+        { name: 'JetBrains Mono', data: jetbrainsMono, weight: 500, style: 'normal' },
+      ],
+    },
   );
 }
 

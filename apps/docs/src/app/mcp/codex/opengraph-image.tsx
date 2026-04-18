@@ -5,8 +5,8 @@ export const size = OG_SIZE;
 export const contentType = 'image/png';
 export const alt = 'Deslint MCP server for OpenAI Codex — deterministic design-system linting for agent-generated code';
 
-export default function Image() {
-  return renderAgentOg({
+export default async function Image() {
+  return await renderAgentOg({
     agent: 'Codex',
     tagline:
       'Deslint MCP tools for OpenAI Codex. Deterministic design-system and WCAG gates attached to every Codex generation.',

@@ -10,7 +10,14 @@ export type AgentOgConfig = {
   tools: string[];
 };
 
-export function renderAgentOg(config: AgentOgConfig): ImageResponse {
+export async function renderAgentOg(config: AgentOgConfig): Promise<ImageResponse> {
+  const [satoshiRegular, satoshiMedium, satoshiBold, jetbrainsMono] = await Promise.all([
+    fetch(new URL('../app/fonts/satoshi-regular.ttf', import.meta.url)).then((r) => r.arrayBuffer()),
+    fetch(new URL('../app/fonts/satoshi-medium.ttf', import.meta.url)).then((r) => r.arrayBuffer()),
+    fetch(new URL('../app/fonts/satoshi-bold.ttf', import.meta.url)).then((r) => r.arrayBuffer()),
+    fetch(new URL('../app/fonts/jetbrains-mono-medium.ttf', import.meta.url)).then((r) => r.arrayBuffer()),
+  ]);
+
   return new ImageResponse(
     (
       <div
@@ -22,7 +29,7 @@ export function renderAgentOg(config: AgentOgConfig): ImageResponse {
           background:
             'linear-gradient(135deg, #0B0A18 0%, #161434 46%, #1E1A3F 100%)',
           color: '#FAFAFB',
-          fontFamily: 'Inter, Arial, sans-serif',
+          fontFamily: 'Satoshi',
         }}
       >
         <div
@@ -97,7 +104,7 @@ export function renderAgentOg(config: AgentOgConfig): ImageResponse {
                   color: '#DDDAF5',
                   fontSize: '16px',
                   fontWeight: 600,
-                  fontFamily: 'monospace',
+                  fontFamily: 'JetBrains Mono',
                 }}
               >
                 {tool}
@@ -140,10 +147,10 @@ export function renderAgentOg(config: AgentOgConfig): ImageResponse {
             </div>
           </div>
 
-          <div style={{ display: 'flex', marginTop: '20px', fontSize: '17px', color: '#6B7280', fontFamily: 'monospace' }}>
+          <div style={{ display: 'flex', marginTop: '20px', fontSize: '17px', color: '#6B7280', fontFamily: 'JetBrains Mono' }}>
             {config.agent} → deslint
           </div>
-          <div style={{ display: 'flex', marginTop: '6px', fontSize: '26px', fontWeight: 700, color: '#111827', fontFamily: 'monospace', letterSpacing: '-0.01em' }}>
+          <div style={{ display: 'flex', marginTop: '6px', fontSize: '26px', fontWeight: 700, color: '#111827', fontFamily: 'JetBrains Mono', letterSpacing: '-0.01em' }}>
             analyze_project()
           </div>
 
@@ -174,12 +181,20 @@ export function renderAgentOg(config: AgentOgConfig): ImageResponse {
           </div>
 
           <div style={{ display: 'flex', marginTop: 'auto', fontSize: '14px', color: '#6B7280' }}>
-            <span style={{ display: 'flex', fontFamily: 'monospace' }}>{config.subhead}</span>
+            <span style={{ display: 'flex', fontFamily: 'JetBrains Mono' }}>{config.subhead}</span>
           </div>
         </div>
       </div>
     ),
-    { ...OG_SIZE },
+    {
+      ...OG_SIZE,
+      fonts: [
+        { name: 'Satoshi', data: satoshiRegular, weight: 400, style: 'normal' },
+        { name: 'Satoshi', data: satoshiMedium,  weight: 500, style: 'normal' },
+        { name: 'Satoshi', data: satoshiBold,    weight: 700, style: 'normal' },
+        { name: 'JetBrains Mono', data: jetbrainsMono, weight: 500, style: 'normal' },
+      ],
+    },
   );
 }
 

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import 'asciinema-player/dist/bundle/asciinema-player.css';
@@ -16,22 +16,42 @@ export const metadata: Metadata = {
   keywords: [
     'mcp',
     'model context protocol',
+    'mcp server',
     'claude code',
+    'claude code linter',
     'cursor',
+    'cursor linter',
     'codex',
     'windsurf',
+    'copilot',
     'ai coding agents',
+    'ai code review',
+    'ai code quality',
+    'ai generated code lint',
+    'vibe coding',
     'design system lint',
+    'design system enforcement',
     'design tokens',
+    'design qa',
+    'design drift',
     'tailwind lint',
+    'tailwind design system',
     'eslint plugin',
+    'react accessibility lint',
     'accessibility',
     'wcag',
-    'design drift',
+    'wcag scanner',
+    'responsive design lint',
+    'dark mode audit',
+    'local linter',
+    'local code analysis',
+    'deterministic static analysis',
   ],
-  authors: [{ name: 'Deslint' }],
+  applicationName: 'Deslint',
+  authors: [{ name: 'Deslint', url: 'https://deslint.com' }],
   creator: 'Deslint',
   publisher: 'Deslint',
+  category: 'technology',
   alternates: {
     canonical: '/',
     types: {
@@ -53,14 +73,23 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://deslint.com'),
   icons: {
     icon: [
-      { url: '/icons/favicon.ico', sizes: 'any' },
+      { url: '/favicon.ico', sizes: '48x48 32x32 16x16', type: 'image/x-icon' },
       { url: '/icons/icon-32.svg', type: 'image/svg+xml' },
       { url: '/icons/icon-32.png', sizes: '32x32', type: 'image/png' },
       { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
-    apple: '/icons/apple-touch-icon.png',
+    shortcut: '/favicon.ico',
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
   manifest: '/icons/site.webmanifest',
+  appleWebApp: {
+    title: 'Deslint',
+    statusBarStyle: 'black-translucent',
+    capable: true,
+  },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
@@ -83,6 +112,16 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     images: ['/opengraph-image'],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#534AB7' },
+    { media: '(prefers-color-scheme: dark)',  color: '#0B0A18' },
+  ],
+  colorScheme: 'light dark',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
