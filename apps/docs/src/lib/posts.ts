@@ -21,6 +21,15 @@ export interface Post {
 
 export const POSTS: Post[] = [
   {
+    slug: 'tailwind-v4-eslint-migration',
+    title: 'Tailwind v4 ESLint migration: a deterministic upgrade guide',
+    description:
+      'A working playbook for moving an ESLint setup from Tailwind v3 to v4 — what changes in the class generation, which lint rules go stale, and the deterministic checks that make the migration boring instead of risky.',
+    date: '2026-04-19',
+    readingMinutes: 10,
+    tags: ['Tailwind', 'ESLint', 'Migration', 'AI coding'],
+  },
+  {
     slug: 'fix-design-drift-ai-generated-code',
     title: 'How to fix design drift in AI-generated code',
     description:

@@ -11,6 +11,16 @@ export const metadata: Metadata = {
   description:
     'Install Deslint\'s MCP server in Windsurf. Deterministic design-token, accessibility, and responsive-layout lint the Cascade agent calls pre-commit. Local, no cloud.',
   alternates: { canonical: '/mcp/windsurf' },
+  keywords: [
+    'deslint mcp',
+    'windsurf mcp server',
+    'codeium windsurf mcp',
+    'cascade agent design lint',
+    'mcp server design lint',
+    'design linter for windsurf',
+    'ai coding agent design drift',
+    'deterministic design linter',
+  ],
   openGraph: {
     title: 'Deslint for Windsurf — MCP Design Linter',
     description:

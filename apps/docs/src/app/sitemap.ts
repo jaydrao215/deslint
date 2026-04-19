@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { POSTS } from '@/lib/posts';
+import { RULES } from '@/lib/rules';
 
 const BASE = 'https://deslint.com';
 
@@ -46,5 +47,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...staticEntries, ...postEntries];
+  // Each /docs/rules/<slug> is its own indexable page with unique meta and
+  // JSON-LD; emit one sitemap entry per rule so Google can crawl them
+  // directly instead of relying on the hub's outbound links.
+  const ruleEntries = RULES.map((rule) => ({
+    url: `${BASE}/docs/rules/${rule.slug}`,
+    lastModified: now,
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
+  return [...staticEntries, ...postEntries, ...ruleEntries];
 }

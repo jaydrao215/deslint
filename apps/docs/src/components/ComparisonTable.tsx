@@ -4,6 +4,40 @@ import { FadeIn } from './motion';
 import { Check, Minus, X } from 'lucide-react';
 
 /**
+ * "When to pick them" — honest, single-sentence positioning for each
+ * competitor in the comparison. The intent is to be useful to readers who
+ * already use the other tool, not to dunk on alternatives. Every entry
+ * names the situation where the other tool is the right call.
+ */
+const WHEN_TO_PICK: Record<string, { tool: string; pick: string }> = {
+  deslint: {
+    tool: 'Deslint',
+    pick:
+      'You ship UI written in part by AI agents, you have a design system you want to defend, and you want one local-first gate covering design tokens, WCAG, responsive layout, and dark mode in the same pass.',
+  },
+  jsxA11y: {
+    tool: 'eslint-plugin-jsx-a11y',
+    pick:
+      'Your stack is React-only, you only need accessibility lint, and you already have separate tooling for design tokens and responsive checks.',
+  },
+  tailwindEslint: {
+    tool: 'eslint-plugin-tailwindcss',
+    pick:
+      'You want class-order normalisation and duplicate-class detection on a Tailwind v3 codebase and do not need design-token enforcement, accessibility, or v4 support.',
+  },
+  sonarQube: {
+    tool: 'SonarQube',
+    pick:
+      'Your team already runs SonarQube for backend code quality and you want a single dashboard — accept that frontend design and a11y coverage will be partial.',
+  },
+  codeRabbit: {
+    tool: 'CodeRabbit',
+    pick:
+      'You want LLM-generated PR review summaries and are comfortable shipping diffs to a cloud reviewer; pair it with a deterministic local linter for the rules that must not be statistical.',
+  },
+};
+
+/**
  * Deslint vs. the adjacent tooling landscape. Every claim here is researched
  * against the actual competitor positioning — see DESLINT-EXECUTION.md Section
  * 10 for the sourcing. This is the single most important differentiation
@@ -200,6 +234,55 @@ export function ComparisonTable() {
               <span className="ml-auto text-gray-400 hidden sm:inline">
                 Sources: each tool&apos;s own README + v1.x release notes
               </span>
+            </div>
+          </div>
+        </FadeIn>
+
+        {/* When to pick them — every tool here is a legitimate choice for
+            some team. The block below names the situation in which each
+            competitor is the right call, instead of pretending Deslint is
+            the answer to every question. */}
+        <FadeIn delay={0.15}>
+          <div className="mt-12">
+            <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
+              When to pick them
+            </p>
+            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 tracking-tight text-balance">
+              An honest take on when each tool is the right call
+            </h3>
+            <p className="text-base text-gray-500 leading-relaxed mb-8 max-w-2xl">
+              Every option in the table is the right answer for some team.
+              The matrix above shows where each one stops; this block names
+              the situation where each one starts.
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              {(['deslint', 'jsxA11y', 'tailwindEslint', 'sonarQube', 'codeRabbit'] as const).map(
+                (key) => {
+                  const entry = WHEN_TO_PICK[key];
+                  const isUs = key === 'deslint';
+                  return (
+                    <div
+                      key={key}
+                      className={`rounded-2xl border p-5 ${
+                        isUs
+                          ? 'border-primary/30 bg-primary-50/40'
+                          : 'border-gray-200 bg-white'
+                      }`}
+                    >
+                      <p
+                        className={`font-semibold mb-2 ${
+                          isUs ? 'text-primary' : 'text-gray-900'
+                        }`}
+                      >
+                        Pick {entry.tool} when…
+                      </p>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {entry.pick}
+                      </p>
+                    </div>
+                  );
+                },
+              )}
             </div>
           </div>
         </FadeIn>
