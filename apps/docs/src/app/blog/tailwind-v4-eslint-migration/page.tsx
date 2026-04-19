@@ -290,20 +290,23 @@ pnpm add -D @deslint/eslint-plugin           # reads tokens from @theme`}</code>
                 <p className="text-gray-700 leading-relaxed mb-3">
                   This is the step most teams forget. The codemod migrates the
                   <em> runtime</em> token source to CSS, but your linter still
-                  needs to know what is allowed. With deslint, regenerate the{' '}
-                  <code>.deslintrc.json</code> from the new <code>@theme</code>{' '}
-                  block:
+                  needs to know what is allowed. Mirror the values declared
+                  inside your <code>@theme</code> block into the{' '}
+                  <code>designSystem</code> section of <code>.deslintrc.json</code>
+                  {' '}— colors, spacing, radii, fonts. If you also publish a
+                  Style Dictionary or Stitch token file as part of your build,{' '}
+                  <code>npx deslint import-tokens</code> can pull from there
+                  directly:
                 </p>
                 <pre className="bg-gray-950 text-gray-100 rounded-xl border border-gray-800/50 p-4 overflow-x-auto text-sm font-mono">
-                  <code>{`npx deslint import-tokens --tailwind-v4 ./app/styles.css --format deslintrc`}</code>
+                  <code>{`npx deslint import-tokens --style-dictionary ./tokens/build/tokens.json`}</code>
                 </pre>
                 <p className="text-gray-700 leading-relaxed mt-3">
-                  The command parses every <code>--color-*</code>,{' '}
-                  <code>--spacing-*</code>, <code>--font-*</code>, and{' '}
-                  <code>--radius-*</code> custom property declared inside{' '}
-                  <code>@theme</code>, and emits a deslintrc allowlist that
-                  matches the runtime exactly. Now <code>no-arbitrary-colors</code>{' '}
-                  knows your palette again.
+                  Once the allowlist matches your <code>@theme</code> exactly,{' '}
+                  <code>no-arbitrary-colors</code>,{' '}
+                  <code>no-arbitrary-spacing</code>, and{' '}
+                  <code>no-arbitrary-typography</code> stop drifting against
+                  the new runtime.
                 </p>
               </li>
 
@@ -324,7 +327,7 @@ pnpm add -D @deslint/eslint-plugin           # reads tokens from @theme`}</code>
                 </p>
                 <pre className="bg-gray-950 text-gray-100 rounded-xl border border-gray-800/50 p-4 overflow-x-auto text-sm font-mono">
                   <code>{`# deslint flags v3 classes that drift back in
-npx deslint scan --rules no-conflicting-classes,no-arbitrary-colors`}</code>
+npx deslint scan`}</code>
                 </pre>
                 <p className="text-gray-700 leading-relaxed mt-3">
                   The same <code>no-conflicting-classes</code> rule that
@@ -351,7 +354,7 @@ npx deslint scan --rules no-conflicting-classes,no-arbitrary-colors`}</code>
                 <pre className="bg-gray-950 text-gray-100 rounded-xl border border-gray-800/50 p-4 overflow-x-auto text-sm font-mono">
                   <code>{`# .github/workflows/lint.yml — relevant step
 - name: Deslint
-  run: npx @deslint/cli enforce-budget`}</code>
+  run: npx @deslint/cli scan --budget .deslint/budget.yml`}</code>
                 </pre>
               </li>
             </ol>
@@ -409,8 +412,8 @@ npx deslint scan --rules no-conflicting-classes,no-arbitrary-colors`}</code>
               <code>{`# 1. install the v4-aware lint set
 pnpm add -D @deslint/eslint-plugin @deslint/cli
 
-# 2. import tokens from your new @theme block
-npx deslint import-tokens --tailwind-v4 ./app/styles.css --format deslintrc
+# 2. update designSystem in .deslintrc.json to mirror your @theme block
+#    (or pull from a Style Dictionary build with import-tokens)
 
 # 3. measure
 npx deslint coverage`}</code>

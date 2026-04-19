@@ -383,6 +383,19 @@ export const RULES: Rule[] = [
     relatedSlugs: ['no-arbitrary-spacing', 'consistent-border-radius', 'spacing-rhythm-consistency'],
   },
   {
+    slug: 'no-arbitrary-border-radius',
+    name: 'no-arbitrary-border-radius',
+    category: 'Consistency',
+    tagline: 'Disallow arbitrary border-radius values; use the radius scale.',
+    description:
+      'Flags `rounded-[8px]`, `rounded-tl-[1rem]`, and friends. Suggests the nearest value from your configured radius scale so corners stay on-system instead of drifting one pixel at a time as agents bolt on new components.',
+    fixable: 'Yes — replaces the arbitrary value with the nearest scale step.',
+    suggestions: 'Yes — also offers the next-larger and next-smaller scale step.',
+    badCode: `<div className="rounded-[10px]">Card</div>`,
+    goodCode: `<div className="rounded-lg">Card</div>`,
+    relatedSlugs: ['consistent-border-radius', 'no-arbitrary-spacing', 'no-arbitrary-colors'],
+  },
+  {
     slug: 'consistent-border-radius',
     name: 'consistent-border-radius',
     category: 'Consistency',
