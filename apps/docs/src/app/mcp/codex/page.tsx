@@ -11,6 +11,15 @@ export const metadata: Metadata = {
   description:
     'Wire Deslint\'s MCP server into Codex. Deterministic design-system and a11y lint that Codex can call as a tool. Local-only, no extra LLM, no network egress.',
   alternates: { canonical: '/mcp/codex' },
+  keywords: [
+    'deslint mcp',
+    'codex mcp server',
+    'openai codex mcp',
+    'mcp server design lint',
+    'design linter for codex',
+    'ai coding agent design drift',
+    'deterministic design linter',
+  ],
   openGraph: {
     title: 'Deslint for Codex — MCP Design Linter',
     description:
