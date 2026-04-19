@@ -4,12 +4,12 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { CATEGORIES, RULES, getRulesByCategory } from '@/lib/rules';
 
 export const metadata: Metadata = {
-  title: 'Rules Reference — 33 Design, Accessibility & Token Lint Rules',
+  title: 'Rules Reference — 34 Design, Accessibility & Token Lint Rules',
   description:
-    'All 33 Deslint rules with examples, options, and auto-fix behaviour. Design-token rules (no-arbitrary-colors, consistent-border-radius), accessibility (a11y-color-contrast, aria-validation), responsive layout, dark-mode coverage, and more — every rule is its own indexable page.',
+    'All 34 Deslint rules with examples, options, and auto-fix behaviour. Design-token rules (no-arbitrary-colors, consistent-border-radius), accessibility (a11y-color-contrast, aria-validation), responsive layout, dark-mode coverage, and more — every rule is its own indexable page.',
   alternates: { canonical: '/docs/rules' },
   openGraph: {
-    title: 'Deslint Rules Reference — 33 Design & A11y Lint Rules',
+    title: 'Deslint Rules Reference — 34 Design & A11y Lint Rules',
     description:
       'Every Deslint rule — examples, options, auto-fix support, and a per-rule page. Tailwind token drift, WCAG contrast, dark-mode, responsive, and consistency categories.',
     url: 'https://deslint.com/docs/rules',
@@ -22,7 +22,7 @@ const JSON_LD = {
   '@type': 'ItemList',
   name: 'Deslint Rules Reference',
   description:
-    'All 33 deterministic rules shipped by Deslint for design-token, accessibility, responsive-layout, dark-mode, and consistency coverage. Each entry links to the rule\'s own page.',
+    'All 34 deterministic rules shipped by Deslint for design-token, accessibility, responsive-layout, dark-mode, and consistency coverage. Each entry links to the rule\'s own page.',
   url: 'https://deslint.com/docs/rules',
   numberOfItems: RULES.length,
   itemListElement: RULES.map((rule, i) => ({
@@ -32,6 +32,14 @@ const JSON_LD = {
     name: rule.name,
   })),
 };
+
+function categoryAnchor(category: string): string {
+  return category
+    .toLowerCase()
+    .replace(/&/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
 
 export default function RulesReference() {
   return (
@@ -74,7 +82,7 @@ export default function RulesReference() {
         if (rules.length === 0) return null;
         return (
           <section key={category}>
-            <h2>{category}</h2>
+            <h2 id={categoryAnchor(category)}>{category}</h2>
             <ul className="not-prose grid gap-3 sm:grid-cols-2">
               {rules.map((rule) => (
                 <li key={rule.slug}>
