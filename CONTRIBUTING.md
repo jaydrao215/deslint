@@ -162,6 +162,44 @@ Conventional-commits style:
 - `refactor(shared): extract colorspace conversions`
 - `chore(deps): bump vitest to 3.3`
 
+## Developer Certificate of Origin (DCO)
+
+Every commit on an accepted PR must carry a `Signed-off-by:` trailer
+that matches the commit author. This is the Linux Foundation's
+[Developer Certificate of Origin 1.1](https://developercertificate.org/)
+— by signing off you certify that you wrote the change (or have the
+right to submit it) and that it can be contributed under the
+project's MIT license.
+
+Sign off a commit with:
+
+```bash
+git commit -s -m "feat(cli): add --min-score flag"
+```
+
+Which adds, at the end of the commit message:
+
+```
+Signed-off-by: Your Name <your.email@example.com>
+```
+
+The name and email in `Signed-off-by:` must match your
+`user.name` / `user.email` git config. A CI check blocks PRs whose
+commits are missing sign-off. If you forget on an existing commit:
+
+```bash
+git commit --amend --signoff            # last commit only
+git rebase --signoff HEAD~N             # last N commits, non-interactive
+```
+
+## Code of Conduct
+
+This project adopts the
+[Contributor Covenant](./CODE_OF_CONDUCT.md). Participating in
+issues, pull requests, discussions, or any Deslint community space
+means you agree to abide by it. Reports of unacceptable conduct go
+to **conduct@deslint.com** and stay confidential.
+
 ## Reporting bugs
 
 Please open an issue at https://github.com/jaydrao215/deslint/issues with:
