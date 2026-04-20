@@ -28,8 +28,20 @@ export interface InlineViolation {
   severity: 'error' | 'warning';
 }
 
+export interface ApplicabilityInfo {
+  filesScanned: number;
+  tailwindFiles: number;
+  styleFiles: number;
+  applicable: boolean;
+  reason?: string;
+}
+
 export interface ScanResult {
-  score: number;
+  /** `null` when the scan had no applicable input — no class or style
+   *  attributes were found in any file so the class-based rules had
+   *  nothing to evaluate. Consumers must render "N/A" rather than a
+   *  fabricated 100. See VALIDATION-0.7.md for the bug this guards. */
+  score: number | null;
   totalViolations: number;
   errors: number;
   warnings: number;
@@ -45,6 +57,9 @@ export interface ScanResult {
    *  Trailer hashes user-only overrides so the hash survives default
    *  drift between CLI and Action. */
   userRules: Record<string, unknown>;
+  /** Populated post-scan so the PR comment can explain why a N/A
+   *  score appeared rather than leaving the reviewer guessing. */
+  applicability?: ApplicabilityInfo;
 }
 
 type RuleCategory =
@@ -306,11 +321,70 @@ async function scanFiles(
     ruleOverrides: scanConfig.userRules,
   });
 
+  const applicability = computeApplicability(absoluteFiles);
+  const scanPart = toScanResult(lintResult, cwd);
+
+  // Gate the score to `null` when the scan had no applicable input AND
+  // found no violations. Mirrors the CLI behaviour so a CSS-in-JS
+  // project can't silently score 100 off our class-based rules. A real
+  // finding proves the rules had SOMETHING to look at — respect that.
+  if (!applicability.applicable && lintResult.totalViolations === 0) {
+    return {
+      ...scanPart,
+      score: null,
+      qualityGate: scanConfig.qualityGate,
+      effectiveRules: lintResult.effectiveRules,
+      userRules: scanConfig.userRules,
+      applicability,
+    };
+  }
+
   return {
-    ...toScanResult(lintResult, cwd),
+    ...scanPart,
     qualityGate: scanConfig.qualityGate,
     effectiveRules: lintResult.effectiveRules,
     userRules: scanConfig.userRules,
+    applicability,
+  };
+}
+
+/** Cheap file-content probe: count files that contain class / style
+ *  attributes. Mirrors the CLI's computeApplicability to keep bug #4
+ *  behaviour consistent until bug #6 merges the two. */
+export function computeApplicability(files: string[]): ApplicabilityInfo {
+  const CLASS_RE = /\b(?:className|class)\s*=|\bclass(?:Names?|sx|va|x|nx)?\s*\(/;
+  const STYLE_RE = /\bstyle\s*=|from\s+['"]styled-components['"]|from\s+['"]@emotion\/[\w-]+['"]/;
+  const BYTE_CAP = 256 * 1024;
+
+  let tailwindFiles = 0;
+  let styleFiles = 0;
+  let filesScanned = 0;
+
+  for (const file of files) {
+    try {
+      const stat = fs.statSync(file);
+      if (!stat.isFile()) continue;
+      filesScanned++;
+      const size = Math.min(stat.size, BYTE_CAP);
+      if (size === 0) continue;
+      let content = fs.readFileSync(file, 'utf-8');
+      if (content.length > BYTE_CAP) content = content.slice(0, BYTE_CAP);
+      if (CLASS_RE.test(content)) tailwindFiles++;
+      if (STYLE_RE.test(content)) styleFiles++;
+    } catch {
+      /* unreadable — skip */
+    }
+  }
+
+  const applicable = tailwindFiles > 0 || styleFiles > 0;
+  return {
+    filesScanned,
+    tailwindFiles,
+    styleFiles,
+    applicable,
+    reason: applicable
+      ? undefined
+      : 'No class or style attributes detected — class-based rules had no applicable input.',
   };
 }
 

@@ -46,8 +46,33 @@ export function formatComment(
   minScore: number,
   gateResult?: GateResult,
 ): string {
-  const badge = scoreBadge(result.score);
-  const passedThreshold = minScore === 0 || result.score >= minScore;
+  // Null score = scan had no applicable input. Render a distinct "N/A"
+  // banner so reviewers don't mistake it for a 0 or 100.
+  if (result.score === null) {
+    const reason = result.applicability?.reason
+      ?? 'No class or style attributes detected in the scanned files.';
+    const lines: string[] = [
+      '## :grey_question: Deslint Design Review',
+      '',
+      '**Design Health Score: N/A**',
+      '',
+      `> ${reason}`,
+      '',
+      `| Metric | Value |`,
+      `|--------|-------|`,
+      `| Files scanned | ${result.filesScanned} |`,
+      `| Files with violations | ${result.filesWithViolations} |`,
+      `| Total violations | ${result.totalViolations} |`,
+      '',
+      '---',
+      '*Powered by [Deslint](https://deslint.com) — Design quality gate for AI-generated code*',
+    ];
+    return lines.join('\n');
+  }
+
+  const score = result.score;
+  const badge = scoreBadge(score);
+  const passedThreshold = minScore === 0 || score >= minScore;
   const thresholdLine = minScore > 0
     ? `\n> Minimum threshold: **${minScore}** — ${passedThreshold ? ':white_check_mark: Passed' : ':x: Failed'}`
     : '';
@@ -55,7 +80,7 @@ export function formatComment(
   const lines: string[] = [
     `## ${badge} Deslint Design Review`,
     '',
-    `**Design Health Score: ${result.score}/100**${thresholdLine}`,
+    `**Design Health Score: ${score}/100**${thresholdLine}`,
     '',
     `| Metric | Value |`,
     `|--------|-------|`,

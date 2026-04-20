@@ -62,7 +62,10 @@ export interface DeslintAttestation {
   projectDir: string;
   rulesetHash: string;
   score: {
-    overall: number;
+    /** `null` when the scan had no applicable input (e.g. a pure
+     *  CSS-in-JS codebase). Verifiers must preserve null rather than
+     *  coerce to 0 — a nulled attestation is still signable. */
+    overall: number | null;
     grade: string;
     categories: Record<string, { score: number; violations: number }>;
     totalViolations: number;
@@ -156,7 +159,7 @@ export async function buildAttestation(
   // gate decision that was in effect at attestation time.
   const loaded = await loadBudget({ explicitPath: options.budgetPath, cwd: projectDir });
   const budgetSnap: BudgetScanSnapshot = {
-    overall: scoreResult.overall,
+    overall: scoreResult.overall ?? 100,
     categories: {
       colors: scoreResult.categories.colors.score,
       spacing: scoreResult.categories.spacing.score,

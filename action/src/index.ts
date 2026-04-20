@@ -51,8 +51,14 @@ async function run(): Promise<void> {
 
     const result = await runScan(changedFiles, workingDirectory, configPath);
 
+    // When the scan had no applicable input (score === null), the gate
+    // evaluator still needs a numeric floor; pass 100 so rule-count
+    // conditions are the only thing that can fail the gate. The action
+    // output below surfaces the N/A state separately so reviewers see
+    // the real picture.
+    const gateOverall = result.score ?? 100;
     const gateResult = evaluateQualityGate(result.qualityGate, {
-      overall: result.score,
+      overall: gateOverall,
       categories: {
         colors: result.categories.find((c) => c.name === 'colors')?.score ?? 100,
         spacing: result.categories.find((c) => c.name === 'spacing')?.score ?? 100,
@@ -86,7 +92,11 @@ async function run(): Promise<void> {
       const verification = verifyTrailer({
         commitMessage,
         rules: projectScan.userRules,
-        score: projectScan.score,
+        // Trailer compares a committed numeric claim; use 100 as the
+        // floor when the scan wasn't applicable so a N/A scan doesn't
+        // implode the verifier. The trailer section still surfaces the
+        // mismatch if the commit claimed a non-100 score.
+        score: projectScan.score ?? 100,
         fileCount: projectScan.filesScanned,
       });
       trailerSection = formatTrailerSection(verification);
@@ -183,12 +193,16 @@ async function run(): Promise<void> {
         repo,
         prNumber,
         result.inlineViolations,
-        result.score,
+        result.score ?? 100,
         maxInlineComments,
       );
     }
 
-    core.setOutput('score', String(result.score));
+    // Score output: emit "N/A" literally when the scan wasn't
+    // applicable so downstream workflow steps can branch on it cleanly
+    // rather than parsing a misleading number.
+    core.setOutput('score', result.score === null ? 'N/A' : String(result.score));
+    core.setOutput('applicable', String(result.score !== null));
     core.setOutput('total-violations', String(result.totalViolations));
     core.setOutput('debt-minutes', String(result.debtMinutes));
     core.setOutput('quality-gate-passed', String(gateResult.passed));
@@ -198,9 +212,18 @@ async function run(): Promise<void> {
     core.setOutput('signature-status', signature.status);
     core.setOutput('agent-breakdown', JSON.stringify(scorecardEntries));
     core.setOutput('token-drift', JSON.stringify(tokenDriftSummary));
-    core.setOutput('passed', String(result.score >= minScore && gateResult.passed));
+    // `passed` stays true for N/A scans — we can't fail on a score we
+    // don't have. min-score gate below mirrors this by skipping rather
+    // than failing when the score is null.
+    const minScorePassed = result.score === null || result.score >= minScore;
+    core.setOutput('passed', String(minScorePassed && gateResult.passed));
 
-    if (minScore > 0 && result.score < minScore) {
+    if (result.score === null) {
+      core.info(
+        'Design Health Score is N/A — no class or style attributes detected ' +
+          'in the changed files. Skipping min-score gate.',
+      );
+    } else if (minScore > 0 && result.score < minScore) {
       core.setFailed(
         `Design Health Score ${result.score} is below the minimum threshold of ${minScore}.`,
       );

@@ -268,7 +268,10 @@ program
           try {
             const history: HistoryEntry[] = JSON.parse(readFileSync(historyPath, 'utf-8'));
             const last = history[history.length - 1];
-            if (last) {
+            if (last && last.overall !== null) {
+              // Skip a previous snapshot with a null score — the
+              // regression gate has no baseline to compare against
+              // when the prior run wasn't applicable.
               previousSnapshot = {
                 overall: last.overall,
                 categories: last.categories,
@@ -280,22 +283,30 @@ program
         }
       }
 
-      const gateResult = evaluateQualityGate(
-        config?.qualityGate,
-        {
-          overall: scoreResult.overall,
-          categories: {
-            colors: scoreResult.categories.colors.score,
-            spacing: scoreResult.categories.spacing.score,
-            typography: scoreResult.categories.typography.score,
-            responsive: scoreResult.categories.responsive.score,
-            consistency: scoreResult.categories.consistency.score,
-          },
-          totalViolations: lintResult.totalViolations,
-          debtMinutes: debtResult.totalMinutes,
-        },
-        previousSnapshot,
-      );
+      const gateResult =
+        scoreResult.overall === null
+          ? {
+              passed: true,
+              enforced: false,
+              failures: [],
+              conditionsChecked: 0,
+            }
+          : evaluateQualityGate(
+              config?.qualityGate,
+              {
+                overall: scoreResult.overall,
+                categories: {
+                  colors: scoreResult.categories.colors.score,
+                  spacing: scoreResult.categories.spacing.score,
+                  typography: scoreResult.categories.typography.score,
+                  responsive: scoreResult.categories.responsive.score,
+                  consistency: scoreResult.categories.consistency.score,
+                },
+                totalViolations: lintResult.totalViolations,
+                debtMinutes: debtResult.totalMinutes,
+              },
+              previousSnapshot,
+            );
 
       if (gateResult.conditionsChecked > 0 && outputFormat === 'text') {
         const colorFn = gateResult.passed ? chalk.green : chalk.red;
@@ -318,7 +329,10 @@ program
           });
 
       const budgetSnapshot: BudgetScanSnapshot = {
-        overall: scoreResult.overall,
+        // When the scan isn't applicable, use 100 so the budget gate
+        // is a no-op for score-based conditions. Rule-count caps still
+        // evaluate against the (empty) byRule map correctly.
+        overall: scoreResult.overall ?? 100,
         categories: {
           colors: scoreResult.categories.colors.score,
           spacing: scoreResult.categories.spacing.score,
@@ -367,11 +381,20 @@ program
         saveHistory(cwd, lintResult, scoreResult);
       }
 
-      if (outputFormat === 'text') {
+      if (outputFormat === 'text' && scoreResult.overall !== null) {
         generateHtmlReport(lintResult, scoreResult, cwd);
         console.log(chalk.gray(`  Full report: .deslint/report.html`));
         console.log('');
+      } else if (outputFormat === 'text') {
+        console.log(
+          chalk.gray(
+            '  HTML report skipped — no applicable input for the rule set.',
+          ),
+        );
+        console.log('');
+      }
 
+      if (outputFormat === 'text') {
         // Install-to-value: tell the user the literal next command to
         // run. Without this, a first-time user finishes `scan` with no
         // idea whether to fix, gate in CI, or re-import tokens.
@@ -417,7 +440,17 @@ program
 
       if (opts.minScore) {
         const minScore = parseInt(opts.minScore, 10);
-        if (scoreResult.overall < minScore) {
+        if (scoreResult.overall === null) {
+          // Can't gate on a score the scanner didn't earn — pass
+          // through without failing the job. The "N/A" banner already
+          // made this visible to the user.
+          console.error(
+            chalk.yellow(
+              `  Score N/A — --min-score ${minScore} skipped ` +
+                `(${scoreResult.notApplicableReason ?? 'no applicable input'}).`,
+            ),
+          );
+        } else if (scoreResult.overall < minScore) {
           console.error(
             chalk.red(`  Score ${scoreResult.overall} is below minimum threshold ${minScore}`),
           );

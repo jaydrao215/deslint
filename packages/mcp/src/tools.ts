@@ -47,7 +47,11 @@ export interface AnalyzeFileResult {
 }
 export interface AnalyzeProjectResult {
   projectDir: string;
-  overallScore: number;
+  /** `null` when the scan had no applicable input — e.g. a pure
+   *  CSS-in-JS codebase where the class-based rules couldn't evaluate
+   *  anything. Agents must treat null as "no score available" rather
+   *  than coerce to 0 or 100. */
+  overallScore: number | null;
   grade: string;
   totalFiles: number;
   filesWithIssues: number;
@@ -113,7 +117,9 @@ export interface FixSuggestion {
 }
 export interface SuggestFixStrategyResult {
   projectDir: string;
-  overallScore: number;
+  /** `null` when the scan had no applicable input. Mirrors
+   *  AnalyzeProjectResult.overallScore. */
+  overallScore: number | null;
   totalViolations: number;
   /** Fix suggestions ordered by impact score (highest first). */
   suggestions: FixSuggestion[];
@@ -424,9 +430,10 @@ export interface EnforceBudgetResult {
   reasons: EnforceBudgetBreach[];
   /** Advisory edits the agent can apply to get under budget. */
   suggestedEdits: EnforceBudgetEdit[];
-  /** Scan snapshot used to evaluate the budget. */
+  /** Scan snapshot used to evaluate the budget. `overall` is `null`
+   *  when the scan had no applicable input. */
   score: {
-    overall: number;
+    overall: number | null;
     grade: string;
     categories: Record<string, { score: number; violations: number }>;
     totalViolations: number;
@@ -550,7 +557,10 @@ export async function enforceBudget(params: {
     debtMinutes += effortForRule(ruleId) * count;
   }
   const snapshot = {
-    overall: scoreResult.overall,
+    // Budget checks still run on N/A scans — rule-count caps can fire
+    // even when the overall score is null. Use 100 as the floor so the
+    // score-threshold condition doesn't accidentally fail a no-op scan.
+    overall: scoreResult.overall ?? 100,
     categories: {
       colors: scoreResult.categories.colors.score,
       spacing: scoreResult.categories.spacing.score,
@@ -602,7 +612,9 @@ export async function enforceBudget(params: {
   }
   const trailer = formatTrailerLine({
     rules: userRules,
-    score: scoreResult.overall,
+    // Trailer records the committed scan claim; N/A scans emit the
+    // neutral 100 floor so the trailer still verifies deterministically.
+    score: scoreResult.overall ?? 100,
     fileCount: lintResult.totalFiles,
   });
   return {

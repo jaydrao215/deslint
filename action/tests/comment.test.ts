@@ -115,4 +115,48 @@ describe('formatComment', () => {
     expect(comment).toContain('Powered by');
     expect(comment).toContain('Deslint');
   });
+
+  // Applicability gate — reviewers need to know when the score is N/A
+  // rather than seeing a fabricated number. Guards VALIDATION-0.7.md
+  // bug #4.
+  it('renders an N/A banner when score is null', () => {
+    const comment = formatComment(
+      makeScanResult({
+        score: null,
+        totalViolations: 0,
+        categories: [],
+        topViolations: [],
+        applicability: {
+          filesScanned: 200,
+          tailwindFiles: 0,
+          styleFiles: 0,
+          applicable: false,
+          reason: 'No class or style attributes detected.',
+        },
+      }),
+      0,
+    );
+    expect(comment).toContain('Design Health Score: N/A');
+    expect(comment).toContain('No class or style');
+    expect(comment).not.toContain('/100');
+  });
+
+  it('does not render min-score pass/fail line when score is null', () => {
+    const comment = formatComment(
+      makeScanResult({
+        score: null,
+        applicability: {
+          filesScanned: 10,
+          tailwindFiles: 0,
+          styleFiles: 0,
+          applicable: false,
+          reason: 'No class or style attributes detected.',
+        },
+      }),
+      75,
+    );
+    expect(comment).not.toContain('Minimum threshold');
+    expect(comment).not.toContain('Passed');
+    expect(comment).not.toContain('Failed');
+  });
 });
