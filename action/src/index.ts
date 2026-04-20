@@ -7,6 +7,7 @@ import { formatComment } from './comment.js';
 import { postInlineReview } from './review.js';
 import { verifyTrailer, formatTrailerSection } from './trailer.js';
 import { verifySignature, formatSignatureSection } from './verify-signature.js';
+import { buildAgentScorecard, formatAgentScorecardSection } from './agent-scorecard.js';
 
 const COMMENT_MARKER = '<!-- deslint-design-review -->';
 
@@ -106,8 +107,36 @@ async function run(): Promise<void> {
     const signatureVerified = signature.status === 'verified';
     core.info(`Signature verification: ${signature.status} \u2014 ${signature.message}`);
 
+    // Per-agent scorecard: attribute inline violations to authoring
+    // agents (Claude / Cursor / Codex / Copilot / Windsurf / humans)
+    // via `git blame`. Skipped when shallow checkout — we emit a hint
+    // so the user knows to set `fetch-depth: 0`.
+    const agentScorecardEnabled = core.getInput('agent-scorecard') !== 'false';
+    let scorecardSection = '';
+    let scorecardEntries: Array<Record<string, unknown>> = [];
+    if (agentScorecardEnabled && result.inlineViolations.length > 0) {
+      const prCommitShas = await fetchPrCommitShas(octokit, owner, repo, prNumber);
+      const scorecard = buildAgentScorecard({
+        workingDirectory,
+        violations: result.inlineViolations,
+        prCommitShas,
+      });
+      scorecardSection = formatAgentScorecardSection(scorecard);
+      scorecardEntries = scorecard.entries.map((e) => ({
+        agent: e.agent.label,
+        kind: e.agent.kind,
+        violations: e.violations,
+        files: e.files,
+        byRule: e.byRule,
+      }));
+      core.info(`Agent scorecard: ${scorecard.status} (${scorecard.entries.length} agents).`);
+    }
+
     const commentBody =
-      formatComment(result, minScore, gateResult) + trailerSection + signatureSection;
+      formatComment(result, minScore, gateResult) +
+      trailerSection +
+      signatureSection +
+      scorecardSection;
     await upsertComment(octokit, owner, repo, prNumber, commentBody);
 
     const inlineReview = core.getInput('inline-review') !== 'false';
@@ -132,6 +161,7 @@ async function run(): Promise<void> {
     core.setOutput('trailer-status', trailerStatus);
     core.setOutput('signature-verified', String(signatureVerified));
     core.setOutput('signature-status', signature.status);
+    core.setOutput('agent-breakdown', JSON.stringify(scorecardEntries));
     core.setOutput('passed', String(result.score >= minScore && gateResult.passed));
 
     if (minScore > 0 && result.score < minScore) {
@@ -204,6 +234,30 @@ async function upsertComment(
       body: fullBody,
     });
   }
+}
+
+async function fetchPrCommitShas(
+  octokit: ReturnType<typeof github.getOctokit>,
+  owner: string,
+  repo: string,
+  prNumber: number,
+): Promise<Set<string>> {
+  const shas = new Set<string>();
+  let page = 1;
+  const perPage = 100;
+  while (true) {
+    const { data } = await octokit.rest.pulls.listCommits({
+      owner,
+      repo,
+      pull_number: prNumber,
+      per_page: perPage,
+      page,
+    });
+    for (const c of data) shas.add(c.sha);
+    if (data.length < perPage) break;
+    page++;
+  }
+  return shas;
 }
 
 function formatNoFilesComment(): string {

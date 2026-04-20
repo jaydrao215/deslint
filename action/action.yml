@@ -44,6 +44,15 @@ inputs:
       signed attestations at the merge gate.
     required: false
     default: 'false'
+  agent-scorecard:
+    description: >-
+      When "true" (default), attribute inline violations to the
+      authoring agent (Claude / Cursor / Codex / Copilot / Windsurf /
+      humans) via `git blame` and render a per-agent scorecard in the
+      PR comment. Requires `fetch-depth: 0` on the `actions/checkout`
+      step. Set to "false" to disable the scorecard entirely.
+    required: false
+    default: 'true'
 
 outputs:
   score:
@@ -70,6 +79,11 @@ outputs:
       One of: verified | missing | invalid | attestation-missing | skipped.
       `missing` means the attestation exists but the `.sigstore` sidecar
       does not; `invalid` means Sigstore verification failed.
+  agent-breakdown:
+    description: >-
+      JSON array of `{ agent, kind, violations, files, byRule }` entries
+      sorted by violations descending. Empty array when the scorecard is
+      skipped (shallow checkout, no violations, or `agent-scorecard: false`).
 
 runs:
   using: 'node20'
