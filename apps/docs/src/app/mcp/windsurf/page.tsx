@@ -7,22 +7,22 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { mcpAgentTechArticle } from '@/lib/mcp-jsonld';
 
 export const metadata: Metadata = {
-  title: 'Deslint for Windsurf — MCP Design Linter for Codeium\'s Agent IDE',
+  title: 'Deslint for Windsurf — Verification Layer Inside Codeium\'s Agent IDE',
   description:
-    'Install Deslint\'s MCP server in Windsurf. Deterministic design-token, accessibility, and responsive-layout lint the Cascade agent calls pre-commit. Local, no cloud.',
+    'Install Deslint\'s MCP server in Windsurf. The verification layer for AI-generated code: deterministic design-token, accessibility, and responsive-layout rules the Cascade agent calls pre-commit. Local, no cloud.',
   alternates: { canonical: '/mcp/windsurf' },
   keywords: [
     'deslint mcp',
     'windsurf mcp server',
     'codeium windsurf mcp',
     'cascade agent design lint',
-    'mcp server design lint',
+    'verify ai generated code',
     'design linter for windsurf',
     'ai coding agent design drift',
     'deterministic design linter',
   ],
   openGraph: {
-    title: 'Deslint for Windsurf — MCP Design Linter',
+    title: 'Deslint for Windsurf — Verification Layer for AI-Generated Code',
     description:
       'Cascade calls deslint\'s MCP tools before shipping UI. Zero egress, zero LLM in the check path.',
     url: 'https://deslint.com/mcp/windsurf',
@@ -30,17 +30,17 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Deslint for Windsurf — MCP Design Linter',
+    title: 'Deslint for Windsurf — Verification Layer for AI-Generated Code',
     description:
-      'Install the Deslint MCP server in Windsurf. Deterministic design-system, accessibility, and responsive-layout lint the Cascade agent calls pre-commit.',
+      'Install the Deslint MCP server in Windsurf. Deterministic design-system, accessibility, and responsive-layout rules the Cascade agent calls pre-commit.',
   },
 };
 
 const JSON_LD = mcpAgentTechArticle({
   agentName: 'Windsurf',
-  headline: 'Deslint for Windsurf — MCP Design Linter',
+  headline: 'Deslint for Windsurf — Verification Layer for AI-Generated Code',
   description:
-    "Install Deslint's MCP server in Windsurf. Deterministic design-token, accessibility, and responsive-layout lint the Cascade agent calls pre-commit. Local, no cloud.",
+    "Install Deslint's MCP server in Windsurf. The verification layer for AI-generated code — deterministic design-token, accessibility, and responsive-layout rules the Cascade agent calls pre-commit. Local, no cloud.",
   url: 'https://deslint.com/mcp/windsurf',
 });
 
@@ -67,11 +67,11 @@ export default function WindsurfPage() {
         </h1>
         <p className="text-lg text-gray-600 leading-relaxed mb-8">
           Windsurf&apos;s Cascade agent moves across files at the speed of a
-          full codebase edit. That&apos;s exactly when deterministic
-          guardrails matter most — without them, one Cascade run can silently
-          regress your dark-mode contrast and snap every button to
-          off-palette greys. Deslint&apos;s MCP server gives Cascade a
-          deterministic tool to call on every touched file.
+          full codebase edit. That&apos;s exactly when a deterministic
+          verification layer matters most — without one, a single Cascade run
+          can silently regress your dark-mode contrast and snap every button
+          to off-palette greys. Deslint&apos;s MCP server gives Cascade a
+          deterministic tool to call on every touched file, before it ships.
         </p>
 
         <section className="mb-10">

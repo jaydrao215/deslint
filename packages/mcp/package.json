@@ -1,7 +1,7 @@
 {
   "name": "@deslint/mcp",
   "version": "0.6.0",
-  "description": "MCP server for Deslint — real-time design quality feedback in Cursor/Claude Code",
+  "description": "MCP server for Deslint, the verification layer for AI-generated code — deterministic checks Claude Code, Cursor, Codex, and Windsurf call before writing a file",
   "homepage": "https://deslint.com",
   "repository": {
     "type": "git",

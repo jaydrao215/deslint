@@ -7,21 +7,21 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { mcpAgentTechArticle } from '@/lib/mcp-jsonld';
 
 export const metadata: Metadata = {
-  title: 'Deslint for Cursor — MCP Design Linter (2 min install)',
+  title: 'Deslint for Cursor — Verify AI Code Before It Lands (2 min install)',
   description:
-    'Install Deslint\'s MCP server in Cursor. Deterministic design-system, token, and WCAG lint that Cursor calls before it writes code. Local-only. No LLM. No egress.',
+    'Install Deslint\'s MCP server in Cursor. The verification layer for AI-generated code: deterministic design-token, WCAG, and responsive rules that Cursor calls before it writes the file. Local-only. Zero LLM in the hot path. Zero code egress.',
   alternates: { canonical: '/mcp/cursor' },
   keywords: [
     'deslint mcp',
     'local mcp linting for cursor',
     'cursor mcp server',
-    'mcp server design lint',
+    'verify ai generated code',
     'design linter for cursor',
     'ai coding agent design drift',
     'deterministic design linter',
   ],
   openGraph: {
-    title: 'Deslint for Cursor — MCP Design Linter',
+    title: 'Deslint for Cursor — Verification Layer for AI-Generated Code',
     description:
       'Cursor calls deslint\'s MCP tools before it ships a change. Zero cloud, zero LLM in the hot path.',
     url: 'https://deslint.com/mcp/cursor',
@@ -29,17 +29,17 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Deslint for Cursor — MCP Design Linter',
+    title: 'Deslint for Cursor — Verify AI Code Before It Lands',
     description:
-      'Install the Deslint MCP server in Cursor. Deterministic design-token, WCAG, and responsive lint called before code is written.',
+      'Install the Deslint MCP server in Cursor. Deterministic design-token, WCAG, and responsive rules called before code is written.',
   },
 };
 
 const JSON_LD = mcpAgentTechArticle({
   agentName: 'Cursor',
-  headline: 'Deslint for Cursor — MCP Design Linter',
+  headline: 'Deslint for Cursor — Verification Layer for AI-Generated Code',
   description:
-    "Install Deslint's MCP server in Cursor. Deterministic design-system, token, and WCAG lint that Cursor calls before it writes code. Local-only. No LLM. No egress.",
+    "Install Deslint's MCP server in Cursor. The verification layer for AI-generated code — deterministic design-system, token, and WCAG rules that Cursor calls before it writes the file. Local-only. Zero LLM. Zero egress.",
   url: 'https://deslint.com/mcp/cursor',
 });
 
@@ -67,9 +67,9 @@ export default function CursorPage() {
         <p className="text-lg text-gray-600 leading-relaxed mb-8">
           Cursor&apos;s Composer and Agent modes are prolific. Within a week
           they can quietly rewrite a third of your UI, and half of it will
-          have slipped past your design tokens. Deslint runs as a Model
-          Context Protocol server Cursor invokes in-loop — pre-generation,
-          deterministically, with zero network calls.
+          have slipped past your design tokens. Deslint is the verification
+          layer Cursor invokes in-loop — a Model Context Protocol server,
+          called pre-generation, deterministically, with zero network calls.
         </p>
 
         <section className="mb-10">

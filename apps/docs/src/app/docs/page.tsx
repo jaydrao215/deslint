@@ -35,9 +35,9 @@ export default function DocsIndex() {
           Deslint Documentation
         </h1>
         <p className="text-lg text-gray-500 leading-relaxed">
-          The design quality gate for AI-generated frontend code.
+          The verification layer for AI-generated code.
           <br className="hidden sm:block" />
-          ESLint plugin + CLI + MCP server.
+          ESLint plugin + CLI + MCP server + GitHub Action.
         </p>
       </div>
 

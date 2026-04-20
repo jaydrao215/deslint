@@ -1,7 +1,7 @@
 {
   "name": "@deslint/cli",
   "version": "0.6.0",
-  "description": "CLI for Deslint — project-wide design quality analysis + Design Health Score",
+  "description": "CLI for Deslint, the verification layer for AI-generated code — scan, fix, attest, and Design Health Score",
   "homepage": "https://deslint.com",
   "repository": {
     "type": "git",

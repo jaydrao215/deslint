@@ -1,11 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Copy, Check, Terminal, Star } from 'lucide-react';
+import { ArrowRight, Copy, Check, Terminal, Star, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { AgentLoopMockup } from './mockups/AgentLoopMockup';
 import { formatStarCount } from '@/lib/github-stars';
+import { POSITIONING } from '@/lib/positioning';
 
 const GITHUB_URL = 'https://github.com/jaydrao215/deslint';
 
@@ -21,10 +22,10 @@ interface HeroProps {
  * count, fix) matches what the real `@deslint/mcp` server returns — the
  * visual is the product, not a pitch for it.
  *
- * The copy is deliberately vendor-neutral. We don't name Cursor, Claude
- * Code, Windsurf, or Copilot. The promise ("the deterministic check
- * inside your AI coding loop") holds across all of them and every future
- * agent, without dating the copy.
+ * The H1, sub-line, and zero-LLM promise are imported from
+ * `@/lib/positioning` — the single source of truth for product
+ * positioning across the docs site. Feature additions never edit these
+ * strings; see apps/docs/src/lib/positioning.ts.
  */
 export function Hero({ stars }: HeroProps) {
   return (
@@ -42,7 +43,7 @@ export function Hero({ stars }: HeroProps) {
             >
               <div className="inline-flex items-center gap-2.5 rounded-full border border-primary/15 bg-primary-50/60 backdrop-blur-sm px-4 py-1.5 text-sm font-medium text-primary mb-7">
                 <Terminal className="h-3.5 w-3.5" />
-                <span>Local · Deterministic · Runs inside the agent loop</span>
+                <span>{POSITIONING.chip}</span>
               </div>
             </motion.div>
 
@@ -52,25 +53,28 @@ export function Hero({ stars }: HeroProps) {
               transition={{ duration: 0.6, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
               className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-[1.06] mb-6 text-balance"
             >
-              AI writes fast.{' '}
-              <span className="gradient-text-hero">Deslint keeps it shippable.</span>
+              {POSITIONING.h1Lead}{' '}
+              <span className="gradient-text-hero">{POSITIONING.h1Accent}</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.35 }}
-              className="text-base sm:text-lg text-gray-500 mb-8 max-w-xl leading-relaxed"
+              className="text-base sm:text-lg text-gray-500 mb-6 max-w-xl leading-relaxed"
             >
-              Design drift. Token breakage. Accessibility failures.
-              Dark-mode gaps. Bundle bloat. Autocomplete ships them all.
-              Deslint is the deterministic check that runs wherever AI
-              writes — your editor, your CI, every PR, and{' '}
-              <span className="font-semibold text-gray-700">
-                inside the agent loop itself
-              </span>
-              . Local. No LLM. Zero bytes ever leave your machine.
+              {POSITIONING.sub}
             </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.42 }}
+              className="inline-flex items-center gap-2.5 rounded-full border border-pass/20 bg-pass/5 px-4 py-1.5 text-sm font-medium text-pass mb-8"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>{POSITIONING.zeroLlm}</span>
+            </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}

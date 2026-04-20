@@ -7,39 +7,39 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { mcpAgentTechArticle } from '@/lib/mcp-jsonld';
 
 export const metadata: Metadata = {
-  title: 'Deslint for Claude Code — MCP Design Linter (2 min install)',
+  title: 'Deslint for Claude Code — Verify AI Code Before It Lands (2 min install)',
   description:
-    'Install Deslint\'s MCP server in Claude Code. Deterministic design-system and WCAG lint that runs before Claude writes code. Zero LLM, zero cloud, zero egress.',
+    'Install Deslint\'s MCP server in Claude Code. The verification layer for AI-generated code: deterministic design-system and WCAG rules that run before Claude writes the file. Zero LLM in the hot path, zero code egress.',
   alternates: { canonical: '/mcp/claude-code' },
   keywords: [
     'deslint mcp',
     'local mcp linting for claude code',
     'claude code mcp server',
-    'mcp server design lint',
+    'verify ai generated code',
     'design linter for claude code',
     'ai coding agent design drift',
     'deterministic design linter',
   ],
   openGraph: {
-    title: 'Deslint for Claude Code — MCP Design Linter',
+    title: 'Deslint for Claude Code — Verification Layer for AI-Generated Code',
     description:
-      'Deterministic design and a11y lint inside Claude Code. Local MCP server, no cloud, no LLM in the hot path.',
+      'Deterministic rules inside Claude Code. Local MCP server, zero LLM in the hot path, zero code egress.',
     url: 'https://deslint.com/mcp/claude-code',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Deslint for Claude Code — MCP Design Linter',
+    title: 'Deslint for Claude Code — Verify AI Code Before It Lands',
     description:
-      'Install the Deslint MCP server in Claude Code. Deterministic design-system and WCAG lint that runs before Claude writes code.',
+      'Install the Deslint MCP server in Claude Code. The verification layer for AI-generated code — runs before Claude writes the file.',
   },
 };
 
 const JSON_LD = mcpAgentTechArticle({
   agentName: 'Claude Code',
-  headline: 'Deslint for Claude Code — MCP Design Linter',
+  headline: 'Deslint for Claude Code — Verification Layer for AI-Generated Code',
   description:
-    "Install Deslint's MCP server in Claude Code. Deterministic design-system and WCAG lint that runs before Claude writes code. Zero LLM, zero cloud, zero egress.",
+    "Install Deslint's MCP server in Claude Code. The verification layer for AI-generated code — deterministic design-system and WCAG rules that run before Claude writes the file. Zero LLM in the hot path, zero code egress.",
   url: 'https://deslint.com/mcp/claude-code',
 });
 
@@ -67,9 +67,9 @@ export default function ClaudeCodePage() {
         <p className="text-lg text-gray-600 leading-relaxed mb-8">
           Claude Code is fast at shipping UI. It is equally fast at shipping
           arbitrary hex colours, off-scale spacing, missing alt text, and
-          contrast failures. Deslint is the deterministic check Claude Code
-          can call <em>before</em> it writes the file — delivered over the
-          Model Context Protocol.
+          contrast failures. Deslint is the verification layer Claude Code
+          calls <em>before</em> it writes the file — deterministic, delivered
+          over the Model Context Protocol, zero LLM in the hot path.
         </p>
 
         <section className="mb-10">

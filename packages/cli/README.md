@@ -1,6 +1,8 @@
 # @deslint/cli
 
-> Design quality CLI with scan, fix, and Design Health Score.
+> The verification layer for AI-generated code — CLI: scan, fix, attest, and Design Health Score.
+
+Scan a project, verify it against your design-system and accessibility standards, auto-fix what is safe, and emit a byte-reproducible attestation your merge gate can re-verify. Zero LLM in the hot path. Zero code leaves your machine.
 
 <p align="center">
   <img src="https://deslint.com/demo/cli-demo.gif" alt="deslint scan producing a Design Health Score with per-category breakdown and violation list" width="720">

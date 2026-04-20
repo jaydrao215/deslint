@@ -14,7 +14,7 @@ export const MCP_SOFTWARE_APPLICATION = {
   name: '@deslint/mcp',
   alternateName: 'Deslint MCP Server',
   description:
-    'Model Context Protocol server that exposes deterministic design-system and accessibility lint as tools any MCP-compatible AI coding agent can call locally.',
+    'Model Context Protocol server that turns Deslint into the verification layer for AI-generated code. Exposes deterministic design-system and accessibility rules as tools any MCP-compatible AI coding agent can call locally, before it writes a file.',
   url: 'https://deslint.com/mcp',
   downloadUrl: 'https://www.npmjs.com/package/@deslint/mcp',
   applicationCategory: 'DeveloperApplication',

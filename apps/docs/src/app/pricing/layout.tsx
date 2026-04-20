@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
-  title: 'Pricing — Deslint Design Linter for Claude Code, Cursor, Codex & Windsurf',
+  title: 'Pricing — Deslint, the Verification Layer for AI-Generated Code',
   description:
-    "Deslint is free and open-source: full ESLint plugin, CLI, MCP server for Claude Code / Cursor / Codex / Windsurf, and GitHub Action. Teams plan from $99/mo; Enterprise with SSO, on-prem, and SOC 2 from $10k/yr.",
+    'Deslint is free and open-source: the full verification layer — ESLint plugin, CLI, MCP server for Claude Code / Cursor / Codex / Windsurf, and GitHub Action with trailer verification. Teams plan from $99/mo; Enterprise with SSO, on-prem, and SOC 2 from $10k/yr.',
   alternates: { canonical: '/pricing' },
   openGraph: {
     title: 'Deslint Pricing — Free OSS, Teams, Enterprise',
     description:
-      'Free forever for open source. Teams dashboards at $99/mo. Enterprise with SSO, on-prem, and audit logs.',
+      'The verification layer for AI-generated code — free forever for open source. Teams dashboards at $99/mo. Enterprise with SSO, on-prem, and audit logs.',
     url: 'https://deslint.com/pricing',
     type: 'website',
   },
@@ -24,7 +24,7 @@ const JSON_LD = {
   '@type': 'Product',
   name: 'Deslint',
   description:
-    'Deterministic design-system and accessibility linter for AI-generated frontend code. ESLint plugin, CLI, GitHub Action, and MCP server for Claude Code, Cursor, Codex, and Windsurf.',
+    'The verification layer for AI-generated code. Deterministic design-system and accessibility rules, reproducible attestations, and a commit trailer the merge gate re-verifies. ESLint plugin, CLI, GitHub Action, and MCP server for Claude Code, Cursor, Codex, and Windsurf.',
   url: 'https://deslint.com/pricing',
   brand: { '@type': 'Brand', name: 'Deslint' },
   category: 'DeveloperApplication',
@@ -39,7 +39,7 @@ const JSON_LD = {
         '@type': 'Offer',
         name: 'Open Source',
         description:
-          'Full ESLint plugin, CLI, MCP server, and GitHub Action — free forever under MIT.',
+          'The full verification layer — ESLint plugin, CLI, MCP server, and GitHub Action with trailer verification. Free forever under MIT.',
         price: '0',
         priceCurrency: 'USD',
         url: 'https://deslint.com/docs/getting-started',

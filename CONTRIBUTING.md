@@ -1,10 +1,10 @@
 # Contributing to Deslint
 
-Thanks for your interest in contributing. Deslint is a deterministic
-design quality gate for AI-generated frontend code — the bar for
-contributions is high because the moat is "zero false positives, every
-rule wrapped, predictable across every framework." Please read this
-whole guide before opening a PR.
+Thanks for your interest in contributing. Deslint is the verification
+layer for AI-generated code — the bar for contributions is high because
+the moat is "zero false positives, every rule wrapped, predictable
+across every framework, deterministic by construction." Please read
+this whole guide before opening a PR.
 
 ## Development Setup
 

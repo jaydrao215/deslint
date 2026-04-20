@@ -1,13 +1,13 @@
 # @deslint/mcp
 
-> Local-first MCP server for AI self-correction of design-quality violations.
+> The verification layer for AI-generated code — MCP server.
 
 [![MCP](https://img.shields.io/badge/MCP-2025--06--18-blue)](https://modelcontextprotocol.io) [![npm](https://img.shields.io/npm/v/@deslint/mcp.svg)](https://www.npmjs.com/package/@deslint/mcp) [![license](https://img.shields.io/npm/l/@deslint/mcp.svg)](./LICENSE)
 
-Enables Claude Code, Cursor, Claude Desktop, and any MCP-compatible client to
-analyze and fix design-quality issues in real time during code generation.
-Pure local static analysis — zero network calls, no source code leaves your
-machine.
+Local-first Model Context Protocol server that lets Claude Code, Cursor,
+Claude Desktop, Windsurf, and any MCP-compatible client verify and auto-fix
+AI-generated code in real time — before it writes the file. Pure local
+static analysis. Zero LLM in the hot path. Zero code leaves your machine.
 
 <p align="center">
   <img src="https://deslint.com/demo/mcp-loop.gif" alt="Deslint MCP self-correction loop: analyze_file returns structured violations, analyze_and_fix returns autofixed code, all over stdio in under a second" width="720">

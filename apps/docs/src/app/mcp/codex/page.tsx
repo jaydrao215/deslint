@@ -7,39 +7,39 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { mcpAgentTechArticle } from '@/lib/mcp-jsonld';
 
 export const metadata: Metadata = {
-  title: 'Deslint for Codex — MCP Design Linter for OpenAI\'s Coding Agent',
+  title: 'Deslint for Codex — Verification Layer Inside OpenAI\'s Coding Agent',
   description:
-    'Wire Deslint\'s MCP server into Codex. Deterministic design-system and a11y lint that Codex can call as a tool. Local-only, no extra LLM, no network egress.',
+    'Wire Deslint\'s MCP server into Codex. The verification layer for AI-generated code: deterministic design-system and a11y rules Codex can call as a tool. Local-only, no extra LLM, no network egress.',
   alternates: { canonical: '/mcp/codex' },
   keywords: [
     'deslint mcp',
     'codex mcp server',
     'openai codex mcp',
-    'mcp server design lint',
+    'verify ai generated code',
     'design linter for codex',
     'ai coding agent design drift',
     'deterministic design linter',
   ],
   openGraph: {
-    title: 'Deslint for Codex — MCP Design Linter',
+    title: 'Deslint for Codex — Verification Layer for AI-Generated Code',
     description:
-      'Deterministic design and accessibility lint inside OpenAI Codex. Local MCP server, zero cloud.',
+      'Deterministic rules inside OpenAI Codex. Local MCP server, zero cloud.',
     url: 'https://deslint.com/mcp/codex',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Deslint for Codex — MCP Design Linter',
+    title: 'Deslint for Codex — Verification Layer for AI-Generated Code',
     description:
-      'Wire the Deslint MCP server into Codex. Deterministic design-system and WCAG lint Codex can call as a tool.',
+      'Wire the Deslint MCP server into Codex. Deterministic design-system and WCAG rules Codex can call as a tool.',
   },
 };
 
 const JSON_LD = mcpAgentTechArticle({
   agentName: 'OpenAI Codex',
-  headline: 'Deslint for Codex — MCP Design Linter',
+  headline: 'Deslint for Codex — Verification Layer for AI-Generated Code',
   description:
-    "Wire Deslint's MCP server into Codex. Deterministic design-system and a11y lint that Codex can call as a tool. Local-only, no extra LLM, no network egress.",
+    "Wire Deslint's MCP server into Codex. The verification layer for AI-generated code — deterministic design-system and a11y rules that Codex can call as a tool. Local-only, no extra LLM, no network egress.",
   url: 'https://deslint.com/mcp/codex',
 });
 
@@ -66,11 +66,12 @@ export default function CodexPage() {
         </h1>
         <p className="text-lg text-gray-600 leading-relaxed mb-8">
           OpenAI Codex is great at one-shotting whole features. Without a
-          gate, every feature is also a fresh opportunity for arbitrary
-          Tailwind values, off-palette colours, and missing ARIA attributes.
-          Deslint&apos;s MCP server gives Codex a deterministic callable tool
-          surface — <code>analyze_and_fix</code>, <code>compliance_check</code>,{' '}
-          <code>enforce_budget</code> — it can invoke before committing.
+          verification layer, every feature is also a fresh opportunity for
+          arbitrary Tailwind values, off-palette colours, and missing ARIA
+          attributes. Deslint&apos;s MCP server gives Codex a deterministic
+          callable tool surface — <code>analyze_and_fix</code>,{' '}
+          <code>compliance_check</code>, <code>enforce_budget</code> — it can
+          invoke before committing.
         </p>
 
         <section className="mb-10">
