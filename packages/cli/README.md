@@ -108,6 +108,27 @@ Open the latest HTML report (produced by `deslint scan`) in your default browser
 deslint report
 ```
 
+### `deslint attest`
+
+Emit a byte-reproducible attestation JSON (`.deslint/attestation.json`). Set `DESLINT_ATTEST_SIGNER=sigstore` to also write a Sigstore sidecar the merge gate can verify.
+
+```bash
+deslint attest                              # write .deslint/attestation.json
+deslint attest --stdout                     # print to stdout
+DESLINT_ATTEST_SIGNER=sigstore deslint attest   # + .deslint/attestation.json.sigstore
+```
+
+Sigstore signing needs an OIDC token: automatic in GitHub Actions with `permissions: id-token: write`, or set `SIGSTORE_ID_TOKEN` locally. Interactive local signing lands in v0.7.1.
+
+### `deslint verify`
+
+Verify the Sigstore sidecar against the attestation. Exits 0 on a valid signature, non-zero on mismatch, tamper, or missing sidecar.
+
+```bash
+deslint verify                              # .deslint/attestation.json + .sigstore
+deslint verify --attestation path/to/a.json # custom location
+```
+
 ## Output Formats
 
 | Format | Flag | Use Case |

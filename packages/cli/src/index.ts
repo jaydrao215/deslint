@@ -748,8 +748,9 @@ program
 program
   .command('attest')
   .description(
-    'Emit a reproducible, committable attestation JSON for the current scan ' +
-      '(v0.6 OSS: unsigned; v0.7 Teams: Sigstore-signed).',
+    'Emit a reproducible, committable attestation JSON for the current scan. ' +
+      'Set DESLINT_ATTEST_SIGNER=sigstore to also write a Sigstore sidecar ' +
+      '(.deslint/attestation.json.sigstore).',
   )
   .argument('[dir]', 'Project directory to scan', '.')
   .option('-o, --output <path>', 'Output file path', '.deslint/attestation.json')
@@ -770,8 +771,10 @@ program
           now: process.env.DESLINT_ATTEST_NOW,
         });
 
+        const serialized = serializeAttestation(attestation);
+
         if (opts.stdout) {
-          process.stdout.write(serializeAttestation(attestation));
+          process.stdout.write(serialized);
           return;
         }
 
@@ -783,6 +786,18 @@ program
             `  Schema: ${attestation.schema} · ruleset: ${attestation.rulesetHash.slice(0, 16)} · files: ${attestation.files.length}`,
           ),
         );
+
+        if (process.env.DESLINT_ATTEST_SIGNER === 'sigstore') {
+          const { signPayload, serializeBundle, SIDECAR_SUFFIX } =
+            await import('./sign.js');
+          const bundle = await signPayload(Buffer.from(serialized, 'utf-8'));
+          const sidecarPath = outputPath + SIDECAR_SUFFIX;
+          writeFileSync(sidecarPath, serializeBundle(bundle));
+          console.log(chalk.green(`  ✓ Wrote ${sidecarPath}`));
+          console.log(
+            chalk.gray('  Signed via Sigstore (bundle sidecar · verify with `deslint verify`).'),
+          );
+        }
       } catch (err) {
         console.error(
           chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`),
@@ -791,6 +806,39 @@ program
       }
     },
   );
+
+program
+  .command('verify')
+  .description(
+    'Verify a Deslint attestation against its Sigstore sidecar bundle. ' +
+      'Exits 0 on a valid signature, non-zero on mismatch or missing sidecar.',
+  )
+  .argument('[dir]', 'Project directory containing .deslint/', '.')
+  .option(
+    '-a, --attestation <path>',
+    'Attestation file path (sidecar is `<path>.sigstore`)',
+    '.deslint/attestation.json',
+  )
+  .action(async (dir: string, opts: { attestation: string }) => {
+    try {
+      const { verifyFromDisk } = await import('./verify.js');
+      const cwd = resolve(dir);
+      const attestationPath = resolve(cwd, opts.attestation);
+      const result = await verifyFromDisk({ attestationPath });
+      if (!result.ok) {
+        console.error(chalk.red(`  ✗ Verification failed: ${result.reason}`));
+        process.exit(1);
+      }
+      console.log(chalk.green('  ✓ Signature verified'));
+      console.log(chalk.gray(`  Subject: ${result.signer.subject || '(unknown)'}`));
+      console.log(chalk.gray(`  Issuer:  ${result.signer.issuer || '(unknown)'}`));
+    } catch (err) {
+      console.error(
+        chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`),
+      );
+      process.exit(1);
+    }
+  });
 
 program
   .command('coverage')

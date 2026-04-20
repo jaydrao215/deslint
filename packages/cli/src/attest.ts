@@ -25,11 +25,12 @@
  *  - `files`             — `[{ path, sha256 }]`, sorted by path, for an
  *                          immutable manifest of what was scanned. Paths
  *                          are relative to `projectDir` for portability.
- *  - `signer`            — informational: the value of
- *                          `DESLINT_ATTEST_SIGNER` if set. Real signing is
- *                          deferred to v0.7 under the Teams tier; the v0.6
- *                          OSS artifact is unsigned but cryptographically
- *                          reproducible.
+ *  - `signer`            — informational hint recording the value of
+ *                          `DESLINT_ATTEST_SIGNER` at attest time
+ *                          (e.g. `"sigstore"`). The authoritative
+ *                          identity lives on the Sigstore cert inside
+ *                          the sidecar bundle — `deslint verify` and
+ *                          the Action extract it from there.
  *
  * Reproducibility contract: two invocations against the same source
  * tree, same `.deslintrc.json`, and same budget file MUST produce

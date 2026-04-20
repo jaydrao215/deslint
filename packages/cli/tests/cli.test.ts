@@ -45,6 +45,7 @@ describe('CLI commands', () => {
       'scan',
       'suggest-tokens',
       'trend',
+      'verify',
     ]);
   });
 

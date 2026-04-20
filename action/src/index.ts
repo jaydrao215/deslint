@@ -6,6 +6,7 @@ import { runProjectScan, runScan } from './scan.js';
 import { formatComment } from './comment.js';
 import { postInlineReview } from './review.js';
 import { verifyTrailer, formatTrailerSection } from './trailer.js';
+import { verifySignature, formatSignatureSection } from './verify-signature.js';
 
 const COMMENT_MARKER = '<!-- deslint-design-review -->';
 
@@ -95,7 +96,18 @@ async function run(): Promise<void> {
       core.warning(`Trailer verification could not run: ${msg}`);
     }
 
-    const commentBody = formatComment(result, minScore, gateResult) + trailerSection;
+    // Signature verification: gate a merge on a valid Sigstore bundle
+    // signed over `.deslint/attestation.json`. Always runs so a missing
+    // sidecar is surfaced; `require-signed` promotes missing/invalid to
+    // a failing check.
+    const requireSigned = core.getInput('require-signed') === 'true';
+    const signature = await verifySignature({ workingDirectory });
+    const signatureSection = formatSignatureSection(signature);
+    const signatureVerified = signature.status === 'verified';
+    core.info(`Signature verification: ${signature.status} \u2014 ${signature.message}`);
+
+    const commentBody =
+      formatComment(result, minScore, gateResult) + trailerSection + signatureSection;
     await upsertComment(octokit, owner, repo, prNumber, commentBody);
 
     const inlineReview = core.getInput('inline-review') !== 'false';
@@ -118,6 +130,8 @@ async function run(): Promise<void> {
     core.setOutput('quality-gate-passed', String(gateResult.passed));
     core.setOutput('trailer-verified', String(trailerVerified));
     core.setOutput('trailer-status', trailerStatus);
+    core.setOutput('signature-verified', String(signatureVerified));
+    core.setOutput('signature-status', signature.status);
     core.setOutput('passed', String(result.score >= minScore && gateResult.passed));
 
     if (minScore > 0 && result.score < minScore) {
@@ -138,6 +152,15 @@ async function run(): Promise<void> {
         `Trailer verification failed (status: ${trailerStatus}). ` +
           `Re-run compliance_check / enforce_budget and commit with an ` +
           `up-to-date \`Deslint-Compliance:\` trailer.`,
+      );
+    }
+
+    if (requireSigned && !signatureVerified) {
+      core.setFailed(
+        `Signature verification failed (status: ${signature.status}). ` +
+          `Re-run \`deslint attest\` with \`DESLINT_ATTEST_SIGNER=sigstore\` and ` +
+          `commit the updated \`.deslint/attestation.json\` + \`.sigstore\` ` +
+          `sidecar, or set \`require-signed: false\` to skip this gate.`,
       );
     }
   } catch (error) {

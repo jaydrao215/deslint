@@ -35,6 +35,15 @@ inputs:
       verification lands non-breaking.
     required: false
     default: 'false'
+  require-signed:
+    description: >-
+      When "true", fail the check if `.deslint/attestation.json` is
+      unsigned (no `.sigstore` sidecar) or the Sigstore signature does
+      not verify against the attestation payload. Default is "false"
+      so v0.6 unsigned attestations pass; flip to "true" to enforce
+      signed attestations at the merge gate.
+    required: false
+    default: 'false'
 
 outputs:
   score:
@@ -52,6 +61,15 @@ outputs:
       One of: verified | missing | mismatched | malformed | skipped.
       Useful for downstream workflows that want to react to the specific
       failure mode.
+  signature-verified:
+    description: >-
+      "true" when the Sigstore sidecar on `.deslint/attestation.json`
+      verified against the server-side payload, "false" otherwise.
+  signature-status:
+    description: >-
+      One of: verified | missing | invalid | attestation-missing | skipped.
+      `missing` means the attestation exists but the `.sigstore` sidecar
+      does not; `invalid` means Sigstore verification failed.
 
 runs:
   using: 'node20'

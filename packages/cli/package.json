@@ -44,11 +44,14 @@
     "@clack/prompts": "^1.2.0",
     "@deslint/eslint-plugin": "workspace:^",
     "@deslint/shared": "workspace:*",
+    "@sigstore/bundle": "^4.0.0",
+    "@sigstore/sign": "^4.1.1",
     "@typescript-eslint/parser": "^8.0.0",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
     "eslint": "^10.0.0",
-    "glob": "^13.0.6"
+    "glob": "^13.0.6",
+    "sigstore": "^4.1.0"
   },
   "devDependencies": {
     "@html-eslint/parser": "^0.59.0",
