@@ -53,6 +53,17 @@ inputs:
       step. Set to "false" to disable the scorecard entirely.
     required: false
     default: 'true'
+  token-drift:
+    description: >-
+      When "true" (default), diff the `designSystem` block of
+      `.deslintrc.json` between the PR's base and head, and render a
+      token-drift section (added / removed / changed tokens) in the PR
+      comment. Catches silent token renames before they ripple through
+      every consumer. Requires `fetch-depth: 0` on the
+      `actions/checkout` step so the base ref is in the runner's git
+      history. Set to "false" to disable the section.
+    required: false
+    default: 'true'
 
 outputs:
   score:
@@ -84,6 +95,13 @@ outputs:
       JSON array of `{ agent, kind, violations, files, byRule }` entries
       sorted by violations descending. Empty array when the scorecard is
       skipped (shallow checkout, no violations, or `agent-scorecard: false`).
+  token-drift:
+    description: >-
+      JSON summary of the designSystem diff between base and head:
+      `{ status, added, removed, changed, added_paths, removed_paths,
+      changed_paths }`. `status` is `ok | unchanged | no-head-config |
+      base-ref-unavailable | config-malformed | skipped`. Useful for
+      downstream workflows (e.g. require-review-on-token-change).
 
 runs:
   using: 'node20'

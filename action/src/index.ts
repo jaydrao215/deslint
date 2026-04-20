@@ -8,6 +8,7 @@ import { postInlineReview } from './review.js';
 import { verifyTrailer, formatTrailerSection } from './trailer.js';
 import { verifySignature, formatSignatureSection } from './verify-signature.js';
 import { buildAgentScorecard, formatAgentScorecardSection } from './agent-scorecard.js';
+import { computeTokenDrift, formatTokenDriftSection } from './token-drift.js';
 
 const COMMENT_MARKER = '<!-- deslint-design-review -->';
 
@@ -132,11 +133,45 @@ async function run(): Promise<void> {
       core.info(`Agent scorecard: ${scorecard.status} (${scorecard.entries.length} agents).`);
     }
 
+    // Token drift: diff `designSystem` tokens between base and head so
+    // a silent color rename doesn't sneak through review. Skipped when
+    // the PR makes no config change or the base ref isn't available
+    // (shallow checkout surfaces a hint rather than failing the job).
+    const tokenDriftEnabled = core.getInput('token-drift') !== 'false';
+    let tokenDriftSection = '';
+    let tokenDriftSummary: Record<string, unknown> = {
+      added: 0,
+      removed: 0,
+      changed: 0,
+      status: 'skipped',
+    };
+    if (tokenDriftEnabled) {
+      const baseSha = context.payload.pull_request.base?.sha ?? '';
+      if (baseSha) {
+        const drift = computeTokenDrift({ workingDirectory, baseRef: baseSha });
+        tokenDriftSection = formatTokenDriftSection(drift);
+        tokenDriftSummary = {
+          status: drift.status,
+          added: drift.drift.added.length,
+          removed: drift.drift.removed.length,
+          changed: drift.drift.changed.length,
+          added_paths: drift.drift.added.map((e) => e.path),
+          removed_paths: drift.drift.removed.map((e) => e.path),
+          changed_paths: drift.drift.changed.map((c) => c.path),
+        };
+        core.info(
+          `Token drift: ${drift.status} ` +
+            `(+${drift.drift.added.length} / -${drift.drift.removed.length} / ~${drift.drift.changed.length}).`,
+        );
+      }
+    }
+
     const commentBody =
       formatComment(result, minScore, gateResult) +
       trailerSection +
       signatureSection +
-      scorecardSection;
+      scorecardSection +
+      tokenDriftSection;
     await upsertComment(octokit, owner, repo, prNumber, commentBody);
 
     const inlineReview = core.getInput('inline-review') !== 'false';
@@ -162,6 +197,7 @@ async function run(): Promise<void> {
     core.setOutput('signature-verified', String(signatureVerified));
     core.setOutput('signature-status', signature.status);
     core.setOutput('agent-breakdown', JSON.stringify(scorecardEntries));
+    core.setOutput('token-drift', JSON.stringify(tokenDriftSummary));
     core.setOutput('passed', String(result.score >= minScore && gateResult.passed));
 
     if (minScore > 0 && result.score < minScore) {
