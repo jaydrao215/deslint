@@ -201,12 +201,60 @@ program.addHelpText(
     ),
 );
 
+// Exit-code policy — the CI contract for `deslint scan`:
+//
+//   0 = success (subject to --fail-on)
+//   1 = gate or severity threshold failed (see below)
+//
+// `--fail-on` controls which severities trip exit 1:
+//
+//   error    (default)  fail only if any violation has severity "error"
+//   warning              fail if any warning-or-error violation exists
+//   any                  alias for "warning"
+//   never                never fail on violations; min-score / gate
+//                        / budget still apply
+//
+// This matches the README / docs; changing the defaults is a breaking
+// change and requires a major bump.
+export type FailOnLevel = 'error' | 'warning' | 'any' | 'never';
+
+export function parseFailOn(value: string | undefined, fallback: FailOnLevel = 'error'): FailOnLevel {
+  if (!value) return fallback;
+  const v = value.toLowerCase();
+  if (v === 'error' || v === 'warning' || v === 'any' || v === 'never') {
+    return v as FailOnLevel;
+  }
+  throw new Error(
+    `Invalid --fail-on value "${value}". Allowed: error, warning, any, never.`,
+  );
+}
+
+export function shouldFailOnViolations(
+  level: FailOnLevel,
+  errors: number,
+  warnings: number,
+): boolean {
+  switch (level) {
+    case 'never': return false;
+    case 'error': return errors > 0;
+    case 'warning':
+    case 'any':   return errors > 0 || warnings > 0;
+  }
+}
+
 program
   .command('scan')
   .description('Scan project for design quality violations and report Design Health Score')
   .argument('[dir]', 'Project directory to scan', '.')
   .option('-f, --format <format>', 'Output format: text, json, sarif', 'text')
   .option('--min-score <score>', 'Fail if score is below this threshold')
+  .option(
+    '--fail-on <level>',
+    'Exit 1 when violations of <level> are found. One of: error (default), warning, any, never. ' +
+      '"error" matches today\'s behavior — fails only if any violation has severity "error". ' +
+      '"never" disables the severity gate; --min-score, quality gate, and budget still apply.',
+    'error',
+  )
   .option('--profile <name>', 'Use a named severity profile from .deslintrc.json')
   .option('--no-history', 'Do not save score to history file')
   .option(
@@ -217,7 +265,7 @@ program
     '--budget <path>',
     'Evaluate against an error budget file (defaults to .deslint/budget.yml, falls back to .deslint/budget.json).',
   )
-  .action(async (dir: string, opts: { format: string; minScore?: string; profile?: string; history: boolean; diff?: string; budget?: string }) => {
+  .action(async (dir: string, opts: { format: string; minScore?: string; failOn?: string; profile?: string; history: boolean; diff?: string; budget?: string }) => {
     try {
       const cwd = resolve(dir);
       const config = loadConfig(cwd);
@@ -438,6 +486,8 @@ program
         }
       }
 
+      const failOn = parseFailOn(opts.failOn);
+
       if (opts.minScore) {
         const minScore = parseInt(opts.minScore, 10);
         if (scoreResult.overall === null) {
@@ -466,7 +516,13 @@ program
         process.exit(1);
       }
 
-      if (lintResult.bySeverity.errors > 0) {
+      if (
+        shouldFailOnViolations(
+          failOn,
+          lintResult.bySeverity.errors,
+          lintResult.bySeverity.warnings,
+        )
+      ) {
         process.exit(1);
       }
     } catch (err) {

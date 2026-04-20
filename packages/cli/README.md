@@ -30,9 +30,36 @@ deslint scan ./src               # scan specific directory
 deslint scan --format json       # JSON output
 deslint scan --format sarif      # SARIF format (for CI integration)
 deslint scan --profile strict    # use strict profile
+deslint scan --fail-on warning   # fail on any warning-or-error
+deslint scan --fail-on never     # always exit 0 (advisory mode)
 ```
 
 **Output:** Design Health Score (0-100), per-category breakdown, violation list.
+
+**Exit codes:**
+
+| Code | Meaning |
+|------|---------|
+| `0`  | Success — no gate tripped and no violations matched `--fail-on` |
+| `1`  | At least one gate tripped: `--min-score`, `--budget`, a qualityGate failure, or a violation of the severity level set by `--fail-on` |
+
+**`--fail-on` severity gate (CI contract):**
+
+| Value     | Fails exit 1 when…                                    |
+|-----------|--------------------------------------------------------|
+| `error`   | any violation has `severity: "error"` (default)        |
+| `warning` | any violation of error **or** warning severity exists  |
+| `any`     | alias for `warning`                                    |
+| `never`   | never — `--min-score`, budget, and quality gate still apply |
+
+The default is `error` to match the behavior shipped in v0.6. Set
+`--fail-on never` for advisory-only CI jobs, or `--fail-on warning` to
+block a PR on any violation regardless of severity.
+
+**Score N/A:** when the scan has no applicable input (e.g. a pure
+CSS-in-JS codebase where class-based rules can't evaluate anything),
+`overall` is reported as `N/A` and `--min-score` is skipped rather
+than failing the job.
 
 ### `deslint fix [dir]`
 
