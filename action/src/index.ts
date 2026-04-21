@@ -208,6 +208,7 @@ async function run(): Promise<void> {
     await upsertComment(octokit, owner, repo, prNumber, commentBody);
 
     const inlineReview = core.getInput('inline-review') !== 'false';
+    const suggestFixes = core.getInput('suggest-fixes') !== 'false';
     const maxInlineComments = parseInt(core.getInput('max-inline-comments') || '25', 10);
     if (inlineReview && result.inlineViolations.length > 0) {
       await postInlineReview(
@@ -218,6 +219,11 @@ async function run(): Promise<void> {
         result.inlineViolations,
         result.score ?? 100,
         maxInlineComments,
+        {
+          suggestFixes,
+          designSystem: result.designSystem,
+          workingDirectory,
+        },
       );
     }
 

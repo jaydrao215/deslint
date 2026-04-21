@@ -87,6 +87,19 @@ inputs:
       history. Set to "false" to disable the section.
     required: false
     default: 'true'
+  suggest-fixes:
+    description: >-
+      When "true" (default), render autofixes inside inline review
+      comments. Visually-lossless fixes — where the replacement token
+      resolves to the same CSS value as the arbitrary one, or where the
+      fix only adds a media-query modifier — are emitted as GitHub
+      `suggestion` blocks so the reviewer can commit the fix in one
+      click. Opinionated replacements (e.g. closest-match tokens with a
+      different pixel value) are shown as read-only code blocks with a
+      "run `deslint fix` locally" nudge. Set to "false" to suppress
+      autofix rendering entirely.
+    required: false
+    default: 'true'
 
 outputs:
   score:

@@ -26,6 +26,10 @@ export interface InlineViolation {
   ruleId: string;
   message: string;
   severity: 'error' | 'warning';
+  /** ESLint autofix payload when the rule provides one. Consumers
+   *  (the Action's PR-review renderer) classify this for visual
+   *  safety before promoting it to a one-click suggestion block. */
+  fix?: { range: [number, number]; text: string };
 }
 
 export interface ApplicabilityInfo {
@@ -60,6 +64,10 @@ export interface ScanResult {
   /** Populated post-scan so the PR comment can explain why a N/A
    *  score appeared rather than leaving the reviewer guessing. */
   applicability?: ApplicabilityInfo;
+  /** Subset of `.deslintrc.json` forwarded to the PR-review renderer
+   *  so it can verify a token-based autofix is byte-identical to the
+   *  arbitrary value it replaces. */
+  designSystem?: { colors?: Record<string, string> };
 }
 
 type RuleCategory =
@@ -77,6 +85,7 @@ interface LintMessage {
   column: number;
   endLine?: number;
   endColumn?: number;
+  fix?: { range: [number, number]; text: string };
 }
 
 interface LintFileResult {
@@ -99,6 +108,10 @@ interface LoadedScanConfig {
   ignorePatterns?: string[];
   qualityGate?: QualityGate;
   userRules: Record<string, unknown>;
+  /** Raw `designSystem` block from `.deslintrc.json`, forwarded to
+   *  the PR-review renderer so it can prove a token-based autofix is
+   *  byte-identical to the arbitrary value being replaced. */
+  designSystem?: { colors?: Record<string, string> };
 }
 
 const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
@@ -246,19 +259,42 @@ function loadScanConfig(
     }
     const raw = JSON.parse(fs.readFileSync(resolvedConfigPath, 'utf-8'));
     const parsed = safeParseConfig(raw);
+    const designSystem = extractDesignSystemColors(raw);
     if (parsed.success) {
       return {
         ignorePatterns: parsed.data.ignore,
         qualityGate: parsed.data.qualityGate,
         userRules: (parsed.data.rules ?? {}) as Record<string, unknown>,
+        designSystem,
       };
     }
     return {
       userRules: (raw?.rules ?? {}) as Record<string, unknown>,
+      designSystem,
     };
   } catch {
     return { userRules: {} };
   }
+}
+
+/**
+ * Pluck `.designSystem.colors` off an arbitrary parsed config blob.
+ * Returns `undefined` when the subtree is missing or the wrong shape
+ * so a malformed config can't crash fix classification.
+ */
+function extractDesignSystemColors(
+  raw: unknown,
+): { colors?: Record<string, string> } | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const ds = (raw as { designSystem?: unknown }).designSystem;
+  if (!ds || typeof ds !== 'object') return undefined;
+  const rawColors = (ds as { colors?: unknown }).colors;
+  if (!rawColors || typeof rawColors !== 'object') return { colors: {} };
+  const colors: Record<string, string> = {};
+  for (const [k, v] of Object.entries(rawColors as Record<string, unknown>)) {
+    if (typeof v === 'string') colors[k] = v;
+  }
+  return { colors };
 }
 
 async function discoverProjectFiles(
@@ -312,6 +348,7 @@ async function scanFiles(
       inlineViolations: [],
       effectiveRules: { ...DEFAULT_RULES, ...normalizeRuleOverrides(scanConfig.userRules) },
       userRules: scanConfig.userRules,
+      designSystem: scanConfig.designSystem,
     };
   }
 
@@ -336,6 +373,7 @@ async function scanFiles(
       effectiveRules: lintResult.effectiveRules,
       userRules: scanConfig.userRules,
       applicability,
+      designSystem: scanConfig.designSystem,
     };
   }
 
@@ -345,6 +383,7 @@ async function scanFiles(
     effectiveRules: lintResult.effectiveRules,
     userRules: scanConfig.userRules,
     applicability,
+    designSystem: scanConfig.designSystem,
   };
 }
 
@@ -647,6 +686,7 @@ function buildInlineViolations(
         ruleId: msg.ruleId,
         message: msg.message,
         severity: msg.severity === 2 ? 'error' : 'warning',
+        fix: msg.fix,
       });
     }
   }
