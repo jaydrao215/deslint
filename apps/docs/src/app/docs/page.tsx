@@ -1,6 +1,50 @@
 import Link from 'next/link';
-import { Rocket, Settings, Shield, ArrowRight } from 'lucide-react';
+import {
+  Rocket,
+  Settings,
+  Shield,
+  ArrowRight,
+  Terminal,
+  Code2,
+  PackageCheck,
+  GitPullRequest,
+} from 'lucide-react';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+
+const SURFACES = [
+  {
+    icon: Terminal,
+    title: 'MCP server',
+    useIf: 'Your AI agent (Claude Code, Cursor, Codex, Windsurf) should check design quality as it writes code.',
+    install: 'npx @deslint/mcp install',
+    href: '/mcp',
+    linkLabel: 'Vendor guides',
+  },
+  {
+    icon: Code2,
+    title: 'ESLint plugin',
+    useIf: 'You already run ESLint and want Deslint rules in that pipeline.',
+    install: 'npm install -D @deslint/eslint-plugin',
+    href: '/docs/getting-started#alternative-eslint',
+    linkLabel: 'Flat-config setup',
+  },
+  {
+    icon: PackageCheck,
+    title: 'CLI',
+    useIf: 'You want ad-hoc scans, local pre-commit, or CI without the GitHub Action.',
+    install: 'npm install -D @deslint/cli',
+    href: '/docs/getting-started#step-2',
+    linkLabel: 'CLI walkthrough',
+  },
+  {
+    icon: GitPullRequest,
+    title: 'GitHub Action',
+    useIf: 'You want PR comments, inline review suggestions, and a Design Health Score on every PR.',
+    install: 'uses: jaydrao215/deslint/action@main',
+    href: '/docs/getting-started#step-6-github-action',
+    linkLabel: 'Workflow setup',
+  },
+];
 
 const CARDS = [
   {
@@ -37,8 +81,52 @@ export default function DocsIndex() {
         <p className="text-lg text-gray-500 leading-relaxed">
           The verification layer for AI-generated code.
           <br className="hidden sm:block" />
-          ESLint plugin + CLI + MCP server + GitHub Action.
+          MCP server + ESLint plugin + CLI + GitHub Action.
         </p>
+      </div>
+
+      {/* Surfaces — pick one or combine */}
+      <div className="mb-10">
+        <div className="mb-4 flex items-baseline justify-between gap-4 flex-wrap">
+          <h2 className="text-lg font-semibold text-gray-900 tracking-tight">
+            Choose your surface
+          </h2>
+          <p className="text-sm text-gray-500">
+            Each works on its own. Use any one — or combine them.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {SURFACES.map((s) => (
+            <div
+              key={s.title}
+              className="group rounded-xl border border-gray-200 bg-white p-5 motion-safe:transition-all hover:border-gray-300 hover:shadow-md hover:shadow-gray-200/50"
+            >
+              <div className="mb-3 flex items-center gap-2.5">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary-50/60 text-primary">
+                  <s.icon className="h-4 w-4" />
+                </span>
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {s.title}
+                </h3>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                <span className="font-medium text-gray-800">Use if:</span>{' '}
+                {s.useIf}
+              </p>
+              <div className="mb-3 rounded-lg bg-gray-950 px-3 py-2 font-mono text-[12px] text-gray-200 overflow-x-auto">
+                <span className="text-gray-500 select-none">$ </span>
+                {s.install}
+              </div>
+              <Link
+                href={s.href}
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+              >
+                {s.linkLabel}
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -101,17 +189,22 @@ export default function DocsIndex() {
         </Link>
       </div>
 
-      {/* Quick install */}
+      {/* Quick install — recommended first step for the AI-agent path */}
       <div className="mt-6 rounded-xl border border-gray-200 bg-gray-950 p-5">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-          Quick Install
+          Quick Install — recommended
         </p>
         <div className="font-mono text-sm text-gray-300">
           <span className="text-gray-500 select-none">$ </span>
-          <span className="text-pass">npm</span>{' '}
-          <span className="text-gray-400">install -D</span>{' '}
-          <span className="text-white">@deslint/eslint-plugin</span>
+          <span className="text-pass">npx</span>{' '}
+          <span className="text-white">@deslint/mcp</span>{' '}
+          <span className="text-gray-400">install</span>
         </div>
+        <p className="mt-2 text-xs text-gray-500">
+          Wires Deslint into your AI agent&apos;s config (Claude Code, Cursor,
+          Codex, Windsurf). Prefer a different surface? Use the &quot;Choose
+          your surface&quot; grid above.
+        </p>
       </div>
     </div>
   );

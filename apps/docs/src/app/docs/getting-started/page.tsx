@@ -34,6 +34,56 @@ export default function GettingStarted() {
         leaves your machine.
       </p>
 
+      <div className="not-prose rounded-xl border border-primary/20 bg-primary-50/40 px-5 py-4 mb-6 text-sm text-gray-700 leading-relaxed">
+        <p className="font-semibold text-gray-900 mb-2">
+          Deslint has four surfaces — you don&apos;t need all four.
+        </p>
+        <p className="mb-2">
+          Each is independently useful. This page wires up the full stack
+          (recommended), but you can install only the one that fits your
+          workflow:
+        </p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>
+            <strong>MCP server</strong> — check design quality inside the AI
+            agent loop (Claude Code / Cursor / Codex / Windsurf). Jump to{' '}
+            <a href="#step-1" className="text-primary hover:underline">
+              Step 1
+            </a>
+            .
+          </li>
+          <li>
+            <strong>ESLint plugin</strong> — add Deslint rules to your
+            existing ESLint pipeline. Jump to{' '}
+            <a href="#alternative-eslint" className="text-primary hover:underline">
+              Alternative: ESLint plugin
+            </a>
+            .
+          </li>
+          <li>
+            <strong>CLI</strong> — ad-hoc scans, local pre-commit, and CI
+            without the Action. Jump to{' '}
+            <a href="#step-2" className="text-primary hover:underline">
+              Step 2
+            </a>
+            .
+          </li>
+          <li>
+            <strong>GitHub Action</strong> — PR comments, inline review
+            suggestions, Design Health Score on every PR. Jump to{' '}
+            <a href="#step-6-github-action" className="text-primary hover:underline">
+              Step 6
+            </a>
+            .
+          </li>
+        </ul>
+        <p className="mt-2 text-xs text-gray-600">
+          Steps 3–5 (import tokens, scan, auto-fix) use the CLI and apply to
+          any surface that reads <code>.deslintrc.json</code> — which is all
+          of them.
+        </p>
+      </div>
+
       <h2 id="step-1">Step 1 — Install the MCP server</h2>
       <p>
         The MCP server is how Deslint talks to Claude Code, Cursor, Codex, and
