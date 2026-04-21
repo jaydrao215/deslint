@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **One-click PR autofixes via GitHub `suggestion` blocks** (`action`).
+  When an inline violation has an autofix that is provably visually
+  lossless — a color token that resolves to the same hex as the
+  arbitrary value it replaces, or a `motion-safe:` wrap that only adds
+  a modifier without removing anything — the Action renders the fix as
+  a GitHub `suggestion` block so a reviewer can commit the change in
+  one click. Opinionated/closest-match fixes render as read-only code
+  blocks with a "run `deslint fix` locally" nudge, so a reviewer can
+  never one-click-ship a pixel change they never saw. Gated by the new
+  `suggest-fixes` input (default `true`).
+- **Signer-identity policy** for Sigstore verification (`action`,
+  `cli`). New `signer-identity` / `signer-issuer` inputs on the Action
+  and matching `--signer-identity` / `--signer-issuer` / `--show-signer`
+  flags on `deslint verify`. When set, only signatures whose cert SAN
+  matches the regex (and whose OIDC issuer matches exactly, if
+  configured) are accepted; a rejection surfaces the observed signer
+  plus a copy-pasteable accept-regex and a `--show-signer` bootstrap
+  hint. Back-compat: when unset, any valid Sigstore signature passes.
+
 ## [0.6.0] — 2026-04-18
 
 ### Added

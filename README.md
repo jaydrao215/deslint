@@ -215,11 +215,48 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           min-score: 80
           strict-trailer: true
+          suggest-fixes: true          # one-click autofixes for safe rewrites
+          require-signed: false        # flip to true once attestations are signed
+          signer-identity: '^https://github\.com/<owner>/<repo>/\.github/workflows/.+$'
 ```
 
 Posts a Design Health Score summary comment on every PR with a category breakdown, and drops inline review comments on the changed lines that introduced violations. Re-runs update the existing comment instead of spamming new ones.
 When `strict-trailer` is enabled, the Action also verifies the head
 commit's `Deslint-Compliance:` trailer against a server-side re-scan.
+
+### One-click PR autofixes (`suggest-fixes`)
+
+When an inline violation has an ESLint autofix, the Action renders the
+fix inside the review comment. The rendering depends on whether the fix
+is provably visually lossless:
+
+- **`identical`** — a `bg-[#1A5276]` → `bg-primary` rewrite where the
+  replacement token resolves (via `designSystem.colors`) to the same
+  hex as the arbitrary value. Renders as a GitHub `suggestion` block
+  so a reviewer can commit the fix in one click.
+- **`additive-safe`** — a `prefers-reduced-motion` fix that only wraps
+  existing classes with `motion-safe:`. Also a one-click suggestion —
+  users in the default state see no visual change.
+- **`heuristic`** — everything else (closest-match token swaps,
+  opinionated rewrites). Rendered as a read-only code block with a
+  "run `deslint fix` locally" nudge. Never a one-click suggestion, so
+  a reviewer can't ship a pixel change they never saw.
+
+Set `suggest-fixes: false` to suppress the fix block entirely and fall
+back to text-only violation comments.
+
+### Other Action inputs
+
+| Input | Default | Purpose |
+|------|--------|---------|
+| `min-score` | `0` | Fails the check below this Design Health Score (0–100). |
+| `strict-trailer` | `false` | Fails when the head commit lacks a valid `Deslint-Compliance:` trailer or it does not match the server re-scan. |
+| `require-signed` | `false` | Fails when `.deslint/attestation.json` is unsigned or the Sigstore signature does not verify. |
+| `signer-identity` | _(empty)_ | Regex the Sigstore cert SAN must match. Without it, any valid signer passes under `require-signed: true`. |
+| `signer-issuer` | _(empty)_ | Exact-match OIDC issuer URL (e.g. `https://token.actions.githubusercontent.com`). |
+| `agent-scorecard` | `true` | Attributes violations to the authoring agent (Claude / Cursor / Codex / Copilot / Windsurf / humans) via `git blame` and renders a per-agent scorecard. Requires `fetch-depth: 0`. |
+| `token-drift` | `true` | Diffs the `designSystem` block of `.deslintrc.json` between base and head and renders a token-drift section. Requires `fetch-depth: 0`. |
+| `suggest-fixes` | `true` | Renders autofixes inside inline review comments. One-click `suggestion` blocks only for `identical` / `additive-safe` fixes; opinionated fixes render as read-only code blocks. |
 
 ## Performance
 
