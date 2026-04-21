@@ -156,7 +156,7 @@ export function Hero({ stars }: HeroProps) {
 
 function InstallCommand() {
   const [copied, setCopied] = useState(false);
-  const command = 'npm install -D @deslint/eslint-plugin';
+  const command = 'npx @deslint/mcp install';
 
   const copy = async () => {
     try {
@@ -169,25 +169,34 @@ function InstallCommand() {
   };
 
   return (
-    <button
-      onClick={copy}
-      className="group relative inline-flex items-center gap-4 rounded-xl bg-gray-950 px-5 py-3.5 font-mono text-sm text-gray-300 motion-safe:transition-all hover:bg-gray-900 glow-border hover:glow-border-hover cursor-pointer"
-      aria-label="Copy install command"
-    >
-      <span className="text-gray-500 select-none">$</span>
-      <span className="sm:whitespace-nowrap">
-        <span className="text-pass">npm</span>{' '}
-        <span className="text-gray-400">install -D</span>{' '}
-        <span className="text-white font-medium">@deslint/eslint-plugin</span>
-      </span>
-      <span className="flex items-center gap-1.5 text-gray-500 group-hover:text-gray-300 motion-safe:transition-colors">
-        {copied ? (
-          <Check className="h-4 w-4 text-pass" />
-        ) : (
-          <Copy className="h-4 w-4" />
-        )}
-      </span>
-    </button>
+    <div>
+      <button
+        onClick={copy}
+        className="group relative inline-flex items-center gap-4 rounded-xl bg-gray-950 px-5 py-3.5 font-mono text-sm text-gray-300 motion-safe:transition-all hover:bg-gray-900 glow-border hover:glow-border-hover cursor-pointer"
+        aria-label="Copy install command"
+      >
+        <span className="text-gray-500 select-none">$</span>
+        <span className="sm:whitespace-nowrap">
+          <span className="text-pass">npx</span>{' '}
+          <span className="text-white font-medium">@deslint/mcp</span>{' '}
+          <span className="text-gray-400">install</span>
+        </span>
+        <span className="flex items-center gap-1.5 text-gray-500 group-hover:text-gray-300 motion-safe:transition-colors">
+          {copied ? (
+            <Check className="h-4 w-4 text-pass" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </span>
+      </button>
+      <p className="mt-2 text-xs text-gray-500">
+        Wires Deslint into Claude Code, Cursor, Codex, or Windsurf — auto-detects
+        the agent config. Prefer ESLint, CLI, or the GitHub Action?{' '}
+        <Link href="/docs/getting-started" className="text-primary hover:underline">
+          See all install paths &rarr;
+        </Link>
+      </p>
+    </div>
   );
 }
 
