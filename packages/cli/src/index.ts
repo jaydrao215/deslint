@@ -908,26 +908,93 @@ program
     'Attestation file path (sidecar is `<path>.sigstore`)',
     '.deslint/attestation.json',
   )
-  .action(async (dir: string, opts: { attestation: string }) => {
-    try {
-      const { verifyFromDisk } = await import('./verify.js');
-      const cwd = resolve(dir);
-      const attestationPath = resolve(cwd, opts.attestation);
-      const result = await verifyFromDisk({ attestationPath });
-      if (!result.ok) {
-        console.error(chalk.red(`  ✗ Verification failed: ${result.reason}`));
+  .option(
+    '--signer-identity <regex>',
+    'Regex the cert SAN must match. Rejects cryptographically valid signatures from out-of-policy signers.',
+  )
+  .option(
+    '--signer-issuer <url>',
+    'Exact-match OIDC issuer URL required on the cert.',
+  )
+  .option(
+    '--show-signer',
+    'Verify and print the observed subject/issuer without enforcing a policy. Use this to bootstrap --signer-identity.',
+  )
+  .action(
+    async (
+      dir: string,
+      opts: {
+        attestation: string;
+        signerIdentity?: string;
+        signerIssuer?: string;
+        showSigner?: boolean;
+      },
+    ) => {
+      try {
+        const { verifyFromDisk, suggestSignerIdentity } = await import('./verify.js');
+        const cwd = resolve(dir);
+        const attestationPath = resolve(cwd, opts.attestation);
+        const policy = opts.showSigner
+          ? undefined
+          : opts.signerIdentity || opts.signerIssuer
+            ? {
+                expectedSubject: opts.signerIdentity,
+                expectedIssuer: opts.signerIssuer,
+              }
+            : undefined;
+        const result = await verifyFromDisk({ attestationPath, policy });
+
+        if (!result.ok && result.kind === 'signer-mismatch' && result.signer) {
+          console.error(chalk.red('  ✗ Signature is valid, but signer does not match policy.'));
+          console.error('');
+          console.error(chalk.gray('  Observed signer:'));
+          console.error(chalk.gray(`    subject: ${result.signer.subject || '(empty)'}`));
+          console.error(chalk.gray(`    issuer:  ${result.signer.issuer || '(empty)'}`));
+          if (opts.signerIdentity) {
+            console.error(chalk.gray(`  Expected --signer-identity (regex): ${opts.signerIdentity}`));
+          }
+          if (opts.signerIssuer) {
+            console.error(chalk.gray(`  Expected --signer-issuer  (exact): ${opts.signerIssuer}`));
+          }
+          console.error('');
+          console.error(
+            chalk.gray('  If you trust this signer, re-run with:'),
+          );
+          console.error(
+            chalk.cyan(
+              `    deslint verify --signer-identity '${suggestSignerIdentity(result.signer)}'`,
+            ),
+          );
+          process.exit(1);
+        }
+
+        if (!result.ok) {
+          console.error(chalk.red(`  ✗ Verification failed: ${result.reason}`));
+          process.exit(1);
+        }
+        if (opts.showSigner) {
+          console.log(chalk.green('  ✓ Signature verified (policy not enforced)'));
+        } else {
+          console.log(chalk.green('  ✓ Signature verified'));
+        }
+        console.log(chalk.gray(`  Subject: ${result.signer.subject || '(unknown)'}`));
+        console.log(chalk.gray(`  Issuer:  ${result.signer.issuer || '(unknown)'}`));
+        if (opts.showSigner) {
+          console.log('');
+          console.log(
+            chalk.gray(
+              `  To pin this signer, set --signer-identity '${suggestSignerIdentity(result.signer)}'`,
+            ),
+          );
+        }
+      } catch (err) {
+        console.error(
+          chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`),
+        );
         process.exit(1);
       }
-      console.log(chalk.green('  ✓ Signature verified'));
-      console.log(chalk.gray(`  Subject: ${result.signer.subject || '(unknown)'}`));
-      console.log(chalk.gray(`  Issuer:  ${result.signer.issuer || '(unknown)'}`));
-    } catch (err) {
-      console.error(
-        chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`),
-      );
-      process.exit(1);
-    }
-  });
+    },
+  );
 
 program
   .command('coverage')

@@ -154,7 +154,29 @@ Verify the Sigstore sidecar against the attestation. Exits 0 on a valid signatur
 ```bash
 deslint verify                              # .deslint/attestation.json + .sigstore
 deslint verify --attestation path/to/a.json # custom location
+deslint verify --show-signer                # print observed subject/issuer, skip policy
+deslint verify \
+  --signer-identity '^https://github\.com/acme/app/\.github/workflows/.+$' \
+  --signer-issuer 'https://token.actions.githubusercontent.com'
 ```
+
+**Signer-identity policy.** A cryptographically valid Sigstore signature
+proves *someone* signed the bytes, not that a *trusted* principal did.
+Without `--signer-identity`, `deslint verify` (and the GitHub Action
+with `require-signed: true`) will accept any valid signature — including
+one an attacker generated from a fork or an unrelated Fulcio-accepted
+issuer. Pin the expected signer:
+
+- `--signer-identity <regex>` — regex the cert SAN must match. Typical
+  GitHub Actions value: `^https://github\.com/<owner>/<repo>/\.github/workflows/.+$`.
+- `--signer-issuer <url>` — exact-match OIDC issuer, usually
+  `https://token.actions.githubusercontent.com`.
+
+When the policy rejects, the error prints the **observed** signer and
+a copy-pasteable `--signer-identity` value that would accept it — you
+just decide whether to trust the signer shown. Use `--show-signer` once
+per repo to discover the correct `--signer-identity` value for your
+attestation.
 
 ## Output Formats
 

@@ -42,8 +42,31 @@ inputs:
       not verify against the attestation payload. Default is "false"
       so v0.6 unsigned attestations pass; flip to "true" to enforce
       signed attestations at the merge gate.
+
+      Without a `signer-identity`, `require-signed: true` accepts any
+      valid Sigstore signature — a PR can commit a tampered attestation
+      signed by an attacker-controlled Fulcio cert and pass the gate.
+      Set `signer-identity` to close that gap.
     required: false
     default: 'false'
+  signer-identity:
+    description: >-
+      Regex the Sigstore cert's subject (SAN) must match for a
+      signature to be accepted. When unset, any valid signer passes
+      (a warning is emitted if `require-signed: true` and this is
+      unset). Typical value for GitHub Actions:
+      `^https://github\.com/<owner>/<repo>/\.github/workflows/.+$`.
+      To discover the observed signer for the current attestation,
+      run `npx deslint verify --show-signer` locally.
+    required: false
+    default: ''
+  signer-issuer:
+    description: >-
+      Exact-match OIDC issuer URL required on the Sigstore cert.
+      Empty string (the default) accepts any issuer. Typical value:
+      `https://token.actions.githubusercontent.com`.
+    required: false
+    default: ''
   agent-scorecard:
     description: >-
       When "true" (default), attribute inline violations to the
@@ -87,9 +110,21 @@ outputs:
       verified against the server-side payload, "false" otherwise.
   signature-status:
     description: >-
-      One of: verified | missing | invalid | attestation-missing | skipped.
-      `missing` means the attestation exists but the `.sigstore` sidecar
-      does not; `invalid` means Sigstore verification failed.
+      One of: verified | missing | invalid | signer-mismatch |
+      attestation-missing | skipped. `missing` means the attestation
+      exists but the `.sigstore` sidecar does not; `invalid` means
+      Sigstore verification failed; `signer-mismatch` means the
+      signature is cryptographically valid but the signer identity
+      does not match `signer-identity` / `signer-issuer`.
+  signature-subject:
+    description: >-
+      Cert SAN of the signer when verification succeeded or rejected
+      via signer-mismatch; empty string otherwise. Useful for seeding
+      a `signer-identity` regex in follow-up runs.
+  signature-issuer:
+    description: >-
+      OIDC issuer URL of the signer when verification succeeded or
+      rejected via signer-mismatch; empty string otherwise.
   agent-breakdown:
     description: >-
       JSON array of `{ agent, kind, violations, files, byRule }` entries

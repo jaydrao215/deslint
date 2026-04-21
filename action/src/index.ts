@@ -111,9 +111,32 @@ async function run(): Promise<void> {
     // Signature verification: gate a merge on a valid Sigstore bundle
     // signed over `.deslint/attestation.json`. Always runs so a missing
     // sidecar is surfaced; `require-signed` promotes missing/invalid to
-    // a failing check.
+    // a failing check. `signer-identity` / `signer-issuer` pin which
+    // cert SAN/issuer is acceptable; without them, any valid Sigstore
+    // signer passes and we warn below so the gap is loud, not silent.
     const requireSigned = core.getInput('require-signed') === 'true';
-    const signature = await verifySignature({ workingDirectory });
+    const expectedSubject = core.getInput('signer-identity').trim();
+    const expectedIssuer = core.getInput('signer-issuer').trim();
+    const hasPolicy = expectedSubject !== '' || expectedIssuer !== '';
+    if (requireSigned && !hasPolicy) {
+      core.warning(
+        'require-signed is enabled but signer-identity is unset. ' +
+          'The gate will accept any valid Sigstore signature, including ' +
+          'attacker-supplied ones. Set `signer-identity` (and optionally ' +
+          '`signer-issuer`) to close this gap. ' +
+          'Run `npx deslint verify --show-signer` to discover the ' +
+          'observed subject/issuer for the current attestation.',
+      );
+    }
+    const signature = await verifySignature({
+      workingDirectory,
+      policy: hasPolicy
+        ? {
+            expectedSubject: expectedSubject || undefined,
+            expectedIssuer: expectedIssuer || undefined,
+          }
+        : undefined,
+    });
     const signatureSection = formatSignatureSection(signature);
     const signatureVerified = signature.status === 'verified';
     core.info(`Signature verification: ${signature.status} \u2014 ${signature.message}`);
@@ -210,6 +233,8 @@ async function run(): Promise<void> {
     core.setOutput('trailer-status', trailerStatus);
     core.setOutput('signature-verified', String(signatureVerified));
     core.setOutput('signature-status', signature.status);
+    core.setOutput('signature-subject', signature.subject ?? '');
+    core.setOutput('signature-issuer', signature.issuer ?? '');
     core.setOutput('agent-breakdown', JSON.stringify(scorecardEntries));
     core.setOutput('token-drift', JSON.stringify(tokenDriftSummary));
     // `passed` stays true for N/A scans — we can't fail on a score we
@@ -245,12 +270,23 @@ async function run(): Promise<void> {
     }
 
     if (requireSigned && !signatureVerified) {
-      core.setFailed(
-        `Signature verification failed (status: ${signature.status}). ` +
-          `Re-run \`deslint attest\` with \`DESLINT_ATTEST_SIGNER=sigstore\` and ` +
-          `commit the updated \`.deslint/attestation.json\` + \`.sigstore\` ` +
-          `sidecar, or set \`require-signed: false\` to skip this gate.`,
-      );
+      if (signature.status === 'signer-mismatch') {
+        const suggestion = signature.suggestedSignerIdentity
+          ? ` To accept the observed signer, set ` +
+            `\`signer-identity: '${signature.suggestedSignerIdentity}'\`.`
+          : '';
+        core.setFailed(
+          `Signature verification failed (status: signer-mismatch). ` +
+            `${signature.message}${suggestion}`,
+        );
+      } else {
+        core.setFailed(
+          `Signature verification failed (status: ${signature.status}). ` +
+            `Re-run \`deslint attest\` with \`DESLINT_ATTEST_SIGNER=sigstore\` and ` +
+            `commit the updated \`.deslint/attestation.json\` + \`.sigstore\` ` +
+            `sidecar, or set \`require-signed: false\` to skip this gate.`,
+        );
+      }
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

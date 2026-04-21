@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, writeFile, rm, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { verifySignature, formatSignatureSection } from '../src/verify-signature.js';
+import {
+  verifySignature,
+  formatSignatureSection,
+  checkPolicy,
+  suggestSignerIdentity,
+} from '../src/verify-signature.js';
 import type { SerializedBundle } from '@sigstore/bundle';
 
 const FAKE_BUNDLE = { mediaType: 'application/vnd.dev.sigstore.bundle.v0.3+json' } as SerializedBundle;
@@ -127,5 +132,161 @@ describe('formatSignatureSection', () => {
       message: 'Sigstore verification failed: certificate has expired.',
     });
     expect(section).toMatch(/\u274c/);
+  });
+
+  it('renders observed signer + copy-pasteable suggestion on signer-mismatch', () => {
+    const section = formatSignatureSection({
+      status: 'signer-mismatch',
+      subject:
+        'https://github.com/attacker/fork/.github/workflows/evil.yml@refs/heads/main',
+      issuer: 'https://token.actions.githubusercontent.com',
+      message:
+        'Signer subject does not match policy. Observed: ..., Expected: ...',
+      suggestedSignerIdentity:
+        '^https://github\\.com/attacker/fork/\\.github/workflows/.+$',
+    });
+    expect(section).toMatch(/❌/);
+    expect(section).toMatch(/Observed signer/);
+    expect(section).toMatch(/attacker\/fork/);
+    expect(section).toMatch(/signer-identity:/);
+  });
+});
+
+describe('verifySignature with policy', () => {
+  let tmp: string;
+
+  beforeEach(async () => {
+    tmp = await mkdtemp(join(tmpdir(), 'deslint-action-sig-policy-'));
+    await mkdir(join(tmp, '.deslint'), { recursive: true });
+    await writeFile(
+      join(tmp, '.deslint', 'attestation.json'),
+      '{"schema":"deslint.attestation/v1"}\n',
+    );
+    await writeFile(
+      join(tmp, '.deslint', 'attestation.json.sigstore'),
+      JSON.stringify(FAKE_BUNDLE),
+    );
+  });
+  afterEach(async () => {
+    await rm(tmp, { recursive: true, force: true });
+  });
+
+  it('accepts an in-policy signer', async () => {
+    const v = await verifySignature(
+      {
+        workingDirectory: tmp,
+        policy: {
+          expectedSubject: '^https://github\\.com/acme/app/.+$',
+          expectedIssuer: 'https://token.actions.githubusercontent.com',
+        },
+      },
+      {
+        verify: async () => ({
+          subject: 'https://github.com/acme/app/.github/workflows/ci.yml@refs/heads/main',
+          issuer: 'https://token.actions.githubusercontent.com',
+        }),
+      },
+    );
+    expect(v.status).toBe('verified');
+  });
+
+  it('rejects an out-of-policy signer with status=signer-mismatch and a suggestion', async () => {
+    const v = await verifySignature(
+      {
+        workingDirectory: tmp,
+        policy: {
+          expectedSubject: '^https://github\\.com/acme/app/.+$',
+        },
+      },
+      {
+        verify: async () => ({
+          subject: 'https://github.com/attacker/fork/.github/workflows/evil.yml@refs/heads/main',
+          issuer: 'https://token.actions.githubusercontent.com',
+        }),
+      },
+    );
+    expect(v.status).toBe('signer-mismatch');
+    expect(v.subject).toMatch(/attacker\/fork/);
+    expect(v.suggestedSignerIdentity).toBe(
+      '^https://github\\.com/attacker/fork/\\.github/workflows/.+$',
+    );
+    expect(v.message).toMatch(/does not match policy/);
+  });
+
+  it('rejects when the issuer is out of policy', async () => {
+    const v = await verifySignature(
+      {
+        workingDirectory: tmp,
+        policy: {
+          expectedIssuer: 'https://token.actions.githubusercontent.com',
+        },
+      },
+      {
+        verify: async () => ({
+          subject: 'user@example.com',
+          issuer: 'https://accounts.google.com',
+        }),
+      },
+    );
+    expect(v.status).toBe('signer-mismatch');
+    expect(v.message).toMatch(/issuer does not match/);
+  });
+
+  it('treats an absent policy as "any valid signer passes" (back-compat)', async () => {
+    const v = await verifySignature(
+      { workingDirectory: tmp },
+      {
+        verify: async () => ({
+          subject: 'https://github.com/anyone/anything/.github/workflows/x.yml@refs/heads/main',
+          issuer: 'https://token.actions.githubusercontent.com',
+        }),
+      },
+    );
+    expect(v.status).toBe('verified');
+  });
+});
+
+describe('checkPolicy', () => {
+  const signer = {
+    subject: 'https://github.com/acme/app/.github/workflows/ci.yml@refs/heads/main',
+    issuer: 'https://token.actions.githubusercontent.com',
+  };
+
+  it('returns null when no policy is set', () => {
+    expect(checkPolicy(signer)).toBeNull();
+  });
+
+  it('rejects invalid regex with a helpful message', () => {
+    const reason = checkPolicy(signer, { expectedSubject: '[' });
+    expect(reason).toMatch(/Invalid signer-identity regex/);
+  });
+
+  it('returns null for a matching subject + issuer', () => {
+    expect(
+      checkPolicy(signer, {
+        expectedSubject: '^https://github\\.com/acme/app/.+$',
+        expectedIssuer: 'https://token.actions.githubusercontent.com',
+      }),
+    ).toBeNull();
+  });
+});
+
+describe('suggestSignerIdentity', () => {
+  it('produces a repo-scoped regex for GitHub Actions SANs', () => {
+    expect(
+      suggestSignerIdentity({
+        subject: 'https://github.com/acme/app/.github/workflows/ci.yml@refs/heads/main',
+        issuer: 'https://token.actions.githubusercontent.com',
+      }),
+    ).toBe('^https://github\\.com/acme/app/\\.github/workflows/.+$');
+  });
+
+  it('regex-escapes non-GitHub subjects for exact match', () => {
+    expect(
+      suggestSignerIdentity({
+        subject: 'user@example.com',
+        issuer: 'https://accounts.google.com',
+      }),
+    ).toBe('^user@example\\.com$');
   });
 });

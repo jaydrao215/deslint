@@ -8,6 +8,11 @@
  * Tests pass a stub verifier via `VerifierDeps` to stay network-free;
  * production flows through `sigstore.verify` which fetches Sigstore's
  * public-good trust root via TUF.
+ *
+ * Signer-identity policy: callers can pin an expected subject (regex)
+ * and/or issuer (exact). A cryptographically valid bundle signed by
+ * an out-of-policy identity is rejected with `reason` kind
+ * `signer-mismatch` so consumers can render a targeted error.
  */
 
 import { readFileSync } from 'node:fs';
@@ -23,9 +28,25 @@ export interface VerifiedSigner {
   issuer: string;
 }
 
+export interface SignerPolicy {
+  /** Regex (string) that the cert's SAN must match. */
+  expectedSubject?: string;
+  /** Exact-match issuer URL. */
+  expectedIssuer?: string;
+}
+
 export type VerifyStatus =
   | { ok: true; signer: VerifiedSigner }
-  | { ok: false; reason: string };
+  | {
+      ok: false;
+      reason: string;
+      /** 'crypto' = signature/TUF failure. 'signer-mismatch' = valid
+       *  signature from an out-of-policy identity. */
+      kind?: 'crypto' | 'signer-mismatch';
+      /** Populated on 'signer-mismatch' so callers can render a
+       *  targeted diff of what was expected vs. seen. */
+      signer?: VerifiedSigner;
+    };
 
 export interface VerifierDeps {
   verify?: (
@@ -39,6 +60,8 @@ export interface VerifyFromDiskOptions {
   attestationPath: string;
   /** Absolute path to the sidecar; defaults to `<attestation>.sigstore`. */
   bundlePath?: string;
+  /** Signer-identity policy. When unset, any valid signer passes. */
+  policy?: SignerPolicy;
 }
 
 /**
@@ -60,6 +83,7 @@ export async function verifyFromDisk(
     return {
       ok: false,
       reason: `Attestation not found at ${attestationPath}.`,
+      kind: 'crypto',
     };
   }
 
@@ -71,10 +95,11 @@ export async function verifyFromDisk(
     return {
       ok: false,
       reason: `Sidecar bundle not found at ${bundlePath}.`,
+      kind: 'crypto',
     };
   }
 
-  return verifyBundle(bundle, attestationBytes, deps);
+  return verifyBundle(bundle, attestationBytes, deps, options.policy);
 }
 
 /**
@@ -84,15 +109,80 @@ export async function verifyBundle(
   bundle: SerializedBundle,
   payload: Buffer,
   deps: VerifierDeps = {},
+  policy?: SignerPolicy,
 ): Promise<VerifyStatus> {
   const verifyFn = deps.verify ?? defaultVerify;
+  let signer: VerifiedSigner;
   try {
-    const signer = await verifyFn(bundle, payload);
-    return { ok: true, signer };
+    signer = await verifyFn(bundle, payload);
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
-    return { ok: false, reason };
+    return { ok: false, reason, kind: 'crypto' };
   }
+
+  const mismatch = checkPolicy(signer, policy);
+  if (mismatch) {
+    return { ok: false, reason: mismatch, kind: 'signer-mismatch', signer };
+  }
+  return { ok: true, signer };
+}
+
+/**
+ * Compare an observed signer against a policy. Returns a
+ * human-readable mismatch reason, or `null` when the signer is in
+ * policy (or no policy is set).
+ */
+export function checkPolicy(
+  signer: VerifiedSigner,
+  policy?: SignerPolicy,
+): string | null {
+  if (!policy) return null;
+  const { expectedSubject, expectedIssuer } = policy;
+  if (expectedSubject) {
+    let re: RegExp;
+    try {
+      re = new RegExp(expectedSubject);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return `Invalid signer-identity regex: ${msg}`;
+    }
+    if (!re.test(signer.subject)) {
+      return (
+        `Signer subject does not match policy. ` +
+        `Observed: ${signer.subject || '(empty)'}. ` +
+        `Expected (regex): ${expectedSubject}.`
+      );
+    }
+  }
+  if (expectedIssuer && signer.issuer !== expectedIssuer) {
+    return (
+      `Signer issuer does not match policy. ` +
+      `Observed: ${signer.issuer || '(empty)'}. ` +
+      `Expected (exact): ${expectedIssuer}.`
+    );
+  }
+  return null;
+}
+
+/**
+ * Given an observed signer, propose a `signer-identity` regex that
+ * would accept it. For GitHub Actions SANs we drop the trailing
+ * `@refs/...` and the workflow-file segment so the suggestion matches
+ * any branch/workflow in the same repo — the common case. Otherwise
+ * we emit a regex-escaped exact match.
+ */
+export function suggestSignerIdentity(signer: VerifiedSigner): string {
+  const gh = signer.subject.match(
+    /^(https:\/\/github\.com\/[^/]+\/[^/]+\/\.github\/workflows\/)[^@]+@refs\/.+$/,
+  );
+  if (gh) {
+    return `^${escapeRegex(gh[1])}.+$`;
+  }
+  return `^${escapeRegex(signer.subject)}$`;
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /** Production verify: calls Sigstore public-good trust root via TUF. */

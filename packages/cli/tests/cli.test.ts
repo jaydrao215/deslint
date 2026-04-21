@@ -71,6 +71,15 @@ describe('CLI commands', () => {
     expect(optNames).toContain('--interactive');
     expect(optNames).toContain('--dry-run');
   });
+
+  it('verify command accepts --signer-identity, --signer-issuer, and --show-signer', () => {
+    const verifyCmd = program.commands.find((c) => c.name() === 'verify');
+    expect(verifyCmd).toBeDefined();
+    const optNames = verifyCmd!.options.map((o) => o.long);
+    expect(optNames).toContain('--signer-identity');
+    expect(optNames).toContain('--signer-issuer');
+    expect(optNames).toContain('--show-signer');
+  });
 });
 
 describe('Library re-exports', () => {

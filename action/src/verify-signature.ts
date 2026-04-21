@@ -5,6 +5,12 @@
  * Sigstore bundle signed over the `.deslint/attestation.json` payload.
  * DI-friendly: tests inject a stub `verify` to exercise branching
  * without touching Sigstore's trust root.
+ *
+ * Signer-identity policy: the caller can pin an expected subject
+ * (regex) and/or issuer (exact). A cryptographically valid bundle
+ * signed by an out-of-policy identity is rejected with
+ * `status: 'signer-mismatch'` so the PR comment can render a targeted
+ * expected-vs-observed diff plus a copy-pasteable policy suggestion.
  */
 
 import * as fs from 'node:fs';
@@ -16,17 +22,30 @@ export type SignatureStatus =
   | 'verified'
   | 'missing'
   | 'invalid'
+  | 'signer-mismatch'
   | 'attestation-missing'
   | 'skipped';
 
 export interface SignatureVerification {
   status: SignatureStatus;
-  /** Cert SAN when status === 'verified'. */
+  /** Cert SAN when the cryptographic verify succeeded (covers both
+   *  'verified' and 'signer-mismatch'). */
   subject?: string;
-  /** Cert issuer when status === 'verified'. */
+  /** Cert issuer when the cryptographic verify succeeded. */
   issuer?: string;
   /** Human-readable one-liner for the PR comment + logs. */
   message: string;
+  /** Populated on 'signer-mismatch': a `signer-identity` regex that
+   *  would have accepted the observed signer, ready to paste into
+   *  `action.yml`. */
+  suggestedSignerIdentity?: string;
+}
+
+export interface SignerPolicy {
+  /** Regex (string) that the cert's SAN must match. */
+  expectedSubject?: string;
+  /** Exact-match issuer URL. */
+  expectedIssuer?: string;
 }
 
 export interface VerifySignatureInput {
@@ -36,6 +55,10 @@ export interface VerifySignatureInput {
   /** Attestation file path (relative or absolute). Default:
    *  `.deslint/attestation.json`. */
   attestationPath?: string;
+  /** Signer-identity policy. When unset, any valid signer passes
+   *  (back-compat with v0.7.0 — callers that pass `require-signed:
+   *  true` without a policy get a separate warning upstream). */
+  policy?: SignerPolicy;
 }
 
 export interface SignatureDeps {
@@ -86,22 +109,89 @@ export async function verifySignature(
 
   const payload = fs.readFileSync(attestationPath);
   const verifyFn = deps.verify ?? defaultVerify;
+  let signer: { subject: string; issuer: string };
   try {
-    const signer = await verifyFn(bundle, payload);
-    return {
-      status: 'verified',
-      subject: signer.subject,
-      issuer: signer.issuer,
-      message:
-        `Sigstore signature verified ` +
-        `(signer: ${signer.subject || '(unknown)'}).`,
-    };
+    signer = await verifyFn(bundle, payload);
   } catch (err) {
     return {
       status: 'invalid',
       message: `Sigstore verification failed: ${errMsg(err)}.`,
     };
   }
+
+  const mismatch = checkPolicy(signer, input.policy);
+  if (mismatch) {
+    return {
+      status: 'signer-mismatch',
+      subject: signer.subject,
+      issuer: signer.issuer,
+      message: mismatch,
+      suggestedSignerIdentity: suggestSignerIdentity(signer),
+    };
+  }
+
+  return {
+    status: 'verified',
+    subject: signer.subject,
+    issuer: signer.issuer,
+    message:
+      `Sigstore signature verified ` +
+      `(signer: ${signer.subject || '(unknown)'}).`,
+  };
+}
+
+/**
+ * Compare an observed signer against a policy. Returns a
+ * human-readable mismatch reason (with the observed + expected values
+ * inline), or `null` when the signer is in policy or no policy is set.
+ */
+export function checkPolicy(
+  signer: { subject: string; issuer: string },
+  policy?: SignerPolicy,
+): string | null {
+  if (!policy) return null;
+  const { expectedSubject, expectedIssuer } = policy;
+  if (expectedSubject) {
+    let re: RegExp;
+    try {
+      re = new RegExp(expectedSubject);
+    } catch (err) {
+      return `Invalid signer-identity regex: ${errMsg(err)}.`;
+    }
+    if (!re.test(signer.subject)) {
+      return (
+        `Signer subject does not match policy. ` +
+        `Observed: ${signer.subject || '(empty)'}. ` +
+        `Expected (regex): ${expectedSubject}.`
+      );
+    }
+  }
+  if (expectedIssuer && signer.issuer !== expectedIssuer) {
+    return (
+      `Signer issuer does not match policy. ` +
+      `Observed: ${signer.issuer || '(empty)'}. ` +
+      `Expected (exact): ${expectedIssuer}.`
+    );
+  }
+  return null;
+}
+
+/**
+ * Propose a `signer-identity` regex that would accept the observed
+ * signer. GitHub Actions SANs collapse to a repo-scoped pattern; all
+ * others get a regex-escaped exact match.
+ */
+export function suggestSignerIdentity(signer: {
+  subject: string;
+  issuer: string;
+}): string {
+  const gh = signer.subject.match(
+    /^(https:\/\/github\.com\/[^/]+\/[^/]+\/\.github\/workflows\/)[^@]+@refs\/.+$/,
+  );
+  if (gh) {
+    return `^${escapeRegex(gh[1])}.+$`;
+  }
+  return `^${escapeRegex(signer.subject)}$`;
 }
 
 export function formatSignatureSection(v: SignatureVerification): string {
@@ -113,6 +203,36 @@ export function formatSignatureSection(v: SignatureVerification): string {
         : v.status === 'missing'
           ? '\u26a0\ufe0f'
           : '\u274c';
+
+  // signer-mismatch gets an expected-vs-observed block plus a
+  // copy-pasteable policy suggestion — the whole point of the feature
+  // is to be zero-guesswork when it rejects.
+  if (v.status === 'signer-mismatch') {
+    const lines = [
+      '',
+      '### Attestation signature',
+      '',
+      `${prefix} Signature is valid, but signer does not match your policy.`,
+      '',
+      '**Observed signer:**',
+      '',
+      `- subject: \`${v.subject || '(empty)'}\``,
+      `- issuer: \`${v.issuer || '(empty)'}\``,
+      '',
+    ];
+    if (v.suggestedSignerIdentity) {
+      lines.push(
+        'If you trust this signer, accept it by setting the `signer-identity` input:',
+        '',
+        '```yaml',
+        `signer-identity: '${v.suggestedSignerIdentity}'`,
+        '```',
+        '',
+      );
+    }
+    return lines.join('\n');
+  }
+
   const identity =
     v.status === 'verified' && v.subject
       ? `\n\n\`${v.subject}\``
@@ -138,6 +258,10 @@ async function defaultVerify(
     subject: signer.subjectAlternativeName ?? '',
     issuer: signer.issuer ?? '',
   };
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function errMsg(err: unknown): string {
