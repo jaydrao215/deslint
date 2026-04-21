@@ -201,12 +201,60 @@ program.addHelpText(
     ),
 );
 
+// Exit-code policy — the CI contract for `deslint scan`:
+//
+//   0 = success (subject to --fail-on)
+//   1 = gate or severity threshold failed (see below)
+//
+// `--fail-on` controls which severities trip exit 1:
+//
+//   error    (default)  fail only if any violation has severity "error"
+//   warning              fail if any warning-or-error violation exists
+//   any                  alias for "warning"
+//   never                never fail on violations; min-score / gate
+//                        / budget still apply
+//
+// This matches the README / docs; changing the defaults is a breaking
+// change and requires a major bump.
+export type FailOnLevel = 'error' | 'warning' | 'any' | 'never';
+
+export function parseFailOn(value: string | undefined, fallback: FailOnLevel = 'error'): FailOnLevel {
+  if (!value) return fallback;
+  const v = value.toLowerCase();
+  if (v === 'error' || v === 'warning' || v === 'any' || v === 'never') {
+    return v as FailOnLevel;
+  }
+  throw new Error(
+    `Invalid --fail-on value "${value}". Allowed: error, warning, any, never.`,
+  );
+}
+
+export function shouldFailOnViolations(
+  level: FailOnLevel,
+  errors: number,
+  warnings: number,
+): boolean {
+  switch (level) {
+    case 'never': return false;
+    case 'error': return errors > 0;
+    case 'warning':
+    case 'any':   return errors > 0 || warnings > 0;
+  }
+}
+
 program
   .command('scan')
   .description('Scan project for design quality violations and report Design Health Score')
   .argument('[dir]', 'Project directory to scan', '.')
   .option('-f, --format <format>', 'Output format: text, json, sarif', 'text')
   .option('--min-score <score>', 'Fail if score is below this threshold')
+  .option(
+    '--fail-on <level>',
+    'Exit 1 when violations of <level> are found. One of: error (default), warning, any, never. ' +
+      '"error" matches today\'s behavior — fails only if any violation has severity "error". ' +
+      '"never" disables the severity gate; --min-score, quality gate, and budget still apply.',
+    'error',
+  )
   .option('--profile <name>', 'Use a named severity profile from .deslintrc.json')
   .option('--no-history', 'Do not save score to history file')
   .option(
@@ -217,7 +265,7 @@ program
     '--budget <path>',
     'Evaluate against an error budget file (defaults to .deslint/budget.yml, falls back to .deslint/budget.json).',
   )
-  .action(async (dir: string, opts: { format: string; minScore?: string; profile?: string; history: boolean; diff?: string; budget?: string }) => {
+  .action(async (dir: string, opts: { format: string; minScore?: string; failOn?: string; profile?: string; history: boolean; diff?: string; budget?: string }) => {
     try {
       const cwd = resolve(dir);
       const config = loadConfig(cwd);
@@ -268,7 +316,10 @@ program
           try {
             const history: HistoryEntry[] = JSON.parse(readFileSync(historyPath, 'utf-8'));
             const last = history[history.length - 1];
-            if (last) {
+            if (last && last.overall !== null) {
+              // Skip a previous snapshot with a null score — the
+              // regression gate has no baseline to compare against
+              // when the prior run wasn't applicable.
               previousSnapshot = {
                 overall: last.overall,
                 categories: last.categories,
@@ -280,22 +331,30 @@ program
         }
       }
 
-      const gateResult = evaluateQualityGate(
-        config?.qualityGate,
-        {
-          overall: scoreResult.overall,
-          categories: {
-            colors: scoreResult.categories.colors.score,
-            spacing: scoreResult.categories.spacing.score,
-            typography: scoreResult.categories.typography.score,
-            responsive: scoreResult.categories.responsive.score,
-            consistency: scoreResult.categories.consistency.score,
-          },
-          totalViolations: lintResult.totalViolations,
-          debtMinutes: debtResult.totalMinutes,
-        },
-        previousSnapshot,
-      );
+      const gateResult =
+        scoreResult.overall === null
+          ? {
+              passed: true,
+              enforced: false,
+              failures: [],
+              conditionsChecked: 0,
+            }
+          : evaluateQualityGate(
+              config?.qualityGate,
+              {
+                overall: scoreResult.overall,
+                categories: {
+                  colors: scoreResult.categories.colors.score,
+                  spacing: scoreResult.categories.spacing.score,
+                  typography: scoreResult.categories.typography.score,
+                  responsive: scoreResult.categories.responsive.score,
+                  consistency: scoreResult.categories.consistency.score,
+                },
+                totalViolations: lintResult.totalViolations,
+                debtMinutes: debtResult.totalMinutes,
+              },
+              previousSnapshot,
+            );
 
       if (gateResult.conditionsChecked > 0 && outputFormat === 'text') {
         const colorFn = gateResult.passed ? chalk.green : chalk.red;
@@ -318,7 +377,10 @@ program
           });
 
       const budgetSnapshot: BudgetScanSnapshot = {
-        overall: scoreResult.overall,
+        // When the scan isn't applicable, use 100 so the budget gate
+        // is a no-op for score-based conditions. Rule-count caps still
+        // evaluate against the (empty) byRule map correctly.
+        overall: scoreResult.overall ?? 100,
         categories: {
           colors: scoreResult.categories.colors.score,
           spacing: scoreResult.categories.spacing.score,
@@ -367,11 +429,20 @@ program
         saveHistory(cwd, lintResult, scoreResult);
       }
 
-      if (outputFormat === 'text') {
+      if (outputFormat === 'text' && scoreResult.overall !== null) {
         generateHtmlReport(lintResult, scoreResult, cwd);
         console.log(chalk.gray(`  Full report: .deslint/report.html`));
         console.log('');
+      } else if (outputFormat === 'text') {
+        console.log(
+          chalk.gray(
+            '  HTML report skipped — no applicable input for the rule set.',
+          ),
+        );
+        console.log('');
+      }
 
+      if (outputFormat === 'text') {
         // Install-to-value: tell the user the literal next command to
         // run. Without this, a first-time user finishes `scan` with no
         // idea whether to fix, gate in CI, or re-import tokens.
@@ -415,9 +486,21 @@ program
         }
       }
 
+      const failOn = parseFailOn(opts.failOn);
+
       if (opts.minScore) {
         const minScore = parseInt(opts.minScore, 10);
-        if (scoreResult.overall < minScore) {
+        if (scoreResult.overall === null) {
+          // Can't gate on a score the scanner didn't earn — pass
+          // through without failing the job. The "N/A" banner already
+          // made this visible to the user.
+          console.error(
+            chalk.yellow(
+              `  Score N/A — --min-score ${minScore} skipped ` +
+                `(${scoreResult.notApplicableReason ?? 'no applicable input'}).`,
+            ),
+          );
+        } else if (scoreResult.overall < minScore) {
           console.error(
             chalk.red(`  Score ${scoreResult.overall} is below minimum threshold ${minScore}`),
           );
@@ -433,7 +516,13 @@ program
         process.exit(1);
       }
 
-      if (lintResult.bySeverity.errors > 0) {
+      if (
+        shouldFailOnViolations(
+          failOn,
+          lintResult.bySeverity.errors,
+          lintResult.bySeverity.warnings,
+        )
+      ) {
         process.exit(1);
       }
     } catch (err) {
@@ -748,8 +837,9 @@ program
 program
   .command('attest')
   .description(
-    'Emit a reproducible, committable attestation JSON for the current scan ' +
-      '(v0.6 OSS: unsigned; v0.7 Teams: Sigstore-signed).',
+    'Emit a reproducible, committable attestation JSON for the current scan. ' +
+      'Set DESLINT_ATTEST_SIGNER=sigstore to also write a Sigstore sidecar ' +
+      '(.deslint/attestation.json.sigstore).',
   )
   .argument('[dir]', 'Project directory to scan', '.')
   .option('-o, --output <path>', 'Output file path', '.deslint/attestation.json')
@@ -770,8 +860,10 @@ program
           now: process.env.DESLINT_ATTEST_NOW,
         });
 
+        const serialized = serializeAttestation(attestation);
+
         if (opts.stdout) {
-          process.stdout.write(serializeAttestation(attestation));
+          process.stdout.write(serialized);
           return;
         }
 
@@ -783,6 +875,118 @@ program
             `  Schema: ${attestation.schema} · ruleset: ${attestation.rulesetHash.slice(0, 16)} · files: ${attestation.files.length}`,
           ),
         );
+
+        if (process.env.DESLINT_ATTEST_SIGNER === 'sigstore') {
+          const { signPayload, serializeBundle, SIDECAR_SUFFIX } =
+            await import('./sign.js');
+          const bundle = await signPayload(Buffer.from(serialized, 'utf-8'));
+          const sidecarPath = outputPath + SIDECAR_SUFFIX;
+          writeFileSync(sidecarPath, serializeBundle(bundle));
+          console.log(chalk.green(`  ✓ Wrote ${sidecarPath}`));
+          console.log(
+            chalk.gray('  Signed via Sigstore (bundle sidecar · verify with `deslint verify`).'),
+          );
+        }
+      } catch (err) {
+        console.error(
+          chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`),
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+program
+  .command('verify')
+  .description(
+    'Verify a Deslint attestation against its Sigstore sidecar bundle. ' +
+      'Exits 0 on a valid signature, non-zero on mismatch or missing sidecar.',
+  )
+  .argument('[dir]', 'Project directory containing .deslint/', '.')
+  .option(
+    '-a, --attestation <path>',
+    'Attestation file path (sidecar is `<path>.sigstore`)',
+    '.deslint/attestation.json',
+  )
+  .option(
+    '--signer-identity <regex>',
+    'Regex the cert SAN must match. Rejects cryptographically valid signatures from out-of-policy signers.',
+  )
+  .option(
+    '--signer-issuer <url>',
+    'Exact-match OIDC issuer URL required on the cert.',
+  )
+  .option(
+    '--show-signer',
+    'Verify and print the observed subject/issuer without enforcing a policy. Use this to bootstrap --signer-identity.',
+  )
+  .action(
+    async (
+      dir: string,
+      opts: {
+        attestation: string;
+        signerIdentity?: string;
+        signerIssuer?: string;
+        showSigner?: boolean;
+      },
+    ) => {
+      try {
+        const { verifyFromDisk, suggestSignerIdentity } = await import('./verify.js');
+        const cwd = resolve(dir);
+        const attestationPath = resolve(cwd, opts.attestation);
+        const policy = opts.showSigner
+          ? undefined
+          : opts.signerIdentity || opts.signerIssuer
+            ? {
+                expectedSubject: opts.signerIdentity,
+                expectedIssuer: opts.signerIssuer,
+              }
+            : undefined;
+        const result = await verifyFromDisk({ attestationPath, policy });
+
+        if (!result.ok && result.kind === 'signer-mismatch' && result.signer) {
+          console.error(chalk.red('  ✗ Signature is valid, but signer does not match policy.'));
+          console.error('');
+          console.error(chalk.gray('  Observed signer:'));
+          console.error(chalk.gray(`    subject: ${result.signer.subject || '(empty)'}`));
+          console.error(chalk.gray(`    issuer:  ${result.signer.issuer || '(empty)'}`));
+          if (opts.signerIdentity) {
+            console.error(chalk.gray(`  Expected --signer-identity (regex): ${opts.signerIdentity}`));
+          }
+          if (opts.signerIssuer) {
+            console.error(chalk.gray(`  Expected --signer-issuer  (exact): ${opts.signerIssuer}`));
+          }
+          console.error('');
+          console.error(
+            chalk.gray('  If you trust this signer, re-run with:'),
+          );
+          console.error(
+            chalk.cyan(
+              `    deslint verify --signer-identity '${suggestSignerIdentity(result.signer)}'`,
+            ),
+          );
+          process.exit(1);
+        }
+
+        if (!result.ok) {
+          console.error(chalk.red(`  ✗ Verification failed: ${result.reason}`));
+          process.exit(1);
+        }
+        if (opts.showSigner) {
+          console.log(chalk.green('  ✓ Signature verified (policy not enforced)'));
+        } else {
+          console.log(chalk.green('  ✓ Signature verified'));
+        }
+        console.log(chalk.gray(`  Subject: ${result.signer.subject || '(unknown)'}`));
+        console.log(chalk.gray(`  Issuer:  ${result.signer.issuer || '(unknown)'}`));
+        if (opts.showSigner) {
+          console.log('');
+          console.log(
+            chalk.gray(
+              `  To pin this signer, set --signer-identity '${suggestSignerIdentity(result.signer)}'`,
+            ),
+          );
+        }
       } catch (err) {
         console.error(
           chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`),

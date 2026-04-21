@@ -448,12 +448,17 @@ export async function initWizard(options: InitOptions): Promise<void> {
         const result = await runLint({ files: previewFiles, cwd });
         const score = calculateScore(result);
 
-        const scoreColor =
-          score.overall >= 80 ? chalk.green : score.overall >= 60 ? chalk.yellow : chalk.red;
-
-        prompts.log.success(
-          `Quick scan of ${chalk.cyan(String(previewFiles.length))} files → Design Health Score: ${scoreColor.bold(String(score.overall))}/100`,
-        );
+        if (score.overall === null) {
+          prompts.log.info(
+            `Quick scan of ${chalk.cyan(String(previewFiles.length))} files → Design Health Score: ${chalk.gray.bold('N/A')}/100 (${score.notApplicableReason ?? 'no applicable input'}).`,
+          );
+        } else {
+          const scoreColor =
+            score.overall >= 80 ? chalk.green : score.overall >= 60 ? chalk.yellow : chalk.red;
+          prompts.log.success(
+            `Quick scan of ${chalk.cyan(String(previewFiles.length))} files → Design Health Score: ${scoreColor.bold(String(score.overall))}/100`,
+          );
+        }
 
         if (result.totalViolations > 0) {
           prompts.log.info(

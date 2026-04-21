@@ -1,7 +1,7 @@
 {
   "name": "@deslint/eslint-plugin",
   "version": "0.6.0",
-  "description": "The design quality gate for AI-generated frontend code",
+  "description": "The verification layer for AI-generated code — deterministic ESLint rules for design-system and accessibility standards",
   "keywords": [
     "eslint",
     "eslintplugin",

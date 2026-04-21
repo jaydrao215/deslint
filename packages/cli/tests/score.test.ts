@@ -196,6 +196,60 @@ describe('calculateScore', () => {
     );
     // Each: 6/10 = 0.6 → 100 - 30 = 70
     expect(result.overall).toBe(70);
-    expect(result.overall < 75).toBe(true);
+    expect(result.overall !== null && result.overall < 75).toBe(true);
+  });
+
+  // Applicability gate — guards against the VALIDATION-0.7.md headline bug
+  // (twenty scored 100 despite being a CSS-in-JS codebase the class rules
+  // couldn't comment on).
+  it('returns null overall when applicability.applicable is false and no violations', () => {
+    const result = calculateScore(
+      makeLintResult({
+        applicability: {
+          filesScanned: 500,
+          tailwindFiles: 0,
+          styleFiles: 0,
+          applicable: false,
+          reason: 'No class or style attributes detected.',
+        },
+      }),
+    );
+    expect(result.overall).toBeNull();
+    expect(result.grade).toBe('skipped');
+    expect(result.applicable).toBe(false);
+    expect(result.notApplicableReason).toMatch(/class or style/i);
+  });
+
+  it('still scores when applicable flag is false but violations exist', () => {
+    // A real finding proves the rules had SOMETHING to inspect — respect
+    // that signal over the coarse applicability probe.
+    const result = calculateScore(
+      makeLintResult({
+        totalFiles: 10,
+        totalViolations: 2,
+        byCategory: {
+          colors: 2,
+          spacing: 0,
+          typography: 0,
+          responsive: 0,
+          consistency: 0,
+        },
+        applicability: {
+          filesScanned: 10,
+          tailwindFiles: 0,
+          styleFiles: 0,
+          applicable: false,
+          reason: 'No class or style attributes detected.',
+        },
+      }),
+    );
+    expect(result.overall).not.toBeNull();
+    expect(result.applicable).toBe(true);
+  });
+
+  it('defaults to a concrete score when applicability is undefined (pre-v0.7 path)', () => {
+    const result = calculateScore(makeLintResult());
+    expect(result.overall).toBe(100);
+    expect(result.applicable).toBe(true);
   });
 });

@@ -29,7 +29,7 @@ const JSON_LD = {
       url: 'https://deslint.com',
       logo: 'https://deslint.com/icons/icon-192.png',
       description:
-        'Deterministic design-system and accessibility lint for AI-generated frontend code.',
+        'The verification layer for AI-generated code. Deterministic design-system and accessibility rules, reproducible attestations, runs inside the agent loop and at the merge gate.',
       sameAs: ['https://github.com/jaydrao215/deslint'],
     },
     {
@@ -45,7 +45,7 @@ const JSON_LD = {
       applicationCategory: 'DeveloperApplication',
       operatingSystem: 'macOS, Linux, Windows',
       description:
-        'Deterministic design-system and accessibility lint for AI-generated frontend code. MCP server for Claude Code, Cursor, Codex, and Windsurf.',
+        'The verification layer for AI-generated code. Deterministic design-system and accessibility rules, reproducible attestations, and a commit trailer the merge gate re-verifies. MCP server for Claude Code, Cursor, Codex, and Windsurf.',
       url: 'https://deslint.com',
       offers: [
         {
@@ -69,10 +69,11 @@ const JSON_LD = {
       ],
       featureList: [
         '33 deterministic design and accessibility rules',
+        'Reproducible attestations and commit-trailer verification',
         'MCP server for Claude Code, Cursor, Codex, Windsurf',
         'ESLint plugin for React, Vue, Svelte, Angular, Astro',
         'CLI with coverage reports and auto-fix',
-        'GitHub Action with PR comments',
+        'GitHub Action with PR comments and trailer verification',
         'Local-first, zero LLM, zero cloud egress',
       ],
     },

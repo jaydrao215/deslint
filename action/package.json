@@ -2,7 +2,7 @@
   "name": "@deslint/action",
   "version": "0.1.1",
   "private": true,
-  "description": "GitHub Action for Deslint PR design reviews",
+  "description": "GitHub Action for Deslint, the verification layer for AI-generated code \u2014 PR reviews and commit-trailer verification at the merge gate",
   "type": "commonjs",
   "engines": {
     "node": ">=20.19.0"
@@ -17,9 +17,11 @@
     "@actions/github": "^6.0.0",
     "@deslint/eslint-plugin": "workspace:*",
     "@deslint/shared": "workspace:*",
+    "@sigstore/bundle": "^4.0.0",
     "eslint": "^9.27.0",
     "glob": "^13.0.6",
-    "minimatch": "^10.0.1"
+    "minimatch": "^10.0.1",
+    "sigstore": "^4.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

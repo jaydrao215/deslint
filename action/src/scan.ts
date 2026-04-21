@@ -26,10 +26,26 @@ export interface InlineViolation {
   ruleId: string;
   message: string;
   severity: 'error' | 'warning';
+  /** ESLint autofix payload when the rule provides one. Consumers
+   *  (the Action's PR-review renderer) classify this for visual
+   *  safety before promoting it to a one-click suggestion block. */
+  fix?: { range: [number, number]; text: string };
+}
+
+export interface ApplicabilityInfo {
+  filesScanned: number;
+  tailwindFiles: number;
+  styleFiles: number;
+  applicable: boolean;
+  reason?: string;
 }
 
 export interface ScanResult {
-  score: number;
+  /** `null` when the scan had no applicable input — no class or style
+   *  attributes were found in any file so the class-based rules had
+   *  nothing to evaluate. Consumers must render "N/A" rather than a
+   *  fabricated 100. See VALIDATION-0.7.md for the bug this guards. */
+  score: number | null;
   totalViolations: number;
   errors: number;
   warnings: number;
@@ -45,6 +61,13 @@ export interface ScanResult {
    *  Trailer hashes user-only overrides so the hash survives default
    *  drift between CLI and Action. */
   userRules: Record<string, unknown>;
+  /** Populated post-scan so the PR comment can explain why a N/A
+   *  score appeared rather than leaving the reviewer guessing. */
+  applicability?: ApplicabilityInfo;
+  /** Subset of `.deslintrc.json` forwarded to the PR-review renderer
+   *  so it can verify a token-based autofix is byte-identical to the
+   *  arbitrary value it replaces. */
+  designSystem?: { colors?: Record<string, string> };
 }
 
 type RuleCategory =
@@ -62,6 +85,7 @@ interface LintMessage {
   column: number;
   endLine?: number;
   endColumn?: number;
+  fix?: { range: [number, number]; text: string };
 }
 
 interface LintFileResult {
@@ -84,6 +108,10 @@ interface LoadedScanConfig {
   ignorePatterns?: string[];
   qualityGate?: QualityGate;
   userRules: Record<string, unknown>;
+  /** Raw `designSystem` block from `.deslintrc.json`, forwarded to
+   *  the PR-review renderer so it can prove a token-based autofix is
+   *  byte-identical to the arbitrary value being replaced. */
+  designSystem?: { colors?: Record<string, string> };
 }
 
 const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
@@ -231,19 +259,42 @@ function loadScanConfig(
     }
     const raw = JSON.parse(fs.readFileSync(resolvedConfigPath, 'utf-8'));
     const parsed = safeParseConfig(raw);
+    const designSystem = extractDesignSystemColors(raw);
     if (parsed.success) {
       return {
         ignorePatterns: parsed.data.ignore,
         qualityGate: parsed.data.qualityGate,
         userRules: (parsed.data.rules ?? {}) as Record<string, unknown>,
+        designSystem,
       };
     }
     return {
       userRules: (raw?.rules ?? {}) as Record<string, unknown>,
+      designSystem,
     };
   } catch {
     return { userRules: {} };
   }
+}
+
+/**
+ * Pluck `.designSystem.colors` off an arbitrary parsed config blob.
+ * Returns `undefined` when the subtree is missing or the wrong shape
+ * so a malformed config can't crash fix classification.
+ */
+function extractDesignSystemColors(
+  raw: unknown,
+): { colors?: Record<string, string> } | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const ds = (raw as { designSystem?: unknown }).designSystem;
+  if (!ds || typeof ds !== 'object') return undefined;
+  const rawColors = (ds as { colors?: unknown }).colors;
+  if (!rawColors || typeof rawColors !== 'object') return { colors: {} };
+  const colors: Record<string, string> = {};
+  for (const [k, v] of Object.entries(rawColors as Record<string, unknown>)) {
+    if (typeof v === 'string') colors[k] = v;
+  }
+  return { colors };
 }
 
 async function discoverProjectFiles(
@@ -297,6 +348,7 @@ async function scanFiles(
       inlineViolations: [],
       effectiveRules: { ...DEFAULT_RULES, ...normalizeRuleOverrides(scanConfig.userRules) },
       userRules: scanConfig.userRules,
+      designSystem: scanConfig.designSystem,
     };
   }
 
@@ -306,11 +358,72 @@ async function scanFiles(
     ruleOverrides: scanConfig.userRules,
   });
 
+  const applicability = computeApplicability(absoluteFiles);
+  const scanPart = toScanResult(lintResult, cwd);
+
+  // Gate the score to `null` when the scan had no applicable input AND
+  // found no violations. Mirrors the CLI behaviour so a CSS-in-JS
+  // project can't silently score 100 off our class-based rules. A real
+  // finding proves the rules had SOMETHING to look at — respect that.
+  if (!applicability.applicable && lintResult.totalViolations === 0) {
+    return {
+      ...scanPart,
+      score: null,
+      qualityGate: scanConfig.qualityGate,
+      effectiveRules: lintResult.effectiveRules,
+      userRules: scanConfig.userRules,
+      applicability,
+      designSystem: scanConfig.designSystem,
+    };
+  }
+
   return {
-    ...toScanResult(lintResult, cwd),
+    ...scanPart,
     qualityGate: scanConfig.qualityGate,
     effectiveRules: lintResult.effectiveRules,
     userRules: scanConfig.userRules,
+    applicability,
+    designSystem: scanConfig.designSystem,
+  };
+}
+
+/** Cheap file-content probe: count files that contain class / style
+ *  attributes. Mirrors the CLI's computeApplicability to keep bug #4
+ *  behaviour consistent until bug #6 merges the two. */
+export function computeApplicability(files: string[]): ApplicabilityInfo {
+  const CLASS_RE = /\b(?:className|class)\s*=|\bclass(?:Names?|sx|va|x|nx)?\s*\(/;
+  const STYLE_RE = /\bstyle\s*=|from\s+['"]styled-components['"]|from\s+['"]@emotion\/[\w-]+['"]/;
+  const BYTE_CAP = 256 * 1024;
+
+  let tailwindFiles = 0;
+  let styleFiles = 0;
+  let filesScanned = 0;
+
+  for (const file of files) {
+    try {
+      const stat = fs.statSync(file);
+      if (!stat.isFile()) continue;
+      filesScanned++;
+      const size = Math.min(stat.size, BYTE_CAP);
+      if (size === 0) continue;
+      let content = fs.readFileSync(file, 'utf-8');
+      if (content.length > BYTE_CAP) content = content.slice(0, BYTE_CAP);
+      if (CLASS_RE.test(content)) tailwindFiles++;
+      if (STYLE_RE.test(content)) styleFiles++;
+    } catch {
+      /* unreadable — skip */
+    }
+  }
+
+  const applicable = tailwindFiles > 0 || styleFiles > 0;
+  return {
+    filesScanned,
+    tailwindFiles,
+    styleFiles,
+    applicable,
+    reason: applicable
+      ? undefined
+      : 'No class or style attributes detected — class-based rules had no applicable input.',
   };
 }
 
@@ -573,6 +686,7 @@ function buildInlineViolations(
         ruleId: msg.ruleId,
         message: msg.message,
         severity: msg.severity === 2 ? 'error' : 'warning',
+        fix: msg.fix,
       });
     }
   }

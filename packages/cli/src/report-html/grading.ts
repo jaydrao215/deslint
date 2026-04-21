@@ -68,13 +68,19 @@ export function buildGradeRing(score: number, color: string, letter: string): st
 }
 
 export function buildTrendSvg(history: HistoryEntry[]): string {
-  if (history.length < 2) return '<div class="trend-empty">Run more scans to see trends.</div>';
+  // Filter out non-applicable scans (overall === null) so we don't
+  // plot a lie on the trend line. If too few points remain, fall
+  // back to the empty-state message.
+  const valid = history.filter(
+    (e): e is HistoryEntry & { overall: number } => typeof e.overall === 'number',
+  );
+  if (valid.length < 2) return '<div class="trend-empty">Run more scans to see trends.</div>';
   const w = 800, h = 100, pad = 16;
   const plotW = w - pad * 2, plotH = h - pad * 2;
-  const min = Math.min(...history.map(e => e.overall), 50);
+  const min = Math.min(...valid.map(e => e.overall), 50);
   const range = 100 - min || 1;
-  const pts = history.map((e, i) => ({
-    x: pad + (i / (history.length - 1)) * plotW,
+  const pts = valid.map((e, i) => ({
+    x: pad + (i / (valid.length - 1)) * plotW,
     y: pad + plotH - ((e.overall - min) / range) * plotH,
     s: e.overall, d: e.timestamp,
   }));

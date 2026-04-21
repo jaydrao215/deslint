@@ -34,6 +34,56 @@ export default function GettingStarted() {
         leaves your machine.
       </p>
 
+      <div className="not-prose rounded-xl border border-primary/20 bg-primary-50/40 px-5 py-4 mb-6 text-sm text-gray-700 leading-relaxed">
+        <p className="font-semibold text-gray-900 mb-2">
+          Deslint has four surfaces — you don&apos;t need all four.
+        </p>
+        <p className="mb-2">
+          Each is independently useful. This page wires up the full stack
+          (recommended), but you can install only the one that fits your
+          workflow:
+        </p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>
+            <strong>MCP server</strong> — check design quality inside the AI
+            agent loop (Claude Code / Cursor / Codex / Windsurf). Jump to{' '}
+            <a href="#step-1" className="text-primary hover:underline">
+              Step 1
+            </a>
+            .
+          </li>
+          <li>
+            <strong>ESLint plugin</strong> — add Deslint rules to your
+            existing ESLint pipeline. Jump to{' '}
+            <a href="#alternative-eslint" className="text-primary hover:underline">
+              Alternative: ESLint plugin
+            </a>
+            .
+          </li>
+          <li>
+            <strong>CLI</strong> — ad-hoc scans, local pre-commit, and CI
+            without the Action. Jump to{' '}
+            <a href="#step-2" className="text-primary hover:underline">
+              Step 2
+            </a>
+            .
+          </li>
+          <li>
+            <strong>GitHub Action</strong> — PR comments, inline review
+            suggestions, Design Health Score on every PR. Jump to{' '}
+            <a href="#step-6-github-action" className="text-primary hover:underline">
+              Step 6
+            </a>
+            .
+          </li>
+        </ul>
+        <p className="mt-2 text-xs text-gray-600">
+          Steps 3–5 (import tokens, scan, auto-fix) use the CLI and apply to
+          any surface that reads <code>.deslintrc.json</code> — which is all
+          of them.
+        </p>
+      </div>
+
       <h2 id="step-1">Step 1 — Install the MCP server</h2>
       <p>
         The MCP server is how Deslint talks to Claude Code, Cursor, Codex, and
@@ -194,6 +244,53 @@ npx deslint fix --dry-run`}</code>
         Once your repo is clean, the last step is locking the gate so the
         next AI-generated PR can&apos;t silently regress it.
       </p>
+
+      <h3 id="step-6-github-action">GitHub Action (recommended)</h3>
+      <p>
+        The Action posts a Design Health Score summary, drops inline review
+        comments on the changed lines that introduced violations, and renders
+        one-click autofixes as GitHub <code>suggestion</code> blocks when the
+        replacement is provably visually lossless.
+      </p>
+      <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
+        <code>{`# .github/workflows/deslint.yml
+name: Deslint design review
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0              # required for agent-scorecard + token-drift
+      - uses: jaydrao215/deslint/action@main
+        with:
+          github-token: \${{ secrets.GITHUB_TOKEN }}
+          min-score: 85
+          suggest-fixes: true         # one-click PR suggestions (safe fixes only)
+          agent-scorecard: true       # attribute violations to Claude/Cursor/Codex/…
+          token-drift: true           # diff designSystem tokens base vs head
+          strict-trailer: false       # flip to true once attestations are rolling`}</code>
+      </pre>
+      <p>
+        <strong>One-click autofixes</strong> — when the fix is byte-identical
+        (e.g. <code>bg-[#1A5276]</code> → <code>bg-primary</code> where{' '}
+        <code>primary</code> resolves to <code>#1A5276</code>) or additive-safe
+        (a <code>motion-safe:</code> wrap that adds a modifier without removing
+        anything), the Action renders it as a GitHub <code>suggestion</code>{' '}
+        block a reviewer can commit in one click. Opinionated closest-match
+        fixes render as read-only code blocks with a &quot;run{' '}
+        <code>deslint fix</code> locally&quot; nudge — so nobody
+        one-click-ships a pixel change they never saw. Disable with{' '}
+        <code>suggest-fixes: false</code>.
+      </p>
+
+      <h3 id="step-6-cli">CLI-only (non-GitHub, or local pre-commit)</h3>
       <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
         <code>{`- name: Design Quality Gate
   run: npx deslint scan --min-score 85 --format sarif`}</code>
@@ -201,7 +298,9 @@ npx deslint fix --dry-run`}</code>
       <p>
         Exit code <code>1</code> if the Design Health Score drops below your
         threshold. SARIF output integrates with GitHub Advanced Security so
-        violations show inline in the PR diff.
+        violations show inline in the PR diff. Use{' '}
+        <code>--fail-on warning</code> to fail on warnings too, or{' '}
+        <code>--fail-on never</code> to report without blocking.
       </p>
 
       <h2 id="troubleshooting">Troubleshooting</h2>

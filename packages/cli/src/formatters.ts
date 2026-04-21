@@ -62,6 +62,18 @@ export function formatText(
   if (allViolationsAreParseErrors) {
     lines.push(`  Design Health Score: ${chalk.red('unavailable')}`);
     lines.push(chalk.red(`  Fix ${lintResult.parseErrors} parser error${lintResult.parseErrors !== 1 ? 's' : ''} first — no files were analyzed.`));
+  } else if (scoreResult.overall === null) {
+    // Applicability gate: the scan ran cleanly but none of the
+    // class-based rules had applicable input. Saying "100" here would
+    // be a lie — surface "N/A" with a one-liner that tells the user
+    // what to do next (e.g. enable element-based rules, or accept
+    // that Deslint has nothing to say about this codebase).
+    lines.push(`  Design Health Score: ${chalk.gray(chalk.bold('N/A'))}${chalk.gray('/100')}`);
+    lines.push(
+      chalk.gray(
+        `  ${scoreResult.notApplicableReason ?? 'No applicable input detected.'}`,
+      ),
+    );
   } else {
     const colorFn = scoreColor(scoreResult.overall);
     lines.push(`  Design Health Score: ${colorFn(chalk.bold(String(scoreResult.overall)))}${chalk.gray('/100')}`);
@@ -69,7 +81,7 @@ export function formatText(
   lines.push('');
 
   // ── Category breakdown ──
-  if (!allViolationsAreParseErrors) {
+  if (!allViolationsAreParseErrors && scoreResult.overall !== null) {
     for (const cat of ['colors', 'spacing', 'typography', 'responsive', 'consistency'] as RuleCategory[]) {
       const data: CategoryScore = scoreResult.categories[cat];
       const label = categoryLabel(cat).padEnd(12);
@@ -227,8 +239,12 @@ export interface JsonReport {
   version: string;
   timestamp: string;
   score: {
-    overall: number;
+    /** `null` when the scan had no applicable input — consumers
+     *  should render "N/A" instead of treating null as 0. */
+    overall: number | null;
     grade: string;
+    applicable: boolean;
+    notApplicableReason?: string;
     categories: Record<RuleCategory, { score: number; violations: number }>;
   };
   summary: {
@@ -238,6 +254,13 @@ export interface JsonReport {
     errors: number;
     warnings: number;
     parseErrors: number;
+  };
+  applicability?: {
+    filesScanned: number;
+    tailwindFiles: number;
+    styleFiles: number;
+    applicable: boolean;
+    reason?: string;
   };
   debt: {
     totalMinutes: number;
@@ -272,6 +295,8 @@ export function formatJson(
     score: {
       overall: scoreResult.overall,
       grade: scoreResult.grade,
+      applicable: scoreResult.applicable,
+      notApplicableReason: scoreResult.notApplicableReason,
       categories: {} as any,
     },
     summary: {
@@ -290,6 +315,16 @@ export function formatJson(
     },
     violations: [],
   };
+
+  if (lintResult.applicability) {
+    report.applicability = {
+      filesScanned: lintResult.applicability.filesScanned,
+      tailwindFiles: lintResult.applicability.tailwindFiles,
+      styleFiles: lintResult.applicability.styleFiles,
+      applicable: lintResult.applicability.applicable,
+      reason: lintResult.applicability.reason,
+    };
+  }
 
   for (const [cat, data] of Object.entries(scoreResult.categories)) {
     report.score.categories[cat as RuleCategory] = {

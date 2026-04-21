@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Deslint Configuration Reference',
     description:
-      '.deslintrc.json schema, design-system token config, rule severities, and ignore patterns for the Deslint design linter.',
+      '.deslintrc.json schema, design-system token config, rule severities, and ignore patterns for Deslint — the verification layer for AI-generated code.',
     url: 'https://deslint.com/docs/configuration',
     type: 'article',
   },

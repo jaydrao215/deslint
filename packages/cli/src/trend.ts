@@ -83,7 +83,13 @@ export function analyzeTrend(
   const limit = options.limit ?? 10;
   const alertThreshold = options.alertThreshold ?? 5;
 
-  const window = history.slice(-limit);
+  // Skip non-applicable scans (overall === null) — they're not
+  // meaningful on a trend chart and would break numeric comparisons.
+  type NumberScored = HistoryEntry & { overall: number };
+  const scored = history.filter(
+    (e): e is NumberScored => typeof e.overall === 'number',
+  );
+  const window = scored.slice(-limit);
   const totalEntries = history.length;
   const windowEntries = window.length;
 
@@ -203,16 +209,23 @@ export function formatTrendText(
   }
 
   if (summary.windowEntries === 1) {
-    const only = summary.latest!;
+    const only = summary.latest! as HistoryEntry & { overall: number };
     lines.push(`  Only one entry recorded so far: ${scoreColor(only.overall)(String(only.overall))}/100 on ${new Date(only.timestamp).toLocaleDateString()}.`);
     lines.push(chalk.gray('  Run another scan to see trend data.'));
     lines.push('');
     return lines.join('\n');
   }
 
-  const window = history.slice(-limit);
-  const latest = summary.latest!;
-  const first = summary.first!;
+  // Filter history to only the non-null-score entries before slicing,
+  // mirroring what `analyzeTrend` did internally so downstream reads
+  // of `entry.overall` are guaranteed to be numbers.
+  type NumberScored = HistoryEntry & { overall: number };
+  const scoredHistory = history.filter(
+    (e): e is NumberScored => typeof e.overall === 'number',
+  );
+  const window = scoredHistory.slice(-limit);
+  const latest = summary.latest! as NumberScored;
+  const first = summary.first! as NumberScored;
 
   // Headline
   const colorFn = scoreColor(latest.overall);

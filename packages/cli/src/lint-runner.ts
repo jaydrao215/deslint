@@ -1,5 +1,6 @@
 import { ESLint } from 'eslint';
 import { dirname } from 'node:path';
+import { readFileSync, statSync } from 'node:fs';
 
 export type RuleCategory = 'colors' | 'spacing' | 'typography' | 'responsive' | 'consistency';
 
@@ -68,6 +69,27 @@ export interface LintResult {
   parseErrors: number;
   /** Effective rule map used for the scan. Used by trailer computation. */
   effectiveRules?: Record<string, unknown>;
+  /** Which scanned files contained class attributes / inline styles —
+   *  inputs the rules actually had something to say about. Used to
+   *  gate the Design Health Score to `null` on codebases where none of
+   *  our class-based rules apply (e.g. a CSS-in-JS project). */
+  applicability?: ApplicabilityInfo;
+}
+
+export interface ApplicabilityInfo {
+  filesScanned: number;
+  /** Files containing a `class=` or `className=` attribute (Tailwind /
+   *  plain HTML / JSX — anything the class-visitor can reach). */
+  tailwindFiles: number;
+  /** Files containing a `style=` attribute or `styled`/`css` import
+   *  (CSS-in-JS surfaces that element-based rules can still reach). */
+  styleFiles: number;
+  /** True when at least one scanned file had something for the rules
+   *  to inspect. False means none of the class/element rules had
+   *  applicable input. */
+  applicable: boolean;
+  /** Short hint surfaced in output when !applicable. */
+  reason?: string;
 }
 
 export interface LintRunnerOptions {
@@ -227,7 +249,52 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
   }
 
   const aggregated = aggregateResults(results as unknown as LintFileResult[]);
-  return { ...aggregated, effectiveRules: rules };
+  const applicability = computeApplicability(options.files);
+  return { ...aggregated, effectiveRules: rules, applicability };
+}
+
+/** Cheap file-content probe: count files that contain class / style
+ *  attributes. Runs AFTER the lint pass so it doesn't slow the hot
+ *  path. Reads each file once with a byte cap (256 KB) — enough to
+ *  reach any attribute in a realistic component file. */
+export function computeApplicability(files: string[]): ApplicabilityInfo {
+  const CLASS_RE = /\b(?:className|class)\s*=|\bclass(?:Names?|sx|va|x|nx)?\s*\(/;
+  const STYLE_RE = /\bstyle\s*=|from\s+['"]styled-components['"]|from\s+['"]@emotion\/[\w-]+['"]/;
+  const BYTE_CAP = 256 * 1024;
+
+  let tailwindFiles = 0;
+  let styleFiles = 0;
+  let filesScanned = 0;
+
+  for (const file of files) {
+    try {
+      const stat = statSync(file);
+      if (!stat.isFile()) continue;
+      filesScanned++;
+      const size = Math.min(stat.size, BYTE_CAP);
+      if (size === 0) continue;
+      // For files larger than the cap, readFileSync still works but we
+      // slice the returned string — cheaper than a fd-seek dance.
+      let content = readFileSync(file, 'utf-8');
+      if (content.length > BYTE_CAP) content = content.slice(0, BYTE_CAP);
+      if (CLASS_RE.test(content)) tailwindFiles++;
+      if (STYLE_RE.test(content)) styleFiles++;
+    } catch {
+      // Unreadable file — skip silently; ESLint already surfaced any
+      // real failures via parseErrors.
+    }
+  }
+
+  const applicable = tailwindFiles > 0 || styleFiles > 0;
+  return {
+    filesScanned,
+    tailwindFiles,
+    styleFiles,
+    applicable,
+    reason: applicable
+      ? undefined
+      : 'No class or style attributes detected — class-based rules had no applicable input.',
+  };
 }
 
 /** Aggregate results into a LintResult. Exported so diff-scoping can

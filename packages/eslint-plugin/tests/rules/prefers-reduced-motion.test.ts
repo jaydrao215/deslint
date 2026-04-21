@@ -33,6 +33,24 @@ ruleTester.run('prefers-reduced-motion', rule, {
     { code: '<div className="animate-ping">New</div>' },
     { code: '<span className="animate-spin mr-2" aria-hidden="true" />' },
     { code: '<div className="sm:animate-spin">Loading</div>' },
+
+    // ── Non-motion transitions: color/shadow/opacity/background don't ──
+    // trigger vestibular symptoms, and WCAG 2.3.3 scopes to motion. These
+    // are valid by default; opt into stricter matching via `strictTransitions`.
+    { code: '<button className="transition-colors hover:bg-blue-600">Hover tint</button>' },
+    { code: '<div className="transition-shadow hover:shadow-lg">Card</div>' },
+    { code: '<div className="transition-opacity opacity-50">Fade</div>' },
+    { code: '<div className="transition-background">Bg</div>' },
+
+    // ── Orphan timing / easing utilities ──
+    // `duration-*`, `ease-*`, `delay-*` are no-ops without a paired
+    // `transition-*` / `animate-*` on the same element. Tailwind silently
+    // ignores them; flagging them was noise the author can't act on.
+    { code: '<div className="duration-200">Orphan</div>' },
+    { code: '<div className="ease-in-out">Orphan</div>' },
+    { code: '<div className="delay-150">Orphan</div>' },
+    { code: '<div className="transition-colors ease-in-out duration-200">Tint</div>' },
+    { code: '<div className="transition-shadow duration-300">Shadow</div>' },
   ],
 
   invalid: [
@@ -61,17 +79,15 @@ ruleTester.run('prefers-reduced-motion', rule, {
       errors: [{ messageId: 'missingMotionSafe' }],
     },
 
-    // ── Two motion classes → multi-pass fix ──
+    // ── Motion transition + modifier → single violation, one-pass fix ──
+    // `transition-all` is real motion; `duration-300` piggy-backs on it.
+    // One violation per element (bug #1) with an autofix that wraps both
+    // the motion class and any modifiers that depend on it.
     {
       code: '<button className="transition-all duration-300 hover:bg-blue-600">Click</button>',
-      output: [
-        '<button className="motion-safe:transition-all duration-300 hover:bg-blue-600">Click</button>',
+      output:
         '<button className="motion-safe:transition-all motion-safe:duration-300 hover:bg-blue-600">Click</button>',
-      ],
-      errors: [
-        { messageId: 'missingMotionSafe' },
-        { messageId: 'missingMotionSafe' },
-      ],
+      errors: [{ messageId: 'missingMotionSafe' }],
     },
 
     // ── Single motion class with non-motion classes ──
@@ -81,32 +97,28 @@ ruleTester.run('prefers-reduced-motion', rule, {
       errors: [{ messageId: 'missingMotionSafe' }],
     },
 
-    // ── Three motion classes → multi-pass fix ──
-    {
-      code: '<div className="transition-colors ease-in-out duration-200">Fade</div>',
-      output: [
-        '<div className="motion-safe:transition-colors ease-in-out duration-200">Fade</div>',
-        '<div className="motion-safe:transition-colors motion-safe:ease-in-out duration-200">Fade</div>',
-        '<div className="motion-safe:transition-colors motion-safe:ease-in-out motion-safe:duration-200">Fade</div>',
-      ],
-      errors: [
-        { messageId: 'missingMotionSafe' },
-        { messageId: 'missingMotionSafe' },
-        { messageId: 'missingMotionSafe' },
-      ],
-    },
-
-    // ── Two motion classes → multi-pass fix ──
+    // ── animate-* with delay modifier → one violation, wrap both ──
     {
       code: '<div className="animate-pulse delay-150">Pulse</div>',
-      output: [
-        '<div className="motion-safe:animate-pulse delay-150">Pulse</div>',
-        '<div className="motion-safe:animate-pulse motion-safe:delay-150">Pulse</div>',
-      ],
-      errors: [
-        { messageId: 'missingMotionSafe' },
-        { messageId: 'missingMotionSafe' },
-      ],
+      output: '<div className="motion-safe:animate-pulse motion-safe:delay-150">Pulse</div>',
+      errors: [{ messageId: 'missingMotionSafe' }],
+    },
+
+    // ── Three-way motion + easing + duration → one violation, one fix ──
+    {
+      code: '<div className="transition-transform duration-200 ease-linear">Shift</div>',
+      output:
+        '<div className="motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-linear">Shift</div>',
+      errors: [{ messageId: 'missingMotionSafe' }],
+    },
+
+    // ── strictTransitions: flag non-motion transitions opt-in ──
+    {
+      code: '<div className="transition-colors ease-in-out duration-200">Tint</div>',
+      options: [{ strictTransitions: true }],
+      output:
+        '<div className="motion-safe:transition-colors motion-safe:ease-in-out motion-safe:duration-200">Tint</div>',
+      errors: [{ messageId: 'missingMotionSafe' }],
     },
   ],
 });

@@ -1,0 +1,64 @@
+# Dependabot keeps dependencies fresh without blowing up the PR queue.
+# Grouped updates land as a single PR per ecosystem per week so reviewers
+# aren't drowning in per-package bumps.
+#
+# Security updates are always sent through regardless of the schedule.
+
+version: 2
+updates:
+  # Root workspace — covers every package and app via the pnpm
+  # workspace root. Dependabot understands pnpm workspaces as of 2024.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      # Dev tooling rarely affects runtime behavior — safe to batch.
+      dev-tooling:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      # Runtime minors + patches batch together too; majors still land
+      # as individual PRs for the usual breaking-change review.
+      runtime:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # ESLint and TypeScript majors need coordinated rule migrations;
+      # let humans schedule those.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions used in workflows + action/action.yml.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    groups:
+      actions:
+        patterns:
+          - "*"

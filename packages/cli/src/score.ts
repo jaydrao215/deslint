@@ -11,9 +11,18 @@ const DEFAULT_WEIGHTS: Record<RuleCategory, number> = {
 };
 
 export interface ScoreResult {
-  overall: number;
+  /** `null` when the scan had no applicable input (e.g. a CSS-in-JS
+   *  project where class-based rules can't meaningfully comment).
+   *  Consumers must render "N/A" in that case rather than claiming a
+   *  100 the scanner didn't earn. */
+  overall: number | null;
   categories: Record<RuleCategory, CategoryScore>;
-  grade: 'pass' | 'warn' | 'fail';
+  grade: 'pass' | 'warn' | 'fail' | 'skipped';
+  /** True when the score reflects a real scan; false when the rule
+   *  set found no input and `overall` is `null`. */
+  applicable: boolean;
+  /** Human-readable reason surfaced when `applicable` is false. */
+  notApplicableReason?: string;
 }
 
 export interface CategoryScore {
@@ -24,7 +33,7 @@ export interface CategoryScore {
 
 export interface HistoryEntry {
   timestamp: string;
-  overall: number;
+  overall: number | null;
   categories: Record<RuleCategory, number>;
   totalFiles: number;
   totalViolations: number;
@@ -55,6 +64,29 @@ export function calculateScore(
     categories[cat] = { score, violations, weight: normalizedWeights[cat] };
   }
 
+  // Applicability gate: if the scan had no files the rules could
+  // comment on AND reported no violations, a "100" is misleading —
+  // the scanner literally had nothing to say. Return `null` so
+  // consumers can render N/A. We only skip when there are zero
+  // violations; any real finding means the rules DID have something
+  // to work with and the score stands.
+  const applicability = lintResult.applicability;
+  if (
+    applicability &&
+    !applicability.applicable &&
+    lintResult.totalViolations === 0
+  ) {
+    return {
+      overall: null,
+      categories,
+      grade: 'skipped',
+      applicable: false,
+      notApplicableReason:
+        applicability.reason ??
+        'No applicable input for the configured rules.',
+    };
+  }
+
   let overall = 0;
   for (const cat of Object.keys(DEFAULT_WEIGHTS) as RuleCategory[]) {
     overall += categories[cat].score * (normalizedWeights[cat] / 100);
@@ -64,7 +96,7 @@ export function calculateScore(
   const grade: ScoreResult['grade'] =
     overall >= 80 ? 'pass' : overall >= 60 ? 'warn' : 'fail';
 
-  return { overall, categories, grade };
+  return { overall, categories, grade, applicable: true };
 }
 
 export function saveHistory(

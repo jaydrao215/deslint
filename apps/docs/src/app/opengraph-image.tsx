@@ -3,7 +3,7 @@ import { ImageResponse } from 'next/og';
 export const runtime = 'edge';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Deslint — catch design drift, broken responsive layouts, and WCAG failures in AI-generated frontend code';
+export const alt = 'Deslint — the verification layer for AI-generated code. Deterministic rules, reproducible attestations, runs inside the agent loop and at the merge gate.';
 
 // All top-level and nested <div>s declare `display: 'flex'` explicitly.
 // Satori (the renderer next/og uses) rejects multi-child divs without it,
@@ -61,15 +61,19 @@ export default async function OpenGraphImage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', marginTop: '40px', fontSize: '66px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.02, color: '#FAFAFB' }}>
-            AI writes fast.
+          <div style={{ display: 'flex', marginTop: '40px', fontSize: '60px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.02, color: '#FAFAFB' }}>
+            Verify the code
           </div>
-          <div style={{ display: 'flex', marginTop: '4px', fontSize: '66px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.02, color: '#C2BCE9' }}>
-            Deslint keeps it clean.
+          <div style={{ display: 'flex', marginTop: '4px', fontSize: '60px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.02, color: '#C2BCE9' }}>
+            your AI just wrote.
           </div>
 
-          <div style={{ display: 'flex', marginTop: '28px', fontSize: '24px', lineHeight: 1.45, color: 'rgba(250,250,251,0.75)', maxWidth: '540px' }}>
-            Catch design drift, broken responsive layouts, and WCAG failures in AI-generated frontend code.
+          <div style={{ display: 'flex', marginTop: '28px', fontSize: '22px', lineHeight: 1.45, color: 'rgba(250,250,251,0.75)', maxWidth: '540px' }}>
+            Deterministic rules. Reproducible attestations. Runs inside the agent loop and at the merge gate.
+          </div>
+
+          <div style={{ display: 'flex', marginTop: '16px', fontSize: '18px', lineHeight: 1.4, color: 'rgba(250,250,251,0.6)', maxWidth: '540px' }}>
+            Zero LLM in the hot path. Zero code leaves your machine.
           </div>
 
           <div style={{ display: 'flex', marginTop: '36px', gap: '10px' }}>

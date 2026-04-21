@@ -49,7 +49,8 @@ export const RULES: Rule[] = [
       'Disallow arbitrary color values like bg-[#FF0000] in Tailwind classes.',
     description:
       'Flags arbitrary color values inside Tailwind utility classes — bg-[#FF0000], text-[#333], border-[hsl(0,0%,50%)] — and steers the codebase back to the imported design-token palette. The most common form of design-system drift in AI-generated code: the model knows the brand hex, types it directly, and bypasses the token that exists for exactly that color.',
-    fixable: 'Yes — auto-fix replaces with the nearest token in your scale.',
+    fixable:
+      'Yes — auto-fix replaces with the nearest token in your scale. When the replacement token resolves to the same hex as the arbitrary value (e.g. bg-[#1A5276] → bg-primary with primary=#1A5276), the GitHub Action renders it as a one-click `suggestion` block; closest-match fixes with a different pixel value render as a read-only code block with a "run `deslint fix` locally" nudge.',
     suggestions: 'Yes — surfaces the closest legal tokens.',
     options: `["error", {
   "allowlist": ["#1E3A5F"],
@@ -548,11 +549,12 @@ export const RULES: Rule[] = [
       'Require animations to respect prefers-reduced-motion.',
     description:
       'Flags Tailwind animation utilities (animate-spin, transition-*) that ship without a motion-reduce: variant. The rule keeps the codebase usable for vestibular-disorder users — a population AI agents never optimise for by default.',
-    fixable: 'Yes — wraps the class in a motion-reduce: variant.',
+    fixable:
+      'Yes — wraps motion classes with a `motion-safe:` prefix so the animation only runs when the user has not requested reduced motion. Because the fix only adds a modifier without removing anything, the GitHub Action renders it as a one-click `suggestion` block — users in the default state see no visual change.',
     suggestions: 'Yes.',
     wcag: 'WCAG 2.3.3 (Animation from Interactions).',
     badCode: `<div className="animate-spin transition-all duration-500" />`,
-    goodCode: `<div className="animate-spin motion-reduce:animate-none transition-all motion-reduce:transition-none" />`,
+    goodCode: `<div className="motion-safe:animate-spin motion-safe:transition-all motion-safe:duration-500" />`,
     relatedSlugs: ['focus-visible-style', 'focus-trap-patterns', 'icon-accessibility'],
   },
   {

@@ -3,9 +3,9 @@ import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import 'asciinema-player/dist/bundle/asciinema-player.css';
 
-const TITLE = 'Deslint — Design Lint for AI Coding Agents via MCP';
+const TITLE = 'Deslint — The Verification Layer for AI-Generated Code';
 const DESCRIPTION =
-  'Deterministic design-system and accessibility lint for AI-generated frontend code. MCP server for Claude Code, Cursor, Codex, and Windsurf. ESLint plugin, CLI, and GitHub Action. Local. No LLM. Zero cloud.';
+  'Deslint is the verification layer for AI-generated code. Deterministic design-system and accessibility rules. Reproducible attestations. Runs inside the agent loop (MCP for Claude Code, Cursor, Codex, Windsurf) and at the merge gate (GitHub Action with trailer verification). Local. No LLM. Zero code egress.';
 
 export const metadata: Metadata = {
   title: {
@@ -102,7 +102,7 @@ export const metadata: Metadata = {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'Deslint — MCP design linter for AI coding agents',
+        alt: 'Deslint — the verification layer for AI-generated code',
       },
     ],
   },
