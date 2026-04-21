@@ -54,6 +54,16 @@ export interface ScanResult {
   filesScanned: number;
   filesWithViolations: number;
   debtMinutes: number;
+  /** Parser failures (ESLint messages with `ruleId: null`, severity 2).
+   *  Not counted in `totalViolations` / `errors` / `warnings` / `byRule`
+   *  — they don't tell us anything about design quality and leaking
+   *  them into those metrics produced the "13 errors, score 99,
+   *  rule=unknown" PR comment tracked in VALIDATION-0.7.md. */
+  parseErrors: number;
+  /** Distinct files that failed to parse. Surfaced separately from
+   *  `filesWithViolations` so the banner can say "N files couldn't
+   *  be analyzed" rather than conflating them with rule hits. */
+  filesWithParseErrors: number;
   qualityGate?: QualityGate;
   inlineViolations: InlineViolation[];
   effectiveRules: Record<string, unknown>;
@@ -101,6 +111,10 @@ interface LintResult {
   byRule: Record<string, number>;
   byCategory: Record<RuleCategory, number>;
   filesWithViolations: number;
+  /** Parser failures (null-ruleId severity-2 messages). Tracked
+   *  separately so they never leak into the Design Health Score. */
+  parseErrors: number;
+  filesWithParseErrors: number;
   effectiveRules: Record<string, unknown>;
 }
 
@@ -344,6 +358,8 @@ async function scanFiles(
       filesScanned: 0,
       filesWithViolations: 0,
       debtMinutes: 0,
+      parseErrors: 0,
+      filesWithParseErrors: 0,
       qualityGate: scanConfig.qualityGate,
       inlineViolations: [],
       effectiveRules: { ...DEFAULT_RULES, ...normalizeRuleOverrides(scanConfig.userRules) },
@@ -538,6 +554,8 @@ function aggregateResults(results: LintFileResult[]): Omit<LintResult, 'effectiv
   let errors = 0;
   let warnings = 0;
   let filesWithViolations = 0;
+  let parseErrors = 0;
+  let filesWithParseErrors = 0;
   const byRule: Record<string, number> = {};
   const byCategory: Record<RuleCategory, number> = {
     colors: 0,
@@ -547,6 +565,10 @@ function aggregateResults(results: LintFileResult[]): Omit<LintResult, 'effectiv
     consistency: 0,
   };
 
+  // Keep both parse errors and deslint rule messages through to
+  // downstream consumers — parse errors render as a distinct banner,
+  // deslint hits feed the score. Drop everything else (non-plugin
+  // eslint noise) so `unknown` never shows up in Top Violations.
   const filteredResults = results.map((result) => ({
     ...result,
     messages: result.messages.filter(
@@ -555,20 +577,31 @@ function aggregateResults(results: LintFileResult[]): Omit<LintResult, 'effectiv
   }));
 
   for (const result of filteredResults) {
-    if (result.messages.length > 0) filesWithViolations++;
+    let fileHasRuleHit = false;
+    let fileHasParseError = false;
+
     for (const msg of result.messages) {
+      if (msg.ruleId === null) {
+        // Parser failure. Segregated from the score + rule metrics so
+        // it surfaces in its own banner rather than inflating `errors`
+        // or producing an `unknown` Top Violations row.
+        parseErrors++;
+        fileHasParseError = true;
+        continue;
+      }
+
       totalViolations++;
       if (msg.severity === 2) errors++;
       else warnings++;
 
-      const ruleId = msg.ruleId ?? 'unknown';
-      byRule[ruleId] = (byRule[ruleId] ?? 0) + 1;
-
-      if (msg.ruleId) {
-        const category = RULE_CATEGORY_MAP[msg.ruleId];
-        if (category) byCategory[category]++;
-      }
+      byRule[msg.ruleId] = (byRule[msg.ruleId] ?? 0) + 1;
+      const category = RULE_CATEGORY_MAP[msg.ruleId];
+      if (category) byCategory[category]++;
+      fileHasRuleHit = true;
     }
+
+    if (fileHasRuleHit) filesWithViolations++;
+    if (fileHasParseError) filesWithParseErrors++;
   }
 
   return {
@@ -579,6 +612,8 @@ function aggregateResults(results: LintFileResult[]): Omit<LintResult, 'effectiv
     byRule,
     byCategory,
     filesWithViolations,
+    parseErrors,
+    filesWithParseErrors,
   };
 }
 
@@ -597,6 +632,8 @@ function toScanResult(
     filesScanned: lintResult.totalFiles,
     filesWithViolations: lintResult.filesWithViolations,
     debtMinutes: computeDebtMinutes(lintResult.byRule),
+    parseErrors: lintResult.parseErrors,
+    filesWithParseErrors: lintResult.filesWithParseErrors,
     inlineViolations: buildInlineViolations(lintResult.results, cwd),
   };
 }
@@ -642,11 +679,13 @@ function buildTopViolations(results: LintFileResult[]): ViolationSummary[] {
   const byRule = new Map<string, { count: number; severity: number }>();
   for (const result of results) {
     for (const msg of result.messages) {
-      const ruleId = msg.ruleId ?? 'unknown';
-      const current = byRule.get(ruleId) ?? { count: 0, severity: msg.severity };
+      // Parser failures (null ruleId) render in their own banner; they
+      // never belong in Top Violations as `unknown`.
+      if (msg.ruleId === null) continue;
+      const current = byRule.get(msg.ruleId) ?? { count: 0, severity: msg.severity };
       current.count++;
       current.severity = Math.max(current.severity, msg.severity);
-      byRule.set(ruleId, current);
+      byRule.set(msg.ruleId, current);
     }
   }
 

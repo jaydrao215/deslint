@@ -22,6 +22,11 @@ function makeScanResult(overrides: Partial<ScanResult> = {}): ScanResult {
     filesScanned: 10,
     filesWithViolations: 3,
     debtMinutes: 0,
+    parseErrors: 0,
+    filesWithParseErrors: 0,
+    inlineViolations: [],
+    effectiveRules: {},
+    userRules: {},
     ...overrides,
   };
 }
@@ -139,6 +144,90 @@ describe('formatComment', () => {
     expect(comment).toContain('Design Health Score: N/A');
     expect(comment).toContain('No class or style');
     expect(comment).not.toContain('/100');
+  });
+
+  // Parser-error segregation — VALIDATION-0.7.md "13 errors / score 99
+  // / rule=unknown" regression. Parse failures must never leak into
+  // totalViolations, errors, or Top Violations — they render in their
+  // own banner.
+  it('renders a parser-error banner when parseErrors > 0', () => {
+    const comment = formatComment(
+      makeScanResult({
+        parseErrors: 3,
+        filesWithParseErrors: 2,
+      }),
+      0,
+    );
+    expect(comment).toContain('Parser errors');
+    expect(comment).toContain("2 files couldn't be analyzed");
+    expect(comment).toContain('3 parser errors');
+    expect(comment).toContain('excluded from the Design Health Score');
+  });
+
+  it('uses singular copy when one file has one parser error', () => {
+    const comment = formatComment(
+      makeScanResult({
+        parseErrors: 1,
+        filesWithParseErrors: 1,
+      }),
+      0,
+    );
+    expect(comment).toContain("1 file couldn't be analyzed");
+    expect(comment).toContain('1 parser error');
+    expect(comment).not.toContain('1 parser errors');
+  });
+
+  it('omits the parser-error banner when parseErrors is 0', () => {
+    const comment = formatComment(makeScanResult(), 0);
+    expect(comment).not.toContain('Parser errors');
+    expect(comment).not.toContain("couldn't be analyzed");
+  });
+
+  it('suppresses the celebration line when only parser errors exist', () => {
+    const comment = formatComment(
+      makeScanResult({
+        totalViolations: 0,
+        errors: 0,
+        warnings: 0,
+        topViolations: [],
+        parseErrors: 2,
+        filesWithParseErrors: 2,
+        categories: [
+          { name: 'colors', violations: 0, score: 100 },
+          { name: 'spacing', violations: 0, score: 100 },
+          { name: 'typography', violations: 0, score: 100 },
+          { name: 'responsive', violations: 0, score: 100 },
+          { name: 'consistency', violations: 0, score: 100 },
+        ],
+      }),
+      0,
+    );
+    expect(comment).not.toContain('No design violations found');
+    expect(comment).toContain('Parser errors');
+  });
+
+  it('renders the parser-error banner alongside the N/A score banner', () => {
+    const comment = formatComment(
+      makeScanResult({
+        score: null,
+        totalViolations: 0,
+        topViolations: [],
+        categories: [],
+        parseErrors: 4,
+        filesWithParseErrors: 2,
+        applicability: {
+          filesScanned: 200,
+          tailwindFiles: 0,
+          styleFiles: 0,
+          applicable: false,
+          reason: 'No class or style attributes detected.',
+        },
+      }),
+      0,
+    );
+    expect(comment).toContain('Design Health Score: N/A');
+    expect(comment).toContain('Parser errors');
+    expect(comment).toContain("2 files couldn't be analyzed");
   });
 
   it('does not render min-score pass/fail line when score is null', () => {

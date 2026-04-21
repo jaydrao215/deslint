@@ -64,9 +64,10 @@ export function formatComment(
       `| Files with violations | ${result.filesWithViolations} |`,
       `| Total violations | ${result.totalViolations} |`,
       '',
-      '---',
-      '*Powered by [Deslint](https://deslint.com) — Design quality gate for AI-generated code*',
     ];
+    appendParseErrorBanner(lines, result);
+    lines.push('---');
+    lines.push('*Powered by [Deslint](https://deslint.com) — Design quality gate for AI-generated code*');
     return lines.join('\n');
   }
 
@@ -147,13 +148,43 @@ export function formatComment(
     lines.push('');
   }
 
-  if (result.totalViolations === 0) {
+  if (result.totalViolations === 0 && result.parseErrors === 0) {
     lines.push(':tada: **No design violations found!** Your code follows design best practices.');
     lines.push('');
   }
+
+  appendParseErrorBanner(lines, result);
 
   lines.push('---');
   lines.push('*Powered by [Deslint](https://deslint.com) — Design quality gate for AI-generated code*');
 
   return lines.join('\n');
+}
+
+/**
+ * Surface parser failures as a distinct diagnostic banner rather than
+ * letting them inflate the violation counts or appear as `unknown` in
+ * Top Violations. The Design Health Score is computed from deslint-rule
+ * hits only — parse errors mean "couldn't analyze this file," not
+ * "this file has a design problem."
+ */
+function appendParseErrorBanner(lines: string[], result: ScanResult): void {
+  if (result.parseErrors <= 0) return;
+  const fileCount = result.filesWithParseErrors;
+  const fileLabel = fileCount === 1 ? 'file' : 'files';
+  lines.push(':warning: **Parser errors**');
+  lines.push('');
+  lines.push(
+    `${fileCount} ${fileLabel} couldn't be analyzed ` +
+      `(${result.parseErrors} parser error${result.parseErrors !== 1 ? 's' : ''}). ` +
+      'These are excluded from the Design Health Score.',
+  );
+  lines.push('');
+  lines.push('Most common causes:');
+  lines.push('- Real syntax errors in the source file.');
+  lines.push(
+    '- File types the Action doesn\'t bundle a parser for yet ' +
+      '(`.vue`, `.svelte`, `.angular.html`). TypeScript and JSX are supported.',
+  );
+  lines.push('');
 }
