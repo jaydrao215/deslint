@@ -56,8 +56,11 @@ the tool shipped passive and churned.
 - The onboarding prompts the user for consent before touching any
   file outside the MCP config, matching the release-safety principle
   from `0.7.0` (no destructive writes without explicit opt-in).
-- No other package changed in `0.7.1`. `@deslint/cli`,
-  `@deslint/eslint-plugin`, and `@deslint/shared` stay on `0.7.0`.
+- Only `@deslint/mcp` has behaviour changes in `0.7.1`. `@deslint/cli`,
+  `@deslint/eslint-plugin`, and `@deslint/shared` ship as `0.7.1`
+  republishes with no code changes, so the monorepo's packages stay
+  in version lockstep and the release tag validator (which requires
+  every publishable `package.json` to match the tag) passes.
 
 ## [0.7.0] — 2026-04-21
 
