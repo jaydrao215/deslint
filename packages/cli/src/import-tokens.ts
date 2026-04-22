@@ -28,7 +28,7 @@ import {
   statSync,
   existsSync,
 } from 'node:fs';
-import { resolve, dirname, relative, isAbsolute, join } from 'node:path';
+import { resolve, dirname, relative, isAbsolute, join, basename } from 'node:path';
 import chalk from 'chalk';
 import {
   figmaVariablesToDTCG,
@@ -57,6 +57,12 @@ export interface ImportTokensOptions {
    * (hidden work-in-progress tokens are excluded, matching the Figma UI).
    */
   includeHidden?: boolean;
+  /**
+   * Overwrite the output file when it already exists. Defaults to
+   * false so an accidental `--output my-design-tokens.json` over a
+   * hand-edited file is caught loudly rather than silently.
+   */
+  force?: boolean;
   /** Override the working directory (for tests). */
   cwd?: string;
   /** Override the fetch implementation (for tests). */
@@ -89,11 +95,57 @@ export class ImportTokensError extends Error {
       | 'source_not_found'
       | 'source_not_json'
       | 'source_empty'
-      | 'source_invalid_shape',
+      | 'source_invalid_shape'
+      /** Output path would clobber a user file and --force was not
+       *  passed, OR the path is `.deslintrc.json` which is always
+       *  refused because the emitted fragment would drop the user's
+       *  rules, ignore patterns, and qualityGate. */
+      | 'destructive_output',
   ) {
     super(message);
     this.name = 'ImportTokensError';
   }
+}
+
+/**
+ * Shared guard for the three importers. A token export is destructive
+ * by nature: it writes a file Deslint controls end-to-end, there is no
+ * merge step. Two specific failure modes killed real users in
+ * pre-0.7.0 review:
+ *
+ *   1. `--output .deslintrc.json` silently replaces the entire config
+ *      with a `designSystem`-only fragment. Rules, ignore patterns,
+ *      and qualityGate evaporate.
+ *   2. `--output tokens.json` overwrites a hand-authored tokens file
+ *      the user forgot they had.
+ *
+ * Refuse the first unconditionally — emitting a `.deslintrc.json`
+ * fragment and hand-merging it into the real config is the documented
+ * path; there is no legitimate use for --force here. Refuse the second
+ * unless `--force` is passed so the destructive intent is explicit.
+ */
+function writeOutputFile(
+  outputPath: string,
+  serialized: string,
+  options: { force?: boolean; cwd?: string },
+): void {
+  if (basename(outputPath) === '.deslintrc.json') {
+    throw new ImportTokensError(
+      'Refusing to write to .deslintrc.json. `import-tokens` emits only a `designSystem` fragment — overwriting would silently drop your rules, ignore patterns, and qualityGate. Write to a different path (e.g. `--output design-tokens.json --format deslintrc`) and merge the fragment into .deslintrc.json by hand.',
+      'destructive_output',
+    );
+  }
+  if (existsSync(outputPath) && !options.force) {
+    const displayPath = options.cwd
+      ? relative(options.cwd, outputPath) || outputPath
+      : outputPath;
+    throw new ImportTokensError(
+      `Refusing to overwrite existing file: ${displayPath}. Pass --force to overwrite, or choose a different --output path.`,
+      'destructive_output',
+    );
+  }
+  mkdirSync(dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, serialized, 'utf-8');
 }
 
 /** Only allow [A-Za-z0-9-_] in a Figma file key. */
@@ -159,8 +211,7 @@ export async function importTokens(
       ? toDeslintRcFragment(transform)
       : JSON.stringify(transform.dtcg, null, 2) + '\n';
 
-  mkdirSync(dirname(outputPath), { recursive: true });
-  writeFileSync(outputPath, serialized, 'utf-8');
+  writeOutputFile(outputPath, serialized, { force: options.force, cwd });
 
   return { outputPath, transform };
 }
@@ -499,6 +550,8 @@ export interface ImportStyleDictionaryOptions {
    * etc.) to DTCG types. Defaults to true.
    */
   normalizeTypes?: boolean;
+  /** Overwrite the output file when it already exists. */
+  force?: boolean;
   /** Override the working directory (for tests). */
   cwd?: string;
 }
@@ -572,8 +625,7 @@ export function importStyleDictionary(
       ? toDeslintRcFragment(transform)
       : JSON.stringify(transform.dtcg, null, 2) + '\n';
 
-  mkdirSync(dirname(outputPath), { recursive: true });
-  writeFileSync(outputPath, serialized, 'utf-8');
+  writeOutputFile(outputPath, serialized, { force: options.force, cwd });
 
   return { outputPath, transform, filesRead };
 }
@@ -763,6 +815,8 @@ export interface ImportStitchOptions {
   tier?: 'sys' | 'ref' | 'comp';
   /** Normalise legacy type labels. Defaults to true. */
   normalizeTypes?: boolean;
+  /** Overwrite the output file when it already exists. */
+  force?: boolean;
   /** Override the working directory (for tests). */
   cwd?: string;
 }
@@ -834,8 +888,7 @@ export function importStitch(
       ? toDeslintRcFragment(transform)
       : JSON.stringify(transform.dtcg, null, 2) + '\n';
 
-  mkdirSync(dirname(outputPath), { recursive: true });
-  writeFileSync(outputPath, serialized, 'utf-8');
+  writeOutputFile(outputPath, serialized, { force: options.force, cwd });
 
   return { outputPath, transform, sourcePath };
 }

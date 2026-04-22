@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -400,5 +400,81 @@ describe('importTokens', () => {
     expect(err).toBeInstanceOf(Error);
     expect(err.name).toBe('ImportTokensError');
     expect(err.code).toBe('http_forbidden');
+  });
+
+  // Release-safety guard (0.7.0): a fresh install must never clobber a
+  // user file the way we used to. Covers the Figma branch; the Style
+  // Dictionary and Stitch branches share the same writeOutputFile
+  // helper, so one-branch coverage of each code path is sufficient.
+  describe('output clobber guard', () => {
+    it('refuses to overwrite an existing file by default', async () => {
+      const { fn } = queuedFetch([{ status: 200, body: happyResponse() }]);
+      // Seed the target path with a hand-edited file.
+      const existingPath = join(workDir, 'tokens.json');
+      writeFileSync(existingPath, '{ "handAuthored": true }\n', 'utf-8');
+
+      await expect(
+        importTokens({
+          figma: 'ABC123',
+          token: 'fk',
+          cwd: workDir,
+          fetchImpl: fn,
+        }),
+      ).rejects.toMatchObject({ code: 'destructive_output' });
+
+      // File must be untouched when we refuse.
+      expect(readFileSync(existingPath, 'utf-8')).toBe('{ "handAuthored": true }\n');
+    });
+
+    it('overwrites when --force is passed', async () => {
+      const { fn } = queuedFetch([{ status: 200, body: happyResponse() }]);
+      const existingPath = join(workDir, 'tokens.json');
+      writeFileSync(existingPath, '{ "handAuthored": true }\n', 'utf-8');
+
+      await importTokens({
+        figma: 'ABC123',
+        token: 'fk',
+        cwd: workDir,
+        fetchImpl: fn,
+        force: true,
+      });
+
+      // Force path writes a fresh DTCG tree; the old content is gone.
+      const written = JSON.parse(readFileSync(existingPath, 'utf-8'));
+      expect(written.handAuthored).toBeUndefined();
+      expect(written.primitives.brand.primary.$value).toBe('#000000');
+    });
+
+    it('refuses .deslintrc.json output even with --force', async () => {
+      const { fn } = queuedFetch([{ status: 200, body: happyResponse() }]);
+      // No existing file — the guard fires on the path itself, not on
+      // the existence check. `import-tokens` emits a designSystem-only
+      // fragment; overwriting a real `.deslintrc.json` would silently
+      // drop the user's rules, ignore patterns, and qualityGate.
+      await expect(
+        importTokens({
+          figma: 'ABC123',
+          token: 'fk',
+          cwd: workDir,
+          fetchImpl: fn,
+          output: '.deslintrc.json',
+          format: 'deslintrc',
+          force: true,
+        }),
+      ).rejects.toMatchObject({ code: 'destructive_output' });
+    });
+
+    it('allows writing to a fresh path with no guard interaction', async () => {
+      const { fn } = queuedFetch([{ status: 200, body: happyResponse() }]);
+      const result = await importTokens({
+        figma: 'ABC123',
+        token: 'fk',
+        cwd: workDir,
+        fetchImpl: fn,
+        output: 'design-tokens.json',
+      });
+      const written = JSON.parse(readFileSync(result.outputPath, 'utf-8'));
+      expect(written.primitives.brand.primary.$value).toBe('#000000');
+    });
   });
 });

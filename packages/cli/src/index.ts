@@ -623,6 +623,7 @@ program
   .option('-o, --output <path>', 'Output file path', 'tokens.json')
   .option('--format <format>', 'Output format: dtcg (W3C tokens) or deslintrc', 'dtcg')
   .option('--include-hidden', 'Include variables marked hidden-from-publishing')
+  .option('--force', 'Overwrite the output file if it already exists')
   .action(
     async (opts: {
       figma?: string;
@@ -634,6 +635,7 @@ program
       output: string;
       format: string;
       includeHidden?: boolean;
+      force?: boolean;
     }) => {
       if (opts.format !== 'dtcg' && opts.format !== 'deslintrc') {
         console.error(
@@ -679,6 +681,7 @@ program
           output: opts.output,
           format: opts.format,
           tier: opts.tier as 'sys' | 'ref' | 'comp' | undefined,
+          force: opts.force,
           cwd: process.cwd(),
         });
         return;
@@ -688,6 +691,7 @@ program
           source: opts.styleDictionary,
           output: opts.output,
           format: opts.format,
+          force: opts.force,
           cwd: process.cwd(),
         });
         return;
@@ -699,6 +703,7 @@ program
         output: opts.output,
         format: opts.format,
         includeHidden: opts.includeHidden,
+        force: opts.force,
         cwd: process.cwd(),
       });
     },
