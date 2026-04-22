@@ -2,10 +2,41 @@
 
 All notable changes to this project are documented in this file.
 
-## [Unreleased]
+## [0.7.0] — 2026-04-21
+
+The verification-layer release. 0.7.0 turns the commit-trailer claim
+into a real merge gate, attributes violations back to the agent that
+authored them, and ships one-click PR autofixes that are provably
+visually lossless.
 
 ### Added
 
+- **Sigstore-signed attestations** (`cli`, `action`). `deslint attest`
+  can now sign the reproducible `.deslint/attestation.json` with a
+  Sigstore bundle (sidecar `.sigstore`). `deslint verify` checks
+  bundle integrity. Action gains `require-signed`: when `true`, a
+  missing or tampered signature fails the job. Signer identity is
+  extracted from the Sigstore cert after verification — we deliberately
+  do not embed it in the attestation JSON.
+- **Signer-identity policy** (`action`, `cli`). `signer-identity` /
+  `signer-issuer` inputs on the Action and matching flags on
+  `deslint verify` (`--signer-identity`, `--signer-issuer`,
+  `--show-signer`). A rejection surfaces the observed signer plus a
+  copy-pasteable accept-regex. Back-compat: any valid Sigstore
+  signature passes when both policy fields are unset.
+- **Per-agent scorecard** (`action`). `git blame` attributes each
+  inline violation to the agent that authored the offending line —
+  Claude, Cursor, Codex, Copilot, Windsurf, or a human contributor —
+  and renders a table in the PR comment (agent, violations, files,
+  top rule). Only PR-authored commits count; pre-existing violations
+  the PR merely touched are excluded. Gated by new `agent-scorecard`
+  input (default `true`). Shallow-checkout emits a `fetch-depth: 0`
+  hint rather than failing the job.
+- **Design-token drift diff** (`action`). Diffs `designSystem` tokens
+  between the PR base and head so a silent `colors.primary` rename
+  can't sneak through review. Renders a before/after markdown table.
+  Shallow checkout / malformed config emits a hint rather than failing.
+  Gated by new `token-drift` input (default `true`).
 - **One-click PR autofixes via GitHub `suggestion` blocks** (`action`).
   When an inline violation has an autofix that is provably visually
   lossless — a color token that resolves to the same hex as the
@@ -14,16 +45,80 @@ All notable changes to this project are documented in this file.
   a GitHub `suggestion` block so a reviewer can commit the change in
   one click. Opinionated/closest-match fixes render as read-only code
   blocks with a "run `deslint fix` locally" nudge, so a reviewer can
-  never one-click-ship a pixel change they never saw. Gated by the new
+  never one-click-ship a pixel change they never saw. Gated by new
   `suggest-fixes` input (default `true`).
-- **Signer-identity policy** for Sigstore verification (`action`,
-  `cli`). New `signer-identity` / `signer-issuer` inputs on the Action
-  and matching `--signer-identity` / `--signer-issuer` / `--show-signer`
-  flags on `deslint verify`. When set, only signatures whose cert SAN
-  matches the regex (and whose OIDC issuer matches exactly, if
-  configured) are accepted; a rejection surfaces the observed signer
-  plus a copy-pasteable accept-regex and a `--show-signer` bootstrap
-  hint. Back-compat: when unset, any valid Sigstore signature passes.
+- **`deslint scan --fail-on <level>`** (`cli`). `error` (default,
+  matches 0.6 behaviour), `warning` / `any`, or `never` — CI
+  integration control for "fail on any violation" vs "never fail,
+  just report."
+- **`--force` flag for `deslint import-tokens`** (`cli`). Overwrite
+  an existing output file when the destructive intent is explicit.
+- **v0.7 launch kit** (`chore`). `.github/CODEOWNERS`, PR template,
+  Dependabot config, Contributor Covenant 2.1, refreshed SECURITY.md
+  (attestation verification section, version support table, GHSA as
+  preferred private disclosure), CONTRIBUTING DCO sign-off.
+
+### Fixed
+
+- **`prefers-reduced-motion` over-reporting** (`eslint-plugin`). The
+  rule fired once per matched class prefix, turning a three-class
+  element into three violations when one `motion-safe:` wrap fixes
+  the element. Now emits exactly one violation per element with a
+  single autofix that wraps every affected class. Projected impact
+  on shadcn-ui: 1978 hits → ~600.
+- **`prefers-reduced-motion` false positives on non-motion transitions**
+  (`eslint-plugin`). `transition-colors`, `transition-shadow`,
+  `transition-opacity`, `transition-background` no longer fire by
+  default — WCAG 2.3.3 scopes the rule to motion from interactions.
+  New `strictTransitions: true` opt-in for the pre-0.7 interpretation.
+  Orphan `duration-*` / `ease-*` / `delay-*` without a paired
+  `transition-*` are no longer reported.
+- **Design Health Score inflation on non-Tailwind projects** (`cli`,
+  `action`, `mcp`). Scanning a pure CSS-in-JS codebase used to return
+  `overall: 100` because class-based rules had nothing to comment on.
+  A new applicability probe detects when no class/style attributes are
+  present and the score is gated to `null` / `'skipped'` rather than a
+  fabricated 100. PR comment renders a distinct N/A banner; CLI prints
+  a grey "N/A" with the reason; MCP tools expose
+  `overallScore: number | null`.
+- **Parser errors inflating the Action's violation count** (`action`).
+  `.ts` / `.tsx` files that Espree can't parse used to flow into the
+  aggregate as `rule=unknown` severity=2 entries ("13 errors, score 99,
+  rule=unknown"). The Action now bundles `@typescript-eslint/parser`
+  (previously `importOptional`, which never resolved inside the
+  esbuild binary) and segregates `parseErrors` / `filesWithParseErrors`
+  into their own fields. Parse failures render as a distinct "⚠️ N
+  files couldn't be analyzed" banner and never touch the score or
+  Top Violations.
+- **`deslint import-tokens` silent clobber** (`cli`). Every importer
+  (Figma / Style Dictionary / Stitch) wrote output via a naked
+  `writeFileSync`. `--output .deslintrc.json --format deslintrc` used
+  to silently replace the user's full config with a designSystem-only
+  fragment; `--output tokens.json` silently erased a hand-authored
+  file. Now refuses `.deslintrc.json` unconditionally (the emitted
+  fragment is always incomplete) and refuses any existing path
+  without `--force`.
+- **`@deslint/mcp install` non-atomic write** (`mcp`). A crash or
+  disk-full mid-write used to leave `claude_desktop_config.json` or
+  `.cursor/mcp.json` partially written and invalid, and the editor
+  failed to start. Writes now route through a temp sibling +
+  `renameSync` so replacement is atomic on POSIX and Windows NTFS.
+
+### Changed
+
+- **Positioning.** Homepage, pricing, MCP hub, docs intro, OG image,
+  README, and package descriptions now frame Deslint as "the
+  verification layer for AI-generated code." Three proof pillars
+  (verify against your standards / prove it, don't claim it / works
+  where AI writes) are the single source of truth in
+  `apps/docs/src/lib/positioning.ts`.
+- **Docs: surfaces are peers, not sequential steps.** `/docs`
+  overview gains a "Choose your surface" grid (MCP / ESLint plugin /
+  CLI / GitHub Action) with one-line "Use if" guidance per surface.
+  `/docs/getting-started` preamble states "you don't need all four"
+  with jump-links to each surface's install step. Hero + sidebar
+  quick-install now lead with `npx @deslint/mcp install` rather than
+  the ESLint plugin.
 
 ## [0.6.0] — 2026-04-18
 
