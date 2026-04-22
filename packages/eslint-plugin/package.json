@@ -1,6 +1,6 @@
 {
   "name": "@deslint/eslint-plugin",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "The verification layer for AI-generated code — deterministic ESLint rules for design-system and accessibility standards",
   "keywords": [
     "eslint",

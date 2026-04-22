@@ -1,7 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
+import {
+  writeFileSync,
+  mkdirSync,
+  rmSync,
+  readFileSync,
+  existsSync,
+  readdirSync,
+} from 'node:fs';
 import { resolve } from 'node:path';
 import { tmpdir } from 'node:os';
+import { writeJsonFile } from '../src/install.js';
 
 // We test the config read/write logic directly since install()
 // targets real home directories which we can't mock easily.
@@ -73,5 +81,47 @@ describe('MCP config file operations', () => {
     const result = JSON.parse(readFileSync(configPath, 'utf-8'));
     expect(result.mcpServers.deslint).toBeUndefined();
     expect(result.mcpServers.other).toBeDefined();
+  });
+});
+
+// Release-safety guard (0.7.0): a crash or disk-full mid-write must
+// never leave Claude Desktop / Cursor with a partial, invalid-JSON
+// config. writeJsonFile routes through a temp sibling + renameSync so
+// the target is replaced atomically.
+describe('writeJsonFile atomic write', () => {
+  it('creates the config file on first write', () => {
+    const configPath = resolve(TEST_DIR, 'first.json');
+    writeJsonFile(configPath, {
+      mcpServers: { deslint: { command: 'npx', args: ['-y', '@deslint/mcp'] } },
+    });
+    expect(existsSync(configPath)).toBe(true);
+    const data = JSON.parse(readFileSync(configPath, 'utf-8'));
+    expect(data.mcpServers.deslint.command).toBe('npx');
+  });
+
+  it('leaves no .tmp sibling after a successful write', () => {
+    const configPath = resolve(TEST_DIR, 'clean.json');
+    writeJsonFile(configPath, { mcpServers: {} });
+    const leftovers = readdirSync(TEST_DIR).filter((f) => f.endsWith('.tmp'));
+    expect(leftovers).toEqual([]);
+  });
+
+  it('atomically replaces an existing file', () => {
+    const configPath = resolve(TEST_DIR, 'replace.json');
+    writeJsonFile(configPath, {
+      mcpServers: { old: { command: 'old', args: [] } },
+    });
+    writeJsonFile(configPath, {
+      mcpServers: { fresh: { command: 'fresh', args: [] } },
+    });
+    const data = JSON.parse(readFileSync(configPath, 'utf-8'));
+    expect(data.mcpServers.old).toBeUndefined();
+    expect(data.mcpServers.fresh).toBeDefined();
+  });
+
+  it('creates the parent directory if it does not exist', () => {
+    const configPath = resolve(TEST_DIR, 'nested/sub/dir/config.json');
+    writeJsonFile(configPath, { mcpServers: {} });
+    expect(existsSync(configPath)).toBe(true);
   });
 });

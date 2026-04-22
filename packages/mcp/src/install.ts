@@ -5,9 +5,17 @@
  * Deslint MCP server configuration into the appropriate settings file.
  */
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  renameSync,
+  unlinkSync,
+  mkdirSync,
+} from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { homedir, platform } from 'node:os';
+import { randomBytes } from 'node:crypto';
 
 interface McpConfig {
   mcpServers?: Record<string, {
@@ -87,12 +95,36 @@ function readJsonFile(path: string): McpConfig {
   }
 }
 
-function writeJsonFile(path: string, data: McpConfig): void {
+/**
+ * Atomically replace the agent's config file. A crash or disk-full
+ * mid-write must never leave Claude Desktop / Cursor with a partial,
+ * invalid-JSON config — that's the difference between "restart your
+ * editor" and "your editor won't start." We serialize into a temp
+ * sibling, fsync-equivalent is handled by the OS on the rename, then
+ * `renameSync` atomically replaces the target on POSIX (and on
+ * Windows NTFS for same-volume moves, which our paths always are).
+ * Tmp is cleaned up on error so a crashed run doesn't leave droppings.
+ *
+ * Exported for direct test coverage — not part of the public API.
+ */
+export function writeJsonFile(path: string, data: McpConfig): void {
   const dir = dirname(path);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
-  writeFileSync(path, JSON.stringify(data, null, 2) + '\n');
+  const payload = JSON.stringify(data, null, 2) + '\n';
+  const tmp = `${path}.deslint-${randomBytes(6).toString('hex')}.tmp`;
+  try {
+    writeFileSync(tmp, payload);
+    renameSync(tmp, path);
+  } catch (err) {
+    try {
+      if (existsSync(tmp)) unlinkSync(tmp);
+    } catch {
+      /* best-effort cleanup */
+    }
+    throw err;
+  }
 }
 
 /**
