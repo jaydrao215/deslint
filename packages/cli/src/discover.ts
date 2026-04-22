@@ -1,5 +1,5 @@
 import { glob } from 'glob';
-import { readFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /** Default file extensions Deslint scans */
@@ -69,20 +69,31 @@ export async function discoverFiles(options: DiscoverOptions): Promise<string[]>
     cwd: options.cwd,
     absolute: true,
     ignore,
-    // Don't follow symlinks out of the project tree. A symlink
-    // pointing at `/etc/passwd` (or any file outside the repo) would
-    // otherwise be fed to the parser — the lint attempt produces a
-    // parse error, but the symlink resolution itself is an unintended
-    // read of a file the user didn't author.
+    // Glob's `follow: false` prevents traversal through symlinked
+    // directories, but still returns file-level symlinks whose
+    // basename matches the extension pattern. The real containment
+    // happens in the lstat check below — we drop any path that is
+    // itself a symlink so the parser never reads through it.
     follow: false,
   });
 
-  // Filter oversized files at discovery time so the lint pass never
-  // tries to buffer them. Announced to the user on stderr so they
-  // know why their giant generated file disappeared from the report.
+  // Filter at discovery time:
+  //   1. Symlinks — dropped entirely. A symlink whose target lives
+  //      outside the project tree would otherwise be read by the
+  //      parser (parse error on a non-source file, or — worse — a
+  //      successful read of a file the project author never
+  //      committed).
+  //   2. Oversized files — skipped with a visible stderr notice so
+  //      the ESLint parse pass never buffers a file large enough to
+  //      exhaust heap (a single adversarial .tsx of a few MB with
+  //      hundreds of thousands of tokens can crash the scanner).
   const safe: string[] = [];
   for (const file of files) {
     try {
+      const ls = lstatSync(file);
+      if (ls.isSymbolicLink()) {
+        continue;
+      }
       const size = statSync(file).size;
       if (size > MAX_SCANNABLE_BYTES) {
         process.stderr.write(
