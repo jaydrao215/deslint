@@ -33,16 +33,16 @@ const SURFACES = [
     title: 'CLI',
     useIf: 'You want ad-hoc scans, local pre-commit, or CI without the GitHub Action.',
     install: 'npm install -D @deslint/cli',
-    href: '/docs/getting-started#step-2',
-    linkLabel: 'CLI walkthrough',
+    href: '/cli',
+    linkLabel: 'CLI guide',
   },
   {
     icon: GitPullRequest,
     title: 'GitHub Action',
     useIf: 'You want PR comments, inline review suggestions, and a Design Health Score on every PR.',
     install: 'uses: jaydrao215/deslint/action@main',
-    href: '/docs/getting-started#step-6-github-action',
-    linkLabel: 'Workflow setup',
+    href: '/action',
+    linkLabel: 'PR gate guide',
   },
 ];
 
@@ -65,7 +65,7 @@ const CARDS = [
     href: '/docs/rules',
     icon: Shield,
     title: 'Rules Reference',
-    description: 'All 33 rules with examples, options, and auto-fix behavior.',
+    description: 'All 34 rules with examples, options, and auto-fix behavior.',
     color: 'text-warn bg-warn/10 border-warn/20',
   },
 ];

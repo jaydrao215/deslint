@@ -68,7 +68,7 @@ const JSON_LD = {
         },
       ],
       featureList: [
-        '33 deterministic design and accessibility rules',
+        '34 deterministic design and accessibility rules',
         'Reproducible attestations and commit-trailer verification',
         'MCP server for Claude Code, Cursor, Codex, Windsurf',
         'ESLint plugin for React, Vue, Svelte, Angular, Astro',
@@ -101,7 +101,7 @@ const JSON_LD = {
           name: 'What does Deslint catch that ESLint does not?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Design-system drift (arbitrary Tailwind values, hex colours outside your token scale), accessibility failures (WCAG contrast, missing landmarks, alt text), dark-mode gaps, responsive layout issues, bundle bloat, and more. Deslint ships 33 rules purpose-built for frontend code written by AI.',
+            text: 'Design-system drift (arbitrary Tailwind values, hex colours outside your token scale), accessibility failures (WCAG contrast, missing landmarks, alt text), dark-mode gaps, responsive layout issues, bundle bloat, and more. Deslint ships 34 rules purpose-built for frontend code written by AI.',
           },
         },
       ],

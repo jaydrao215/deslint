@@ -1,6 +1,6 @@
 {
   "name": "@deslint/mcp",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "MCP server for Deslint, the verification layer for AI-generated code — deterministic checks Claude Code, Cursor, Codex, and Windsurf call before writing a file",
   "homepage": "https://deslint.com",
   "repository": {
@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@clack/prompts": "^1.2.0",
     "@deslint/cli": "workspace:^",
     "@deslint/eslint-plugin": "workspace:^",
     "@deslint/shared": "workspace:*",

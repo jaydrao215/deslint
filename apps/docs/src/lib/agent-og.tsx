@@ -8,6 +8,24 @@ export type AgentOgConfig = {
   subhead: string;
   accent: string;
   tools: string[];
+  /** Badge label in the top-right of the left pane. Defaults to
+   *  `MCP` so the existing Claude Code / Cursor / Codex / Windsurf
+   *  OG images keep their current visual. `/cli` and `/action`
+   *  override to `CLI` / `ACTION` respectively. */
+  badge?: string;
+  /** Headline on the left pane. Defaults to `Deslint for` (reads as
+   *  "Deslint for Claude Code"). Overridden to `Deslint` for the
+   *  generic surface pages where there's no paired agent name. */
+  headline?: string;
+  /** Label on the right-pane toolcall card (e.g. `MCP TOOLCALL`,
+   *  `CLI OUTPUT`, `PR REVIEW`). Defaults to `MCP TOOLCALL`. */
+  panelLabel?: string;
+  /** Caller→callee arrow on the right pane, e.g. `Claude Code →
+   *  deslint`. Defaults to `${agent} → deslint`. */
+  panelDirection?: string;
+  /** Monospace call signature shown on the right pane, e.g.
+   *  `analyze_project()`. Defaults to `analyze_project()`. */
+  panelCall?: string;
 };
 
 export async function renderAgentOg(config: AgentOgConfig): Promise<ImageResponse> {
@@ -75,12 +93,12 @@ export async function renderAgentOg(config: AgentOgConfig): Promise<ImageRespons
                 letterSpacing: '0.1em',
               }}
             >
-              MCP
+              {config.badge ?? 'MCP'}
             </div>
           </div>
 
           <div style={{ display: 'flex', marginTop: '40px', fontSize: '58px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.02, color: '#FAFAFB' }}>
-            Deslint for
+            {config.headline ?? 'Deslint for'}
           </div>
           <div style={{ display: 'flex', marginTop: '4px', fontSize: '72px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.02, color: config.accent }}>
             {config.agent}
@@ -127,7 +145,7 @@ export async function renderAgentOg(config: AgentOgConfig): Promise<ImageRespons
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', fontSize: '12px', fontWeight: 700, letterSpacing: '0.12em', color: '#6B7280' }}>
-              MCP TOOLCALL
+              {config.panelLabel ?? 'MCP TOOLCALL'}
             </div>
             <div
               style={{
@@ -148,10 +166,10 @@ export async function renderAgentOg(config: AgentOgConfig): Promise<ImageRespons
           </div>
 
           <div style={{ display: 'flex', marginTop: '20px', fontSize: '17px', color: '#6B7280', fontFamily: 'JetBrains Mono' }}>
-            {config.agent} → deslint
+            {config.panelDirection ?? `${config.agent} → deslint`}
           </div>
           <div style={{ display: 'flex', marginTop: '6px', fontSize: '26px', fontWeight: 700, color: '#111827', fontFamily: 'JetBrains Mono', letterSpacing: '-0.01em' }}>
-            analyze_project()
+            {config.panelCall ?? 'analyze_project()'}
           </div>
 
           <div style={{ display: 'flex', marginTop: '22px', height: '1px', background: '#E5E7EB' }} />
