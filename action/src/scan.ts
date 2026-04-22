@@ -2,6 +2,18 @@ import { ESLint } from 'eslint';
 import { glob } from 'glob';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+// Static import: forces esbuild to include @typescript-eslint/parser + its
+// TypeScript peer dep in the bundled dist/index.js. We previously loaded
+// this via `importOptional('@typescript-eslint/parser')` with a `new
+// Function('s', 'return import(s)')` wrapper — that pattern defeats
+// esbuild's static analysis, so the parser never made it into the bundle.
+// GitHub Node actions don't run `npm install`, so the runtime resolution
+// step failed silently and every .ts/.tsx file fell back to Espree, which
+// can't parse TypeScript syntax. Result: the "13 errors, score 99,
+// rule=unknown" pattern the action reported on every PR touching real TS.
+// Keeping this a static import costs ~20MB of bundle size (TS compiler),
+// which is acceptable for a Node action that runs once per PR.
+import * as typescriptParser from '@typescript-eslint/parser';
 import { effortForRule, safeParseConfig } from '@deslint/shared';
 import type { QualityGate } from '@deslint/shared';
 
@@ -456,7 +468,8 @@ async function runLint(options: {
     ...normalizeRuleOverrides(options.ruleOverrides),
   };
 
-  const typescriptParser = await importOptional('@typescript-eslint/parser');
+  // @typescript-eslint/parser is statically imported at the top of this
+  // file so the bundle carries it — see the comment there for why.
   const angularTemplateParser = await importOptional('@angular-eslint/template-parser');
   const vueParser = await importOptional('vue-eslint-parser');
   const svelteParser = await importOptional('svelte-eslint-parser');
