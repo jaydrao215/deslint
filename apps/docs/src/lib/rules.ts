@@ -1,4 +1,4 @@
-// Single source of truth for the 33 Deslint rules.
+// Single source of truth for the 34 Deslint rules.
 //
 // Consumed by:
 //   - apps/docs/src/app/docs/rules/page.tsx       (hub / category index)

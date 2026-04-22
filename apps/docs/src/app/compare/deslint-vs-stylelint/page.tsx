@@ -213,7 +213,7 @@ export default function DeslintVsStylelint() {
                   Deslint
                 </p>
                 <p className="text-[15px] text-gray-700 leading-relaxed mb-3">
-                  A JSX/TSX linter focused on the design-system surface. It parses your components and runs 33 deterministic rules against what AI coding agents actually write — <code className="text-[12px] text-primary bg-primary-50/60 px-1 rounded">className</code> strings, <code className="text-[12px] text-primary bg-primary-50/60 px-1 rounded">style</code> props, Tailwind utilities, inline hex colors.
+                  A JSX/TSX linter focused on the design-system surface. It parses your components and runs 34 deterministic rules against what AI coding agents actually write — <code className="text-[12px] text-primary bg-primary-50/60 px-1 rounded">className</code> strings, <code className="text-[12px] text-primary bg-primary-50/60 px-1 rounded">style</code> props, Tailwind utilities, inline hex colors.
                 </p>
                 <p className="text-[15px] text-gray-700 leading-relaxed">
                   Its job is to catch the stuff stylelint structurally can&rsquo;t see: <code className="text-[12px] text-primary bg-primary-50/60 px-1 rounded">bg-[#1a5276]</code> sitting in a React component, a one-off <code className="text-[12px] text-primary bg-primary-50/60 px-1 rounded">p-[17px]</code>, a <code className="text-[12px] text-primary bg-primary-50/60 px-1 rounded">text-blue-500</code> that should have been a token.
@@ -387,7 +387,7 @@ pnpm deslint scan "apps/**/*.{ts,tsx}" --format sarif --output deslint.sarif
                 href="/docs/rules"
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:border-primary/30 hover:text-primary motion-safe:transition-colors"
               >
-                Browse all 33 rules
+                Browse all 34 rules
               </Link>
               <Link
                 href="/blog/tailwind-arbitrary-values"

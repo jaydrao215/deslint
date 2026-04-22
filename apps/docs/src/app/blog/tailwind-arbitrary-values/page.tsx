@@ -821,7 +821,7 @@ npx deslint coverage`}</code>
               A deterministic linter is how you get that conversation to
               happen at the pull request, when it is cheap, instead of at
               the rebrand, when it is expensive. Everything else — the
-              archetypes, the tooling, the 33 rules — is mechanics in
+              archetypes, the tooling, the 34 rules — is mechanics in
               service of that one idea.
             </p>
           </FadeIn>
@@ -853,7 +853,7 @@ npx deslint coverage`}</code>
                   >
                     <span className="font-semibold">Rules reference</span>
                     <span className="text-gray-500 text-sm">
-                      · all 33 rules, examples, options, autofix coverage
+                      · all 34 rules, examples, options, autofix coverage
                     </span>
                   </Link>
                 </li>

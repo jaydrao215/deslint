@@ -32,7 +32,7 @@ const TIERS: Tier[] = [
       'The full verification layer — ESLint plugin, CLI, MCP server for Claude Code / Cursor / Codex / Windsurf, and GitHub Action with trailer verification. Everything you need to verify AI-generated code inside the agent loop and at the merge gate.',
     features: [
       'MCP server — Claude Code, Cursor, Codex, Windsurf',
-      '33 deterministic rules, 11 with safe auto-fix',
+      '34 deterministic rules, 13 with safe auto-fix',
       'WCAG 2.2 AA compliance reports',
       'Design Health Score + quality gates',
       'Reproducible attestations + commit-trailer verification',
