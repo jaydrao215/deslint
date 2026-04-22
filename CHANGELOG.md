@@ -2,6 +2,40 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.2] — unreleased
+
+Release-safety hardening across the CLI's filesystem boundary.
+
+### Fixed (`@deslint/cli`)
+
+- **`deslint import-tokens --output` now refuses paths outside the
+  project directory.** The 0.7.1 `writeOutputFile` guard refused
+  overwriting `.deslintrc.json` and refused existing files without
+  `--force`, but did not constrain the destination to the working
+  tree. A resolved output path that escapes the current working
+  directory is now rejected regardless of `--force`.
+- **Skip oversized files at scan discovery.** Files above 2 MB are
+  now skipped with a visible stderr notice pointing at
+  `.deslintignore` as the workaround. Very large single files could
+  exhaust the ESLint parser's memory budget and abort the scan;
+  most real source files are well under the cap, and generated
+  bundles that exceed it belong on an ignore list rather than in
+  the design-linter pass.
+- **Symlinks are no longer followed at scan discovery.** The glob
+  call now runs with `follow: false`, so symlinks inside the
+  project are listed but never resolved to their target. Scans that
+  intentionally want to follow a symlink should point the glob at
+  the target directly.
+
+### Notes
+
+- All four publishable packages bump to 0.7.2 in lockstep so the
+  release-tag validator passes. `@deslint/cli` carries the
+  behaviour changes above; `@deslint/eslint-plugin`,
+  `@deslint/mcp`, and `@deslint/shared` ship as 0.7.2 republishes
+  with no code changes.
+- Users running 0.7.1 are advised to upgrade.
+
 ## [0.7.1] — 2026-04-22
 
 First-run onboarding for the MCP install flow. `0.7.0` gave users

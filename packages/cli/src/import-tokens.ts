@@ -28,7 +28,7 @@ import {
   statSync,
   existsSync,
 } from 'node:fs';
-import { resolve, dirname, relative, isAbsolute, join, basename } from 'node:path';
+import { resolve, dirname, relative, isAbsolute, join, basename, sep } from 'node:path';
 import chalk from 'chalk';
 import {
   figmaVariablesToDTCG,
@@ -110,19 +110,26 @@ export class ImportTokensError extends Error {
 /**
  * Shared guard for the three importers. A token export is destructive
  * by nature: it writes a file Deslint controls end-to-end, there is no
- * merge step. Two specific failure modes killed real users in
- * pre-0.7.0 review:
+ * merge step. Three specific failure modes killed real users in
+ * pre-0.7.x review:
  *
  *   1. `--output .deslintrc.json` silently replaces the entire config
  *      with a `designSystem`-only fragment. Rules, ignore patterns,
  *      and qualityGate evaporate.
  *   2. `--output tokens.json` overwrites a hand-authored tokens file
  *      the user forgot they had.
+ *   3. `--output ../../../tmp/evil.json` writes outside the project.
+ *      Harmless for a human running interactively, dangerous when
+ *      `--output` is parameterised from a pipeline variable an
+ *      attacker controls — a malicious PR could smuggle the flag
+ *      into a CI workflow and drop arbitrary JSON anywhere writable.
  *
  * Refuse the first unconditionally — emitting a `.deslintrc.json`
  * fragment and hand-merging it into the real config is the documented
  * path; there is no legitimate use for --force here. Refuse the second
  * unless `--force` is passed so the destructive intent is explicit.
+ * Refuse the third unconditionally — a project-scoped tool must not
+ * write outside the project's working directory, regardless of flags.
  */
 function writeOutputFile(
   outputPath: string,
@@ -135,10 +142,16 @@ function writeOutputFile(
       'destructive_output',
     );
   }
+  const resolvedCwd = options.cwd ? resolve(options.cwd) : resolve(process.cwd());
+  const rel = relative(resolvedCwd, outputPath);
+  if (rel.startsWith('..' + sep) || rel === '..' || isAbsolute(rel)) {
+    throw new ImportTokensError(
+      `Refusing to write outside the project directory. --output resolved to ${outputPath}, which is outside ${resolvedCwd}. Pass a path relative to the project root, e.g. --output design-tokens.json.`,
+      'destructive_output',
+    );
+  }
   if (existsSync(outputPath) && !options.force) {
-    const displayPath = options.cwd
-      ? relative(options.cwd, outputPath) || outputPath
-      : outputPath;
+    const displayPath = rel || outputPath;
     throw new ImportTokensError(
       `Refusing to overwrite existing file: ${displayPath}. Pass --force to overwrite, or choose a different --output path.`,
       'destructive_output',
