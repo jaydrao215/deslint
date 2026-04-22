@@ -2,6 +2,63 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.1] — 2026-04-22
+
+First-run onboarding for the MCP install flow. `0.7.0` gave users
+access to the Deslint MCP tools after `npx @deslint/mcp install`, but
+whether the tools were actually useful depended on three side-conditions
+no one was told to set up: a scan to see what Deslint catches, a
+`.deslintrc.json` seeded with the project's design tokens, and a
+nudge telling the agent to call Deslint after UI edits. Without those,
+a first-time user installed the MCP server and saw nothing change —
+the tool shipped passive and churned.
+
+### Added (`@deslint/mcp`)
+
+- **Opt-in post-install onboarding.** After the MCP config is wired,
+  `npx @deslint/mcp install` now runs up to three prompts against a
+  TTY. Each is independent and skipped silently on CI / piped / Docker
+  installs (`process.stdin.isTTY === false`):
+  1. **Scan preview.** Runs a local scan of the current directory and
+     prints the Design Health Score plus the top three rules by hit
+     count. First concrete proof the tool does something.
+  2. **Tailwind token seed.** When a `tailwind.config.{js,ts}` or v4
+     `@theme {}` block is detected and no `.deslintrc.json` exists,
+     offers to import the project's design tokens into a fresh
+     `.deslintrc.json`. Turns generic "use the color scale" advice
+     into concrete "use `bg-primary`" suggestions.
+  3. **Agent-rules nudge.** For each agent the install step wired up
+     (Claude Code, Cursor, Codex, Windsurf), offers to append a short
+     section to the project-level rules file (`CLAUDE.md`,
+     `.cursorrules`, `AGENTS.md`, or `.windsurfrules` — picks the
+     first existing file per agent, creates the primary name when
+     none exist). Section tells the agent to call
+     `mcp__deslint__analyze_file` after UI edits and apply the
+     `analyze_and_fix` result. Idempotent: a second install skips
+     the append when the marker is already present.
+- Non-project CWDs (no `package.json` or no frontend source files
+  within 3 levels) short-circuit the onboarding entirely — running
+  `npx @deslint/mcp install` from a home directory or a scratch dir
+  keeps the pre-0.7.1 behaviour.
+- Both the scan preview and the Tailwind seed reuse the CLI's
+  `runLint`, `calculateScore`, and `@deslint/shared`'s
+  `importTailwindConfig` — no duplicate logic between the MCP
+  onboarding and the CLI's `deslint init`.
+
+### Changed (`@deslint/mcp`)
+
+- `install()` is now `async`. The CLI entry (`packages/mcp/src/cli.ts`)
+  already chained through `.then(...)`, so this is backward-compatible
+  at every existing call site.
+
+### Notes
+
+- The onboarding prompts the user for consent before touching any
+  file outside the MCP config, matching the release-safety principle
+  from `0.7.0` (no destructive writes without explicit opt-in).
+- No other package changed in `0.7.1`. `@deslint/cli`,
+  `@deslint/eslint-plugin`, and `@deslint/shared` stay on `0.7.0`.
+
 ## [0.7.0] — 2026-04-21
 
 The verification-layer release. 0.7.0 turns the commit-trailer claim

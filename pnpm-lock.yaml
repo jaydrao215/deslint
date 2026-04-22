@@ -252,6 +252,9 @@ importers:
 
   packages/mcp:
     dependencies:
+      '@clack/prompts':
+        specifier: ^1.2.0
+        version: 1.2.0
       '@deslint/cli':
         specifier: workspace:^
         version: link:../cli
