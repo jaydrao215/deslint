@@ -103,6 +103,31 @@ visually lossless.
   `.cursor/mcp.json` partially written and invalid, and the editor
   failed to start. Writes now route through a temp sibling +
   `renameSync` so replacement is atomic on POSIX and Windows NTFS.
+- **MCP tools now honor `.deslintrc.json`** (`mcp`). `analyze_file`,
+  `analyze_project`, `analyze_and_fix`, `compliance_check`, and
+  `suggest_fix_strategy` used to call `runLint` without loading the
+  project's config, so an MCP-driven agent would flag violations for
+  rules the user had turned off — a silent CLI/MCP divergence. All
+  five handlers now load `.deslintrc.json` through the same path
+  `enforce_budget` already used and pass `ruleOverrides` into the
+  lint engine.
+- **MCP fix preview no longer drops project context** (`mcp`).
+  `analyze_and_fix` used to copy the file's basename into a
+  `mkdtempSync` scratch directory and run the fix pass there; that
+  kept the workspace untouched but lost the user's `.deslintrc.json`
+  and any path-based parser heuristics. Now runs the fix pass in the
+  real project directory with `writeFixes: false` — ESLint returns
+  the fixed source on `result.output` without writing to disk. A new
+  test pins the on-disk contract: the source file must be
+  byte-identical after the preview.
+- **MCP returns `null` / `skipped` on zero-file scans** (`mcp`). The
+  documented type on `AnalyzeProjectResult.overallScore` has been
+  `number | null` (with `null` meaning "no applicable input") since
+  0.6, but the zero-file early return in `analyze_project` and
+  `suggest_fix_strategy` returned a hardcoded `100` — which let a
+  backend-only monorepo subdir look "perfect" to a governance
+  dashboard. Both handlers now return `overallScore: null` and
+  `grade: 'skipped'` when no scannable files are discovered.
 
 ### Changed
 

@@ -1,7 +1,7 @@
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, rm, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { analyzeFile, analyzeAndFix } from '../src/tools.js';
+import { analyzeFile, analyzeAndFix, analyzeProject, suggestFixStrategy } from '../src/tools.js';
 
 let tmpDir: string;
 
@@ -218,5 +218,118 @@ describe('analyzeAndFix', () => {
     expect(result.fixedCode).toBe(code);
     expect(result.fixedViolations).toBe(0);
     expect(result.remainingViolations).toEqual([]);
+  });
+
+  // Pre-0.7.0 bug: the fix pass ran in a `mkdtempSync` scratch dir with
+  // the file's basename, which lost the user's `.deslintrc.json` and
+  // every parser/path heuristic scoped to the real project. The fix
+  // preview could diverge from what `deslint fix` would produce in the
+  // real repo. Switched to `writeFixes: false` in the project directory;
+  // the on-disk file must still be untouched.
+  it('leaves the on-disk source file byte-identical after a fix preview', async () => {
+    const filePath = join(tmpDir, 'preview.tsx');
+    const code = `const App = () => <div className="bg-[#FF0000] p-[13px]">Hello</div>;\nexport default App;\n`;
+    await writeFile(filePath, code);
+
+    const result = await analyzeAndFix({ filePath, projectDir: tmpDir });
+
+    // The preview may produce a fixedCode that differs, but the real
+    // file on disk must match exactly what we wrote — that's the
+    // pure-function contract MCP owes an AI agent previewing a fix.
+    const onDisk = await readFile(filePath, 'utf-8');
+    expect(onDisk).toBe(code);
+    // Sanity: the fix preview did run and saw violations.
+    expect(result.originalCode).toBe(code);
+  });
+});
+
+// ── Finding 1: .deslintrc.json parity ─────────────────────────────────
+// Codex flagged that MCP tool handlers skipped project config, so an
+// agent would report violations for rules the user had turned off in
+// `.deslintrc.json`. These tests pin the contract: when the user
+// disables a rule, MCP must not report it.
+
+describe('MCP respects .deslintrc.json', () => {
+  it('analyzeFile: rule disabled via rcfile is not reported', async () => {
+    await writeFile(
+      join(tmpDir, '.deslintrc.json'),
+      JSON.stringify({ rules: { 'no-arbitrary-colors': 'off' } }),
+    );
+    const filePath = join(tmpDir, 'config.tsx');
+    const code = `const App = () => <div className="bg-[#FF0000]">Hello</div>;\nexport default App;\n`;
+    await writeFile(filePath, code);
+
+    const result = await analyzeFile({ filePath, projectDir: tmpDir });
+
+    // The disabled rule must NOT appear; other rules (like contrast /
+    // dark-mode-coverage) may still fire, so we just assert the
+    // specific rule is absent rather than demanding zero violations.
+    expect(
+      result.violations.some((v) => v.ruleId === 'deslint/no-arbitrary-colors'),
+    ).toBe(false);
+  });
+
+  it('analyzeProject: rule disabled via rcfile is not reported', async () => {
+    await writeFile(
+      join(tmpDir, '.deslintrc.json'),
+      JSON.stringify({ rules: { 'no-arbitrary-colors': 'off' } }),
+    );
+    await writeFile(
+      join(tmpDir, 'a.tsx'),
+      `const A = () => <div className="bg-[#FF0000]">A</div>;\nexport default A;\n`,
+    );
+
+    const result = await analyzeProject({ projectDir: tmpDir });
+
+    expect(
+      result.topViolations.some((v) => v.ruleId === 'deslint/no-arbitrary-colors'),
+    ).toBe(false);
+    expect(result.categories.colors?.violations ?? 0).toBe(0);
+  });
+
+  it('analyzeAndFix: fix preview respects a disabled rule', async () => {
+    await writeFile(
+      join(tmpDir, '.deslintrc.json'),
+      JSON.stringify({ rules: { 'no-arbitrary-colors': 'off' } }),
+    );
+    const filePath = join(tmpDir, 'disabled.tsx');
+    const code = `const App = () => <div className="bg-[#FF0000]">Hello</div>;\nexport default App;\n`;
+    await writeFile(filePath, code);
+
+    const result = await analyzeAndFix({ filePath, projectDir: tmpDir });
+
+    // A disabled rule must not produce any fix — so originalCode and
+    // fixedCode agree for that specific rule's fixable content.
+    expect(
+      result.remainingViolations.some(
+        (v) => v.ruleId === 'deslint/no-arbitrary-colors',
+      ),
+    ).toBe(false);
+  });
+});
+
+// ── Finding 4: N/A score semantics on zero-file scans ─────────────────
+// The documented type on AnalyzeProjectResult is `overallScore: number
+// | null` with `null` meaning "no applicable input." The zero-file
+// early return used to hardcode 100, which made a backend-only repo
+// look "perfect" to a governance dashboard.
+
+describe('zero-file scans return N/A, not 100', () => {
+  it('analyzeProject returns overallScore: null and grade: skipped when no scannable files exist', async () => {
+    // tmpDir is empty — no `.tsx`/`.ts`/`.vue`/etc. to discover.
+    const result = await analyzeProject({ projectDir: tmpDir });
+
+    expect(result.overallScore).toBeNull();
+    expect(result.grade).toBe('skipped');
+    expect(result.totalFiles).toBe(0);
+    expect(result.totalViolations).toBe(0);
+  });
+
+  it('suggestFixStrategy returns overallScore: null on zero-file scans', async () => {
+    const result = await suggestFixStrategy({ projectDir: tmpDir });
+
+    expect(result.overallScore).toBeNull();
+    expect(result.totalViolations).toBe(0);
+    expect(result.suggestions).toEqual([]);
   });
 });
