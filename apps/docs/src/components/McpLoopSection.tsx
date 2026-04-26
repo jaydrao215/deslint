@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { FadeIn } from './motion';
 import { McpFlowMockup } from './mockups/McpFlowMockup';
@@ -120,8 +121,61 @@ export function McpLoopSection() {
             />
           </div>
         </FadeIn>
+
+        {/* Agent setup links — keyword-rich internal anchors */}
+        <FadeIn delay={0.3}>
+          <div className="mt-10">
+            <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+              Set up deslint for your AI coding agent
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <AgentLink
+                href="/mcp/claude-code"
+                label="Claude Code"
+                sub="Anthropic · 2-min install"
+              />
+              <AgentLink
+                href="/mcp/cursor"
+                label="Cursor"
+                sub="MCP server setup"
+              />
+              <AgentLink
+                href="/mcp/codex"
+                label="OpenAI Codex"
+                sub="Tool-call wiring"
+              />
+              <AgentLink
+                href="/mcp/windsurf"
+                label="Windsurf"
+                sub="Cascade agent lint"
+              />
+            </div>
+          </div>
+        </FadeIn>
       </div>
     </section>
+  );
+}
+
+function AgentLink({
+  href,
+  label,
+  sub,
+}: {
+  href: string;
+  label: string;
+  sub: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 backdrop-blur-sm motion-safe:transition-all hover:border-primary-light/40 hover:bg-white/[0.06]"
+    >
+      <div className="text-sm font-semibold text-white group-hover:text-primary-light motion-safe:transition-colors">
+        {label}
+      </div>
+      <div className="text-[11px] text-gray-500 mt-0.5 font-mono">{sub}</div>
+    </Link>
   );
 }
 

@@ -35,6 +35,71 @@ inputs:
       verification lands non-breaking.
     required: false
     default: 'false'
+  require-signed:
+    description: >-
+      When "true", fail the check if `.deslint/attestation.json` is
+      unsigned (no `.sigstore` sidecar) or the Sigstore signature does
+      not verify against the attestation payload. Default is "false"
+      so v0.6 unsigned attestations pass; flip to "true" to enforce
+      signed attestations at the merge gate.
+
+      Without a `signer-identity`, `require-signed: true` accepts any
+      valid Sigstore signature — a PR can commit a tampered attestation
+      signed by an attacker-controlled Fulcio cert and pass the gate.
+      Set `signer-identity` to close that gap.
+    required: false
+    default: 'false'
+  signer-identity:
+    description: >-
+      Regex the Sigstore cert's subject (SAN) must match for a
+      signature to be accepted. When unset, any valid signer passes
+      (a warning is emitted if `require-signed: true` and this is
+      unset). Typical value for GitHub Actions:
+      `^https://github\.com/<owner>/<repo>/\.github/workflows/.+$`.
+      To discover the observed signer for the current attestation,
+      run `npx deslint verify --show-signer` locally.
+    required: false
+    default: ''
+  signer-issuer:
+    description: >-
+      Exact-match OIDC issuer URL required on the Sigstore cert.
+      Empty string (the default) accepts any issuer. Typical value:
+      `https://token.actions.githubusercontent.com`.
+    required: false
+    default: ''
+  agent-scorecard:
+    description: >-
+      When "true" (default), attribute inline violations to the
+      authoring agent (Claude / Cursor / Codex / Copilot / Windsurf /
+      humans) via `git blame` and render a per-agent scorecard in the
+      PR comment. Requires `fetch-depth: 0` on the `actions/checkout`
+      step. Set to "false" to disable the scorecard entirely.
+    required: false
+    default: 'true'
+  token-drift:
+    description: >-
+      When "true" (default), diff the `designSystem` block of
+      `.deslintrc.json` between the PR's base and head, and render a
+      token-drift section (added / removed / changed tokens) in the PR
+      comment. Catches silent token renames before they ripple through
+      every consumer. Requires `fetch-depth: 0` on the
+      `actions/checkout` step so the base ref is in the runner's git
+      history. Set to "false" to disable the section.
+    required: false
+    default: 'true'
+  suggest-fixes:
+    description: >-
+      When "true" (default), render autofixes inside inline review
+      comments. Visually-lossless fixes — where the replacement token
+      resolves to the same CSS value as the arbitrary one, or where the
+      fix only adds a media-query modifier — are emitted as GitHub
+      `suggestion` blocks so the reviewer can commit the fix in one
+      click. Opinionated replacements (e.g. closest-match tokens with a
+      different pixel value) are shown as read-only code blocks with a
+      "run `deslint fix` locally" nudge. Set to "false" to suppress
+      autofix rendering entirely.
+    required: false
+    default: 'true'
 
 outputs:
   score:
@@ -52,6 +117,39 @@ outputs:
       One of: verified | missing | mismatched | malformed | skipped.
       Useful for downstream workflows that want to react to the specific
       failure mode.
+  signature-verified:
+    description: >-
+      "true" when the Sigstore sidecar on `.deslint/attestation.json`
+      verified against the server-side payload, "false" otherwise.
+  signature-status:
+    description: >-
+      One of: verified | missing | invalid | signer-mismatch |
+      attestation-missing | skipped. `missing` means the attestation
+      exists but the `.sigstore` sidecar does not; `invalid` means
+      Sigstore verification failed; `signer-mismatch` means the
+      signature is cryptographically valid but the signer identity
+      does not match `signer-identity` / `signer-issuer`.
+  signature-subject:
+    description: >-
+      Cert SAN of the signer when verification succeeded or rejected
+      via signer-mismatch; empty string otherwise. Useful for seeding
+      a `signer-identity` regex in follow-up runs.
+  signature-issuer:
+    description: >-
+      OIDC issuer URL of the signer when verification succeeded or
+      rejected via signer-mismatch; empty string otherwise.
+  agent-breakdown:
+    description: >-
+      JSON array of `{ agent, kind, violations, files, byRule }` entries
+      sorted by violations descending. Empty array when the scorecard is
+      skipped (shallow checkout, no violations, or `agent-scorecard: false`).
+  token-drift:
+    description: >-
+      JSON summary of the designSystem diff between base and head:
+      `{ status, added, removed, changed, added_paths, removed_paths,
+      changed_paths }`. `status` is `ok | unchanged | no-head-config |
+      base-ref-unavailable | config-malformed | skipped`. Useful for
+      downstream workflows (e.g. require-review-on-token-change).
 
 runs:
   using: 'node20'

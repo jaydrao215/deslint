@@ -111,8 +111,34 @@ export function formatComment(
   minScore: number,
   gateResult?: GateResult,
 ): string {
-  const badge = scoreBadge(result.score);
-  const passedThreshold = minScore === 0 || result.score >= minScore;
+  // Null score = scan had no applicable input. Render a distinct "N/A"
+  // banner so reviewers don't mistake it for a 0 or 100.
+  if (result.score === null) {
+    const reason = result.applicability?.reason
+      ?? 'No class or style attributes detected in the scanned files.';
+    const lines: string[] = [
+      '## :grey_question: Deslint Design Review',
+      '',
+      '**Design Health Score: N/A**',
+      '',
+      `> ${reason}`,
+      '',
+      `| Metric | Value |`,
+      `|--------|-------|`,
+      `| Files scanned | ${result.filesScanned} |`,
+      `| Files with violations | ${result.filesWithViolations} |`,
+      `| Total violations | ${result.totalViolations} |`,
+      '',
+    ];
+    appendParseErrorBanner(lines, result);
+    lines.push('---');
+    lines.push('*Powered by [Deslint](https://deslint.com) — Design quality gate for AI-generated code*');
+    return lines.join('\n');
+  }
+
+  const score = result.score;
+  const badge = scoreBadge(score);
+  const passedThreshold = minScore === 0 || score >= minScore;
   const thresholdLine = minScore > 0
     ? `\n> Minimum threshold: **${minScore}** — ${passedThreshold ? ':white_check_mark: Passed' : ':x: Failed'}`
     : '';
@@ -120,7 +146,7 @@ export function formatComment(
   const lines: string[] = [
     `## ${badge} Deslint Design Review`,
     '',
-    `**Design Health Score: ${result.score}/100**${thresholdLine}`,
+    `**Design Health Score: ${score}/100**${thresholdLine}`,
     '',
     `| Metric | Value |`,
     `|--------|-------|`,
@@ -189,13 +215,43 @@ export function formatComment(
     lines.push('');
   }
 
-  if (result.totalViolations === 0) {
+  if (result.totalViolations === 0 && result.parseErrors === 0) {
     lines.push(':tada: **No design violations found!** Your code follows design best practices.');
     lines.push('');
   }
+
+  appendParseErrorBanner(lines, result);
 
   lines.push('---');
   lines.push('*Powered by [Deslint](https://deslint.com) — Design quality gate for AI-generated code*');
 
   return lines.join('\n');
+}
+
+/**
+ * Surface parser failures as a distinct diagnostic banner rather than
+ * letting them inflate the violation counts or appear as `unknown` in
+ * Top Violations. The Design Health Score is computed from deslint-rule
+ * hits only — parse errors mean "couldn't analyze this file," not
+ * "this file has a design problem."
+ */
+function appendParseErrorBanner(lines: string[], result: ScanResult): void {
+  if (result.parseErrors <= 0) return;
+  const fileCount = result.filesWithParseErrors;
+  const fileLabel = fileCount === 1 ? 'file' : 'files';
+  lines.push(':warning: **Parser errors**');
+  lines.push('');
+  lines.push(
+    `${fileCount} ${fileLabel} couldn't be analyzed ` +
+      `(${result.parseErrors} parser error${result.parseErrors !== 1 ? 's' : ''}). ` +
+      'These are excluded from the Design Health Score.',
+  );
+  lines.push('');
+  lines.push('Most common causes:');
+  lines.push('- Real syntax errors in the source file.');
+  lines.push(
+    '- File types the Action doesn\'t bundle a parser for yet ' +
+      '(`.vue`, `.svelte`, `.angular.html`). TypeScript and JSX are supported.',
+  );
+  lines.push('');
 }

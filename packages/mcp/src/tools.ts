@@ -14,9 +14,8 @@
  *
  * v0.3.0 additions: compliance_check, get_rule_details, suggest_fix_strategy
  */
-import { resolve, relative, dirname, basename, join, normalize, isAbsolute, sep } from 'node:path';
-import { existsSync, readFileSync, writeFileSync, mkdtempSync, rmSync, statSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { resolve, relative, dirname, join, normalize, isAbsolute, sep } from 'node:path';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 // ── Security constants ────────────────────────────────────────────────
 /** Maximum file size (10 MB) to prevent memory exhaustion via oversized files. */
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -47,7 +46,11 @@ export interface AnalyzeFileResult {
 }
 export interface AnalyzeProjectResult {
   projectDir: string;
-  overallScore: number;
+  /** `null` when the scan had no applicable input — e.g. a pure
+   *  CSS-in-JS codebase where the class-based rules couldn't evaluate
+   *  anything. Agents must treat null as "no score available" rather
+   *  than coerce to 0 or 100. */
+  overallScore: number | null;
   grade: string;
   totalFiles: number;
   filesWithIssues: number;
@@ -113,7 +116,9 @@ export interface FixSuggestion {
 }
 export interface SuggestFixStrategyResult {
   projectDir: string;
-  overallScore: number;
+  /** `null` when the scan had no applicable input. Mirrors
+   *  AnalyzeProjectResult.overallScore. */
+  overallScore: number | null;
   totalViolations: number;
   /** Fix suggestions ordered by impact score (highest first). */
   suggestions: FixSuggestion[];
@@ -185,6 +190,33 @@ function toViolation(msg: any): Violation {
   if (msg.fix) v.fix = { range: msg.fix.range as [number, number], text: msg.fix.text };
   return v;
 }
+/**
+ * Read user-declared rule overrides from the project's `.deslintrc.json`.
+ * Same contract `enforceBudget` and the CLI use: a malformed root is
+ * salvaged by falling through to the raw `rules` key so a reviewer can
+ * still edit one corner of the config without the scan going silent,
+ * and any read/parse failure returns `{}` so MCP never crashes on bad
+ * input — the worst a broken config can do is fall back to defaults.
+ *
+ * This is what closes the "MCP ignores .deslintrc.json" gap that made
+ * MCP-driven agents report violations for rules the user had turned
+ * off in their config.
+ */
+async function loadUserRules(projectDir: string): Promise<Record<string, unknown>> {
+  const rcPath = join(projectDir, '.deslintrc.json');
+  if (!existsSync(rcPath)) return {};
+  try {
+    const raw = JSON.parse(readFileSync(rcPath, 'utf-8'));
+    const { safeParseConfig } = await import('@deslint/shared');
+    const parsed = safeParseConfig(raw);
+    if (parsed.success) {
+      return (parsed.data.rules ?? {}) as Record<string, unknown>;
+    }
+    return (raw?.rules ?? {}) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
 // ── Tool: analyze_file ──────────────────────────────────────────────
 export async function analyzeFile(params: {
   filePath: string;
@@ -193,7 +225,12 @@ export async function analyzeFile(params: {
   const { absPath, projectDir } = resolveProjectDir(params.filePath, params.projectDir);
   validateFile(absPath, params.filePath);
   const { runLint } = await import('@deslint/cli');
-  const lintResult = await runLint({ files: [absPath], cwd: projectDir });
+  const userRules = await loadUserRules(projectDir);
+  const lintResult = await runLint({
+    files: [absPath],
+    cwd: projectDir,
+    ruleOverrides: userRules,
+  });
   const violations: Violation[] = [];
   let errors = 0;
   let warnings = 0;
@@ -225,10 +262,17 @@ export async function analyzeProject(params: {
   const files = await discoverFiles({ cwd: projectDir });
   const filesToScan = files.slice(0, maxFiles);
   if (filesToScan.length === 0) {
+    // Zero scannable files is semantically "not applicable", not
+    // "perfect score". The type already promises `number | null` and
+    // a downstream dashboard branching on `null` should not see a
+    // fabricated 100 here — that's how regulated buyers end up
+    // shipping a design-quality claim we never earned. Mirror the
+    // CLI / Action applicability gate so all three surfaces render
+    // N/A consistently.
     return {
       projectDir,
-      overallScore: 100,
-      grade: 'pass',
+      overallScore: null,
+      grade: 'skipped',
       totalFiles: 0,
       filesWithIssues: 0,
       totalViolations: 0,
@@ -236,7 +280,12 @@ export async function analyzeProject(params: {
       topViolations: [],
     };
   }
-  const lintResult = await runLint({ files: filesToScan, cwd: projectDir });
+  const userRules = await loadUserRules(projectDir);
+  const lintResult = await runLint({
+    files: filesToScan,
+    cwd: projectDir,
+    ruleOverrides: userRules,
+  });
   const scoreResult = calculateScore(lintResult);
   // Collect top 10 violations for the summary
   const topViolations: Violation[] = [];
@@ -264,12 +313,20 @@ export async function analyzeProject(params: {
 }
 // ── Tool: analyze_and_fix ───────────────────────────────────────────
 /**
- * Analyze a file and return the auto-fixed version. The original file on
- * disk is NEVER modified. We copy the file to a temp directory, run runLint
- * with `fix: true` against the copy (which writes the fixed output to the
- * copy), then read it back and compare. This preserves the pure-function
- * contract the MCP spec asks for — an AI agent can preview the fix without
- * mutating the workspace.
+ * Analyze a file and return the auto-fixed version. The original file
+ * on disk is NEVER modified.
+ *
+ * Implementation: we run two lint passes in the real project directory
+ * so the scan sees the user's `.deslintrc.json` (same rule overrides
+ * as `deslint scan`) and, if the project uses TypeScript path aliases
+ * or a rule with cross-file context, the fix pass lands in the same
+ * environment. The fix pass uses `fix: true, writeFixes: false` —
+ * ESLint computes the fixes and returns the fixed source on
+ * `result.output` without ever calling `fs.writeFile`. A prior
+ * implementation wrote a basename copy into a `mkdtempSync` scratch
+ * directory; that kept the workspace clean but lost the user's config
+ * (and, by extension, the correctness of the fix preview). The
+ * `writeFixes: false` approach achieves both.
  */
 export async function analyzeAndFix(params: {
   filePath: string;
@@ -278,29 +335,32 @@ export async function analyzeAndFix(params: {
   const { absPath, projectDir } = resolveProjectDir(params.filePath, params.projectDir);
   validateFile(absPath, params.filePath);
   const { runLint } = await import('@deslint/cli');
+  const userRules = await loadUserRules(projectDir);
   const originalCode = readFileSync(absPath, 'utf-8');
-  // First pass: read the real file in-place to count original violations.
-  const originalLint = await runLint({ files: [absPath], cwd: projectDir });
+  // First pass: count the violations the user would see in `deslint scan`.
+  const originalLint = await runLint({
+    files: [absPath],
+    cwd: projectDir,
+    ruleOverrides: userRules,
+  });
   const originalCount = originalLint.results[0]?.messages.length ?? 0;
-  // Second pass: copy to a temp dir and fix the copy so the workspace stays
-  // untouched. We preserve the file's basename so the parser/path heuristics
-  // (e.g. `.tsx` → TS parser) still fire.
-  const scratchDir = mkdtempSync(join(tmpdir(), 'deslint-mcp-fix-'));
-  const scratchPath = join(scratchDir, basename(absPath));
-  let fixedCode = originalCode;
+  // Second pass: compute the fix in-memory. `writeFixes: false` is the
+  // documented dry-run mode in lint-runner — ESLint returns the fixed
+  // source on `result.output` without touching disk.
+  const fixedLint = await runLint({
+    files: [absPath],
+    cwd: projectDir,
+    ruleOverrides: userRules,
+    fix: true,
+    writeFixes: false,
+  });
+  const fixedResult = fixedLint.results[0];
+  const fixedCode = fixedResult?.output ?? originalCode;
   const remaining: Violation[] = [];
-  try {
-    writeFileSync(scratchPath, originalCode);
-    const fixedLint = await runLint({ files: [scratchPath], cwd: scratchDir, fix: true });
-    // runLint → ESLint.outputFixes writes the fixed code back to scratchPath
-    fixedCode = readFileSync(scratchPath, 'utf-8');
-    for (const result of fixedLint.results) {
-      for (const msg of result.messages) {
-        remaining.push(toViolation(msg));
-      }
+  for (const result of fixedLint.results) {
+    for (const msg of result.messages) {
+      remaining.push(toViolation(msg));
     }
-  } finally {
-    rmSync(scratchDir, { recursive: true, force: true });
   }
   return {
     filePath: relative(projectDir, absPath),
@@ -345,7 +405,12 @@ export async function complianceCheck(params: {
       })),
     };
   }
-  const lintResult = await runLint({ files: filesToScan, cwd: projectDir });
+  const userRules = await loadUserRules(projectDir);
+  const lintResult = await runLint({
+    files: filesToScan,
+    cwd: projectDir,
+    ruleOverrides: userRules,
+  });
   // Build per-rule file count for the compliance evaluator
   const filesByRule: Record<string, number> = {};
   for (const result of lintResult.results) {
@@ -424,9 +489,10 @@ export interface EnforceBudgetResult {
   reasons: EnforceBudgetBreach[];
   /** Advisory edits the agent can apply to get under budget. */
   suggestedEdits: EnforceBudgetEdit[];
-  /** Scan snapshot used to evaluate the budget. */
+  /** Scan snapshot used to evaluate the budget. `overall` is `null`
+   *  when the scan had no applicable input. */
   score: {
-    overall: number;
+    overall: number | null;
     grade: string;
     categories: Record<string, { score: number; violations: number }>;
     totalViolations: number;
@@ -550,7 +616,10 @@ export async function enforceBudget(params: {
     debtMinutes += effortForRule(ruleId) * count;
   }
   const snapshot = {
-    overall: scoreResult.overall,
+    // Budget checks still run on N/A scans — rule-count caps can fire
+    // even when the overall score is null. Use 100 as the floor so the
+    // score-threshold condition doesn't accidentally fail a no-op scan.
+    overall: scoreResult.overall ?? 100,
     categories: {
       colors: scoreResult.categories.colors.score,
       spacing: scoreResult.categories.spacing.score,
@@ -602,7 +671,9 @@ export async function enforceBudget(params: {
   }
   const trailer = formatTrailerLine({
     rules: userRules,
-    score: scoreResult.overall,
+    // Trailer records the committed scan claim; N/A scans emit the
+    // neutral 100 floor so the trailer still verifies deterministically.
+    score: scoreResult.overall ?? 100,
     fileCount: lintResult.totalFiles,
   });
   return {
@@ -640,6 +711,7 @@ const RULE_METADATA: Record<string, { description: string; category: string; aut
   'deslint/no-magic-numbers-layout': { description: 'Flag arbitrary numbers in grid/flex layout properties.', category: 'spacing', autoFixable: true },
   'deslint/consistent-component-spacing': { description: 'Detect spacing divergence across same-type components.', category: 'consistency', autoFixable: false },
   'deslint/consistent-border-radius': { description: 'Detect mixed rounded-* values in same-type components.', category: 'consistency', autoFixable: false },
+  'deslint/no-arbitrary-border-radius': { description: 'Enforce the radius scale; reject arbitrary values like rounded-[8px].', category: 'consistency', autoFixable: true },
   'deslint/responsive-required': { description: 'Require responsive breakpoints on fixed-width containers.', category: 'responsive', autoFixable: false },
   'deslint/dark-mode-coverage': { description: 'Flag elements with color/bg utilities missing dark: variants.', category: 'colors', autoFixable: true },
   'deslint/missing-states': { description: 'Flag interactive elements missing hover/focus/disabled state handling.', category: 'consistency', autoFixable: false },
@@ -722,15 +794,23 @@ export async function suggestFixStrategy(params: {
   const files = await discoverFiles({ cwd: projectDir });
   const filesToScan = files.slice(0, maxFiles);
   if (filesToScan.length === 0) {
+    // Mirror the analyze_project N/A contract. A dashboard ordering
+    // by score must be able to bucket "no scannable files" separately
+    // from "scanned and scored 100."
     return {
       projectDir,
-      overallScore: 100,
+      overallScore: null,
       totalViolations: 0,
       suggestions: [],
       totalEffortMinutes: 0,
     };
   }
-  const lintResult = await runLint({ files: filesToScan, cwd: projectDir });
+  const userRules = await loadUserRules(projectDir);
+  const lintResult = await runLint({
+    files: filesToScan,
+    cwd: projectDir,
+    ruleOverrides: userRules,
+  });
   const scoreResult = calculateScore(lintResult);
   // Build per-rule stats
   const ruleStats: Array<{

@@ -18,6 +18,8 @@ const FOOTER_LINKS: Record<string, FooterLink[]> = {
   ],
   Resources: [
     { label: 'Documentation', href: '/docs' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'Deslint vs. stylelint', href: '/compare/deslint-vs-stylelint' },
     { label: 'Framework & WCAG coverage', href: '/coverage' },
     { label: 'GitHub', href: GITHUB_URL, external: true },
     { label: 'npm', href: 'https://www.npmjs.com/package/@deslint/eslint-plugin', external: true },

@@ -1,0 +1,33 @@
+# CODEOWNERS — auto-route review requests.
+#
+# Each line maps a path pattern to one or more GitHub handles. GitHub
+# assigns the listed owners as reviewers on every PR that touches a
+# matching path. The last matching line wins, so order matters.
+
+# Default owner for anything not covered by a more-specific rule.
+*                                   @jaydrao215
+
+# Cross-framework rule engine: any change needs a rules-maintainer review.
+/packages/eslint-plugin/            @jaydrao215
+/packages/eslint-plugin/src/rules/  @jaydrao215
+
+# CLI, Action, and MCP ship together; keep them consistent.
+/packages/cli/                      @jaydrao215
+/packages/mcp/                      @jaydrao215
+/action/                            @jaydrao215
+
+# Shared schemas + compliance mapping — shape changes here ripple
+# through every surface.
+/packages/shared/                   @jaydrao215
+
+# Marketing + docs site.
+/apps/docs/                         @jaydrao215
+
+# Release, CI, and OSS-governance files. Changes here affect how the
+# whole project is published and maintained.
+/.github/                           @jaydrao215
+/CONTRIBUTING.md                    @jaydrao215
+/CODE_OF_CONDUCT.md                 @jaydrao215
+/SECURITY.md                        @jaydrao215
+/CHANGELOG.md                       @jaydrao215
+/scripts/                           @jaydrao215

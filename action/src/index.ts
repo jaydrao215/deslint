@@ -6,6 +6,9 @@ import { runProjectScan, runScan } from './scan.js';
 import { formatComment } from './comment.js';
 import { postInlineReview } from './review.js';
 import { verifyTrailer, formatTrailerSection } from './trailer.js';
+import { verifySignature, formatSignatureSection } from './verify-signature.js';
+import { buildAgentScorecard, formatAgentScorecardSection } from './agent-scorecard.js';
+import { computeTokenDrift, formatTokenDriftSection } from './token-drift.js';
 
 const COMMENT_MARKER = '<!-- deslint-design-review -->';
 
@@ -48,8 +51,14 @@ async function run(): Promise<void> {
 
     const result = await runScan(changedFiles, workingDirectory, configPath);
 
+    // When the scan had no applicable input (score === null), the gate
+    // evaluator still needs a numeric floor; pass 100 so rule-count
+    // conditions are the only thing that can fail the gate. The action
+    // output below surfaces the N/A state separately so reviewers see
+    // the real picture.
+    const gateOverall = result.score ?? 100;
     const gateResult = evaluateQualityGate(result.qualityGate, {
-      overall: result.score,
+      overall: gateOverall,
       categories: {
         colors: result.categories.find((c) => c.name === 'colors')?.score ?? 100,
         spacing: result.categories.find((c) => c.name === 'spacing')?.score ?? 100,
@@ -83,7 +92,11 @@ async function run(): Promise<void> {
       const verification = verifyTrailer({
         commitMessage,
         rules: projectScan.userRules,
-        score: projectScan.score,
+        // Trailer compares a committed numeric claim; use 100 as the
+        // floor when the scan wasn't applicable so a N/A scan doesn't
+        // implode the verifier. The trailer section still surfaces the
+        // mismatch if the commit claimed a non-100 score.
+        score: projectScan.score ?? 100,
         fileCount: projectScan.filesScanned,
       });
       trailerSection = formatTrailerSection(verification);
@@ -95,10 +108,107 @@ async function run(): Promise<void> {
       core.warning(`Trailer verification could not run: ${msg}`);
     }
 
-    const commentBody = formatComment(result, minScore, gateResult) + trailerSection;
+    // Signature verification: gate a merge on a valid Sigstore bundle
+    // signed over `.deslint/attestation.json`. Always runs so a missing
+    // sidecar is surfaced; `require-signed` promotes missing/invalid to
+    // a failing check. `signer-identity` / `signer-issuer` pin which
+    // cert SAN/issuer is acceptable; without them, any valid Sigstore
+    // signer passes and we warn below so the gap is loud, not silent.
+    const requireSigned = core.getInput('require-signed') === 'true';
+    const expectedSubject = core.getInput('signer-identity').trim();
+    const expectedIssuer = core.getInput('signer-issuer').trim();
+    const hasPolicy = expectedSubject !== '' || expectedIssuer !== '';
+    if (requireSigned && !hasPolicy) {
+      core.warning(
+        'require-signed is enabled but signer-identity is unset. ' +
+          'The gate will accept any valid Sigstore signature, including ' +
+          'attacker-supplied ones. Set `signer-identity` (and optionally ' +
+          '`signer-issuer`) to close this gap. ' +
+          'Run `npx deslint verify --show-signer` to discover the ' +
+          'observed subject/issuer for the current attestation.',
+      );
+    }
+    const signature = await verifySignature({
+      workingDirectory,
+      policy: hasPolicy
+        ? {
+            expectedSubject: expectedSubject || undefined,
+            expectedIssuer: expectedIssuer || undefined,
+          }
+        : undefined,
+    });
+    const signatureSection = formatSignatureSection(signature);
+    const signatureVerified = signature.status === 'verified';
+    core.info(`Signature verification: ${signature.status} \u2014 ${signature.message}`);
+
+    // Per-agent scorecard: attribute inline violations to authoring
+    // agents (Claude / Cursor / Codex / Copilot / Windsurf / humans)
+    // via `git blame`. Skipped when shallow checkout — we emit a hint
+    // so the user knows to set `fetch-depth: 0`.
+    const agentScorecardEnabled = core.getInput('agent-scorecard') !== 'false';
+    let scorecardSection = '';
+    let scorecardEntries: Array<Record<string, unknown>> = [];
+    if (agentScorecardEnabled && result.inlineViolations.length > 0) {
+      const prCommitShas = await fetchPrCommitShas(octokit, owner, repo, prNumber);
+      const scorecard = buildAgentScorecard({
+        workingDirectory,
+        violations: result.inlineViolations,
+        prCommitShas,
+      });
+      scorecardSection = formatAgentScorecardSection(scorecard);
+      scorecardEntries = scorecard.entries.map((e) => ({
+        agent: e.agent.label,
+        kind: e.agent.kind,
+        violations: e.violations,
+        files: e.files,
+        byRule: e.byRule,
+      }));
+      core.info(`Agent scorecard: ${scorecard.status} (${scorecard.entries.length} agents).`);
+    }
+
+    // Token drift: diff `designSystem` tokens between base and head so
+    // a silent color rename doesn't sneak through review. Skipped when
+    // the PR makes no config change or the base ref isn't available
+    // (shallow checkout surfaces a hint rather than failing the job).
+    const tokenDriftEnabled = core.getInput('token-drift') !== 'false';
+    let tokenDriftSection = '';
+    let tokenDriftSummary: Record<string, unknown> = {
+      added: 0,
+      removed: 0,
+      changed: 0,
+      status: 'skipped',
+    };
+    if (tokenDriftEnabled) {
+      const baseSha = context.payload.pull_request.base?.sha ?? '';
+      if (baseSha) {
+        const drift = computeTokenDrift({ workingDirectory, baseRef: baseSha });
+        tokenDriftSection = formatTokenDriftSection(drift);
+        tokenDriftSummary = {
+          status: drift.status,
+          added: drift.drift.added.length,
+          removed: drift.drift.removed.length,
+          changed: drift.drift.changed.length,
+          added_paths: drift.drift.added.map((e) => e.path),
+          removed_paths: drift.drift.removed.map((e) => e.path),
+          changed_paths: drift.drift.changed.map((c) => c.path),
+        };
+        core.info(
+          `Token drift: ${drift.status} ` +
+            `(+${drift.drift.added.length} / -${drift.drift.removed.length} / ~${drift.drift.changed.length}).`,
+        );
+      }
+    }
+
+    const commentBody =
+      formatComment(result, minScore, gateResult) +
+      trailerSection +
+      signatureSection +
+      scorecardSection +
+      tokenDriftSection;
     await upsertComment(octokit, owner, repo, prNumber, commentBody);
 
     const inlineReview = core.getInput('inline-review') !== 'false';
+    const suggestFixes = core.getInput('suggest-fixes') !== 'false';
     const maxInlineComments = parseInt(core.getInput('max-inline-comments') || '25', 10);
     if (inlineReview && result.inlineViolations.length > 0) {
       await postInlineReview(
@@ -107,20 +217,44 @@ async function run(): Promise<void> {
         repo,
         prNumber,
         result.inlineViolations,
-        result.score,
+        result.score ?? 100,
         maxInlineComments,
+        {
+          suggestFixes,
+          designSystem: result.designSystem,
+          workingDirectory,
+        },
       );
     }
 
-    core.setOutput('score', String(result.score));
+    // Score output: emit "N/A" literally when the scan wasn't
+    // applicable so downstream workflow steps can branch on it cleanly
+    // rather than parsing a misleading number.
+    core.setOutput('score', result.score === null ? 'N/A' : String(result.score));
+    core.setOutput('applicable', String(result.score !== null));
     core.setOutput('total-violations', String(result.totalViolations));
     core.setOutput('debt-minutes', String(result.debtMinutes));
     core.setOutput('quality-gate-passed', String(gateResult.passed));
     core.setOutput('trailer-verified', String(trailerVerified));
     core.setOutput('trailer-status', trailerStatus);
-    core.setOutput('passed', String(result.score >= minScore && gateResult.passed));
+    core.setOutput('signature-verified', String(signatureVerified));
+    core.setOutput('signature-status', signature.status);
+    core.setOutput('signature-subject', signature.subject ?? '');
+    core.setOutput('signature-issuer', signature.issuer ?? '');
+    core.setOutput('agent-breakdown', JSON.stringify(scorecardEntries));
+    core.setOutput('token-drift', JSON.stringify(tokenDriftSummary));
+    // `passed` stays true for N/A scans — we can't fail on a score we
+    // don't have. min-score gate below mirrors this by skipping rather
+    // than failing when the score is null.
+    const minScorePassed = result.score === null || result.score >= minScore;
+    core.setOutput('passed', String(minScorePassed && gateResult.passed));
 
-    if (minScore > 0 && result.score < minScore) {
+    if (result.score === null) {
+      core.info(
+        'Design Health Score is N/A — no class or style attributes detected ' +
+          'in the changed files. Skipping min-score gate.',
+      );
+    } else if (minScore > 0 && result.score < minScore) {
       core.setFailed(
         `Design Health Score ${result.score} is below the minimum threshold of ${minScore}.`,
       );
@@ -139,6 +273,26 @@ async function run(): Promise<void> {
           `Re-run compliance_check / enforce_budget and commit with an ` +
           `up-to-date \`Deslint-Compliance:\` trailer.`,
       );
+    }
+
+    if (requireSigned && !signatureVerified) {
+      if (signature.status === 'signer-mismatch') {
+        const suggestion = signature.suggestedSignerIdentity
+          ? ` To accept the observed signer, set ` +
+            `\`signer-identity: '${signature.suggestedSignerIdentity}'\`.`
+          : '';
+        core.setFailed(
+          `Signature verification failed (status: signer-mismatch). ` +
+            `${signature.message}${suggestion}`,
+        );
+      } else {
+        core.setFailed(
+          `Signature verification failed (status: ${signature.status}). ` +
+            `Re-run \`deslint attest\` with \`DESLINT_ATTEST_SIGNER=sigstore\` and ` +
+            `commit the updated \`.deslint/attestation.json\` + \`.sigstore\` ` +
+            `sidecar, or set \`require-signed: false\` to skip this gate.`,
+        );
+      }
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -181,6 +335,30 @@ async function upsertComment(
       body: fullBody,
     });
   }
+}
+
+async function fetchPrCommitShas(
+  octokit: ReturnType<typeof github.getOctokit>,
+  owner: string,
+  repo: string,
+  prNumber: number,
+): Promise<Set<string>> {
+  const shas = new Set<string>();
+  let page = 1;
+  const perPage = 100;
+  while (true) {
+    const { data } = await octokit.rest.pulls.listCommits({
+      owner,
+      repo,
+      pull_number: prNumber,
+      per_page: perPage,
+      page,
+    });
+    for (const c of data) shas.add(c.sha);
+    if (data.length < perPage) break;
+    page++;
+  }
+  return shas;
 }
 
 function formatNoFilesComment(): string {

@@ -3,13 +3,16 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Menu, X, BookOpen, Zap, CreditCard } from 'lucide-react';
+import { Menu, X, BookOpen, Zap, CreditCard, Terminal, FileText, PackageCheck, GitPullRequest } from 'lucide-react';
 import { BrandLockup } from './BrandLockup';
 
 const NAV_LINKS = [
+  { href: '/mcp', label: 'MCP', icon: Terminal },
+  { href: '/cli', label: 'CLI', icon: PackageCheck },
+  { href: '/action', label: 'PR Gate', icon: GitPullRequest },
   { href: '/docs', label: 'Docs', icon: BookOpen },
-  { href: '/docs/getting-started', label: 'Get Started', icon: Zap },
   { href: '/docs/rules', label: 'Rules', icon: BookOpen },
+  { href: '/blog', label: 'Blog', icon: FileText },
 ];
 
 export function Navbar() {

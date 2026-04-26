@@ -1,17 +1,17 @@
 # @deslint/eslint-plugin
 
-> ESLint catches code bugs. Deslint catches design bugs.
+> The verification layer for AI-generated code — ESLint rule set.
 
 [![npm version](https://img.shields.io/npm/v/@deslint/eslint-plugin)](https://www.npmjs.com/package/@deslint/eslint-plugin)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-33 ESLint rules that catch design quality violations in AI-generated frontend code — arbitrary colors, inconsistent spacing, missing responsive breakpoints, WCAG 2.2 accessibility gaps, and more. Auto-fix support for 11 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
+The rule set behind Deslint, the verification layer for AI-generated code. 34 deterministic ESLint rules that verify design-system and accessibility standards on code written by Claude Code, Cursor, Codex, Windsurf, Copilot, and any other AI coding agent — arbitrary colours, inconsistent spacing, missing responsive breakpoints, WCAG 2.2 accessibility gaps, and more. Auto-fix support for 13 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
 
 Use `@deslint/cli` alongside the plugin to get a Fix Plan that prioritizes
 auto-fixes, token decisions, accessibility risks, and design debt after every
 scan.
 
-**Validated on real-world open-source projects across React / Next.js, Vue / Nuxt, Angular, and plain HTML with 0% false positive rate and 0 crashes.**
+**Zero LLM in the hot path. Zero code leaves your machine.** Validated on real-world open-source projects across React / Next.js, Vue / Nuxt, Angular, and plain HTML with 0% false positive rate and 0 crashes.
 
 <p align="center">
   <img src="https://deslint.com/demo/vscode-squiggle.gif" alt="Deslint ESLint rules surfacing design-quality squiggles inline in VS Code as you type" width="720">

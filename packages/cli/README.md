@@ -1,6 +1,8 @@
 # @deslint/cli
 
-> Design quality CLI with scan, fix, and Design Health Score.
+> The verification layer for AI-generated code — CLI: scan, fix, attest, and Design Health Score.
+
+Scan a project, verify it against your design-system and accessibility standards, auto-fix what is safe, and emit a byte-reproducible attestation your merge gate can re-verify. Zero LLM in the hot path. Zero code leaves your machine.
 
 <p align="center">
   <img src="https://deslint.com/demo/cli-demo.gif" alt="deslint scan producing a Design Health Score with per-category breakdown and violation list" width="720">
@@ -28,6 +30,8 @@ deslint scan ./src               # scan specific directory
 deslint scan --format json       # JSON output
 deslint scan --format sarif      # SARIF format (for CI integration)
 deslint scan --profile strict    # use strict profile
+deslint scan --fail-on warning   # fail on any warning-or-error
+deslint scan --fail-on never     # always exit 0 (advisory mode)
 ```
 
 **Output:** Design Health Score (0-100), per-category breakdown, Fix Plan,
@@ -36,6 +40,31 @@ violation list, and `.deslint/report.html`.
 The Fix Plan separates auto-fixable drift, design-token decisions,
 WCAG-mapped accessibility risks, and the highest design-debt rules so teams
 know what to do next instead of reading a raw lint dump.
+
+**Exit codes:**
+
+| Code | Meaning |
+|------|---------|
+| `0`  | Success — no gate tripped and no violations matched `--fail-on` |
+| `1`  | At least one gate tripped: `--min-score`, `--budget`, a qualityGate failure, or a violation of the severity level set by `--fail-on` |
+
+**`--fail-on` severity gate (CI contract):**
+
+| Value     | Fails exit 1 when…                                    |
+|-----------|--------------------------------------------------------|
+| `error`   | any violation has `severity: "error"` (default)        |
+| `warning` | any violation of error **or** warning severity exists  |
+| `any`     | alias for `warning`                                    |
+| `never`   | never — `--min-score`, budget, and quality gate still apply |
+
+The default is `error` to match the behavior shipped in v0.6. Set
+`--fail-on never` for advisory-only CI jobs, or `--fail-on warning` to
+block a PR on any violation regardless of severity.
+
+**Score N/A:** when the scan has no applicable input (e.g. a pure
+CSS-in-JS codebase where class-based rules can't evaluate anything),
+`overall` is reported as `N/A` and `--min-score` is skipped rather
+than failing the job.
 
 ### `deslint fix [dir]`
 
@@ -110,6 +139,49 @@ Open the latest HTML report (produced by `deslint scan`) in your default browser
 ```bash
 deslint report
 ```
+
+### `deslint attest`
+
+Emit a byte-reproducible attestation JSON (`.deslint/attestation.json`). Set `DESLINT_ATTEST_SIGNER=sigstore` to also write a Sigstore sidecar the merge gate can verify.
+
+```bash
+deslint attest                              # write .deslint/attestation.json
+deslint attest --stdout                     # print to stdout
+DESLINT_ATTEST_SIGNER=sigstore deslint attest   # + .deslint/attestation.json.sigstore
+```
+
+Sigstore signing needs an OIDC token: automatic in GitHub Actions with `permissions: id-token: write`, or set `SIGSTORE_ID_TOKEN` locally. Interactive local signing lands in v0.7.1.
+
+### `deslint verify`
+
+Verify the Sigstore sidecar against the attestation. Exits 0 on a valid signature, non-zero on mismatch, tamper, or missing sidecar.
+
+```bash
+deslint verify                              # .deslint/attestation.json + .sigstore
+deslint verify --attestation path/to/a.json # custom location
+deslint verify --show-signer                # print observed subject/issuer, skip policy
+deslint verify \
+  --signer-identity '^https://github\.com/acme/app/\.github/workflows/.+$' \
+  --signer-issuer 'https://token.actions.githubusercontent.com'
+```
+
+**Signer-identity policy.** A cryptographically valid Sigstore signature
+proves *someone* signed the bytes, not that a *trusted* principal did.
+Without `--signer-identity`, `deslint verify` (and the GitHub Action
+with `require-signed: true`) will accept any valid signature — including
+one an attacker generated from a fork or an unrelated Fulcio-accepted
+issuer. Pin the expected signer:
+
+- `--signer-identity <regex>` — regex the cert SAN must match. Typical
+  GitHub Actions value: `^https://github\.com/<owner>/<repo>/\.github/workflows/.+$`.
+- `--signer-issuer <url>` — exact-match OIDC issuer, usually
+  `https://token.actions.githubusercontent.com`.
+
+When the policy rejects, the error prints the **observed** signer and
+a copy-pasteable `--signer-identity` value that would accept it — you
+just decide whether to trust the signer shown. Use `--show-signer` once
+per repo to discover the correct `--signer-identity` value for your
+attestation.
 
 ## Output Formats
 

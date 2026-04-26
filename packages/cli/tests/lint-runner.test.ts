@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, writeFile, rm, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { runLint, RULE_CATEGORY_MAP } from '../src/lint-runner.js';
+import { runLint, RULE_CATEGORY_MAP, computeApplicability } from '../src/lint-runner.js';
 
 // ── RULE_CATEGORY_MAP unit tests ───────────────────────────────
 
@@ -541,5 +541,92 @@ describe('TypeScript parsing (Bug 1 regression)', () => {
 
     expect(parseErrorMessages).toHaveLength(0);
     expect(result.parseErrors).toBe(0);
+  });
+});
+
+// ── computeApplicability tests ────────────────────────────────
+//
+// Applicability probe answers "did the class/element-based rules have
+// anything to look at in this scan?" It gates the Design Health Score
+// to `null` on CSS-in-JS-only codebases, preventing the false-100 bug
+// documented in VALIDATION-0.7.md.
+
+describe('computeApplicability', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'deslint-appl-'));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  async function write(name: string, content: string): Promise<string> {
+    const p = join(tmpDir, name);
+    await writeFile(p, content);
+    return p;
+  }
+
+  it('flags a Tailwind/JSX file as applicable via className', async () => {
+    const file = await write(
+      'Btn.tsx',
+      'export const Btn = () => <button className="px-4 py-2">x</button>;',
+    );
+    const appl = computeApplicability([file]);
+    expect(appl.applicable).toBe(true);
+    expect(appl.tailwindFiles).toBe(1);
+    expect(appl.styleFiles).toBe(0);
+  });
+
+  it('flags an HTML file with class= as applicable', async () => {
+    const file = await write('page.html', '<div class="card">hi</div>');
+    const appl = computeApplicability([file]);
+    expect(appl.applicable).toBe(true);
+    expect(appl.tailwindFiles).toBe(1);
+  });
+
+  it('flags a styled-components file as applicable via styleFiles', async () => {
+    const file = await write(
+      'Card.tsx',
+      `import styled from 'styled-components';\nexport const Card = styled.div\`color: red;\`;`,
+    );
+    const appl = computeApplicability([file]);
+    expect(appl.applicable).toBe(true);
+    expect(appl.styleFiles).toBe(1);
+  });
+
+  it('flags an Emotion file as applicable via styleFiles', async () => {
+    const file = await write(
+      'Card.tsx',
+      `import { css } from '@emotion/react';\nexport const x = css\`color: red;\`;`,
+    );
+    const appl = computeApplicability([file]);
+    expect(appl.applicable).toBe(true);
+    expect(appl.styleFiles).toBe(1);
+  });
+
+  it('returns applicable=false and a reason when nothing matches', async () => {
+    const file = await write(
+      'pure.ts',
+      `export function add(a: number, b: number) { return a + b; }`,
+    );
+    const appl = computeApplicability([file]);
+    expect(appl.applicable).toBe(false);
+    expect(appl.tailwindFiles).toBe(0);
+    expect(appl.styleFiles).toBe(0);
+    expect(appl.reason).toMatch(/class or style/i);
+  });
+
+  it('skips unreadable paths without throwing', async () => {
+    const real = await write(
+      'real.tsx',
+      'export const A = () => <div className="x"/>;',
+    );
+    const fake = join(tmpDir, 'ghost.tsx');
+    const appl = computeApplicability([real, fake]);
+    expect(appl.applicable).toBe(true);
+    expect(appl.tailwindFiles).toBe(1);
+    expect(appl.filesScanned).toBe(1);
   });
 });

@@ -29,17 +29,18 @@ const TIERS: Tier[] = [
     price: 'Free',
     priceSuffix: 'forever',
     description:
-      'Full ESLint plugin, CLI, MCP server, and GitHub Action. Everything you need to gate design quality in CI.',
+      'The full verification layer — ESLint plugin, CLI, MCP server for Claude Code / Cursor / Codex / Windsurf, and GitHub Action with trailer verification. Everything you need to verify AI-generated code inside the agent loop and at the merge gate.',
     features: [
-      '33 deterministic rules',
+      'MCP server — Claude Code, Cursor, Codex, Windsurf',
+      '34 deterministic rules, 13 with safe auto-fix',
       'Fix Plan in CLI, reports, and PR comments',
       'WCAG 2.2 AA compliance reports',
       'Design Health Score + quality gates',
-      'Auto-fix for 11 rules',
+      'Reproducible attestations + commit-trailer verification',
+      'Token import: Figma, Style Dictionary, Stitch',
       'React, Vue, Svelte, Angular, HTML',
-      'MCP server for AI coding agents',
       'GitHub Action with inline PR review',
-      'Local-first — zero cloud dependency',
+      'Local-first — zero cloud, zero LLM in the check path',
       'MIT licensed',
     ],
     cta: 'Get Started',
@@ -154,8 +155,9 @@ function PricingHero() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-base sm:text-lg text-gray-500 leading-relaxed max-w-xl mx-auto"
         >
-          Every rule, every framework, every CI pipeline — free and MIT-licensed.
-          Teams and Enterprise add dashboards, trend tracking, and org-wide governance.
+          The full verification layer — every rule, every framework, every CI
+          pipeline — is free and MIT-licensed. Teams and Enterprise add
+          dashboards, trend tracking, and org-wide governance.
         </motion.p>
       </div>
     </section>

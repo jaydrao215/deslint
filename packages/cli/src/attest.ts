@@ -25,11 +25,12 @@
  *  - `files`             — `[{ path, sha256 }]`, sorted by path, for an
  *                          immutable manifest of what was scanned. Paths
  *                          are relative to `projectDir` for portability.
- *  - `signer`            — informational: the value of
- *                          `DESLINT_ATTEST_SIGNER` if set. Real signing is
- *                          deferred to v0.7 under the Teams tier; the v0.6
- *                          OSS artifact is unsigned but cryptographically
- *                          reproducible.
+ *  - `signer`            — informational hint recording the value of
+ *                          `DESLINT_ATTEST_SIGNER` at attest time
+ *                          (e.g. `"sigstore"`). The authoritative
+ *                          identity lives on the Sigstore cert inside
+ *                          the sidecar bundle — `deslint verify` and
+ *                          the Action extract it from there.
  *
  * Reproducibility contract: two invocations against the same source
  * tree, same `.deslintrc.json`, and same budget file MUST produce
@@ -61,7 +62,10 @@ export interface DeslintAttestation {
   projectDir: string;
   rulesetHash: string;
   score: {
-    overall: number;
+    /** `null` when the scan had no applicable input (e.g. a pure
+     *  CSS-in-JS codebase). Verifiers must preserve null rather than
+     *  coerce to 0 — a nulled attestation is still signable. */
+    overall: number | null;
     grade: string;
     categories: Record<string, { score: number; violations: number }>;
     totalViolations: number;
@@ -155,7 +159,7 @@ export async function buildAttestation(
   // gate decision that was in effect at attestation time.
   const loaded = await loadBudget({ explicitPath: options.budgetPath, cwd: projectDir });
   const budgetSnap: BudgetScanSnapshot = {
-    overall: scoreResult.overall,
+    overall: scoreResult.overall ?? 100,
     categories: {
       colors: scoreResult.categories.colors.score,
       spacing: scoreResult.categories.spacing.score,

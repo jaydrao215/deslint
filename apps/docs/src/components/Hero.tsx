@@ -1,11 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Copy, Check, ShieldCheck, Star } from 'lucide-react';
+import { ArrowRight, Copy, Check, Terminal, Star, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ComplianceReportMockup } from './mockups/ComplianceReportMockup';
+import { AgentLoopMockup } from './mockups/AgentLoopMockup';
 import { formatStarCount } from '@/lib/github-stars';
+import { POSITIONING } from '@/lib/positioning';
 
 const GITHUB_URL = 'https://github.com/jaydrao215/deslint';
 
@@ -15,9 +16,16 @@ interface HeroProps {
 
 /**
  * Split hero — copy on the left, live product visual on the right.
- * The visual is NOT a static screenshot — it's a hand-coded inline mockup
- * of the actual HTML compliance report that `deslint compliance` produces,
- * with motion accents that play on mount.
+ *
+ * The right pane is a hand-coded mockup of deslint's MCP server answering
+ * an AI agent's tool call over stdio. Every string (rule name, finding
+ * count, fix) matches what the real `@deslint/mcp` server returns — the
+ * visual is the product, not a pitch for it.
+ *
+ * The H1, sub-line, and zero-LLM promise are imported from
+ * `@/lib/positioning` — the single source of truth for product
+ * positioning across the docs site. Feature additions never edit these
+ * strings; see apps/docs/src/lib/positioning.ts.
  */
 export function Hero({ stars }: HeroProps) {
   return (
@@ -34,8 +42,8 @@ export function Hero({ stars }: HeroProps) {
               transition={{ duration: 0.5, delay: 0.1 }}
             >
               <div className="inline-flex items-center gap-2.5 rounded-full border border-primary/15 bg-primary-50/60 backdrop-blur-sm px-4 py-1.5 text-sm font-medium text-primary mb-7">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <span>The deterministic design linter for AI-generated code</span>
+                <Terminal className="h-3.5 w-3.5" />
+                <span>{POSITIONING.chip}</span>
               </div>
             </motion.div>
 
@@ -45,24 +53,28 @@ export function Hero({ stars }: HeroProps) {
               transition={{ duration: 0.6, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
               className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-[1.06] mb-6 text-balance"
             >
-              AI writes fast.{' '}
-              <span className="gradient-text-hero">Deslint keeps it clean.</span>
+              {POSITIONING.h1Lead}{' '}
+              <span className="gradient-text-hero">{POSITIONING.h1Accent}</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.35 }}
-              className="text-base sm:text-lg text-gray-500 mb-8 max-w-xl leading-relaxed"
+              className="text-base sm:text-lg text-gray-500 mb-6 max-w-xl leading-relaxed"
             >
-              AI ships design drift, dark-mode gaps, and accessibility
-              failures at the speed of autocomplete. Deslint is the
-              deterministic check that runs in your editor, your CI, your PR,
-              and inside the agent loop itself —{' '}
-              <span className="font-semibold text-gray-700">
-                without ever sending your code to a cloud.
-              </span>
+              {POSITIONING.sub}
             </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.42 }}
+              className="inline-flex items-center gap-2.5 rounded-full border border-pass/20 bg-pass/5 px-4 py-1.5 text-sm font-medium text-pass mb-8"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>{POSITIONING.zeroLlm}</span>
+            </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -110,7 +122,7 @@ export function Hero({ stars }: HeroProps) {
             >
               <span className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-pass" />
-                33 deterministic rules
+                34 deterministic rules
               </span>
               <span className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-pass" />
@@ -134,7 +146,7 @@ export function Hero({ stars }: HeroProps) {
             transition={{ duration: 0.8, delay: 0.35, ease: [0.21, 0.47, 0.32, 0.98] }}
             className="lg:col-span-6 relative"
           >
-            <ComplianceReportMockup />
+            <AgentLoopMockup />
           </motion.div>
         </div>
       </div>
@@ -144,7 +156,7 @@ export function Hero({ stars }: HeroProps) {
 
 function InstallCommand() {
   const [copied, setCopied] = useState(false);
-  const command = 'npm install -D @deslint/eslint-plugin';
+  const command = 'npx @deslint/mcp install';
 
   const copy = async () => {
     try {
@@ -157,25 +169,34 @@ function InstallCommand() {
   };
 
   return (
-    <button
-      onClick={copy}
-      className="group relative inline-flex items-center gap-4 rounded-xl bg-gray-950 px-5 py-3.5 font-mono text-sm text-gray-300 motion-safe:transition-all hover:bg-gray-900 glow-border hover:glow-border-hover cursor-pointer"
-      aria-label="Copy install command"
-    >
-      <span className="text-gray-500 select-none">$</span>
-      <span className="sm:whitespace-nowrap">
-        <span className="text-pass">npm</span>{' '}
-        <span className="text-gray-400">install -D</span>{' '}
-        <span className="text-white font-medium">@deslint/eslint-plugin</span>
-      </span>
-      <span className="flex items-center gap-1.5 text-gray-500 group-hover:text-gray-300 motion-safe:transition-colors">
-        {copied ? (
-          <Check className="h-4 w-4 text-pass" />
-        ) : (
-          <Copy className="h-4 w-4" />
-        )}
-      </span>
-    </button>
+    <div>
+      <button
+        onClick={copy}
+        className="group relative inline-flex items-center gap-4 rounded-xl bg-gray-950 px-5 py-3.5 font-mono text-sm text-gray-300 motion-safe:transition-all hover:bg-gray-900 glow-border hover:glow-border-hover cursor-pointer"
+        aria-label="Copy install command"
+      >
+        <span className="text-gray-500 select-none">$</span>
+        <span className="sm:whitespace-nowrap">
+          <span className="text-pass">npx</span>{' '}
+          <span className="text-white font-medium">@deslint/mcp</span>{' '}
+          <span className="text-gray-400">install</span>
+        </span>
+        <span className="flex items-center gap-1.5 text-gray-500 group-hover:text-gray-300 motion-safe:transition-colors">
+          {copied ? (
+            <Check className="h-4 w-4 text-pass" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </span>
+      </button>
+      <p className="mt-2 text-xs text-gray-500">
+        Wires Deslint into Claude Code, Cursor, Codex, or Windsurf — auto-detects
+        the agent config. Prefer ESLint, CLI, or the GitHub Action?{' '}
+        <Link href="/docs/getting-started" className="text-primary hover:underline">
+          See all install paths &rarr;
+        </Link>
+      </p>
+    </div>
   );
 }
 

@@ -124,11 +124,19 @@ export function generateHtmlReport(
     messages: lintResult.results.flatMap((result) => result.messages),
   });
 
+  // HTML report is only meaningful for applicable scans; callers gate on
+  // `overall !== null` before invoking us. Bail defensively if that invariant
+  // is ever broken rather than rendering a report with a fake score.
+  if (scoreResult.overall === null) {
+    return reportPath;
+  }
+  const scoreForReport = { ...scoreResult, overall: scoreResult.overall };
+
   const html = buildHtml({
     version: _pkg.version,
     timestamp: new Date().toISOString(),
     projectName: cwd.split('/').pop() ?? 'Project',
-    score: scoreResult,
+    score: scoreForReport,
     debt,
     summary: {
       totalFiles: lintResult.totalFiles,

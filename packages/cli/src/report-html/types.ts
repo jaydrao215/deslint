@@ -33,7 +33,10 @@ export interface ReportData {
   version: string;
   timestamp: string;
   projectName: string;
-  score: ScoreResult;
+  // HTML report is only rendered for applicable scans, so `overall` is
+  // always a concrete number here — callers gate on `overall !== null`
+  // before calling buildHtml.
+  score: Omit<ScoreResult, 'overall'> & { overall: number };
   debt: DebtResult;
   summary: {
     totalFiles: number;

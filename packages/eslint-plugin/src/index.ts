@@ -10,6 +10,7 @@ import darkModeCoverage from './rules/dark-mode-coverage.js';
 import noArbitraryZindex from './rules/no-arbitrary-zindex.js';
 import noInlineStyles from './rules/no-inline-styles.js';
 import consistentBorderRadius from './rules/consistent-border-radius.js';
+import noArbitraryBorderRadius from './rules/no-arbitrary-border-radius.js';
 import imageAltText from './rules/image-alt-text.js';
 import noMagicNumbersLayout from './rules/no-magic-numbers-layout.js';
 import langAttribute from './rules/lang-attribute.js';
@@ -54,6 +55,7 @@ const plugin = {
     'no-arbitrary-zindex': noArbitraryZindex,
     'no-inline-styles': noInlineStyles,
     'consistent-border-radius': consistentBorderRadius,
+    'no-arbitrary-border-radius': noArbitraryBorderRadius,
     'image-alt-text': imageAltText,
     'no-magic-numbers-layout': noMagicNumbersLayout,
     'lang-attribute': langAttribute,
@@ -95,6 +97,7 @@ plugin.configs.recommended = {
     'deslint/no-arbitrary-zindex': 'warn',
     'deslint/no-inline-styles': 'off',
     'deslint/consistent-border-radius': 'warn',
+    'deslint/no-arbitrary-border-radius': 'warn',
     'deslint/image-alt-text': 'warn',
     'deslint/no-magic-numbers-layout': 'warn',
     'deslint/lang-attribute': 'warn',
@@ -134,6 +137,7 @@ plugin.configs.strict = {
     'deslint/no-arbitrary-zindex': 'error',
     'deslint/no-inline-styles': 'error',
     'deslint/consistent-border-radius': 'error',
+    'deslint/no-arbitrary-border-radius': 'error',
     'deslint/image-alt-text': 'error',
     'deslint/no-magic-numbers-layout': 'error',
     'deslint/lang-attribute': 'error',

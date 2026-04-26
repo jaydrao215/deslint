@@ -2,6 +2,18 @@ import { ESLint } from 'eslint';
 import { glob } from 'glob';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+// Static import: forces esbuild to include @typescript-eslint/parser + its
+// TypeScript peer dep in the bundled dist/index.js. We previously loaded
+// this via `importOptional('@typescript-eslint/parser')` with a `new
+// Function('s', 'return import(s)')` wrapper — that pattern defeats
+// esbuild's static analysis, so the parser never made it into the bundle.
+// GitHub Node actions don't run `npm install`, so the runtime resolution
+// step failed silently and every .ts/.tsx file fell back to Espree, which
+// can't parse TypeScript syntax. Result: the "13 errors, score 99,
+// rule=unknown" pattern the action reported on every PR touching real TS.
+// Keeping this a static import costs ~20MB of bundle size (TS compiler),
+// which is acceptable for a Node action that runs once per PR.
+import * as typescriptParser from '@typescript-eslint/parser';
 import { effortForRule, safeParseConfig } from '@deslint/shared';
 import type { QualityGate } from '@deslint/shared';
 
@@ -26,10 +38,26 @@ export interface InlineViolation {
   ruleId: string;
   message: string;
   severity: 'error' | 'warning';
+  /** ESLint autofix payload when the rule provides one. Consumers
+   *  (the Action's PR-review renderer) classify this for visual
+   *  safety before promoting it to a one-click suggestion block. */
+  fix?: { range: [number, number]; text: string };
+}
+
+export interface ApplicabilityInfo {
+  filesScanned: number;
+  tailwindFiles: number;
+  styleFiles: number;
+  applicable: boolean;
+  reason?: string;
 }
 
 export interface ScanResult {
-  score: number;
+  /** `null` when the scan had no applicable input — no class or style
+   *  attributes were found in any file so the class-based rules had
+   *  nothing to evaluate. Consumers must render "N/A" rather than a
+   *  fabricated 100. See VALIDATION-0.7.md for the bug this guards. */
+  score: number | null;
   totalViolations: number;
   errors: number;
   warnings: number;
@@ -39,6 +67,16 @@ export interface ScanResult {
   filesWithViolations: number;
   debtMinutes: number;
   byRule: Record<string, number>;
+  /** Parser failures (ESLint messages with `ruleId: null`, severity 2).
+   *  Not counted in `totalViolations` / `errors` / `warnings` / `byRule`
+   *  — they don't tell us anything about design quality and leaking
+   *  them into those metrics produced the "13 errors, score 99,
+   *  rule=unknown" PR comment tracked in VALIDATION-0.7.md. */
+  parseErrors: number;
+  /** Distinct files that failed to parse. Surfaced separately from
+   *  `filesWithViolations` so the banner can say "N files couldn't
+   *  be analyzed" rather than conflating them with rule hits. */
+  filesWithParseErrors: number;
   qualityGate?: QualityGate;
   inlineViolations: InlineViolation[];
   effectiveRules: Record<string, unknown>;
@@ -46,6 +84,13 @@ export interface ScanResult {
    *  Trailer hashes user-only overrides so the hash survives default
    *  drift between CLI and Action. */
   userRules: Record<string, unknown>;
+  /** Populated post-scan so the PR comment can explain why a N/A
+   *  score appeared rather than leaving the reviewer guessing. */
+  applicability?: ApplicabilityInfo;
+  /** Subset of `.deslintrc.json` forwarded to the PR-review renderer
+   *  so it can verify a token-based autofix is byte-identical to the
+   *  arbitrary value it replaces. */
+  designSystem?: { colors?: Record<string, string> };
 }
 
 type RuleCategory =
@@ -63,6 +108,7 @@ interface LintMessage {
   column: number;
   endLine?: number;
   endColumn?: number;
+  fix?: { range: [number, number]; text: string };
 }
 
 interface LintFileResult {
@@ -78,6 +124,10 @@ interface LintResult {
   byRule: Record<string, number>;
   byCategory: Record<RuleCategory, number>;
   filesWithViolations: number;
+  /** Parser failures (null-ruleId severity-2 messages). Tracked
+   *  separately so they never leak into the Design Health Score. */
+  parseErrors: number;
+  filesWithParseErrors: number;
   effectiveRules: Record<string, unknown>;
 }
 
@@ -85,6 +135,10 @@ interface LoadedScanConfig {
   ignorePatterns?: string[];
   qualityGate?: QualityGate;
   userRules: Record<string, unknown>;
+  /** Raw `designSystem` block from `.deslintrc.json`, forwarded to
+   *  the PR-review renderer so it can prove a token-based autofix is
+   *  byte-identical to the arbitrary value being replaced. */
+  designSystem?: { colors?: Record<string, string> };
 }
 
 const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
@@ -98,6 +152,7 @@ const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'deslint/no-arbitrary-zindex': 'consistency',
   'deslint/no-inline-styles': 'consistency',
   'deslint/consistent-border-radius': 'consistency',
+  'deslint/no-arbitrary-border-radius': 'consistency',
   'deslint/image-alt-text': 'responsive',
   'deslint/no-magic-numbers-layout': 'spacing',
   'deslint/lang-attribute': 'consistency',
@@ -134,6 +189,7 @@ const DEFAULT_RULES: Record<string, unknown> = {
   'deslint/no-arbitrary-zindex': 'warn',
   'deslint/no-inline-styles': 'off',
   'deslint/consistent-border-radius': 'warn',
+  'deslint/no-arbitrary-border-radius': 'warn',
   'deslint/image-alt-text': 'warn',
   'deslint/no-magic-numbers-layout': 'warn',
   'deslint/lang-attribute': 'warn',
@@ -230,19 +286,42 @@ function loadScanConfig(
     }
     const raw = JSON.parse(fs.readFileSync(resolvedConfigPath, 'utf-8'));
     const parsed = safeParseConfig(raw);
+    const designSystem = extractDesignSystemColors(raw);
     if (parsed.success) {
       return {
         ignorePatterns: parsed.data.ignore,
         qualityGate: parsed.data.qualityGate,
         userRules: (parsed.data.rules ?? {}) as Record<string, unknown>,
+        designSystem,
       };
     }
     return {
       userRules: (raw?.rules ?? {}) as Record<string, unknown>,
+      designSystem,
     };
   } catch {
     return { userRules: {} };
   }
+}
+
+/**
+ * Pluck `.designSystem.colors` off an arbitrary parsed config blob.
+ * Returns `undefined` when the subtree is missing or the wrong shape
+ * so a malformed config can't crash fix classification.
+ */
+function extractDesignSystemColors(
+  raw: unknown,
+): { colors?: Record<string, string> } | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const ds = (raw as { designSystem?: unknown }).designSystem;
+  if (!ds || typeof ds !== 'object') return undefined;
+  const rawColors = (ds as { colors?: unknown }).colors;
+  if (!rawColors || typeof rawColors !== 'object') return { colors: {} };
+  const colors: Record<string, string> = {};
+  for (const [k, v] of Object.entries(rawColors as Record<string, unknown>)) {
+    if (typeof v === 'string') colors[k] = v;
+  }
+  return { colors };
 }
 
 async function discoverProjectFiles(
@@ -293,10 +372,13 @@ async function scanFiles(
       filesWithViolations: 0,
       debtMinutes: 0,
       byRule: {},
+      parseErrors: 0,
+      filesWithParseErrors: 0,
       qualityGate: scanConfig.qualityGate,
       inlineViolations: [],
       effectiveRules: { ...DEFAULT_RULES, ...normalizeRuleOverrides(scanConfig.userRules) },
       userRules: scanConfig.userRules,
+      designSystem: scanConfig.designSystem,
     };
   }
 
@@ -306,11 +388,72 @@ async function scanFiles(
     ruleOverrides: scanConfig.userRules,
   });
 
+  const applicability = computeApplicability(absoluteFiles);
+  const scanPart = toScanResult(lintResult, cwd);
+
+  // Gate the score to `null` when the scan had no applicable input AND
+  // found no violations. Mirrors the CLI behaviour so a CSS-in-JS
+  // project can't silently score 100 off our class-based rules. A real
+  // finding proves the rules had SOMETHING to look at — respect that.
+  if (!applicability.applicable && lintResult.totalViolations === 0) {
+    return {
+      ...scanPart,
+      score: null,
+      qualityGate: scanConfig.qualityGate,
+      effectiveRules: lintResult.effectiveRules,
+      userRules: scanConfig.userRules,
+      applicability,
+      designSystem: scanConfig.designSystem,
+    };
+  }
+
   return {
-    ...toScanResult(lintResult, cwd),
+    ...scanPart,
     qualityGate: scanConfig.qualityGate,
     effectiveRules: lintResult.effectiveRules,
     userRules: scanConfig.userRules,
+    applicability,
+    designSystem: scanConfig.designSystem,
+  };
+}
+
+/** Cheap file-content probe: count files that contain class / style
+ *  attributes. Mirrors the CLI's computeApplicability to keep bug #4
+ *  behaviour consistent until bug #6 merges the two. */
+export function computeApplicability(files: string[]): ApplicabilityInfo {
+  const CLASS_RE = /\b(?:className|class)\s*=|\bclass(?:Names?|sx|va|x|nx)?\s*\(/;
+  const STYLE_RE = /\bstyle\s*=|from\s+['"]styled-components['"]|from\s+['"]@emotion\/[\w-]+['"]/;
+  const BYTE_CAP = 256 * 1024;
+
+  let tailwindFiles = 0;
+  let styleFiles = 0;
+  let filesScanned = 0;
+
+  for (const file of files) {
+    try {
+      const stat = fs.statSync(file);
+      if (!stat.isFile()) continue;
+      filesScanned++;
+      const size = Math.min(stat.size, BYTE_CAP);
+      if (size === 0) continue;
+      let content = fs.readFileSync(file, 'utf-8');
+      if (content.length > BYTE_CAP) content = content.slice(0, BYTE_CAP);
+      if (CLASS_RE.test(content)) tailwindFiles++;
+      if (STYLE_RE.test(content)) styleFiles++;
+    } catch {
+      /* unreadable — skip */
+    }
+  }
+
+  const applicable = tailwindFiles > 0 || styleFiles > 0;
+  return {
+    filesScanned,
+    tailwindFiles,
+    styleFiles,
+    applicable,
+    reason: applicable
+      ? undefined
+      : 'No class or style attributes detected — class-based rules had no applicable input.',
   };
 }
 
@@ -327,7 +470,8 @@ async function runLint(options: {
     ...normalizeRuleOverrides(options.ruleOverrides),
   };
 
-  const typescriptParser = await importOptional('@typescript-eslint/parser');
+  // @typescript-eslint/parser is statically imported at the top of this
+  // file so the bundle carries it — see the comment there for why.
   const angularTemplateParser = await importOptional('@angular-eslint/template-parser');
   const vueParser = await importOptional('vue-eslint-parser');
   const svelteParser = await importOptional('svelte-eslint-parser');
@@ -425,6 +569,8 @@ function aggregateResults(results: LintFileResult[]): Omit<LintResult, 'effectiv
   let errors = 0;
   let warnings = 0;
   let filesWithViolations = 0;
+  let parseErrors = 0;
+  let filesWithParseErrors = 0;
   const byRule: Record<string, number> = {};
   const byCategory: Record<RuleCategory, number> = {
     colors: 0,
@@ -434,6 +580,10 @@ function aggregateResults(results: LintFileResult[]): Omit<LintResult, 'effectiv
     consistency: 0,
   };
 
+  // Keep both parse errors and deslint rule messages through to
+  // downstream consumers — parse errors render as a distinct banner,
+  // deslint hits feed the score. Drop everything else (non-plugin
+  // eslint noise) so `unknown` never shows up in Top Violations.
   const filteredResults = results.map((result) => ({
     ...result,
     messages: result.messages.filter(
@@ -442,20 +592,31 @@ function aggregateResults(results: LintFileResult[]): Omit<LintResult, 'effectiv
   }));
 
   for (const result of filteredResults) {
-    if (result.messages.length > 0) filesWithViolations++;
+    let fileHasRuleHit = false;
+    let fileHasParseError = false;
+
     for (const msg of result.messages) {
+      if (msg.ruleId === null) {
+        // Parser failure. Segregated from the score + rule metrics so
+        // it surfaces in its own banner rather than inflating `errors`
+        // or producing an `unknown` Top Violations row.
+        parseErrors++;
+        fileHasParseError = true;
+        continue;
+      }
+
       totalViolations++;
       if (msg.severity === 2) errors++;
       else warnings++;
 
-      const ruleId = msg.ruleId ?? 'unknown';
-      byRule[ruleId] = (byRule[ruleId] ?? 0) + 1;
-
-      if (msg.ruleId) {
-        const category = RULE_CATEGORY_MAP[msg.ruleId];
-        if (category) byCategory[category]++;
-      }
+      byRule[msg.ruleId] = (byRule[msg.ruleId] ?? 0) + 1;
+      const category = RULE_CATEGORY_MAP[msg.ruleId];
+      if (category) byCategory[category]++;
+      fileHasRuleHit = true;
     }
+
+    if (fileHasRuleHit) filesWithViolations++;
+    if (fileHasParseError) filesWithParseErrors++;
   }
 
   return {
@@ -466,6 +627,8 @@ function aggregateResults(results: LintFileResult[]): Omit<LintResult, 'effectiv
     byRule,
     byCategory,
     filesWithViolations,
+    parseErrors,
+    filesWithParseErrors,
   };
 }
 
@@ -485,6 +648,8 @@ function toScanResult(
     filesWithViolations: lintResult.filesWithViolations,
     debtMinutes: computeDebtMinutes(lintResult.byRule),
     byRule: lintResult.byRule,
+    parseErrors: lintResult.parseErrors,
+    filesWithParseErrors: lintResult.filesWithParseErrors,
     inlineViolations: buildInlineViolations(lintResult.results, cwd),
   };
 }
@@ -530,11 +695,13 @@ function buildTopViolations(results: LintFileResult[]): ViolationSummary[] {
   const byRule = new Map<string, { count: number; severity: number }>();
   for (const result of results) {
     for (const msg of result.messages) {
-      const ruleId = msg.ruleId ?? 'unknown';
-      const current = byRule.get(ruleId) ?? { count: 0, severity: msg.severity };
+      // Parser failures (null ruleId) render in their own banner; they
+      // never belong in Top Violations as `unknown`.
+      if (msg.ruleId === null) continue;
+      const current = byRule.get(msg.ruleId) ?? { count: 0, severity: msg.severity };
       current.count++;
       current.severity = Math.max(current.severity, msg.severity);
-      byRule.set(ruleId, current);
+      byRule.set(msg.ruleId, current);
     }
   }
 
@@ -574,6 +741,7 @@ function buildInlineViolations(
         ruleId: msg.ruleId,
         message: msg.message,
         severity: msg.severity === 2 ? 'error' : 'warning',
+        fix: msg.fix,
       });
     }
   }
