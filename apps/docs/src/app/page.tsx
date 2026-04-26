@@ -5,6 +5,7 @@ import { getGitHubStars } from '@/lib/github-stars';
 import { VisualProofSection } from '@/components/VisualProofSection';
 import { McpLoopSection } from '@/components/McpLoopSection';
 import { ProductShowcase } from '@/components/ProductShowcase';
+import { OssProofSection } from '@/components/OssProofSection';
 import { WhatItCatches } from '@/components/WhatItCatches';
 import { ComparisonStrip } from '@/components/ComparisonStrip';
 import { Cta } from '@/components/Cta';
@@ -21,6 +22,7 @@ export default async function Home() {
         <VisualProofSection />
         <McpLoopSection />
         <ProductShowcase />
+        <OssProofSection />
         <WhatItCatches />
         <ComparisonStrip />
         <Cta />

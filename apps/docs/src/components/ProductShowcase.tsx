@@ -39,13 +39,13 @@ export function ProductShowcase() {
     },
     {
       eyebrow: '02 · In your terminal',
-      title: 'Design Health Score for the whole codebase',
+      title: 'Design Health Score plus a Fix Plan',
       description:
-        'One command scans every file, produces a 0–100 Design Health Score, and generates a self-contained HTML compliance report you can email to legal or attach to a SOC 2 audit.',
+        'One command scans every file, produces a 0–100 Design Health Score, and tells you what to do next: auto-fix low-risk drift, decide token candidates, review WCAG risks, or start with the highest design debt.',
       bullets: [
         { icon: <Terminal className="h-4 w-4" />, text: 'deslint scan / fix / compliance / trend' },
-        { icon: <ChartIcon />, text: 'Per-category scores + violation breakdown' },
-        { icon: <FileIcon />, text: 'WCAG 2.2 + 2.1 AA report, no external assets' },
+        { icon: <ChartIcon />, text: 'Per-category scores + prioritized next actions' },
+        { icon: <FileIcon />, text: 'Self-contained HTML report with the same Fix Plan' },
       ],
       visual: <TerminalMockup />,
       reverse: true,
@@ -54,7 +54,7 @@ export function ProductShowcase() {
       eyebrow: '03 · In your pull requests',
       title: 'Block drift before it lands',
       description:
-        'GitHub Action runs the same engine as your local scan. Posts inline review comments with rule ID, WCAG mapping, and a commit-ready suggested change. Fails the check when the score drops below your threshold.',
+        'GitHub Action runs the same engine as your local scan. Posts a score, inline review comments, and a Fix Plan that separates auto-fixable drift from token decisions and accessibility merge risks.',
       bullets: [
         { icon: <GitPullRequest className="h-4 w-4" />, text: 'Inline review comments on the offending line' },
         { icon: <WcagIcon />, text: 'Every violation linked to its WCAG criterion' },

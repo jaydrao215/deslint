@@ -263,3 +263,71 @@ describe('formatText — parse error score suppression (Bug 2 regression)', () =
     expect(parsed.summary.parseErrors).toBe(23);
   });
 });
+
+describe('formatText — Fix Plan', () => {
+  it('includes a concise fix plan when violations exist', () => {
+    const lintResult = makeLintResult({
+      results: [
+        {
+          filePath: '/project/src/App.tsx',
+          messages: [
+            {
+              ruleId: 'deslint/no-arbitrary-spacing',
+              severity: 1,
+              message: 'Arbitrary spacing `p-[13px]` detected. Suggested: `p-3`',
+              line: 3,
+              column: 10,
+              fix: { range: [0, 1], text: 'p-3' },
+            },
+            {
+              ruleId: 'deslint/a11y-color-contrast',
+              severity: 2,
+              message: 'Contrast ratio 2.1:1 fails WCAG AA.',
+              line: 4,
+              column: 10,
+            },
+          ],
+        },
+      ],
+      totalViolations: 2,
+      bySeverity: { errors: 1, warnings: 1 },
+      byRule: {
+        'deslint/no-arbitrary-spacing': 1,
+        'deslint/a11y-color-contrast': 1,
+      },
+      byCategory: {
+        colors: 1,
+        spacing: 1,
+        typography: 0,
+        responsive: 0,
+        consistency: 0,
+      },
+      filesWithViolations: 1,
+    });
+
+    const output = formatText(lintResult, makeScoreResult({ overall: 80 }), '/project');
+
+    expect(output).toContain('Fix Plan');
+    expect(output).toContain('Auto-fix now');
+    expect(output).toContain('npx deslint fix --all');
+    expect(output).toContain('Accessibility blockers');
+    expect(output).toContain('npx deslint compliance');
+  });
+
+  it('omits the fix plan when the project is clean', () => {
+    const output = formatText(makeLintResult(), makeScoreResult(), '/project');
+    expect(output).not.toContain('Fix Plan');
+  });
+
+  it('omits the fix plan for parse-only scans', () => {
+    const lintResult = makeLintResult({
+      totalFiles: 2,
+      totalViolations: 2,
+      parseErrors: 2,
+      bySeverity: { errors: 2, warnings: 0 },
+      byRule: { unknown: 2 },
+    });
+    const output = formatText(lintResult, makeScoreResult(), '/project');
+    expect(output).not.toContain('Fix Plan');
+  });
+});

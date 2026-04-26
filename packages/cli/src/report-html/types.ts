@@ -1,5 +1,6 @@
 import type { ScoreResult, HistoryEntry } from '../score.js';
 import type { DebtResult } from '../debt.js';
+import type { FixPlan } from '@deslint/shared';
 import { RULE_CATEGORY_MAP, type RuleCategory } from '../lint-runner.js';
 
 export interface ViolationEntry {
@@ -42,6 +43,7 @@ export interface ReportData {
     warnings: number;
   };
   ruleSummaries: RuleSummary[];
+  fixPlan: FixPlan;
   fileHotspots: [string, number][];
   violations: ViolationEntry[];
   arbitraryColors: { hex: string; suggestion: string; count: number }[];

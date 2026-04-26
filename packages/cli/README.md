@@ -20,7 +20,7 @@ npx deslint scan
 
 ### `deslint scan [dir]`
 
-Scan a project and report the Design Health Score.
+Scan a project, report the Design Health Score, and print a prioritized Fix Plan.
 
 ```bash
 deslint scan                     # scan current directory
@@ -30,7 +30,12 @@ deslint scan --format sarif      # SARIF format (for CI integration)
 deslint scan --profile strict    # use strict profile
 ```
 
-**Output:** Design Health Score (0-100), per-category breakdown, violation list.
+**Output:** Design Health Score (0-100), per-category breakdown, Fix Plan,
+violation list, and `.deslint/report.html`.
+
+The Fix Plan separates auto-fixable drift, design-token decisions,
+WCAG-mapped accessibility risks, and the highest design-debt rules so teams
+know what to do next instead of reading a raw lint dump.
 
 ### `deslint fix [dir]`
 

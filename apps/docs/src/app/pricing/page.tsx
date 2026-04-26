@@ -32,6 +32,7 @@ const TIERS: Tier[] = [
       'Full ESLint plugin, CLI, MCP server, and GitHub Action. Everything you need to gate design quality in CI.',
     features: [
       '33 deterministic rules',
+      'Fix Plan in CLI, reports, and PR comments',
       'WCAG 2.2 AA compliance reports',
       'Design Health Score + quality gates',
       'Auto-fix for 11 rules',

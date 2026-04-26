@@ -17,6 +17,7 @@
 import { relative, resolve } from 'node:path';
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { buildFixPlan } from '@deslint/shared';
 import type { LintResult } from './lint-runner.js';
 import type { ScoreResult, HistoryEntry } from './score.js';
 import { calculateDebt } from './debt.js';
@@ -116,6 +117,12 @@ export function generateHtmlReport(
   }
 
   const debt = calculateDebt(lintResult);
+  const fixPlan = buildFixPlan({
+    totalViolations: lintResult.totalViolations,
+    parseErrors: lintResult.parseErrors,
+    byRule: lintResult.byRule,
+    messages: lintResult.results.flatMap((result) => result.messages),
+  });
 
   const html = buildHtml({
     version: _pkg.version,
@@ -131,6 +138,7 @@ export function generateHtmlReport(
       warnings: lintResult.bySeverity.warnings,
     },
     ruleSummaries,
+    fixPlan,
     fileHotspots,
     violations: violations.slice(0, 500),
     arbitraryColors,

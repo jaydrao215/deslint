@@ -38,6 +38,7 @@ export interface ScanResult {
   filesScanned: number;
   filesWithViolations: number;
   debtMinutes: number;
+  byRule: Record<string, number>;
   qualityGate?: QualityGate;
   inlineViolations: InlineViolation[];
   effectiveRules: Record<string, unknown>;
@@ -291,6 +292,7 @@ async function scanFiles(
       filesScanned: 0,
       filesWithViolations: 0,
       debtMinutes: 0,
+      byRule: {},
       qualityGate: scanConfig.qualityGate,
       inlineViolations: [],
       effectiveRules: { ...DEFAULT_RULES, ...normalizeRuleOverrides(scanConfig.userRules) },
@@ -482,6 +484,7 @@ function toScanResult(
     filesScanned: lintResult.totalFiles,
     filesWithViolations: lintResult.filesWithViolations,
     debtMinutes: computeDebtMinutes(lintResult.byRule),
+    byRule: lintResult.byRule,
     inlineViolations: buildInlineViolations(lintResult.results, cwd),
   };
 }

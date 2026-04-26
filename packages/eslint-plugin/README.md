@@ -7,6 +7,10 @@
 
 33 ESLint rules that catch design quality violations in AI-generated frontend code — arbitrary colors, inconsistent spacing, missing responsive breakpoints, WCAG 2.2 accessibility gaps, and more. Auto-fix support for 11 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
 
+Use `@deslint/cli` alongside the plugin to get a Fix Plan that prioritizes
+auto-fixes, token decisions, accessibility risks, and design debt after every
+scan.
+
 **Validated on real-world open-source projects across React / Next.js, Vue / Nuxt, Angular, and plain HTML with 0% false positive rate and 0 crashes.**
 
 <p align="center">

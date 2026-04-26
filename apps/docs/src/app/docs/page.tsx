@@ -6,7 +6,7 @@ const CARDS = [
     href: '/docs/getting-started',
     icon: Rocket,
     title: 'Getting Started',
-    description: 'Install, configure, and run your first scan in under 2 minutes.',
+    description: 'Install, configure, and run your first scan with a Fix Plan in under 2 minutes.',
     color: 'text-pass bg-pass/10 border-pass/20',
   },
   {
@@ -35,7 +35,7 @@ export default function DocsIndex() {
         <p className="text-lg text-gray-500 leading-relaxed">
           The design quality gate for AI-generated frontend code.
           <br className="hidden sm:block" />
-          ESLint plugin + CLI + MCP server.
+          ESLint plugin + CLI + MCP server + PR Fix Plans.
         </p>
       </div>
 
