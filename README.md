@@ -57,6 +57,9 @@ npx deslint fix --all
 # Interactive fix (review each change)
 npx deslint fix --interactive
 
+# Tweetable scorecard, copied to clipboard
+npx deslint share
+
 # Emit a reproducible attestation artifact
 npx deslint attest --stdout
 ```
@@ -64,6 +67,13 @@ npx deslint attest --stdout
 `deslint scan` in text mode prints a prioritized Fix Plan and writes
 `.deslint/report.html` for a shareable local report with the same recommended
 next actions.
+
+## v0.8 Highlights
+
+- **`npx deslint launch-check`** — one-command launch-readiness scorer for AI-built frontends (alias of `scan` with a launch-readiness banner)
+- **`npx deslint share`** — copies a tweetable markdown scorecard to your clipboard
+- **3 new frontend-safety rules:** `no-dangerous-html` (XSS), `safe-external-links` (rel guard, autofixable), `iframe-sandbox`
+- Validated against shadcn-ui/ui (3,110 .tsx files, 0 crashes, 0 parse errors)
 
 ## v0.6 Highlights
 
