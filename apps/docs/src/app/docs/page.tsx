@@ -65,7 +65,7 @@ const CARDS = [
     href: '/docs/rules',
     icon: Shield,
     title: 'Rules Reference',
-    description: 'All 34 rules with examples, options, and auto-fix behavior.',
+    description: 'All 37 rules with examples, options, and auto-fix behavior.',
     color: 'text-warn bg-warn/10 border-warn/20',
   },
 ];

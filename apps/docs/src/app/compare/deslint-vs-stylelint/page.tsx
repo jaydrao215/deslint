@@ -387,7 +387,7 @@ pnpm deslint scan "apps/**/*.{ts,tsx}" --format sarif --output deslint.sarif
                 href="/docs/rules"
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:border-primary/30 hover:text-primary motion-safe:transition-colors"
               >
-                Browse all 34 rules
+                Browse all 37 rules
               </Link>
               <Link
                 href="/blog/tailwind-arbitrary-values"

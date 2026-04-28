@@ -102,7 +102,7 @@ const JSON_LD = {
           name: 'What does Deslint catch that ESLint does not?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Design-system drift (arbitrary Tailwind values, hex colours outside your token scale), accessibility failures (WCAG contrast, missing landmarks, alt text), dark-mode gaps, responsive layout issues, bundle bloat, and more. Deslint ships 34 rules purpose-built for frontend code written by AI.',
+            text: 'Design-system drift (arbitrary Tailwind values, hex colours outside your token scale), accessibility failures (WCAG contrast, missing landmarks, alt text), dark-mode gaps, responsive layout issues, bundle bloat, and more. Deslint ships 37 rules purpose-built for frontend code written by AI.',
           },
         },
       ],

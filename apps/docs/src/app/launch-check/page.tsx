@@ -145,7 +145,7 @@ export default function LaunchCheckPage() {
             What it catches that your AI missed
           </h2>
           <p className="text-gray-600 mb-6 max-w-2xl">
-            34 deterministic rules across 5 scoring categories — design system,
+            37 deterministic rules across 5 scoring categories — design system,
             spacing, typography, responsive coverage, consistency — plus the
             safety basics every shipped app should pass. Every check is plain
             ESLint underneath, so no LLM ever sees your code.
@@ -242,7 +242,7 @@ export default function LaunchCheckPage() {
             href="/docs/rules"
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 motion-safe:transition-all"
           >
-            All 34 rules
+            All 37 rules
           </Link>
           <Link
             href="https://github.com/jaydrao215/deslint"
