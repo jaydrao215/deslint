@@ -44,6 +44,7 @@ describe('CLI commands', () => {
       'launch-check',
       'report',
       'scan',
+      'share',
       'suggest-tokens',
       'trend',
       'verify',

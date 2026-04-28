@@ -5,7 +5,9 @@
  *
  * Commands:
  *   deslint scan [dir]              — Scan project, report Design Health Score
+ *   deslint launch-check [dir]      — Same engine, indie-facing "Frontend Launch Readiness" banner
  *   deslint fix [dir]               — Fix violations (--all, --interactive, --dry-run)
+ *   deslint share [dir]             — Print + copy a tweetable scorecard
  *   deslint generate-config <target> — Generate AI tool config (cursor, claude, agents)
  */
 
@@ -1181,6 +1183,87 @@ program
         console.log(chalk.green(`  Opened report in browser`));
       }
     });
+  });
+
+program
+  .command('share')
+  .description('Print a tweetable launch-readiness scorecard and copy it to the clipboard')
+  .argument('[dir]', 'Project directory to scan', '.')
+  .action(async (dir: string) => {
+    try {
+      const cwd = resolve(dir);
+      const config = loadConfig(cwd);
+      const rules = buildEffectiveRules(config, undefined);
+
+      const files = await discoverFiles({ cwd, ignorePatterns: config?.ignore });
+      if (files.length === 0) {
+        console.log(chalk.yellow('\n  No files found to scan.\n'));
+        process.exit(0);
+      }
+
+      const lintResult = await runLint({ files, ruleOverrides: rules, cwd });
+      const scoreResult = calculateScore(lintResult);
+
+      if (scoreResult.overall === null) {
+        console.log(
+          chalk.yellow(
+            '\n  Score N/A — no applicable input. Try `npx deslint launch-check` for details.\n',
+          ),
+        );
+        process.exit(0);
+      }
+
+      const cats = scoreResult.categories;
+      const scorecard =
+        `Frontend Launch Readiness: ${scoreResult.overall}/100\n` +
+        `Colors ${cats.colors.score} · Spacing ${cats.spacing.score} · ` +
+        `Typography ${cats.typography.score} · Responsive ${cats.responsive.score} · ` +
+        `Consistency ${cats.consistency.score}\n` +
+        `Scanned with \`npx deslint launch-check\` — https://deslint.com/launch-check`;
+
+      console.log('');
+      console.log(scorecard);
+      console.log('');
+
+      const { spawn } = await import('node:child_process');
+      const platform = process.platform;
+      const candidates: Array<{ cmd: string; args: string[] }> =
+        platform === 'darwin'
+          ? [{ cmd: 'pbcopy', args: [] }]
+          : platform === 'win32'
+            ? [{ cmd: 'clip', args: [] }]
+            : [
+                { cmd: 'wl-copy', args: [] },
+                { cmd: 'xclip', args: ['-selection', 'clipboard'] },
+                { cmd: 'xsel', args: ['--clipboard', '--input'] },
+              ];
+
+      const copied = await new Promise<boolean>((resolveCopy) => {
+        const tryNext = (i: number) => {
+          if (i >= candidates.length) return resolveCopy(false);
+          const { cmd, args } = candidates[i];
+          const proc = spawn(cmd, args, { stdio: ['pipe', 'ignore', 'ignore'] });
+          proc.on('error', () => tryNext(i + 1));
+          proc.on('exit', (code) => resolveCopy(code === 0));
+          proc.stdin.end(scorecard);
+        };
+        tryNext(0);
+      });
+
+      if (copied) {
+        console.log(chalk.green('  Copied to clipboard. Paste into X / a PR / wherever.'));
+      } else {
+        console.log(
+          chalk.gray(
+            '  Clipboard tool not found (install pbcopy/xclip/wl-copy/clip). Copy the scorecard above manually.',
+          ),
+        );
+      }
+      console.log('');
+    } catch (err) {
+      console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
+      process.exit(1);
+    }
   });
 
 const runningAsCli =
