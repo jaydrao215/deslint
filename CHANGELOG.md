@@ -2,6 +2,71 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.8.0] — unreleased
+
+Launch-readiness scoring + three new frontend-safety rules. `npx deslint
+launch-check` is the new one-command entry point for indie devs shipping
+apps built with Cursor, Claude Code, Codex, or Windsurf.
+
+### Added (`@deslint/cli`)
+
+- **`deslint launch-check`** — alias of `scan` with a launch-readiness
+  banner ("Frontend Launch Readiness: NN/100" instead of "Design Health
+  Score") and a "Next:" hint pointing to `deslint share` for clean runs.
+  Same engine, same flags, same exit codes — designed as the indie-
+  facing zero-install entry point. Existing `scan` output is unchanged.
+- **`deslint share`** — runs a scan and emits a 3-line markdown
+  scorecard, copying it to the system clipboard. Goes through `pbcopy`
+  on macOS, `clip` on Windows, and `wl-copy` → `xclip` → `xsel` on
+  Linux, with a graceful stdout-only fallback when no clipboard binary
+  is installed. No new npm dependency.
+
+### Added (`@deslint/eslint-plugin`)
+
+Three new rules under a new "Frontend Safety" category. All three ride
+under the existing `consistency` scoring category, are enabled at `warn`
+in `recommended` / `error` in `strict`, and follow the existing element-
+visitor pattern.
+
+- **`no-dangerous-html`** — flags `dangerouslySetInnerHTML` on JSX
+  elements. The most common XSS path in AI-generated React code.
+  Whitelists three well-known safe patterns: `<script type="application/ld+json">`
+  (Schema.org structured data), `<style dangerouslySetInnerHTML>` (CSS
+  injection has a different threat model than HTML/XSS), and
+  `<Script dangerouslySetInnerHTML>` (the Next.js `<Script>` component
+  for inline scripts via the framework's loading strategy). Validated
+  against shadcn-ui/ui — the whitelist cut false positives from 36 → 11,
+  with the 11 remaining all being real surfaces.
+- **`safe-external-links`** — flags `<a target="_blank">` missing
+  `rel="noopener noreferrer"`. Autofixable on JSX — inserts both
+  required tokens.
+- **`iframe-sandbox`** — flags `<iframe>` without a `sandbox` attribute.
+  Suggestion only; the right sandbox value is intent-dependent.
+
+### Fixed (`@deslint/cli`)
+
+- **`packages/cli/src/report-html/template.ts`** previously emitted
+  `rel="noopener"` only on every external link in the generated
+  `.deslint/report.html`. Now emits `rel="noopener noreferrer"` so every
+  generated report passes its own ruleset (the same `safe-external-links`
+  rule introduced above).
+
+### Notes
+
+- All four publishable packages (`@deslint/eslint-plugin`,
+  `@deslint/shared`, `@deslint/cli`, `@deslint/mcp`) bump from 0.7.2 to
+  0.8.0 in lockstep — the changeset config keeps these linked. The
+  `@deslint/action` private package bumps to 0.1.2 for its workspace
+  dependency update; not published to npm.
+- README rule counts brought back in sync (lead-paragraph said 34 / 13
+  fixable while the rule table said 33 — actually 34 / 13 before this
+  release, now 37 / 14 with the three new safety rules and the
+  previously-undocumented `no-arbitrary-border-radius`).
+- Validated end-to-end against shadcn-ui/ui (3,110 .tsx files): 92/100
+  score, 0 parse errors, 0 crashes, 21s scan time. New rules fire on
+  real shadcn-ui code (14 `safe-external-links`, 4 `iframe-sandbox`,
+  11 true-positive `no-dangerous-html` after the whitelist fix).
+
 ## [0.7.2] — unreleased
 
 Release-safety hardening across the CLI's filesystem boundary.

@@ -1,8 +1,8 @@
 {
   "name": "@deslint/action",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
-  "description": "GitHub Action for Deslint, the verification layer for AI-generated code \u2014 PR reviews and commit-trailer verification at the merge gate",
+  "description": "GitHub Action for Deslint, the verification layer for AI-generated code — PR reviews and commit-trailer verification at the merge gate",
   "type": "commonjs",
   "engines": {
     "node": ">=20.19.0"
