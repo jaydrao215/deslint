@@ -24,6 +24,29 @@ export const metadata: Metadata = {
       'A free 0-100 readiness score for AI-generated frontends. One command, no install, runs locally. Catch what Cursor / Claude / Codex broke before your users do.',
     url: 'https://deslint.com/launch-check',
     type: 'website',
+    // Explicit images override — the root layout sets a site-wide
+    // `openGraph.images` pointing at /opengraph-image (the verification-
+    // layer card), which would otherwise be inherited here. Without this
+    // override, X / LinkedIn / Slack scrape /launch-check and still find
+    // the root OG via inheritance even though /launch-check has its own
+    // colocated opengraph-image.tsx file.
+    images: [
+      {
+        url: '/launch-check/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'Frontend launch readiness for AI-built apps — Deslint',
+      },
+    ],
+  },
+  twitter: {
+    // Same override reason as openGraph.images above — root layout sets
+    // twitter.images globally, which otherwise leaks the wrong card here.
+    card: 'summary_large_image',
+    title: 'Is your AI-built app ready to ship? — Deslint Launch Check',
+    description:
+      'Free 0-100 readiness score for AI-generated frontends. One command, runs locally.',
+    images: ['/launch-check/opengraph-image'],
   },
 };
 
