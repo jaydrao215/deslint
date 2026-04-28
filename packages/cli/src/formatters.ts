@@ -11,6 +11,7 @@ const _require = createRequire(import.meta.url);
 const _pkg = _require('../package.json') as { version: string };
 
 export type OutputFormat = 'text' | 'json' | 'sarif';
+export type ScanMode = 'scan' | 'launch-check';
 
 // ── Text Formatter (colored terminal output) ─────────────────────────
 
@@ -110,12 +111,15 @@ export function formatText(
   lintResult: LintResult,
   scoreResult: ScoreResult,
   cwd: string,
+  mode: ScanMode = 'scan',
 ): string {
   const lines: string[] = [];
+  const scoreLabel = mode === 'launch-check' ? 'Frontend Launch Readiness' : 'Design Health Score';
+  const headerLabel = mode === 'launch-check' ? 'Deslint Launch Check' : 'Deslint Design Health Report';
 
   // ── Header ──
   lines.push('');
-  lines.push(chalk.bold('  Deslint Design Health Report'));
+  lines.push(chalk.bold(`  ${headerLabel}`));
   lines.push(chalk.gray('  ─'.repeat(24)));
   lines.push('');
 
@@ -124,7 +128,7 @@ export function formatText(
     lintResult.parseErrors > 0 && lintResult.parseErrors === lintResult.totalViolations;
 
   if (allViolationsAreParseErrors) {
-    lines.push(`  Design Health Score: ${chalk.red('unavailable')}`);
+    lines.push(`  ${scoreLabel}: ${chalk.red('unavailable')}`);
     lines.push(chalk.red(`  Fix ${lintResult.parseErrors} parser error${lintResult.parseErrors !== 1 ? 's' : ''} first — no files were analyzed.`));
   } else if (scoreResult.overall === null) {
     // Applicability gate: the scan ran cleanly but none of the
@@ -132,7 +136,7 @@ export function formatText(
     // be a lie — surface "N/A" with a one-liner that tells the user
     // what to do next (e.g. enable element-based rules, or accept
     // that Deslint has nothing to say about this codebase).
-    lines.push(`  Design Health Score: ${chalk.gray(chalk.bold('N/A'))}${chalk.gray('/100')}`);
+    lines.push(`  ${scoreLabel}: ${chalk.gray(chalk.bold('N/A'))}${chalk.gray('/100')}`);
     lines.push(
       chalk.gray(
         `  ${scoreResult.notApplicableReason ?? 'No applicable input detected.'}`,
@@ -140,7 +144,7 @@ export function formatText(
     );
   } else {
     const colorFn = scoreColor(scoreResult.overall);
-    lines.push(`  Design Health Score: ${colorFn(chalk.bold(String(scoreResult.overall)))}${chalk.gray('/100')}`);
+    lines.push(`  ${scoreLabel}: ${colorFn(chalk.bold(String(scoreResult.overall)))}${chalk.gray('/100')}`);
   }
   lines.push('');
 
@@ -485,10 +489,11 @@ export function format(
   lintResult: LintResult,
   scoreResult: ScoreResult,
   cwd: string,
+  mode: ScanMode = 'scan',
 ): string {
   switch (outputFormat) {
     case 'text':
-      return formatText(lintResult, scoreResult, cwd);
+      return formatText(lintResult, scoreResult, cwd, mode);
     case 'json':
       return formatJson(lintResult, scoreResult, cwd);
     case 'sarif':

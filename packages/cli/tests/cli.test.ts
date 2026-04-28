@@ -41,6 +41,7 @@ describe('CLI commands', () => {
       'generate-config',
       'import-tokens',
       'init',
+      'launch-check',
       'report',
       'scan',
       'suggest-tokens',

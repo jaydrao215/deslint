@@ -19,6 +19,11 @@ and where the highest design debt lives.
 ## Quick Start
 
 ```bash
+# One-shot launch readiness check (no install)
+npx deslint launch-check
+```
+
+```bash
 # Install
 npm install -D @deslint/eslint-plugin @deslint/cli
 
@@ -70,9 +75,9 @@ next actions.
 - Expanded MCP surface for compliance, rule metadata, prioritization, and
   budget vetoes
 
-## Rules (33)
+## Rules (34)
 
-### Design system & layout (6)
+### Design system & layout (7)
 
 | Rule | Description | Auto-fix | Default |
 |------|-------------|:--------:|---------|
@@ -80,6 +85,7 @@ next actions.
 | `no-arbitrary-colors` | Flag hardcoded colors in Tailwind classes (`bg-[#FF0000]`) | Yes | warn |
 | `no-arbitrary-typography` | Flag arbitrary font size, weight, leading, tracking | Yes | warn |
 | `no-arbitrary-zindex` | Flag arbitrary z-index values (`z-[999]`) | Yes | warn |
+| `no-arbitrary-border-radius` | Flag arbitrary `rounded-[7px]` values | Yes | warn |
 | `no-inline-styles` | Flag `style={{}}` attributes; prefer utility classes | No | off |
 | `no-magic-numbers-layout` | Flag arbitrary numbers in grid/flex layout | Yes | warn |
 
@@ -103,7 +109,7 @@ next actions.
 | `dark-mode-coverage` | Flag elements missing `dark:` variants | Yes | off |
 | `missing-states` | Flag interactive elements missing hover/focus/disabled states | No | off |
 
-### Accessibility — WCAG 2.2 mapped (15)
+### Accessibility — WCAG 2.2 mapped (16)
 
 | Rule | WCAG | Description | Auto-fix | Default |
 |------|:----:|-------------|:--------:|---------|
@@ -130,7 +136,7 @@ next actions.
 |------|-------------|:--------:|---------|
 | `max-component-lines` | Flag overly large components (default: 300 lines) | No | off |
 
-**Auto-fix coverage:** 11 of 33 rules auto-correct in place (the rest report only — adding a responsive breakpoint or naming a design token is a human decision).
+**Auto-fix coverage:** 13 of 34 rules auto-correct in place (the rest report only — adding a responsive breakpoint or naming a design token is a human decision).
 
 **Validation:** tested across React/Next.js, Vue/Nuxt, Angular, and plain HTML codebases. No crashes observed in testing; false-positive rate has been low in the projects we've scanned, but we have not formally quantified it. Every rule is wrapped in try/catch. If you hit a false positive, please [open an issue](https://github.com/jaydrao215/deslint/issues).
 
