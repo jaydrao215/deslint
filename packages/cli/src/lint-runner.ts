@@ -37,6 +37,9 @@ export const RULE_CATEGORY_MAP: Record<string, RuleCategory> = {
   'deslint/focus-trap-patterns': 'consistency',
   'deslint/responsive-image-optimization': 'responsive',
   'deslint/spacing-rhythm-consistency': 'spacing',
+  'deslint/no-dangerous-html': 'consistency',
+  'deslint/safe-external-links': 'consistency',
+  'deslint/iframe-sandbox': 'consistency',
 };
 
 export interface LintMessage {
@@ -141,6 +144,9 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     'deslint/focus-trap-patterns': 'warn',
     'deslint/responsive-image-optimization': 'warn',
     'deslint/spacing-rhythm-consistency': 'off',
+    'deslint/no-dangerous-html': 'warn',
+    'deslint/safe-external-links': 'warn',
+    'deslint/iframe-sandbox': 'warn',
   };
 
   if (options.ruleOverrides) {

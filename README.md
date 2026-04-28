@@ -75,7 +75,7 @@ next actions.
 - Expanded MCP surface for compliance, rule metadata, prioritization, and
   budget vetoes
 
-## Rules (34)
+## Rules (37)
 
 ### Design system & layout (7)
 
@@ -130,13 +130,21 @@ next actions.
 | `viewport-meta` | 1.4.4 | Flag `user-scalable=no` / `maximum-scale=1` | No | error |
 | `aria-validation` | 4.1.2 | Invalid roles, hallucinated `aria-*`, LLM typos | No | error |
 
+### Frontend safety (3)
+
+| Rule | Description | Auto-fix | Default |
+|------|-------------|:--------:|---------|
+| `no-dangerous-html` | Flag `dangerouslySetInnerHTML` (XSS path on user-supplied input) | No | warn |
+| `safe-external-links` | Require `rel="noopener noreferrer"` on `<a target="_blank">` | Yes | warn |
+| `iframe-sandbox` | Require a `sandbox` attribute on `<iframe>` | No | warn |
+
 ### Code quality (1)
 
 | Rule | Description | Auto-fix | Default |
 |------|-------------|:--------:|---------|
 | `max-component-lines` | Flag overly large components (default: 300 lines) | No | off |
 
-**Auto-fix coverage:** 13 of 34 rules auto-correct in place (the rest report only — adding a responsive breakpoint or naming a design token is a human decision).
+**Auto-fix coverage:** 14 of 37 rules auto-correct in place (the rest report only — adding a responsive breakpoint or naming a design token is a human decision).
 
 **Validation:** tested across React/Next.js, Vue/Nuxt, Angular, and plain HTML codebases. No crashes observed in testing; false-positive rate has been low in the projects we've scanned, but we have not formally quantified it. Every rule is wrapped in try/catch. If you hit a false positive, please [open an issue](https://github.com/jaydrao215/deslint/issues).
 

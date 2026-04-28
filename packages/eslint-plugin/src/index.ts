@@ -32,6 +32,9 @@ import iconAccessibility from './rules/icon-accessibility.js';
 import focusTrapPatterns from './rules/focus-trap-patterns.js';
 import responsiveImageOptimization from './rules/responsive-image-optimization.js';
 import spacingRhythmConsistency from './rules/spacing-rhythm-consistency.js';
+import noDangerousHtml from './rules/no-dangerous-html.js';
+import safeExternalLinks from './rules/safe-external-links.js';
+import iframeSandbox from './rules/iframe-sandbox.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -77,6 +80,9 @@ const plugin = {
     'focus-trap-patterns': focusTrapPatterns,
     'responsive-image-optimization': responsiveImageOptimization,
     'spacing-rhythm-consistency': spacingRhythmConsistency,
+    'no-dangerous-html': noDangerousHtml,
+    'safe-external-links': safeExternalLinks,
+    'iframe-sandbox': iframeSandbox,
   },
   configs: {} as Record<string, any>,
 };
@@ -119,6 +125,9 @@ plugin.configs.recommended = {
     'deslint/focus-trap-patterns': 'warn',
     'deslint/responsive-image-optimization': 'warn',
     'deslint/spacing-rhythm-consistency': 'off',
+    'deslint/no-dangerous-html': 'warn',
+    'deslint/safe-external-links': 'warn',
+    'deslint/iframe-sandbox': 'warn',
   },
 };
 
@@ -159,6 +168,9 @@ plugin.configs.strict = {
     'deslint/focus-trap-patterns': 'error',
     'deslint/responsive-image-optimization': 'error',
     'deslint/spacing-rhythm-consistency': 'warn',
+    'deslint/no-dangerous-html': 'error',
+    'deslint/safe-external-links': 'error',
+    'deslint/iframe-sandbox': 'error',
   },
 };
 
