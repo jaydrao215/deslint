@@ -94,7 +94,7 @@ export default function RulesReference() {
                       <code className="font-mono text-sm font-semibold text-primary group-hover:text-primary-light">
                         {rule.name}
                       </code>
-                      <span className="text-[11px] text-gray-400 ml-3 shrink-0">
+                      <span className="text-xs text-gray-400 ml-3 shrink-0">
                         /docs/rules/{rule.slug} →
                       </span>
                     </div>

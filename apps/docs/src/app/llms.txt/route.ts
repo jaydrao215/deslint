@@ -10,7 +10,7 @@ const BODY = `# Deslint
 
 Deslint ships as three npm packages:
 
-- \`@deslint/eslint-plugin\` — 34 rules across colors, spacing, typography, responsive, accessibility, consistency, and motion.
+- \`@deslint/eslint-plugin\` — 37 rules across colors, spacing, typography, responsive, accessibility, consistency, and motion.
 - \`@deslint/cli\` — scanning, fixing, coverage reports, Design Health Score, budget enforcement, and compliance attestation.
 - \`@deslint/mcp\` — stdio MCP server exposing the rules as tools that Claude Code, Cursor, Codex, Windsurf, and other MCP clients can call pre-commit.
 
@@ -26,7 +26,7 @@ All three run entirely on the user's machine. Source code never leaves the host.
 
 - [Getting started](https://deslint.com/docs/getting-started/): install, configure, first scan.
 - [Configuration](https://deslint.com/docs/configuration/): \`.deslintrc.json\`, design-system tokens, severity profiles, budgets, quality gates.
-- [Rules index](https://deslint.com/docs/rules/): all 34 rules grouped by category.
+- [Rules index](https://deslint.com/docs/rules/): all 37 rules grouped by category.
 
 ## Rule categories
 

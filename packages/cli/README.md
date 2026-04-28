@@ -20,6 +20,29 @@ npx deslint scan
 
 ## Commands
 
+### `deslint launch-check [dir]`
+
+Free launch-readiness check for AI-generated frontends. Same engine as `scan`, same flags, same exit codes — just a launch-readiness banner ("Frontend Launch Readiness: NN/100" instead of "Design Health Score") and a "Next:" hint that points to `deslint share` for clean runs. Designed as the one-command entry point for indie devs shipping apps built with Cursor, Claude Code, Codex, or Windsurf.
+
+```bash
+npx deslint launch-check         # zero install
+deslint launch-check ./src       # scan a specific directory
+deslint launch-check --diff origin/main  # diff-only
+```
+
+### `deslint share [dir]`
+
+Run a scan and emit a 3-line markdown scorecard, copying it to the system clipboard so you can paste it directly into X / a PR / wherever.
+
+```bash
+deslint share
+# Frontend Launch Readiness: 92/100
+# Colors 100 · Spacing 100 · Typography 92 · Responsive 88 · Consistency 95
+# Scanned with `npx deslint launch-check` — https://deslint.com/launch-check
+```
+
+Clipboard write goes through `pbcopy` on macOS, `clip` on Windows, and `wl-copy` → `xclip` → `xsel` on Linux. When no clipboard binary is installed, the scorecard prints to stdout with a friendly hint — no failure, no extra dependency.
+
 ### `deslint scan [dir]`
 
 Scan a project, report the Design Health Score, and print a prioritized Fix Plan.

@@ -15,6 +15,7 @@ const BASE = 'https://deslint.com';
 
 const STATIC_ROUTES: { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'] }[] = [
   { path: '/',                               priority: 1.0,  changeFrequency: 'weekly'  },
+  { path: '/launch-check',                   priority: 0.95, changeFrequency: 'weekly'  },
   { path: '/mcp',                            priority: 0.95, changeFrequency: 'weekly'  },
   { path: '/mcp/claude-code',                priority: 0.9,  changeFrequency: 'weekly'  },
   { path: '/mcp/cursor',                     priority: 0.9,  changeFrequency: 'weekly'  },

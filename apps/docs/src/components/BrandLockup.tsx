@@ -37,7 +37,7 @@ export function BrandLockup({
       />
       <span className="flex flex-col leading-none">
         <span
-          className={`${satoshi.className} text-[19px] tracking-[-0.025em] lowercase`}
+          className={`${satoshi.className} text-lg tracking-tight lowercase`}
           aria-label="deslint"
         >
           <span className="text-gray-900">des</span>
@@ -45,7 +45,7 @@ export function BrandLockup({
         </span>
         {showTagline && (
           <span
-            className={`mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400 ${taglineClassName}`}
+            className={`mt-1 text-2xs font-semibold uppercase tracking-extra-wide text-gray-400 ${taglineClassName}`}
           >
             Design Quality Gate
           </span>

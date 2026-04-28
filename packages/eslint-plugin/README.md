@@ -5,7 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/@deslint/eslint-plugin)](https://www.npmjs.com/package/@deslint/eslint-plugin)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-The rule set behind Deslint, the verification layer for AI-generated code. 34 deterministic ESLint rules that verify design-system and accessibility standards on code written by Claude Code, Cursor, Codex, Windsurf, Copilot, and any other AI coding agent — arbitrary colours, inconsistent spacing, missing responsive breakpoints, WCAG 2.2 accessibility gaps, and more. Auto-fix support for 13 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
+The rule set behind Deslint, the verification layer for AI-generated code. 37 deterministic ESLint rules that verify design-system, accessibility, and frontend-safety standards on code written by Claude Code, Cursor, Codex, Windsurf, Copilot, and any other AI coding agent — arbitrary colours, inconsistent spacing, missing responsive breakpoints, WCAG 2.2 accessibility gaps, `dangerouslySetInnerHTML` XSS surfaces, missing `rel="noopener noreferrer"` on external links, and more. Auto-fix support for 14 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
 
 Use `@deslint/cli` alongside the plugin to get a Fix Plan that prioritizes
 auto-fixes, token decisions, accessibility risks, and design debt after every
@@ -57,7 +57,7 @@ export default [
 ];
 ```
 
-## Rules (33)
+## Rules (37)
 
 | Rule | Category | Description | Fixable | Default |
 |------|----------|-------------|:-------:|---------|
@@ -65,6 +65,7 @@ export default [
 | `no-arbitrary-colors` | Colors | Disallow arbitrary color values | Yes | warn |
 | `no-arbitrary-typography` | Typography | Disallow arbitrary font/leading/tracking values | Yes | warn |
 | `no-arbitrary-zindex` | Consistency | Disallow arbitrary z-index values | Yes | warn |
+| `no-arbitrary-border-radius` | Consistency | Disallow arbitrary `rounded-[Npx]` values | Yes | warn |
 | `no-magic-numbers-layout` | Layout | Disallow arbitrary numbers in grid/flex | Yes | warn |
 | `no-inline-styles` | Design System | Disallow inline style attributes | No | off |
 | `consistent-component-spacing` | Consistency | Detect spacing divergence across components | No | warn |
@@ -93,6 +94,9 @@ export default [
 | `lang-attribute` | A11y (WCAG 3.1.1) | Require `lang` on root `<html>` | Yes | warn |
 | `viewport-meta` | A11y (WCAG 1.4.4) | Forbid `user-scalable=no` | No | error |
 | `aria-validation` | A11y (WCAG 4.1.2) | Invalid roles, hallucinated `aria-*` | No | error |
+| `no-dangerous-html` | Frontend Safety | Flag `dangerouslySetInnerHTML` (XSS surface). Whitelists `<script type="application/ld+json">`, `<style>`, and `<Script>` (Next.js) | No | warn |
+| `safe-external-links` | Frontend Safety | Require `rel="noopener noreferrer"` on `<a target="_blank">` | Yes | warn |
+| `iframe-sandbox` | Frontend Safety | Require a `sandbox` attribute on `<iframe>` | No | warn |
 | `max-component-lines` | Code Quality | Flag overly large components | No | off |
 
 ---
@@ -262,6 +266,51 @@ Flags `<img>` elements without `alt` attribute or with meaningless alt text like
 Flags components exceeding a configurable line count (default: 300). Large components are harder to maintain.
 
 **Options:** `maxLines` (default: 300)
+
+---
+
+### `no-dangerous-html`
+
+Flags `dangerouslySetInnerHTML` on JSX elements — the most common XSS path in AI-generated React code, especially when the agent reaches for it instead of rendering text or piping through a sanitizer.
+
+**Whitelisted (known-safe) patterns:** `<script type="application/ld+json">` (Schema.org structured data), `<style dangerouslySetInnerHTML>` (CSS injection has a different threat model), and `<Script dangerouslySetInnerHTML>` (the Next.js `<Script>` component for inline scripts via the framework's loading strategy).
+
+```jsx
+// Bad
+<div dangerouslySetInnerHTML={{ __html: comment }} />
+// Good
+<div>{comment}</div>
+// Or, if HTML is genuinely needed: sanitize first
+<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment) }} />
+```
+
+---
+
+### `safe-external-links`
+
+Flags `<a target="_blank">` missing `rel="noopener noreferrer"`. Without the rel guard, the new tab can navigate the opener (`window.opener`) and leaks the referrer. Autofixable on JSX — inserts both required tokens.
+
+```jsx
+// Bad (auto-fixed)
+<a href="https://x.com" target="_blank">External</a>
+// Good
+<a href="https://x.com" target="_blank" rel="noopener noreferrer">External</a>
+```
+
+---
+
+### `iframe-sandbox`
+
+Flags `<iframe>` without a `sandbox` attribute. Without sandbox, an embedded frame inherits full origin privileges — it can navigate the parent, run scripts, and submit forms. Suggestion only; the right sandbox value is intent-dependent.
+
+```jsx
+// Bad
+<iframe src="https://example.com" />
+// Good — strictest
+<iframe src="https://example.com" sandbox="" />
+// Good — opt-in only what's needed
+<iframe src="https://example.com" sandbox="allow-scripts allow-same-origin" />
+```
 
 ---
 

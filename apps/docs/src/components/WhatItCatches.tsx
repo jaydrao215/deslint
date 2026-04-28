@@ -41,7 +41,7 @@ const CATEGORIES: Category[] = [
     description:
       'Font sizes outside your type scale, mixed weights, arbitrary line heights — hierarchy that reads like a ransom note.',
     examples: {
-      bad: 'text-[15px] leading-[22px]',
+      bad: 'text-base leading-[22px]',
       good: 'text-base leading-relaxed',
     },
     rules: ['no-arbitrary-typography', 'heading-hierarchy'],
@@ -127,7 +127,7 @@ export function WhatItCatches() {
                   {c.rules.map((r) => (
                     <code
                       key={r}
-                      className="text-[10px] font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded"
+                      className="text-2xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded"
                     >
                       {r}
                     </code>

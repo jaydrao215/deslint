@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
+import { LaunchCheckCallout } from '@/components/LaunchCheckCallout';
 import { AgentCompatStrip } from '@/components/AgentCompatStrip';
 import { TrustBanner } from '@/components/TrustBanner';
 import { getGitHubStars } from '@/lib/github-stars';
@@ -102,7 +103,7 @@ const JSON_LD = {
           name: 'What does Deslint catch that ESLint does not?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Design-system drift (arbitrary Tailwind values, hex colours outside your token scale), accessibility failures (WCAG contrast, missing landmarks, alt text), dark-mode gaps, responsive layout issues, bundle bloat, and more. Deslint ships 34 rules purpose-built for frontend code written by AI.',
+            text: 'Design-system drift (arbitrary Tailwind values, hex colours outside your token scale), accessibility failures (WCAG contrast, missing landmarks, alt text), dark-mode gaps, responsive layout issues, bundle bloat, and more. Deslint ships 37 rules purpose-built for frontend code written by AI.',
           },
         },
       ],
@@ -124,6 +125,7 @@ export default async function Home() {
       <Navbar />
       <main>
         <Hero stars={stars} />
+        <LaunchCheckCallout />
         <AgentCompatStrip weeklyDownloads={weeklyDownloads} />
         <TrustBanner />
         <VisualProofSection />

@@ -96,8 +96,8 @@ export function AccessibilitySection() {
                     <span
                       className={
                         c.level === 'A'
-                          ? 'text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded'
-                          : 'text-[10px] font-bold text-primary-dark bg-primary/15 px-2 py-0.5 rounded'
+                          ? 'text-2xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded'
+                          : 'text-2xs font-bold text-primary-dark bg-primary/15 px-2 py-0.5 rounded'
                       }
                     >
                       {c.level}
@@ -106,7 +106,7 @@ export function AccessibilitySection() {
                 ))}
               </ul>
               <div className="px-5 py-3 border-t border-gray-200/80 bg-surface-100">
-                <p className="text-[11px] text-gray-500 leading-relaxed">
+                <p className="text-xs text-gray-500 leading-relaxed">
                   6 Level A &middot; 9 Level AA. Conformance is computed
                   &quot;at-or-below&quot;: one Level A failure drops the whole
                   claim to Not Met.

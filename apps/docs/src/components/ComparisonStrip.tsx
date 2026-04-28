@@ -79,7 +79,7 @@ export function ComparisonStrip() {
               <p className="mb-4 flex-1 text-sm leading-relaxed text-gray-500">
                 {c.body}
               </p>
-              <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 font-mono text-[12px] text-gray-600 ring-1 ring-gray-200/60">
+              <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 font-mono text-xs text-gray-600 ring-1 ring-gray-200/60">
                 <span className="text-gray-400" aria-hidden>
                   ›
                 </span>
@@ -95,7 +95,7 @@ export function ComparisonStrip() {
             href="/docs/rules"
             className="inline-flex items-center gap-1.5 font-medium text-primary hover:text-primary-light"
           >
-            Browse all 34 rules
+            Browse all 37 rules
             <span aria-hidden>→</span>
           </a>
         </div>

@@ -5,7 +5,9 @@
  *
  * Commands:
  *   deslint scan [dir]              — Scan project, report Design Health Score
+ *   deslint launch-check [dir]      — Same engine, indie-facing "Frontend Launch Readiness" banner
  *   deslint fix [dir]               — Fix violations (--all, --interactive, --dry-run)
+ *   deslint share [dir]             — Print + copy a tweetable scorecard
  *   deslint generate-config <target> — Generate AI tool config (cursor, claude, agents)
  */
 
@@ -242,6 +244,294 @@ export function shouldFailOnViolations(
   }
 }
 
+type ScanOpts = {
+  format: string;
+  minScore?: string;
+  failOn?: string;
+  profile?: string;
+  history: boolean;
+  diff?: string;
+  budget?: string;
+};
+
+async function runScanCommand(
+  dir: string,
+  opts: ScanOpts,
+  mode: 'scan' | 'launch-check' = 'scan',
+): Promise<void> {
+  try {
+    const cwd = resolve(dir);
+    const config = loadConfig(cwd);
+    const rules = buildEffectiveRules(config, opts.profile);
+
+    const { gitDiffAddedRanges, filterLintResultByHunks } = await import('./git-diff.js');
+    const diffScope = opts.diff ? gitDiffAddedRanges(opts.diff, cwd) : undefined;
+
+    const allFiles = await discoverFiles({
+      cwd,
+      ignorePatterns: config?.ignore,
+    });
+
+    const files = diffScope
+      ? allFiles.filter((f) => diffScope.files.has(f))
+      : allFiles;
+
+    if (files.length === 0) {
+      if (diffScope) {
+        console.log(chalk.yellow(`\n  No frontend files changed since ${opts.diff}.\n`));
+      } else {
+        console.log(chalk.yellow('\n  No files found to scan.\n'));
+      }
+      process.exit(0);
+    }
+
+    const rawLintResult = await runLint({ files, ruleOverrides: rules, cwd });
+    const lintResult = diffScope
+      ? filterLintResultByHunks(rawLintResult, diffScope)
+      : rawLintResult;
+    const scoreResult = calculateScore(lintResult);
+    const debtResult = calculateDebt(lintResult);
+
+    const outputFormat = opts.format as OutputFormat;
+    if (diffScope && outputFormat === 'text') {
+      console.log(
+        chalk.cyan(
+          `\n  Diff mode: scoped to ${files.length} changed file(s) since ${opts.diff}.`,
+        ),
+      );
+    }
+    console.log(format(outputFormat, lintResult, scoreResult, cwd, mode));
+
+    let previousSnapshot: GateScanSnapshot | undefined;
+    if (config?.qualityGate) {
+      const historyPath = resolve(cwd, '.deslint', 'history.json');
+      if (existsSync(historyPath)) {
+        try {
+          const history: HistoryEntry[] = JSON.parse(readFileSync(historyPath, 'utf-8'));
+          const last = history[history.length - 1];
+          if (last && last.overall !== null) {
+            // Skip a previous snapshot with a null score — the
+            // regression gate has no baseline to compare against
+            // when the prior run wasn't applicable.
+            previousSnapshot = {
+              overall: last.overall,
+              categories: last.categories,
+              totalViolations: last.totalViolations,
+              debtMinutes: 0,
+            };
+          }
+        } catch { /* ignore */ }
+      }
+    }
+
+    const gateResult =
+      scoreResult.overall === null
+        ? {
+            passed: true,
+            enforced: false,
+            failures: [],
+            conditionsChecked: 0,
+          }
+        : evaluateQualityGate(
+            config?.qualityGate,
+            {
+              overall: scoreResult.overall,
+              categories: {
+                colors: scoreResult.categories.colors.score,
+                spacing: scoreResult.categories.spacing.score,
+                typography: scoreResult.categories.typography.score,
+                responsive: scoreResult.categories.responsive.score,
+                consistency: scoreResult.categories.consistency.score,
+              },
+              totalViolations: lintResult.totalViolations,
+              debtMinutes: debtResult.totalMinutes,
+            },
+            previousSnapshot,
+          );
+
+    if (gateResult.conditionsChecked > 0 && outputFormat === 'text') {
+      const colorFn = gateResult.passed ? chalk.green : chalk.red;
+      console.log(colorFn(`  ${formatGateResult(gateResult)}`));
+      console.log('');
+    }
+
+    // Budget evaluation (opt-in via .deslint/budget.yml or --budget <path>).
+    // Diff mode intentionally skips budget evaluation — a partial scan cannot
+    // be meaningfully compared to full-repo caps.
+    const loaded = diffScope
+      ? undefined
+      : await loadBudget({ explicitPath: opts.budget, cwd }).catch((err) => {
+          console.error(
+            chalk.red(
+              `  Error loading budget: ${err instanceof Error ? err.message : String(err)}`,
+            ),
+          );
+          process.exit(1);
+        });
+
+    const budgetSnapshot: BudgetScanSnapshot = {
+      // When the scan isn't applicable, use 100 so the budget gate
+      // is a no-op for score-based conditions. Rule-count caps still
+      // evaluate against the (empty) byRule map correctly.
+      overall: scoreResult.overall ?? 100,
+      categories: {
+        colors: scoreResult.categories.colors.score,
+        spacing: scoreResult.categories.spacing.score,
+        typography: scoreResult.categories.typography.score,
+        responsive: scoreResult.categories.responsive.score,
+        consistency: scoreResult.categories.consistency.score,
+      },
+      totalViolations: lintResult.totalViolations,
+      debtMinutes: debtResult.totalMinutes,
+      byRule: lintResult.byRule,
+    };
+
+    const previousBudgetSnapshot: BudgetScanSnapshot | undefined = previousSnapshot
+      ? {
+          ...previousSnapshot,
+          byRule: {},
+        }
+      : undefined;
+    if (previousBudgetSnapshot) {
+      try {
+        const historyPath = resolve(cwd, '.deslint', 'history.json');
+        if (existsSync(historyPath)) {
+          const history: HistoryEntry[] = JSON.parse(readFileSync(historyPath, 'utf-8'));
+          const last = history[history.length - 1];
+          if (last?.byRule) previousBudgetSnapshot.byRule = last.byRule;
+        }
+      } catch { /* ignore */ }
+    }
+
+    const budgetResult = evaluateBudget(
+      loaded?.budget,
+      budgetSnapshot,
+      previousBudgetSnapshot,
+    );
+
+    if (budgetResult.conditionsChecked > 0 && outputFormat === 'text') {
+      const colorFn = budgetResult.passed ? chalk.green : chalk.red;
+      console.log(colorFn(`  ${formatBudgetResult(budgetResult)}`));
+      if (loaded) {
+        console.log(chalk.gray(`  Budget file: ${loaded.path}`));
+      }
+      console.log('');
+    }
+
+    if (opts.history && outputFormat === 'text' && !diffScope) {
+      saveHistory(cwd, lintResult, scoreResult);
+    }
+
+    if (outputFormat === 'text' && scoreResult.overall !== null) {
+      generateHtmlReport(lintResult, scoreResult, cwd);
+      console.log(chalk.gray(`  Full report: .deslint/report.html`));
+      console.log('');
+    } else if (outputFormat === 'text') {
+      console.log(
+        chalk.gray(
+          '  HTML report skipped — no applicable input for the rule set.',
+        ),
+      );
+      console.log('');
+    }
+
+    if (outputFormat === 'text') {
+      // Install-to-value: tell the user the literal next command to
+      // run. Without this, a first-time user finishes `scan` with no
+      // idea whether to fix, gate in CI, or re-import tokens.
+      const fixableCount = lintResult.results.reduce(
+        (sum, r) =>
+          sum + (r.fixableErrorCount ?? 0) + (r.fixableWarningCount ?? 0),
+        0,
+      );
+      if (lintResult.totalViolations === 0) {
+        console.log(chalk.bold('  Next:'));
+        if (mode === 'launch-check') {
+          console.log(
+            chalk.gray(
+              '    Ship it. Share your scorecard with `npx deslint share`.',
+            ),
+          );
+        } else {
+          console.log(
+            chalk.gray(
+              '    Ship it. Gate this in CI with ' +
+                '`npx deslint scan --min-score 85 --format sarif`',
+            ),
+          );
+        }
+        console.log('');
+      } else {
+        console.log(chalk.bold('  Next:'));
+        if (fixableCount > 0) {
+          console.log(
+            chalk.gray(
+              `    ${fixableCount} auto-fixable. Review with ` +
+                '`npx deslint fix --interactive`',
+            ),
+          );
+          console.log(
+            chalk.gray(
+              '    Or apply every safe fix: `npx deslint fix --all`',
+            ),
+          );
+        } else {
+          console.log(
+            chalk.gray(
+              '    Walk the remaining violations with ' +
+                '`npx deslint fix --interactive`',
+            ),
+          );
+        }
+        console.log('');
+      }
+    }
+
+    const failOn = parseFailOn(opts.failOn);
+
+    if (opts.minScore) {
+      const minScore = parseInt(opts.minScore, 10);
+      if (scoreResult.overall === null) {
+        // Can't gate on a score the scanner didn't earn — pass
+        // through without failing the job. The "N/A" banner already
+        // made this visible to the user.
+        console.error(
+          chalk.yellow(
+            `  Score N/A — --min-score ${minScore} skipped ` +
+              `(${scoreResult.notApplicableReason ?? 'no applicable input'}).`,
+          ),
+        );
+      } else if (scoreResult.overall < minScore) {
+        console.error(
+          chalk.red(`  Score ${scoreResult.overall} is below minimum threshold ${minScore}`),
+        );
+        process.exit(1);
+      }
+    }
+
+    if (gateResult.enforced && !gateResult.passed) {
+      process.exit(1);
+    }
+
+    if (budgetResult.enforced && !budgetResult.passed) {
+      process.exit(1);
+    }
+
+    if (
+      shouldFailOnViolations(
+        failOn,
+        lintResult.bySeverity.errors,
+        lintResult.bySeverity.warnings,
+      )
+    ) {
+      process.exit(1);
+    }
+  } catch (err) {
+    console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
+    process.exit(1);
+  }
+}
+
 program
   .command('scan')
   .description('Scan project for design quality violations and report Design Health Score')
@@ -265,271 +555,30 @@ program
     '--budget <path>',
     'Evaluate against an error budget file (defaults to .deslint/budget.yml, falls back to .deslint/budget.json).',
   )
-  .action(async (dir: string, opts: { format: string; minScore?: string; failOn?: string; profile?: string; history: boolean; diff?: string; budget?: string }) => {
-    try {
-      const cwd = resolve(dir);
-      const config = loadConfig(cwd);
-      const rules = buildEffectiveRules(config, opts.profile);
+  .action((dir: string, opts: ScanOpts) => runScanCommand(dir, opts, 'scan'));
 
-      const { gitDiffAddedRanges, filterLintResultByHunks } = await import('./git-diff.js');
-      const diffScope = opts.diff ? gitDiffAddedRanges(opts.diff, cwd) : undefined;
-
-      const allFiles = await discoverFiles({
-        cwd,
-        ignorePatterns: config?.ignore,
-      });
-
-      const files = diffScope
-        ? allFiles.filter((f) => diffScope.files.has(f))
-        : allFiles;
-
-      if (files.length === 0) {
-        if (diffScope) {
-          console.log(chalk.yellow(`\n  No frontend files changed since ${opts.diff}.\n`));
-        } else {
-          console.log(chalk.yellow('\n  No files found to scan.\n'));
-        }
-        process.exit(0);
-      }
-
-      const rawLintResult = await runLint({ files, ruleOverrides: rules, cwd });
-      const lintResult = diffScope
-        ? filterLintResultByHunks(rawLintResult, diffScope)
-        : rawLintResult;
-      const scoreResult = calculateScore(lintResult);
-      const debtResult = calculateDebt(lintResult);
-
-      const outputFormat = opts.format as OutputFormat;
-      if (diffScope && outputFormat === 'text') {
-        console.log(
-          chalk.cyan(
-            `\n  Diff mode: scoped to ${files.length} changed file(s) since ${opts.diff}.`,
-          ),
-        );
-      }
-      console.log(format(outputFormat, lintResult, scoreResult, cwd));
-
-      let previousSnapshot: GateScanSnapshot | undefined;
-      if (config?.qualityGate) {
-        const historyPath = resolve(cwd, '.deslint', 'history.json');
-        if (existsSync(historyPath)) {
-          try {
-            const history: HistoryEntry[] = JSON.parse(readFileSync(historyPath, 'utf-8'));
-            const last = history[history.length - 1];
-            if (last && last.overall !== null) {
-              // Skip a previous snapshot with a null score — the
-              // regression gate has no baseline to compare against
-              // when the prior run wasn't applicable.
-              previousSnapshot = {
-                overall: last.overall,
-                categories: last.categories,
-                totalViolations: last.totalViolations,
-                debtMinutes: 0,
-              };
-            }
-          } catch { /* ignore */ }
-        }
-      }
-
-      const gateResult =
-        scoreResult.overall === null
-          ? {
-              passed: true,
-              enforced: false,
-              failures: [],
-              conditionsChecked: 0,
-            }
-          : evaluateQualityGate(
-              config?.qualityGate,
-              {
-                overall: scoreResult.overall,
-                categories: {
-                  colors: scoreResult.categories.colors.score,
-                  spacing: scoreResult.categories.spacing.score,
-                  typography: scoreResult.categories.typography.score,
-                  responsive: scoreResult.categories.responsive.score,
-                  consistency: scoreResult.categories.consistency.score,
-                },
-                totalViolations: lintResult.totalViolations,
-                debtMinutes: debtResult.totalMinutes,
-              },
-              previousSnapshot,
-            );
-
-      if (gateResult.conditionsChecked > 0 && outputFormat === 'text') {
-        const colorFn = gateResult.passed ? chalk.green : chalk.red;
-        console.log(colorFn(`  ${formatGateResult(gateResult)}`));
-        console.log('');
-      }
-
-      // Budget evaluation (opt-in via .deslint/budget.yml or --budget <path>).
-      // Diff mode intentionally skips budget evaluation — a partial scan cannot
-      // be meaningfully compared to full-repo caps.
-      const loaded = diffScope
-        ? undefined
-        : await loadBudget({ explicitPath: opts.budget, cwd }).catch((err) => {
-            console.error(
-              chalk.red(
-                `  Error loading budget: ${err instanceof Error ? err.message : String(err)}`,
-              ),
-            );
-            process.exit(1);
-          });
-
-      const budgetSnapshot: BudgetScanSnapshot = {
-        // When the scan isn't applicable, use 100 so the budget gate
-        // is a no-op for score-based conditions. Rule-count caps still
-        // evaluate against the (empty) byRule map correctly.
-        overall: scoreResult.overall ?? 100,
-        categories: {
-          colors: scoreResult.categories.colors.score,
-          spacing: scoreResult.categories.spacing.score,
-          typography: scoreResult.categories.typography.score,
-          responsive: scoreResult.categories.responsive.score,
-          consistency: scoreResult.categories.consistency.score,
-        },
-        totalViolations: lintResult.totalViolations,
-        debtMinutes: debtResult.totalMinutes,
-        byRule: lintResult.byRule,
-      };
-
-      const previousBudgetSnapshot: BudgetScanSnapshot | undefined = previousSnapshot
-        ? {
-            ...previousSnapshot,
-            byRule: {},
-          }
-        : undefined;
-      if (previousBudgetSnapshot) {
-        try {
-          const historyPath = resolve(cwd, '.deslint', 'history.json');
-          if (existsSync(historyPath)) {
-            const history: HistoryEntry[] = JSON.parse(readFileSync(historyPath, 'utf-8'));
-            const last = history[history.length - 1];
-            if (last?.byRule) previousBudgetSnapshot.byRule = last.byRule;
-          }
-        } catch { /* ignore */ }
-      }
-
-      const budgetResult = evaluateBudget(
-        loaded?.budget,
-        budgetSnapshot,
-        previousBudgetSnapshot,
-      );
-
-      if (budgetResult.conditionsChecked > 0 && outputFormat === 'text') {
-        const colorFn = budgetResult.passed ? chalk.green : chalk.red;
-        console.log(colorFn(`  ${formatBudgetResult(budgetResult)}`));
-        if (loaded) {
-          console.log(chalk.gray(`  Budget file: ${loaded.path}`));
-        }
-        console.log('');
-      }
-
-      if (opts.history && outputFormat === 'text' && !diffScope) {
-        saveHistory(cwd, lintResult, scoreResult);
-      }
-
-      if (outputFormat === 'text' && scoreResult.overall !== null) {
-        generateHtmlReport(lintResult, scoreResult, cwd);
-        console.log(chalk.gray(`  Full report: .deslint/report.html`));
-        console.log('');
-      } else if (outputFormat === 'text') {
-        console.log(
-          chalk.gray(
-            '  HTML report skipped — no applicable input for the rule set.',
-          ),
-        );
-        console.log('');
-      }
-
-      if (outputFormat === 'text') {
-        // Install-to-value: tell the user the literal next command to
-        // run. Without this, a first-time user finishes `scan` with no
-        // idea whether to fix, gate in CI, or re-import tokens.
-        const fixableCount = lintResult.results.reduce(
-          (sum, r) =>
-            sum + (r.fixableErrorCount ?? 0) + (r.fixableWarningCount ?? 0),
-          0,
-        );
-        if (lintResult.totalViolations === 0) {
-          console.log(chalk.bold('  Next:'));
-          console.log(
-            chalk.gray(
-              '    Ship it. Gate this in CI with ' +
-                '`npx deslint scan --min-score 85 --format sarif`',
-            ),
-          );
-          console.log('');
-        } else {
-          console.log(chalk.bold('  Next:'));
-          if (fixableCount > 0) {
-            console.log(
-              chalk.gray(
-                `    ${fixableCount} auto-fixable. Review with ` +
-                  '`npx deslint fix --interactive`',
-              ),
-            );
-            console.log(
-              chalk.gray(
-                '    Or apply every safe fix: `npx deslint fix --all`',
-              ),
-            );
-          } else {
-            console.log(
-              chalk.gray(
-                '    Walk the remaining violations with ' +
-                  '`npx deslint fix --interactive`',
-              ),
-            );
-          }
-          console.log('');
-        }
-      }
-
-      const failOn = parseFailOn(opts.failOn);
-
-      if (opts.minScore) {
-        const minScore = parseInt(opts.minScore, 10);
-        if (scoreResult.overall === null) {
-          // Can't gate on a score the scanner didn't earn — pass
-          // through without failing the job. The "N/A" banner already
-          // made this visible to the user.
-          console.error(
-            chalk.yellow(
-              `  Score N/A — --min-score ${minScore} skipped ` +
-                `(${scoreResult.notApplicableReason ?? 'no applicable input'}).`,
-            ),
-          );
-        } else if (scoreResult.overall < minScore) {
-          console.error(
-            chalk.red(`  Score ${scoreResult.overall} is below minimum threshold ${minScore}`),
-          );
-          process.exit(1);
-        }
-      }
-
-      if (gateResult.enforced && !gateResult.passed) {
-        process.exit(1);
-      }
-
-      if (budgetResult.enforced && !budgetResult.passed) {
-        process.exit(1);
-      }
-
-      if (
-        shouldFailOnViolations(
-          failOn,
-          lintResult.bySeverity.errors,
-          lintResult.bySeverity.warnings,
-        )
-      ) {
-        process.exit(1);
-      }
-    } catch (err) {
-      console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
-      process.exit(1);
-    }
-  });
+program
+  .command('launch-check')
+  .description('Free launch readiness check for AI-generated frontends (alias of scan with launch-readiness banner)')
+  .argument('[dir]', 'Project directory to scan', '.')
+  .option('-f, --format <format>', 'Output format: text, json, sarif', 'text')
+  .option('--min-score <score>', 'Fail if score is below this threshold')
+  .option(
+    '--fail-on <level>',
+    'Exit 1 when violations of <level> are found. One of: error (default), warning, any, never.',
+    'error',
+  )
+  .option('--profile <name>', 'Use a named severity profile from .deslintrc.json')
+  .option('--no-history', 'Do not save score to history file')
+  .option(
+    '--diff <ref>',
+    'Only report violations on lines changed since <ref> (e.g. origin/main, HEAD~1). Requires git.',
+  )
+  .option(
+    '--budget <path>',
+    'Evaluate against an error budget file (defaults to .deslint/budget.yml, falls back to .deslint/budget.json).',
+  )
+  .action((dir: string, opts: ScanOpts) => runScanCommand(dir, opts, 'launch-check'));
 
 program
   .command('fix')
@@ -1134,6 +1183,87 @@ program
         console.log(chalk.green(`  Opened report in browser`));
       }
     });
+  });
+
+program
+  .command('share')
+  .description('Print a tweetable launch-readiness scorecard and copy it to the clipboard')
+  .argument('[dir]', 'Project directory to scan', '.')
+  .action(async (dir: string) => {
+    try {
+      const cwd = resolve(dir);
+      const config = loadConfig(cwd);
+      const rules = buildEffectiveRules(config, undefined);
+
+      const files = await discoverFiles({ cwd, ignorePatterns: config?.ignore });
+      if (files.length === 0) {
+        console.log(chalk.yellow('\n  No files found to scan.\n'));
+        process.exit(0);
+      }
+
+      const lintResult = await runLint({ files, ruleOverrides: rules, cwd });
+      const scoreResult = calculateScore(lintResult);
+
+      if (scoreResult.overall === null) {
+        console.log(
+          chalk.yellow(
+            '\n  Score N/A — no applicable input. Try `npx deslint launch-check` for details.\n',
+          ),
+        );
+        process.exit(0);
+      }
+
+      const cats = scoreResult.categories;
+      const scorecard =
+        `Frontend Launch Readiness: ${scoreResult.overall}/100\n` +
+        `Colors ${cats.colors.score} · Spacing ${cats.spacing.score} · ` +
+        `Typography ${cats.typography.score} · Responsive ${cats.responsive.score} · ` +
+        `Consistency ${cats.consistency.score}\n` +
+        `Scanned with \`npx deslint launch-check\` — https://deslint.com/launch-check`;
+
+      console.log('');
+      console.log(scorecard);
+      console.log('');
+
+      const { spawn } = await import('node:child_process');
+      const platform = process.platform;
+      const candidates: Array<{ cmd: string; args: string[] }> =
+        platform === 'darwin'
+          ? [{ cmd: 'pbcopy', args: [] }]
+          : platform === 'win32'
+            ? [{ cmd: 'clip', args: [] }]
+            : [
+                { cmd: 'wl-copy', args: [] },
+                { cmd: 'xclip', args: ['-selection', 'clipboard'] },
+                { cmd: 'xsel', args: ['--clipboard', '--input'] },
+              ];
+
+      const copied = await new Promise<boolean>((resolveCopy) => {
+        const tryNext = (i: number) => {
+          if (i >= candidates.length) return resolveCopy(false);
+          const { cmd, args } = candidates[i];
+          const proc = spawn(cmd, args, { stdio: ['pipe', 'ignore', 'ignore'] });
+          proc.on('error', () => tryNext(i + 1));
+          proc.on('exit', (code) => resolveCopy(code === 0));
+          proc.stdin.end(scorecard);
+        };
+        tryNext(0);
+      });
+
+      if (copied) {
+        console.log(chalk.green('  Copied to clipboard. Paste into X / a PR / wherever.'));
+      } else {
+        console.log(
+          chalk.gray(
+            '  Clipboard tool not found (install pbcopy/xclip/wl-copy/clip). Copy the scorecard above manually.',
+          ),
+        );
+      }
+      console.log('');
+    } catch (err) {
+      console.error(chalk.red(`  Error: ${err instanceof Error ? err.message : String(err)}`));
+      process.exit(1);
+    }
   });
 
 const runningAsCli =

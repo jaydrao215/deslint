@@ -96,7 +96,7 @@ export function Footer() {
                 MIT licensed &middot; always-free open source core
               </span>
             </p>
-            <p className="text-[11px] text-gray-400 sm:text-xs">
+            <p className="text-xs text-gray-400 sm:text-xs">
               Local-first &middot; deterministic &middot; zero cloud dependency
             </p>
           </div>

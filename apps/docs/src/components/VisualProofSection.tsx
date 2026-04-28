@@ -242,7 +242,7 @@ export function VisualProofSection() {
                 </div>
               </div>
             </div>
-            <div className="hidden items-center gap-3 text-[10px] text-gray-400 sm:flex">
+            <div className="hidden items-center gap-3 text-2xs text-gray-400 sm:flex">
               <span className="font-mono">1280×900 · H.264</span>
               <span className="h-3 w-px bg-gray-200" aria-hidden />
               <a

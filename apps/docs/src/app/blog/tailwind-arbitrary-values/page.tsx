@@ -78,7 +78,7 @@ function RuleCard({ name, catches }: { name: string; catches: string }) {
       <code className="block text-sm font-mono font-semibold text-primary mb-1.5">
         {name}
       </code>
-      <code className="block text-[12px] font-mono text-gray-500 leading-relaxed">
+      <code className="block text-xs font-mono text-gray-500 leading-relaxed">
         catches: {catches}
       </code>
     </div>
@@ -383,7 +383,7 @@ export default function TailwindArbitraryValuesPost() {
                   <h3 className="text-xl font-semibold text-gray-900">
                     The hex-outside-palette
                   </h3>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-fail">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-fail">
                     Most damaging
                   </span>
                 </div>
@@ -431,7 +431,7 @@ export default function TailwindArbitraryValuesPost() {
           {/* Batch 4: Pull quote + AI amplification */}
           <FadeIn>
             <blockquote className="relative rounded-2xl bg-gradient-to-br from-primary-50 via-white to-primary-50/40 border border-primary/20 px-8 py-10 my-4">
-              <p className="text-2xl sm:text-[1.6rem] font-semibold text-gray-900 leading-snug tracking-tight">
+              <p className="text-2xl font-semibold text-gray-900 leading-snug tracking-tight">
                 The design system you have is whatever survives your last
                 thirty AI-generated pull requests.
               </p>

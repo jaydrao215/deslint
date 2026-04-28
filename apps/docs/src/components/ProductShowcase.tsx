@@ -114,7 +114,7 @@ function SurfaceRow({ surface }: { surface: Surface }) {
   const copyCol = (
     <FadeIn direction={surface.reverse ? 'right' : 'left'}>
       <div className="max-w-lg">
-        <p className="text-xs font-mono font-semibold text-primary/70 uppercase tracking-[0.18em] mb-3">
+        <p className="text-xs font-mono font-semibold text-primary/70 uppercase tracking-extra-wide mb-3">
           {surface.eyebrow}
         </p>
         <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 leading-tight text-balance">

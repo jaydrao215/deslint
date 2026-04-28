@@ -347,7 +347,7 @@ function WaitlistForm({ tier }: { tier: Tier }) {
           {state === 'submitting' ? 'Joining...' : tier.cta}
         </button>
       </div>
-      <p className="text-[11px] text-gray-400 text-center">
+      <p className="text-xs text-gray-400 text-center">
         No spam, ever. We&apos;ll only email when {tier.name} launches.
       </p>
     </form>

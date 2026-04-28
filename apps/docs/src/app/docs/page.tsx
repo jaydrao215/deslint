@@ -65,7 +65,7 @@ const CARDS = [
     href: '/docs/rules',
     icon: Shield,
     title: 'Rules Reference',
-    description: 'All 34 rules with examples, options, and auto-fix behavior.',
+    description: 'All 37 rules with examples, options, and auto-fix behavior.',
     color: 'text-warn bg-warn/10 border-warn/20',
   },
 ];
@@ -113,7 +113,7 @@ export default function DocsIndex() {
                 <span className="font-medium text-gray-800">Use if:</span>{' '}
                 {s.useIf}
               </p>
-              <div className="mb-3 rounded-lg bg-gray-950 px-3 py-2 font-mono text-[12px] text-gray-200 overflow-x-auto">
+              <div className="mb-3 rounded-lg bg-gray-950 px-3 py-2 font-mono text-xs text-gray-200 overflow-x-auto">
                 <span className="text-gray-500 select-none">$ </span>
                 {s.install}
               </div>
