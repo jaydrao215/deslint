@@ -49,6 +49,12 @@ const config: Config = {
         sans: ['Satoshi', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
+      fontSize: {
+        '2xs': ['10px', { lineHeight: '14px' }],
+      },
+      letterSpacing: {
+        'extra-wide': '0.18em',
+      },
       animation: {
         'fade-in': 'fadeIn 0.6s ease-out forwards',
         'fade-in-up': 'fadeInUp 0.6s ease-out forwards',

@@ -142,7 +142,7 @@ export default function ActionHubPage() {
             <code className="font-mono text-sm">GITHUB_TOKEN</code>, no code
             egress.
           </p>
-          <div className="rounded-xl bg-gray-950 text-gray-200 font-mono text-[12.5px] leading-relaxed px-5 py-5 whitespace-pre overflow-x-auto">
+          <div className="rounded-xl bg-gray-950 text-gray-200 font-mono text-xs leading-relaxed px-5 py-5 whitespace-pre overflow-x-auto">
             {WORKFLOW_YAML}
           </div>
         </section>
@@ -197,10 +197,10 @@ export default function ActionHubPage() {
               <tbody className="divide-y divide-gray-100">
                 {INPUTS.map((i) => (
                   <tr key={i.name} className="bg-white">
-                    <td className="px-4 py-3 font-mono text-[12px] font-semibold text-primary whitespace-nowrap">
+                    <td className="px-4 py-3 font-mono text-xs font-semibold text-primary whitespace-nowrap">
                       {i.name}
                     </td>
-                    <td className="px-4 py-3 font-mono text-[12px] text-gray-500 whitespace-nowrap">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap">
                       {i.default}
                     </td>
                     <td className="px-4 py-3 text-gray-700">{i.meaning}</td>

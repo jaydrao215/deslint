@@ -183,7 +183,7 @@ export function ComparisonTable() {
                     <th className="px-3 py-4 w-[12%] min-w-[110px] sm:min-w-[110px] md:min-w-[110px] bg-primary-50/70 border-x-2 border-primary/30">
                       <div className="flex flex-col items-center">
                         <span className="text-primary font-bold text-sm">Deslint</span>
-                        <span className="text-[10px] text-primary-light font-semibold uppercase tracking-wider mt-0.5">
+                        <span className="text-2xs text-primary-light font-semibold uppercase tracking-wider mt-0.5">
                           This tool
                         </span>
                       </div>
@@ -296,7 +296,7 @@ function ColHeader({ top, sub }: { top: string; sub: string }) {
     <th className="px-3 py-4 w-[12%] min-w-[110px] sm:min-w-[110px] md:min-w-[110px]">
       <div className="flex flex-col items-center">
         <span className="text-gray-900 font-semibold text-sm">{top}</span>
-        <span className="text-[10px] text-gray-400 font-medium mt-0.5">{sub}</span>
+        <span className="text-2xs text-gray-400 font-medium mt-0.5">{sub}</span>
       </div>
     </th>
   );

@@ -174,7 +174,7 @@ function AgentLink({
       <div className="text-sm font-semibold text-white group-hover:text-primary-light motion-safe:transition-colors">
         {label}
       </div>
-      <div className="text-[11px] text-gray-500 mt-0.5 font-mono">{sub}</div>
+      <div className="text-xs text-gray-500 mt-0.5 font-mono">{sub}</div>
     </Link>
   );
 }
@@ -209,11 +209,11 @@ function RealSessionPanel() {
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-pass motion-safe:animate-pulse" />
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-pass-light">
+          <span className="text-xs font-semibold uppercase tracking-wider text-pass-light">
             Unedited recording
           </span>
         </div>
-        <span className="text-[11px] font-mono text-gray-500">
+        <span className="text-xs font-mono text-gray-500">
           asciinema · node packages/mcp/dist/cli.js
         </span>
       </div>

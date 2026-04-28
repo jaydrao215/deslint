@@ -126,7 +126,7 @@ export function TrustBanner() {
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white shadow-sm shadow-primary/20">
                     {p.icon}
                   </div>
-                  <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-primary-light">
+                  <span className="rounded-full bg-primary-50 px-2 py-0.5 text-2xs font-bold uppercase tracking-widest text-primary-light">
                     {p.badge}
                   </span>
                 </div>
