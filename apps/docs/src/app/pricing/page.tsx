@@ -33,6 +33,7 @@ const TIERS: Tier[] = [
     features: [
       'MCP server — Claude Code, Cursor, Codex, Windsurf',
       '34 deterministic rules, 13 with safe auto-fix',
+      'Fix Plan in CLI, reports, and PR comments',
       'WCAG 2.2 AA compliance reports',
       'Design Health Score + quality gates',
       'Reproducible attestations + commit-trailer verification',

@@ -31,6 +31,67 @@ function violationCategoryKey(ruleId: string): RuleCategory | 'other' {
   return RULE_CATEGORY_MAP[ruleId] ?? 'other';
 }
 
+function shortRule(ruleId: string): string {
+  return ruleId.replace(/^deslint\//, '');
+}
+
+function renderFixPlan(data: ReportData): string {
+  const plan = data.fixPlan;
+  if (!plan.hasWork || plan.parseOnly) return '';
+
+  const cards: string[] = [];
+
+  if (plan.autoFixable.count > 0) {
+    cards.push(`<div class="action-card action-fix">
+      <div class="action-kicker">Auto-fix now</div>
+      <div class="action-title">${plan.autoFixable.count} issue${plan.autoFixable.count === 1 ? '' : 's'}</div>
+      <div class="action-copy">${plan.autoFixable.rules.slice(0, 3).map(r => `<span>${esc(shortRule(r.ruleId))}</span>`).join('')}</div>
+      <code>${esc(plan.autoFixable.command ?? 'npx deslint fix --all')}</code>
+    </div>`);
+  }
+
+  if (plan.tokenDecisions.count > 0) {
+    const repeated = plan.tokenDecisions.repeatedValues > 0
+      ? `${plan.tokenDecisions.repeatedValues} repeated value${plan.tokenDecisions.repeatedValues === 1 ? '' : 's'}`
+      : 'Review intent before naming tokens';
+    cards.push(`<div class="action-card action-token">
+      <div class="action-kicker">Needs design decision</div>
+      <div class="action-title">${plan.tokenDecisions.count} token candidate${plan.tokenDecisions.count === 1 ? '' : 's'}</div>
+      <div class="action-copy">${esc(repeated)}</div>
+      <code>${esc(plan.tokenDecisions.command ?? 'npx deslint suggest-tokens .')}</code>
+    </div>`);
+  }
+
+  if (plan.accessibility.count > 0) {
+    const label = plan.accessibility.errors > 0 ? 'Accessibility blockers' : 'Accessibility risks';
+    const detail = plan.accessibility.errors > 0
+      ? `${plan.accessibility.errors} error${plan.accessibility.errors === 1 ? '' : 's'} before merge`
+      : 'WCAG-mapped issues to review';
+    cards.push(`<div class="action-card action-a11y">
+      <div class="action-kicker">${esc(label)}</div>
+      <div class="action-title">${plan.accessibility.count} WCAG issue${plan.accessibility.count === 1 ? '' : 's'}</div>
+      <div class="action-copy">${esc(detail)}</div>
+      <code>npx deslint compliance</code>
+    </div>`);
+  }
+
+  if (plan.topDebt.length > 0) {
+    cards.push(`<div class="action-card action-debt">
+      <div class="action-kicker">Highest design debt</div>
+      <div class="action-title">${esc(formatDebt(plan.topDebt[0].effortMinutes))}</div>
+      <div class="action-copy">${plan.topDebt.map(r => `<span>${esc(formatDebt(r.effortMinutes))} ${esc(shortRule(r.ruleId))}</span>`).join('')}</div>
+      <a href="#debt">Open debt table &rarr;</a>
+    </div>`);
+  }
+
+  if (cards.length === 0) return '';
+
+  return `<section id="actions" class="section">
+  <div class="section-head">Recommended next actions <span class="sh-count">${cards.length} step${cards.length === 1 ? '' : 's'} from this scan</span></div>
+  <div class="action-grid">${cards.join('')}</div>
+</section>`;
+}
+
 export function buildHtml(data: ReportData): string {
   const cats = data.score.categories;
   const fixableCount = data.ruleSummaries.filter(r => r.fixable).reduce((s, r) => s + r.count, 0);
@@ -102,6 +163,7 @@ export function buildHtml(data: ReportData): string {
   </a>
   <nav class="topnav" aria-label="Report sections">
     <a href="#overview">Overview</a>
+    ${data.fixPlan.hasWork && !data.fixPlan.parseOnly ? '<a href="#actions">Actions</a>' : ''}
     <a href="#categories">Categories</a>
     <a href="#rules">Rules</a>
     ${data.fileHotspots.length > 0 ? '<a href="#files">Files</a>' : ''}
@@ -139,6 +201,8 @@ export function buildHtml(data: ReportData): string {
     </div>
   </div>
 </section>
+
+${renderFixPlan(data)}
 
 <section id="categories" class="section">
   <div class="section-head">Categories <span class="sh-count">${data.summary.totalViolations} violation${data.summary.totalViolations === 1 ? '' : 's'} across 5 dimensions</span></div>

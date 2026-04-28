@@ -58,6 +58,14 @@ export type { TrailerInput, ParsedTrailer } from './trailer.js';
 
 export { RULE_EFFORT_MINUTES, DEFAULT_RULE_EFFORT_MINUTES, effortForRule } from './debt-table.js';
 
+export { buildFixPlan } from './fix-plan.js';
+export type {
+  FixPlan,
+  FixPlanInput,
+  FixPlanMessage,
+  FixPlanRuleSummary,
+} from './fix-plan.js';
+
 export {
   parseW3CTokens,
   loadW3CTokensFile,

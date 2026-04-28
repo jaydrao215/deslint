@@ -66,6 +66,7 @@ export interface ScanResult {
   filesScanned: number;
   filesWithViolations: number;
   debtMinutes: number;
+  byRule: Record<string, number>;
   /** Parser failures (ESLint messages with `ruleId: null`, severity 2).
    *  Not counted in `totalViolations` / `errors` / `warnings` / `byRule`
    *  — they don't tell us anything about design quality and leaking
@@ -370,6 +371,7 @@ async function scanFiles(
       filesScanned: 0,
       filesWithViolations: 0,
       debtMinutes: 0,
+      byRule: {},
       parseErrors: 0,
       filesWithParseErrors: 0,
       qualityGate: scanConfig.qualityGate,
@@ -645,6 +647,7 @@ function toScanResult(
     filesScanned: lintResult.totalFiles,
     filesWithViolations: lintResult.filesWithViolations,
     debtMinutes: computeDebtMinutes(lintResult.byRule),
+    byRule: lintResult.byRule,
     parseErrors: lintResult.parseErrors,
     filesWithParseErrors: lintResult.filesWithParseErrors,
     inlineViolations: buildInlineViolations(lintResult.results, cwd),

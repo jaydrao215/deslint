@@ -5,6 +5,7 @@ import type { LintResult } from './lint-runner.js';
 import type { ScoreResult, CategoryScore } from './score.js';
 import type { RuleCategory } from './lint-runner.js';
 import { calculateDebt, formatDebt } from './debt.js';
+import { buildFixPlan, type FixPlan } from '@deslint/shared';
 
 const _require = createRequire(import.meta.url);
 const _pkg = _require('../package.json') as { version: string };
@@ -40,6 +41,69 @@ function scoreBar(score: number): string {
   const empty = width - filled;
   const color = scoreColor(score);
   return color('█'.repeat(filled)) + chalk.gray('░'.repeat(empty));
+}
+
+function shortRule(ruleId: string): string {
+  return ruleId.replace(/^deslint\//, '');
+}
+
+function formatRuleList(rules: FixPlan['topDebt']): string {
+  return rules
+    .slice(0, 3)
+    .map((rule) => `${shortRule(rule.ruleId)} (${rule.count})`)
+    .join(', ');
+}
+
+function formatFixPlan(lintResult: LintResult): string[] {
+  const messages = lintResult.results.flatMap((result) => result.messages);
+  const plan = buildFixPlan({
+    totalViolations: lintResult.totalViolations,
+    parseErrors: lintResult.parseErrors,
+    byRule: lintResult.byRule,
+    messages,
+  });
+
+  if (!plan.hasWork || plan.parseOnly) return [];
+
+  const lines: string[] = [];
+  lines.push(chalk.bold('  Fix Plan'));
+
+  if (plan.autoFixable.count > 0) {
+    lines.push(
+      `  ${chalk.green('Auto-fix now:')} ${plan.autoFixable.count} issue${plan.autoFixable.count === 1 ? '' : 's'} across ${formatRuleList(plan.autoFixable.rules)}`,
+    );
+    lines.push(chalk.gray(`    ${plan.autoFixable.command}`));
+  }
+
+  if (plan.tokenDecisions.count > 0) {
+    const repeated = plan.tokenDecisions.repeatedValues > 0
+      ? ` (${plan.tokenDecisions.repeatedValues} repeated value${plan.tokenDecisions.repeatedValues === 1 ? '' : 's'})`
+      : '';
+    lines.push(
+      `  ${chalk.yellow('Needs design decision:')} ${plan.tokenDecisions.count} token candidate${plan.tokenDecisions.count === 1 ? '' : 's'}${repeated}`,
+    );
+    lines.push(chalk.gray(`    ${plan.tokenDecisions.command}`));
+  }
+
+  if (plan.accessibility.count > 0) {
+    const label = plan.accessibility.errors > 0 ? chalk.red('Accessibility blockers:') : chalk.yellow('Accessibility risks:');
+    const suffix = plan.accessibility.errors > 0
+      ? ` (${plan.accessibility.errors} error${plan.accessibility.errors === 1 ? '' : 's'})`
+      : '';
+    lines.push(
+      `  ${label} ${plan.accessibility.count} WCAG-mapped issue${plan.accessibility.count === 1 ? '' : 's'}${suffix}`,
+    );
+    lines.push(chalk.gray(`    npx deslint compliance`));
+  }
+
+  if (plan.topDebt.length > 0) {
+    lines.push(
+      `  ${chalk.cyan('Highest debt:')} ${plan.topDebt.map((rule) => `${formatDebt(rule.effortMinutes)} ${shortRule(rule.ruleId)}`).join(' · ')}`,
+    );
+  }
+
+  lines.push('');
+  return lines;
 }
 
 export function formatText(
@@ -124,6 +188,11 @@ export function formatText(
     }
   }
   lines.push('');
+
+  const fixPlanLines = formatFixPlan(lintResult);
+  if (fixPlanLines.length > 0) {
+    lines.push(...fixPlanLines);
+  }
 
   // ── Per-file violations (grouped by class for repeated violations) ──
   if (lintResult.totalViolations > 0) {

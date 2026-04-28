@@ -51,7 +51,7 @@ const CARDS = [
     href: '/docs/getting-started',
     icon: Rocket,
     title: 'Getting Started',
-    description: 'The complete happy path — zero to an enforced design system in six steps.',
+    description: 'The complete happy path — zero to an enforced design system with a Fix Plan.',
     color: 'text-pass bg-pass/10 border-pass/20',
   },
   {
@@ -81,7 +81,7 @@ export default function DocsIndex() {
         <p className="text-lg text-gray-500 leading-relaxed">
           The verification layer for AI-generated code.
           <br className="hidden sm:block" />
-          MCP server + ESLint plugin + CLI + GitHub Action.
+          MCP server + ESLint plugin + CLI + GitHub Action + PR Fix Plans.
         </p>
       </div>
 

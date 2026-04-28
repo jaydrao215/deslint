@@ -5,7 +5,11 @@
 [![npm version](https://img.shields.io/npm/v/@deslint/eslint-plugin)](https://www.npmjs.com/package/@deslint/eslint-plugin)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-The rule set behind Deslint, the verification layer for AI-generated code. 33 deterministic ESLint rules that verify design-system and accessibility standards on code written by Claude Code, Cursor, Codex, Windsurf, Copilot, and any other AI coding agent — arbitrary colours, inconsistent spacing, missing responsive breakpoints, WCAG 2.2 accessibility gaps, and more. Auto-fix support for 11 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
+The rule set behind Deslint, the verification layer for AI-generated code. 34 deterministic ESLint rules that verify design-system and accessibility standards on code written by Claude Code, Cursor, Codex, Windsurf, Copilot, and any other AI coding agent — arbitrary colours, inconsistent spacing, missing responsive breakpoints, WCAG 2.2 accessibility gaps, and more. Auto-fix support for 13 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
+
+Use `@deslint/cli` alongside the plugin to get a Fix Plan that prioritizes
+auto-fixes, token decisions, accessibility risks, and design debt after every
+scan.
 
 **Zero LLM in the hot path. Zero code leaves your machine.** Validated on real-world open-source projects across React / Next.js, Vue / Nuxt, Angular, and plain HTML with 0% false positive rate and 0 crashes.
 

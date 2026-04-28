@@ -148,6 +148,22 @@ main { max-width: 1180px; margin: 0 auto; padding: 1.5rem 2rem 3rem; }
 .section-desc { font-size: 13px; color: var(--text3); margin-bottom: 1rem; line-height: 1.55; }
 section[id] { scroll-margin-top: 80px; }
 
+.action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; }
+.action-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); min-width: 0; }
+.action-card code { display: inline-block; margin-top: .75rem; max-width: 100%; overflow-x: auto; font-family: var(--mono); font-size: 11px; background: var(--bg3); color: var(--text2); border: 1px solid var(--border); border-radius: 4px; padding: .25rem .45rem; user-select: all; }
+.action-card a { display: inline-block; margin-top: .75rem; font-size: 12px; font-weight: 600; }
+.action-kicker { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--text3); margin-bottom: .35rem; }
+.action-title { font-family: var(--font-brand); font-size: 20px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+.action-copy { display: flex; flex-direction: column; gap: .2rem; margin-top: .55rem; min-height: 2.2rem; color: var(--text3); font-size: 12px; line-height: 1.35; }
+.action-fix { border-color: #A7F3D0; }
+.action-fix .action-kicker { color: var(--pass-deep); }
+.action-token { border-color: #FDE68A; }
+.action-token .action-kicker { color: var(--warn-deep); }
+.action-a11y { border-color: #FECACA; }
+.action-a11y .action-kicker { color: var(--fail-deep); }
+.action-debt { border-color: #C7D2FE; }
+.action-debt .action-kicker { color: var(--primary-deep); }
+
 .cat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .75rem; }
 .cat-card { display: block; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; transition: border-color .12s, transform .12s, box-shadow .12s; color: inherit; text-decoration: none; }
 .cat-card:hover { border-color: var(--primary); transform: translateY(-1px); box-shadow: var(--shadow); text-decoration: none; }
@@ -309,6 +325,7 @@ section[id] { scroll-margin-top: 80px; }
   main { padding: 1rem 1rem 2rem; }
   .hero { grid-template-columns: 1fr; gap: 1rem; padding: 1.25rem; }
   .grade-ring { margin: 0 auto; width: 150px; height: 150px; }
+  .action-grid { grid-template-columns: 1fr; }
   .cat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 

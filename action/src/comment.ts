@@ -3,6 +3,7 @@
  */
 
 import type { GateResult } from '@deslint/shared';
+import { buildFixPlan } from '@deslint/shared';
 import type { ScanResult } from './scan.js';
 
 function formatDebt(minutes: number): string {
@@ -36,6 +37,70 @@ function categoryStatus(score: number, maxScore: number): string {
   if (pct >= 90) return ':green_circle:';
   if (pct >= 50) return ':yellow_circle:';
   return ':red_circle:';
+}
+
+function shortRule(ruleId: string): string {
+  return ruleId.replace(/^deslint\//, '');
+}
+
+function formatRuleList(rules: Array<{ ruleId: string; count: number }>): string {
+  return rules
+    .slice(0, 3)
+    .map((rule) => `\`${shortRule(rule.ruleId)}\` (${rule.count})`)
+    .join(', ');
+}
+
+function formatFixPlanSection(result: ScanResult): string[] {
+  const plan = buildFixPlan({
+    totalViolations: result.totalViolations,
+    byRule: result.byRule,
+    messages: result.inlineViolations.map((v) => ({
+      ruleId: v.ruleId,
+      severity: v.severity,
+      message: v.message,
+    })),
+  });
+
+  if (!plan.hasWork || plan.parseOnly) return [];
+
+  const lines: string[] = ['### Fix Plan', ''];
+
+  if (plan.autoFixable.count > 0) {
+    lines.push(
+      `- **Auto-fix now:** ${plan.autoFixable.count} issue${plan.autoFixable.count === 1 ? '' : 's'} across ${formatRuleList(plan.autoFixable.rules)}`,
+    );
+    lines.push(`  \`${plan.autoFixable.command}\``);
+  }
+
+  if (plan.tokenDecisions.count > 0) {
+    const repeated = plan.tokenDecisions.repeatedValues > 0
+      ? ` (${plan.tokenDecisions.repeatedValues} repeated value${plan.tokenDecisions.repeatedValues === 1 ? '' : 's'})`
+      : '';
+    lines.push(
+      `- **Needs design decision:** ${plan.tokenDecisions.count} token candidate${plan.tokenDecisions.count === 1 ? '' : 's'}${repeated}`,
+    );
+    lines.push(`  \`${plan.tokenDecisions.command}\``);
+  }
+
+  if (plan.accessibility.count > 0) {
+    const label = plan.accessibility.errors > 0 ? 'Accessibility blockers' : 'Accessibility risks';
+    const suffix = plan.accessibility.errors > 0
+      ? ` (${plan.accessibility.errors} error${plan.accessibility.errors === 1 ? '' : 's'})`
+      : '';
+    lines.push(
+      `- **${label}:** ${plan.accessibility.count} WCAG-mapped issue${plan.accessibility.count === 1 ? '' : 's'}${suffix}`,
+    );
+    lines.push('  `npx deslint compliance`');
+  }
+
+  if (plan.topDebt.length > 0) {
+    lines.push(
+      `- **Highest debt:** ${plan.topDebt.map((rule) => `${formatDebt(rule.effortMinutes)} \`${shortRule(rule.ruleId)}\``).join(' · ')}`,
+    );
+  }
+
+  lines.push('');
+  return lines;
 }
 
 /**
@@ -115,6 +180,8 @@ export function formatComment(
     }
     lines.push('');
   }
+
+  lines.push(...formatFixPlanSection(result));
 
   // Category breakdown
   if (result.categories.length > 0) {

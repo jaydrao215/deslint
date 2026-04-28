@@ -22,6 +22,10 @@ function makeScanResult(overrides: Partial<ScanResult> = {}): ScanResult {
     filesScanned: 10,
     filesWithViolations: 3,
     debtMinutes: 0,
+    byRule: {
+      'deslint/no-arbitrary-colors': 3,
+      'deslint/no-inline-styles': 2,
+    },
     parseErrors: 0,
     filesWithParseErrors: 0,
     inlineViolations: [],
@@ -53,6 +57,35 @@ describe('formatComment', () => {
     expect(comment).toContain('Top Violations');
     expect(comment).toContain('no-arbitrary-colors');
     expect(comment).toContain('no-inline-styles');
+  });
+
+  it('includes a PR-focused fix plan', () => {
+    const comment = formatComment(
+      makeScanResult({
+        totalViolations: 4,
+        byRule: {
+          'deslint/no-arbitrary-colors': 2,
+          'deslint/form-labels': 2,
+        },
+        inlineViolations: [
+          {
+            filePath: 'src/App.tsx',
+            line: 4,
+            column: 10,
+            ruleId: 'deslint/form-labels',
+            message: 'Input is missing an associated label.',
+            severity: 'error',
+          },
+        ],
+      }),
+      0,
+    );
+
+    expect(comment).toContain('Fix Plan');
+    expect(comment).toContain('Auto-fix now');
+    expect(comment).toContain('npx deslint fix --all');
+    expect(comment).toContain('Accessibility blockers');
+    expect(comment).toContain('npx deslint compliance');
   });
 
   it('includes summary metrics', () => {
@@ -94,6 +127,7 @@ describe('formatComment', () => {
           { name: 'responsive', violations: 0, score: 100 },
           { name: 'consistency', violations: 0, score: 100 },
         ],
+        byRule: {},
       }),
       0,
     );
