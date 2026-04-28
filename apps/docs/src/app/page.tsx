@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
+import { LaunchCheckCallout } from '@/components/LaunchCheckCallout';
 import { AgentCompatStrip } from '@/components/AgentCompatStrip';
 import { TrustBanner } from '@/components/TrustBanner';
 import { getGitHubStars } from '@/lib/github-stars';
@@ -124,6 +125,7 @@ export default async function Home() {
       <Navbar />
       <main>
         <Hero stars={stars} />
+        <LaunchCheckCallout />
         <AgentCompatStrip weeklyDownloads={weeklyDownloads} />
         <TrustBanner />
         <VisualProofSection />
