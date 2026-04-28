@@ -28,6 +28,16 @@ ruleTester.run('no-dangerous-html', rule, {
     {
       code: '<script dangerouslySetInnerHTML={{ __html: JSON.stringify(j) }} type="application/ld+json" />',
     },
+    // <style> with dangerouslySetInnerHTML — CSS injection has a different
+    // threat model than HTML/XSS. Common in chart libraries, dynamic theming.
+    {
+      code: '<style dangerouslySetInnerHTML={{ __html: cssVars }} />',
+    },
+    // Next.js Script component (capital S) — conventionally used to ship
+    // inline scripts via the framework's loading strategy.
+    {
+      code: '<Script id="tag" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: js }} />',
+    },
   ],
   invalid: [
     {
