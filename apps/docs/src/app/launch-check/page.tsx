@@ -137,6 +137,20 @@ export default function LaunchCheckPage() {
     9 auto-fixable. Review with \`npx deslint fix --interactive\`
     Or apply every safe fix: \`npx deslint fix --all\``}
           </div>
+          <div className="mt-4">
+            <a
+              href="/sample-report.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary motion-safe:transition-colors"
+            >
+              See the full HTML report this command writes
+              <span aria-hidden>→</span>
+            </a>
+            <p className="mt-2 text-xs text-gray-500">
+              Real scan output. Fix Plan, per-rule patterns, file hotspots, color palette diff, and a 20-run trend chart. The same file lands at <code className="font-mono">.deslint/report.html</code> after every scan.
+            </p>
+          </div>
         </section>
 
         {/* AI broke this */}

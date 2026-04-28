@@ -2,6 +2,7 @@
   "$schema": "../../packages/shared/schemas/deslintrc.schema.json",
   "ignore": [
     "src/components/mockups/**",
-    "src/components/ComparisonTable.tsx"
+    "src/components/ComparisonTable.tsx",
+    "public/**"
   ]
 }

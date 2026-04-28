@@ -81,11 +81,19 @@ export function LaunchCheckCallout() {
                 href="/launch-check"
                 className="group inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white motion-safe:transition-all hover:bg-primary-light hover:shadow-lg hover:shadow-primary/20"
               >
-                See a sample report
+                Try the launch check
                 <ArrowRight className="h-4 w-4 motion-safe:transition-transform group-hover:translate-x-0.5" />
               </Link>
+              <a
+                href="/sample-report.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:border-primary hover:text-primary motion-safe:transition-colors"
+              >
+                See sample report
+              </a>
               <span className="text-xs text-gray-500">
-                Runs locally · 0 LLM · 0 telemetry
+                Local · 0 LLM · 0 telemetry
               </span>
             </div>
           </div>
