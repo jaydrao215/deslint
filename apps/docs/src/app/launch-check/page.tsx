@@ -107,7 +107,7 @@ export default function LaunchCheckPage() {
             account, no telemetry — the report renders in your terminal and
             in <code className="font-mono text-xs">.deslint/report.html</code>.
           </p>
-          <div className="rounded-xl bg-gray-950 text-gray-200 font-mono text-[13px] leading-relaxed px-5 py-5 whitespace-pre overflow-x-auto">
+          <div className="rounded-xl bg-gray-950 text-gray-200 font-mono text-sm leading-relaxed px-5 py-5 whitespace-pre overflow-x-auto">
 {`$ npx deslint launch-check
 
   Deslint Launch Check
@@ -205,7 +205,7 @@ export default function LaunchCheckPage() {
           <div className="grid sm:grid-cols-3 gap-3">
             <Link
               href="/mcp"
-              className="rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-primary hover:bg-primary-50/40 motion-safe:transition-colors"
+              className="rounded-xl border border-gray-200 bg-white px-5 py-3 hover:border-primary hover:bg-primary-50/40 motion-safe:transition-colors"
             >
               <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">In the agent loop</p>
               <p className="font-semibold text-gray-900 mb-1">MCP server</p>
@@ -213,7 +213,7 @@ export default function LaunchCheckPage() {
             </Link>
             <Link
               href="/action"
-              className="rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-primary hover:bg-primary-50/40 motion-safe:transition-colors"
+              className="rounded-xl border border-gray-200 bg-white px-5 py-3 hover:border-primary hover:bg-primary-50/40 motion-safe:transition-colors"
             >
               <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">At the merge gate</p>
               <p className="font-semibold text-gray-900 mb-1">GitHub Action</p>
@@ -221,7 +221,7 @@ export default function LaunchCheckPage() {
             </Link>
             <Link
               href="/cli"
-              className="rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-primary hover:bg-primary-50/40 motion-safe:transition-colors"
+              className="rounded-xl border border-gray-200 bg-white px-5 py-3 hover:border-primary hover:bg-primary-50/40 motion-safe:transition-colors"
             >
               <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">In your terminal</p>
               <p className="font-semibold text-gray-900 mb-1">Full CLI</p>
