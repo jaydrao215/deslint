@@ -11,6 +11,17 @@ export const metadata: Metadata = {
   description:
     'Long-form writing from the Deslint team on design token drift, Tailwind arbitrary values, AI coding agents (Claude Code, Cursor, Codex, Windsurf), MCP, and deterministic design-system enforcement.',
   alternates: { canonical: '/blog' },
+  keywords: [
+    'design systems blog',
+    'ai code review blog',
+    'tailwind blog',
+    'eslint blog',
+    'frontend launch readiness',
+    'mcp server blog',
+    'cursor lint blog',
+    'claude code lint blog',
+    'design token drift',
+  ],
   openGraph: {
     title: 'Deslint Blog',
     description:

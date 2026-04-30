@@ -9,6 +9,17 @@ export const metadata: Metadata = {
   description:
     'Exactly which frameworks Deslint parses (React, Vue, Svelte, Astro, Angular) and every WCAG 2.2 AA criterion it statically detects. The full coverage matrix for AI-generated frontend code.',
   alternates: { canonical: '/coverage' },
+  keywords: [
+    'wcag 2.2 react',
+    'wcag 2.2 eslint',
+    'react accessibility checker',
+    'vue accessibility lint',
+    'svelte a11y lint',
+    'angular accessibility eslint',
+    'framework coverage matrix',
+    'design token coverage',
+    'tailwind token usage',
+  ],
   openGraph: {
     title: 'Deslint Coverage — Frameworks & WCAG 2.2 AA',
     description:

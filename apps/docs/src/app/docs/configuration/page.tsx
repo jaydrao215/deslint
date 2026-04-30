@@ -6,6 +6,16 @@ export const metadata: Metadata = {
   description:
     "Complete .deslintrc.json reference for Deslint. Configure design-system tokens (colors, spacing, radii, typography), rule severities, ignore patterns, and profiles for AI-generated frontend code.",
   alternates: { canonical: '/docs/configuration' },
+  keywords: [
+    'deslintrc.json',
+    'deslint configuration',
+    'eslint design system config',
+    'design token config',
+    'severity profiles eslint',
+    'ignore patterns eslint',
+    'tailwind token configuration',
+    'design lint configuration reference',
+  ],
   openGraph: {
     title: 'Deslint Configuration Reference',
     description:

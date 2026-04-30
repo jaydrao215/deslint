@@ -4,14 +4,25 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 import { CATEGORIES, RULES, getRulesByCategory } from '@/lib/rules';
 
 export const metadata: Metadata = {
-  title: 'Rules Reference — 34 Design, Accessibility & Token Lint Rules',
+  title: 'Rules Reference — 37 Design, Accessibility & Frontend-Safety Lint Rules',
   description:
-    'All 34 Deslint rules with examples, options, and auto-fix behaviour. Design-token rules (no-arbitrary-colors, consistent-border-radius), accessibility (a11y-color-contrast, aria-validation), responsive layout, dark-mode coverage, and more — every rule is its own indexable page.',
+    'All 37 Deslint rules with examples, options, and auto-fix behaviour. Design-token rules (no-arbitrary-colors, consistent-border-radius), accessibility (a11y-color-contrast, aria-validation), responsive layout, dark-mode coverage, and frontend-safety basics (no-dangerous-html, safe-external-links, iframe-sandbox) — every rule is its own indexable page.',
   alternates: { canonical: '/docs/rules' },
+  keywords: [
+    'eslint rule reference',
+    'deslint rules',
+    'tailwind eslint rules',
+    'wcag eslint rules',
+    'design token lint rules',
+    'react accessibility lint',
+    'no-dangerous-html eslint',
+    'safe-external-links eslint',
+    'frontend safety rules',
+  ],
   openGraph: {
-    title: 'Deslint Rules Reference — 34 Design & A11y Lint Rules',
+    title: 'Deslint Rules Reference — 37 Design, A11y & Safety Lint Rules',
     description:
-      'Every Deslint rule — examples, options, auto-fix support, and a per-rule page. Tailwind token drift, WCAG contrast, dark-mode, responsive, and consistency categories.',
+      'Every Deslint rule — examples, options, auto-fix support, and a per-rule page. Tailwind token drift, WCAG contrast, dark-mode, responsive, consistency, and frontend-safety categories.',
     url: 'https://deslint.com/docs/rules',
     type: 'article',
   },
