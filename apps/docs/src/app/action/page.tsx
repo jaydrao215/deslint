@@ -110,10 +110,40 @@ const INPUTS = [
   { name: 'file-patterns', default: '—', meaning: 'Comma-separated glob filter for which files to scan.' },
 ];
 
+// SoftwareApplication schema for the Deslint GitHub Action. The action
+// is distributed via the GitHub Marketplace; the schema describes it as
+// a free developer tool so the marketplace listing and our /action page
+// share a coherent structured-data identity. Rendered as inline JSON-LD
+// so it's available to crawlers regardless of client-side hydration.
+const ACTION_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Deslint Design Review (GitHub Action)',
+  description:
+    'GitHub Action that runs Deslint on every pull request, posts a Design Health Score comment, verifies the Deslint-Compliance commit trailer, and gates merges on quality. Free for public repositories. Local-first analysis — no code leaves your runner.',
+  url: 'https://deslint.com/action',
+  applicationCategory: 'DeveloperApplication',
+  operatingSystem: 'GitHub Actions (Ubuntu, macOS, Windows runners)',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+    availability: 'https://schema.org/InStock',
+  },
+  author: { '@type': 'Organization', name: 'Deslint', url: 'https://deslint.com' },
+  publisher: { '@type': 'Organization', name: 'Deslint', url: 'https://deslint.com' },
+  softwareVersion: '0.1.2',
+  downloadUrl: 'https://github.com/marketplace/actions/deslint-design-review',
+};
+
 export default function ActionHubPage() {
   return (
     <>
       <Navbar />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ACTION_JSON_LD) }}
+      />
       <BreadcrumbJsonLd trail={[{ name: 'GitHub Action', path: '/action' }]} />
       <main className="mx-auto max-w-4xl px-6 pt-32 pb-20">
         <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">

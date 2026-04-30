@@ -21,6 +21,15 @@ export interface Post {
 
 export const POSTS: Post[] = [
   {
+    slug: 'frontend-launch-readiness-checklist',
+    title: 'Frontend launch readiness: 14 checks before AI code goes live',
+    description:
+      'A deterministic 14-point launch checklist for apps your AI just wrote. Design tokens, responsive coverage, WCAG 2.2, dark mode, and the frontend-safety basics — with the rule that catches each one and a one-command scan to run them all.',
+    date: '2026-04-30',
+    readingMinutes: 13,
+    tags: ['Launch readiness', 'AI coding', 'Checklist', 'WCAG'],
+  },
+  {
     slug: 'tailwind-v4-eslint-migration',
     title: 'Tailwind v4 ESLint migration: a deterministic upgrade guide',
     description:

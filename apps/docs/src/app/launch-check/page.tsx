@@ -89,10 +89,68 @@ const BROKEN_BY_AI = [
   },
 ];
 
+// HowTo schema describing the launch-check loop. Eligible for Google's
+// rich-result HowTo treatment. Mirrors the actual user flow: install, run,
+// read the score, fix, share. Steps reference real surfaces on the site.
+const HOW_TO_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'Run a launch-readiness check on an AI-built frontend',
+  description:
+    'A free 0-100 readiness score for AI-generated frontends. Catches design-token drift, broken responsive layouts, accessibility gaps, dark-mode regressions, and the safety basics — in one local command.',
+  totalTime: 'PT2M',
+  estimatedCost: { '@type': 'MonetaryAmount', currency: 'USD', value: '0' },
+  tool: [
+    { '@type': 'HowToTool', name: 'Node.js (≥ 20.19)' },
+    { '@type': 'HowToTool', name: 'A frontend project (React, Vue, Svelte, Angular, or plain HTML)' },
+  ],
+  step: [
+    {
+      '@type': 'HowToStep',
+      position: 1,
+      name: 'Run the launch check',
+      text: 'From the project root, run `npx deslint launch-check`. No install, no config — Deslint auto-detects Tailwind, the framework, and the test surface.',
+      url: 'https://deslint.com/launch-check#run',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 2,
+      name: 'Read the 0-100 readiness score',
+      text: 'The CLI prints a Frontend Launch Readiness score with five category bars (Colors, Spacing, Typography, Responsive, Consistency) and a Fix Plan that lists the literal next command to run.',
+      url: 'https://deslint.com/sample-report.html',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 3,
+      name: 'Apply the auto-fixable violations',
+      text: 'Run `npx deslint fix --all` to apply every safe autofix (typography tokens, color tokens, rel="noopener noreferrer" on external links, and more). Review unfixable ones with `--interactive`.',
+      url: 'https://deslint.com/cli',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 4,
+      name: 'Share the scorecard',
+      text: 'Run `npx deslint share` to copy a tweetable markdown scorecard to your clipboard. Paste it into X, a PR, or a Loom.',
+      url: 'https://deslint.com/launch-check',
+    },
+    {
+      '@type': 'HowToStep',
+      position: 5,
+      name: 'Wire it into the agent loop or merge gate',
+      text: 'Install the MCP server so Cursor / Claude Code / Codex / Windsurf verify each edit, or add the GitHub Action so PRs that drop the score get blocked.',
+      url: 'https://deslint.com/mcp',
+    },
+  ],
+};
+
 export default function LaunchCheckPage() {
   return (
     <>
       <Navbar />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(HOW_TO_JSON_LD) }}
+      />
       <BreadcrumbJsonLd trail={[{ name: 'Launch Check', path: '/launch-check' }]} />
       <main className="mx-auto max-w-4xl px-6 pt-32 pb-20">
         <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">

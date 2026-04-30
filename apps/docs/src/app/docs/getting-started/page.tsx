@@ -6,6 +6,16 @@ export const metadata: Metadata = {
   description:
     "Zero to enforced design system in five commands. Install the MCP server for your AI coding agent, import your tokens, run your first scan, fix what's auto-fixable, gate in CI. Local-first. Zero cloud.",
   alternates: { canonical: '/docs/getting-started' },
+  keywords: [
+    'deslint getting started',
+    'install deslint',
+    'eslint plugin tailwind',
+    'mcp server install',
+    'design system lint setup',
+    'first scan deslint',
+    'eslint flat config tailwind',
+    'ai coding agent lint setup',
+  ],
   openGraph: {
     title: 'Deslint — Getting Started',
     description:

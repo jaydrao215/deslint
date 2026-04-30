@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   Rocket,
@@ -10,6 +11,32 @@ import {
   GitPullRequest,
 } from 'lucide-react';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
+
+export const metadata: Metadata = {
+  title: 'Documentation — Deslint',
+  description:
+    'Deslint documentation hub. Pick a surface (MCP server, ESLint plugin, CLI, or GitHub Action), follow the getting-started guide, browse the 37-rule reference, or read the configuration schema. Verification for AI-generated frontend code, end-to-end.',
+  alternates: { canonical: '/docs' },
+  keywords: [
+    'deslint docs',
+    'deslint documentation',
+    'eslint plugin docs',
+    'mcp server docs',
+    'design lint configuration',
+    'deslint getting started',
+    'deslint rules reference',
+    'ai code linter docs',
+    'tailwind eslint docs',
+    'wcag eslint plugin',
+  ],
+  openGraph: {
+    title: 'Deslint Documentation — MCP, ESLint Plugin, CLI, and GitHub Action',
+    description:
+      'Pick a surface, follow getting-started, browse 37 rules, or read the configuration schema. Verification for AI-generated frontend code.',
+    url: 'https://deslint.com/docs',
+    type: 'website',
+  },
+};
 
 const SURFACES = [
   {
