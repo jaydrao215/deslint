@@ -369,6 +369,31 @@ pnpm deslint scan "apps/**/*.{ts,tsx}" --format sarif --output deslint.sarif
         </FadeIn>
 
         <FadeIn>
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-4">
+              Other comparisons
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Link href="/compare/deslint-vs-eslint" className="rounded-lg border border-gray-200 bg-white p-4 hover:border-primary/30 motion-safe:transition-colors">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">vs.</p>
+                <p className="text-base font-semibold text-gray-900">ESLint</p>
+                <p className="mt-1 text-sm text-gray-700">JS correctness vs. design intent.</p>
+              </Link>
+              <Link href="/compare/deslint-vs-prettier" className="rounded-lg border border-gray-200 bg-white p-4 hover:border-primary/30 motion-safe:transition-colors">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">vs.</p>
+                <p className="text-base font-semibold text-gray-900">Prettier</p>
+                <p className="mt-1 text-sm text-gray-700">Formatting vs. design intent.</p>
+              </Link>
+              <Link href="/compare/deslint-vs-biome" className="rounded-lg border border-gray-200 bg-white p-4 hover:border-primary/30 motion-safe:transition-colors">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">vs.</p>
+                <p className="text-base font-semibold text-gray-900">Biome</p>
+                <p className="mt-1 text-sm text-gray-700">All-in-one toolchain vs. design layer.</p>
+              </Link>
+            </div>
+          </section>
+        </FadeIn>
+
+        <FadeIn>
           <section className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary-50 via-white to-white p-8 mb-8">
             <h2 className="text-xl font-bold tracking-tight text-gray-900 mb-3">
               Ready to add deslint alongside stylelint?

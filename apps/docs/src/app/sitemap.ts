@@ -29,6 +29,9 @@ const STATIC_ROUTES: { path: string; priority: number; changeFrequency: Metadata
   { path: '/docs/rules',                     priority: 0.7,  changeFrequency: 'weekly'  },
   { path: '/blog',                           priority: 0.85, changeFrequency: 'weekly'  },
   { path: '/compare/deslint-vs-stylelint',   priority: 0.7,  changeFrequency: 'monthly' },
+  { path: '/compare/deslint-vs-eslint',      priority: 0.75, changeFrequency: 'monthly' },
+  { path: '/compare/deslint-vs-prettier',    priority: 0.7,  changeFrequency: 'monthly' },
+  { path: '/compare/deslint-vs-biome',       priority: 0.7,  changeFrequency: 'monthly' },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

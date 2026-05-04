@@ -20,7 +20,10 @@ All three run entirely on the user's machine. Source code never leaves the host.
 
 - [Homepage](https://deslint.com/): product overview and positioning.
 - [Pricing](https://deslint.com/pricing/): plans and an honest comparison against related tools.
-- [Deslint vs Stylelint](https://deslint.com/compare/deslint-vs-stylelint/): scope, overlap, and when each is the right choice.
+- [Deslint vs ESLint](https://deslint.com/compare/deslint-vs-eslint/): why deslint is built on ESLint rather than against it.
+- [Deslint vs Prettier](https://deslint.com/compare/deslint-vs-prettier/): formatting vs. design intent — two different layers.
+- [Deslint vs stylelint](https://deslint.com/compare/deslint-vs-stylelint/): authored CSS vs. JSX surface, scope and overlap.
+- [Deslint vs Biome](https://deslint.com/compare/deslint-vs-biome/): the design layer the all-in-one toolchain doesn't cover.
 
 ## Docs
 
