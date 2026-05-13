@@ -7,7 +7,7 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 export const metadata: Metadata = {
   title: 'Deslint CLI — Scan, Fix, and Attest AI-Generated Frontend Code',
   description:
-    "Deslint ships a local CLI for AI-generated frontend code. Scan a repo, fix deterministic violations, import design tokens from Figma / Style Dictionary / Google Stitch, and emit a reproducible, Sigstore-signable attestation. Zero LLM in the hot path. Zero code leaves your machine.",
+    "Deslint ships a local CLI for AI-generated code — frontend, backend, and Next.js. Scan a repo, fix deterministic violations, import design tokens from Figma / Style Dictionary / Google Stitch, and emit a reproducible, Sigstore-signable attestation. 62 rules covering design, accessibility, backend safety, and AI-coding hygiene. Zero LLM in the hot path. Zero code leaves your machine.",
   alternates: { canonical: '/cli' },
   keywords: [
     'deslint cli',
@@ -255,7 +255,7 @@ export default function CliHubPage() {
             href="/docs/rules"
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 motion-safe:transition-all"
           >
-            All 37 rules
+            All 62 rules
           </Link>
           <Link
             href="/mcp"

@@ -102,7 +102,7 @@ const HOW_TO_JSON_LD = {
   estimatedCost: { '@type': 'MonetaryAmount', currency: 'USD', value: '0' },
   tool: [
     { '@type': 'HowToTool', name: 'Node.js (≥ 20.19)' },
-    { '@type': 'HowToTool', name: 'A frontend project (React, Vue, Svelte, Angular, or plain HTML)' },
+    { '@type': 'HowToTool', name: 'A frontend project (React, Vue, Svelte, Astro, Angular, or plain HTML)' },
   ],
   step: [
     {
@@ -240,10 +240,11 @@ export default function LaunchCheckPage() {
             What it catches that your AI missed
           </h2>
           <p className="text-gray-600 mb-6 max-w-2xl">
-            37 deterministic rules across 5 scoring categories — design system,
-            spacing, typography, responsive coverage, consistency — plus the
-            safety basics every shipped app should pass. Every check is plain
-            ESLint underneath, so no LLM ever sees your code.
+            62 deterministic rules across design system, spacing, typography,
+            responsive coverage, accessibility, backend safety (secrets,
+            injection, traversal, SSRF, weak crypto), Next.js stability, and
+            AI-coding antipatterns. Every check is plain ESLint underneath, so
+            no LLM ever sees your code.
           </p>
           <ul className="space-y-4">
             {BROKEN_BY_AI.map((item) => (
@@ -337,7 +338,7 @@ export default function LaunchCheckPage() {
             href="/docs/rules"
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 motion-safe:transition-all"
           >
-            All 37 rules
+            All 62 rules
           </Link>
           <Link
             href="https://github.com/jaydrao215/deslint"

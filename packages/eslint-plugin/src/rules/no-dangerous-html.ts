@@ -33,7 +33,12 @@ export default createRule<Options, MessageIds>({
       check(element) {
         try {
           if (element.framework !== 'jsx') return;
-          const attr = getAttribute(element, 'dangerouslySetInnerHTML');
+          // React `dangerouslySetInnerHTML` and Astro `set:html` are the
+          // same threat model — both inject raw HTML and both are the
+          // attribute name AI coding tools reach for. We accept either.
+          const attr =
+            getAttribute(element, 'dangerouslySetInnerHTML') ??
+            getAttribute(element, 'set:html');
           if (!attr) return;
 
           const tag = element.tagName;
@@ -48,13 +53,11 @@ export default createRule<Options, MessageIds>({
             if (type === 'application/ld+json') return;
           }
 
-          // <style dangerouslySetInnerHTML={{__html: cssString}}> is the
-          // canonical inline-CSS pattern (chart libraries, dynamic
-          // theming, CSS variables). Browsers parse the content as CSS,
-          // not HTML — the threat model is CSS injection, not HTML/XSS.
-          // If CSS injection matters for the codebase, that deserves a
-          // separate rule; flagging it here would flood every chart-
-          // and theme-heavy frontend with false positives.
+          // <style dangerouslySetInnerHTML={{__html: cssString}}> /
+          // <style set:html={cssString}> is the canonical inline-CSS
+          // pattern (chart libraries, dynamic theming, CSS variables).
+          // Browsers parse the content as CSS, not HTML — the threat
+          // model is CSS injection, not HTML/XSS.
           if (tagLower === 'style') return;
 
           // <Script> (capital S) is conventionally the Next.js Script

@@ -105,7 +105,21 @@ export interface LintRunnerOptions {
   cwd?: string;
 }
 
-export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
+/**
+ * Build the flat-config array (rules + per-extension parser dispatch)
+ * deslint passes to ESLint. Extracted out of `runLint` so the MCP
+ * server can build configs once and reuse them across many calls
+ * (each call to `runLint` was previously re-doing all the parser
+ * imports, which dominated cold-start time on the MCP path).
+ *
+ * The returned array is the SAME shape ESLint v9+ flat config
+ * accepts via `overrideConfig` (for `ESLint`) or as the second arg
+ * to `Linter.verify` — agents in the MCP fast path use the latter
+ * to avoid spinning up the full engine.
+ */
+export async function buildLintConfigs(options: {
+  ruleOverrides?: Record<string, any>;
+}): Promise<any[]> {
   const deslintPlugin = await import('@deslint/eslint-plugin');
   const plugin = deslintPlugin.default ?? deslintPlugin;
 
@@ -156,8 +170,6 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     }
   }
 
-  const cwd = options.cwd ?? (options.files.length > 0 ? dirname(options.files[0]) : process.cwd());
-
   let typescriptParser: any;
   try { typescriptParser = await import('@typescript-eslint/parser'); } catch {}
 
@@ -172,6 +184,9 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
 
   let htmlParser: any;
   try { htmlParser = await import('@html-eslint/parser'); } catch {}
+
+  let astroParser: any;
+  try { astroParser = await import('astro-eslint-parser'); } catch {}
 
   const baseConfig = {
     plugins: { deslint: plugin } as any,
@@ -200,8 +215,6 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
   });
 
-  // html-eslint owns plain `.html` when installed; Angular parser narrows
-  // to `**/*.component.html` so both coexist cleanly.
   if (htmlParser) {
     configs.push({
       ...baseConfig,
@@ -240,6 +253,31 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
     });
   }
 
+  if (astroParser) {
+    configs.push({
+      ...baseConfig,
+      files: ['**/*.astro'],
+      languageOptions: { parser: astroParser },
+    });
+  }
+
+  return configs;
+}
+
+/**
+ * Internal helper used by `runLint` to derive the effective rules
+ * map. Returned alongside the lint result so consumers (the trailer
+ * computation, the score breakdown) can see the merged severities.
+ */
+function deriveEffectiveRules(configs: any[]): Record<string, any> {
+  const first = configs[0];
+  return (first?.rules ?? {}) as Record<string, any>;
+}
+
+export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
+  const cwd = options.cwd ?? (options.files.length > 0 ? dirname(options.files[0]) : process.cwd());
+  const configs = await buildLintConfigs({ ruleOverrides: options.ruleOverrides });
+
   const eslint = new ESLint({
     overrideConfigFile: true,
     cwd,
@@ -256,7 +294,7 @@ export async function runLint(options: LintRunnerOptions): Promise<LintResult> {
 
   const aggregated = aggregateResults(results as unknown as LintFileResult[]);
   const applicability = computeApplicability(options.files);
-  return { ...aggregated, effectiveRules: rules, applicability };
+  return { ...aggregated, effectiveRules: deriveEffectiveRules(configs), applicability };
 }
 
 /** Cheap file-content probe: count files that contain class / style

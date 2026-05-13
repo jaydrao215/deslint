@@ -55,8 +55,23 @@ const AGENTS = [
 
 const TOOLS = [
   {
+    name: 'verify_before_write',
+    blurb:
+      'The pre-write gate. Agent passes the proposed file content; server returns passed / violations / recommendedAction (ok-to-write | ok-with-warnings | fix-and-retry | consult-user). In-process Linter.verify, no temp file. Cold ~1s, warm 3-7ms, identical-content cache hit ~0.05ms.',
+  },
+  {
+    name: 'quick_check',
+    blurb:
+      'Sub-200-byte yes/no check. Agent\'s "is this even worth a full verify?" decision. Shares cache with verify_before_write — calling both for the same content is essentially free.',
+  },
+  {
+    name: 'scan_diff',
+    blurb:
+      'Lint only files changed against a base ref (default origin/main). Separates new violations from pre-existing so the merge gate can hard-block on new failures without re-litigating legacy ones.',
+  },
+  {
     name: 'analyze_file',
-    blurb: 'Return all design-system and a11y violations for a single file.',
+    blurb: 'Return all design-system, a11y, backend-safety, and AI-coding violations for a single file. Supports strict mode.',
   },
   {
     name: 'analyze_project',
@@ -85,6 +100,11 @@ const TOOLS = [
     name: 'suggest_fix_strategy',
     blurb:
       'Given a violation, return a structured fix plan the agent can execute.',
+  },
+  {
+    name: 'get_server_stats',
+    blurb:
+      'Per-session telemetry: total verify calls, wall-clock spent linting, cache hit rate. Surface to the user so deslint\'s overhead stays visible.',
   },
 ];
 

@@ -6,11 +6,11 @@
 
 const BODY = `# Deslint
 
-> Deterministic design-system linter for AI-generated frontend code. Local ESLint plugin + CLI + Model Context Protocol (MCP) server. No cloud, no telemetry, no LLM in the check path.
+> Deterministic verification layer for AI-generated code, frontend and backend. Local ESLint plugin + CLI + Model Context Protocol (MCP) server. No cloud, no telemetry, no LLM in the check path.
 
 Deslint ships as three npm packages:
 
-- \`@deslint/eslint-plugin\` — 37 rules across colors, spacing, typography, responsive, accessibility, consistency, and motion.
+- \`@deslint/eslint-plugin\` — 62 rules across design (colors, spacing, typography, responsive), accessibility (WCAG 2.2 AA-mapped), backend safety (secrets, SQL/shell injection, path traversal, SSRF, weak crypto, open redirects, insecure cookies, permissive CORS, disabled TLS, JWT expiry), Next.js client/server boundary (hydration mismatch, env-var leakage, server-only imports), Astro (\`class:list\` + \`set:html\`), and AI-coding hygiene (\`useEffect(async ...)\`, unwrapped Express handlers, mass-assignment, placeholder code, hardcoded localhost, empty catch blocks, \`console.log\` left in production, leaked stack traces, unvalidated input, mock data shipped to prod).
 - \`@deslint/cli\` — scanning, fixing, coverage reports, Design Health Score, budget enforcement, and compliance attestation.
 - \`@deslint/mcp\` — stdio MCP server exposing the rules as tools that Claude Code, Cursor, Codex, Windsurf, and other MCP clients can call pre-commit.
 
@@ -26,7 +26,7 @@ All three run entirely on the user's machine. Source code never leaves the host.
 
 - [Getting started](https://deslint.com/docs/getting-started/): install, configure, first scan.
 - [Configuration](https://deslint.com/docs/configuration/): \`.deslintrc.json\`, design-system tokens, severity profiles, budgets, quality gates.
-- [Rules index](https://deslint.com/docs/rules/): all 37 rules grouped by category.
+- [Rules index](https://deslint.com/docs/rules/): all 62 rules grouped by category.
 
 ## Rule categories
 
@@ -37,6 +37,10 @@ All three run entirely on the user's machine. Source code never leaves the host.
 - [Accessibility](https://deslint.com/docs/rules/#accessibility): \`image-alt-text\`, \`form-labels\`, \`autocomplete-attribute\`, \`aria-validation\`, \`link-text\`, \`lang-attribute\`, \`viewport-meta\`, \`prefer-semantic-html\`.
 - [Consistency](https://deslint.com/docs/rules/#consistency): \`consistent-component-spacing\`, \`no-arbitrary-border-radius\`, \`consistent-border-radius\`, \`max-component-lines\`, \`missing-states\`, \`no-arbitrary-zindex\`, \`no-inline-styles\`, \`no-conflicting-classes\`, \`no-duplicate-class-strings\`, \`max-tailwind-classes\`.
 - [Motion & Animation](https://deslint.com/docs/rules/#motion-animation): \`prefers-reduced-motion\`, \`icon-accessibility\`, \`focus-trap-patterns\`, \`responsive-image-optimization\`, \`spacing-rhythm-consistency\`.
+- [Frontend safety](https://deslint.com/docs/rules/#frontend-safety): \`no-dangerous-html\`, \`safe-external-links\`, \`iframe-sandbox\`.
+- [Backend safety](https://deslint.com/docs/rules/#backend-safety): \`no-hardcoded-secrets\`, \`no-sql-injection\`, \`no-shell-injection\`, \`no-path-traversal\`, \`no-ssrf\`, \`no-eval\`, \`no-permissive-cors\`, \`no-disabled-tls\`, \`secure-cookies\`, \`require-jwt-expiry\`, \`no-weak-crypto\`, \`safe-redirect\`.
+- [Next.js / framework stability](https://deslint.com/docs/rules/#nextjs): \`no-hydration-mismatch\`, \`no-leaked-env-on-client\`, \`no-server-only-in-client\`, \`no-async-useeffect\`.
+- [AI-coding hygiene](https://deslint.com/docs/rules/#ai-coding-hygiene): \`no-floating-promise-handler\`, \`no-unsafe-mass-assignment\`, \`no-placeholder-code\`, \`no-hardcoded-localhost\`, \`no-empty-catch\`, \`no-prod-console\`, \`no-leaked-stack-trace\`, \`no-unvalidated-input\`, \`no-mock-data-in-prod\`.
 
 ## CLI commands
 
@@ -54,15 +58,31 @@ All three run entirely on the user's machine. Source code never leaves the host.
 
 ## MCP tools
 
-Exposed by \`@deslint/mcp\` over stdio:
+Exposed by \`@deslint/mcp\` over stdio. **Designed for agent throughput**: in-process \`Linter.verify\` fast path (no temp file, no engine spin-up), preloaded on server startup, with module-level caches so identical-content re-calls return in ~0.05ms with \`cached: true\`.
 
-- \`analyze_file\` — lint a single file, return violations plus sub-score.
+- **\`verify_before_write\`** — pre-write gate. Agent passes proposed file content; server returns \`passed\` + violations + \`recommendedAction\` (\`ok-to-write\` | \`ok-with-warnings\` | \`fix-and-retry\` | \`consult-user\`) + \`durationMs\` + \`cached\`. Supports \`strict\`, \`severityFloor\` (\`'error'|'warn'\`), and \`categories\` filters. Cold ~1s, warm 3-7ms, cached 0.05ms.
+- **\`quick_check\`** — sub-200-byte yes/no check (\`{ clean, errorCount, warningCount }\`). Agent's "is this worth a full verify?" decision; shares cache with verify_before_write.
+- **\`scan_diff\`** — lint only files changed against a base ref; separates \`newViolations\` from \`preExisting\`.
+- **\`get_server_stats\`** — per-session telemetry: total verify calls, total wall-clock spent linting, cache hit rate, average call cost. Surface to the user so deslint's overhead is visible.
+- \`analyze_file\` — lint a single existing file. Supports \`strict: true\`.
 - \`analyze_project\` — scan an entire project, return the Design Health Score.
 - \`analyze_and_fix\` — return corrected code for a specific file.
 - \`compliance_check\` — WCAG 2.2 compliance evaluation.
 - \`enforce_budget\` — evaluate a scan against \`.deslint/budget.yml\` and report breaches.
 - \`get_rule_details\` — return full documentation for a rule id.
 - \`suggest_fix_strategy\` — structured guidance for resolving a class of violation.
+
+## MCP resources
+
+Read-only data sources an agent can fetch up front and cache between
+tool calls:
+
+- \`deslint://rules\` — JSON index of every rule (id, category, default severity, auto-fix, WCAG mapping, docs URL).
+- \`deslint://rules/{slug}\` — per-rule documentation (e.g. \`deslint://rules/no-arbitrary-colors\`).
+
+## MCP prompts
+
+- \`/deslint-fix\` — cost-aware slash-command workflow. Leads with \`quick_check\` to skip clean files for free, calls \`verify_before_write\` AT MOST ONCE for the actual fix, treats \`ok-with-warnings\` as ship-it (no retry on advisory drift), and surfaces \`get_server_stats\` so the user sees the verification overhead. Hard cap: never more than two verify calls per file per turn.
 
 ## MCP setup guides
 

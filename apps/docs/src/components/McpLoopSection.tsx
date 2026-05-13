@@ -66,11 +66,24 @@ export function McpLoopSection() {
             server speaks the Model Context Protocol over stdio — the same
             transport Cursor and Claude Code already use. Your assistant
             calls{' '}
-            <code className="text-primary-light font-mono text-base">analyze_file</code>{' '}
-            and{' '}
-            <code className="text-primary-light font-mono text-base">analyze_and_fix</code>
-            , gets back structured violations with rule IDs and autofixes,
-            and corrects its own output before you even see it.
+            <code className="text-primary-light font-mono text-base">verify_before_write</code>{' '}
+            with the candidate file content, gets back{' '}
+            <code className="text-primary-light font-mono text-base">passed</code> +
+            violations + a{' '}
+            <code className="text-primary-light font-mono text-base">recommendedAction</code>,
+            and corrects its own output{' '}
+            <em>before the file is written to disk</em> — not after.
+          </p>
+          <p className="mt-4 text-sm text-gray-500 leading-relaxed">
+            <strong className="text-gray-300">Built for agent throughput.</strong>{' '}
+            In-process{' '}
+            <code className="text-primary-light/80 font-mono text-xs">Linter.verify</code>{' '}
+            (no temp file, no engine spin-up), preloaded on startup, with module-level caches.
+            Cold start ~1s; warm calls 3–7ms; identical-content re-checks ~0.05ms with{' '}
+            <code className="text-primary-light/80 font-mono text-xs">cached: true</code>.
+            The <code className="text-primary-light/80 font-mono text-xs">/deslint-fix</code>{' '}
+            prompt template hard-caps verify at twice per file per turn — never an
+            indefinite retry loop.
           </p>
           <p className="mt-4 text-sm text-gray-500 leading-relaxed">
             Your AI stays on your terms. Deslint itself runs zero LLMs — it&apos;s

@@ -57,6 +57,7 @@
   "peerDependencies": {
     "@angular-eslint/template-parser": ">=18.0.0",
     "@html-eslint/parser": ">=0.40.0",
+    "astro-eslint-parser": ">=1.0.0",
     "eslint": ">=10.0.0",
     "svelte-eslint-parser": ">=0.30.0",
     "vue-eslint-parser": ">=9.0.0"
@@ -66,6 +67,9 @@
       "optional": true
     },
     "@html-eslint/parser": {
+      "optional": true
+    },
+    "astro-eslint-parser": {
       "optional": true
     },
     "vue-eslint-parser": {
@@ -85,6 +89,7 @@
     "@typescript-eslint/parser": "^8.0.0",
     "@typescript-eslint/rule-tester": "^8.0.0",
     "@vitest/coverage-v8": "^3.0.0",
+    "astro-eslint-parser": "^1.2.2",
     "eslint": "^10.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.0",

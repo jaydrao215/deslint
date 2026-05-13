@@ -1,0 +1,28 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`release-gate: shadcn-ui/ui shadcn@4.7.0 > per-rule fire counts match the committed snapshot (regression alarm) 1`] = `
+{
+  "filesLinted": 485,
+  "ref": "shadcn@4.7.0",
+  "repo": "shadcn-ui/ui",
+  "ruleFireCounts": {
+    "deslint/a11y-color-contrast": 1,
+    "deslint/autocomplete-attribute": 39,
+    "deslint/focus-visible-style": 13,
+    "deslint/icon-accessibility": 34,
+    "deslint/image-alt-text": 4,
+    "deslint/link-text": 3,
+    "deslint/no-arbitrary-border-radius": 6,
+    "deslint/no-arbitrary-spacing": 91,
+    "deslint/no-arbitrary-typography": 2,
+    "deslint/no-arbitrary-zindex": 1,
+    "deslint/no-magic-numbers-layout": 1,
+    "deslint/no-prod-console": 1,
+    "deslint/prefer-semantic-html": 5,
+    "deslint/prefers-reduced-motion": 48,
+    "deslint/responsive-image-optimization": 8,
+    "deslint/responsive-required": 59,
+    "react/no-children-prop": 9,
+  },
+}
+`;

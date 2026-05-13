@@ -5,7 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/@deslint/eslint-plugin)](https://www.npmjs.com/package/@deslint/eslint-plugin)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-The rule set behind Deslint, the verification layer for AI-generated code. 37 deterministic ESLint rules that verify design-system, accessibility, and frontend-safety standards on code written by Claude Code, Cursor, Codex, Windsurf, Copilot, and any other AI coding agent — arbitrary colours, inconsistent spacing, missing responsive breakpoints, WCAG 2.2 accessibility gaps, `dangerouslySetInnerHTML` XSS surfaces, missing `rel="noopener noreferrer"` on external links, and more. Auto-fix support for 14 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
+The rule set behind Deslint, the verification layer for AI-generated code. 62 deterministic ESLint rules that verify design-system, accessibility, **backend-safety**, **Next.js stability**, and **AI-coding hygiene** standards on code written by Claude Code, Cursor, Codex, Windsurf, Copilot, and any other AI coding agent. Auto-fix support for 14 rules. **Works with React / Next.js, Vue / Nuxt, Svelte, Astro, Angular, and plain HTML** — including Astro's `class:list={[...]}` form and `set:html` (frontmatter ESM is linted by every backend-safety rule too).
 
 Use `@deslint/cli` alongside the plugin to get a Fix Plan that prioritizes
 auto-fixes, token decisions, accessibility risks, and design debt after every
@@ -35,9 +35,28 @@ pnpm add -D vue-eslint-parser
 pnpm add -D @angular-eslint/template-parser
 # Svelte
 pnpm add -D svelte-eslint-parser
+# Astro
+pnpm add -D astro-eslint-parser
 # Plain HTML (.html files)
 pnpm add -D @html-eslint/parser
 ```
+
+> **Astro setup:** Install `astro-eslint-parser` and add an override
+> block to your flat config so `.astro` files are parsed correctly:
+> ```js
+> import astroParser from 'astro-eslint-parser';
+> import deslint from '@deslint/eslint-plugin';
+>
+> export default [
+>   deslint.configs.recommended,
+>   {
+>     files: ['**/*.astro'],
+>     languageOptions: { parser: astroParser },
+>   },
+> ];
+> ```
+> Without the override, ESLint silently skips `.astro` files — that's
+> the dominant source of false-negative reports on Astro projects.
 
 > **Angular vs plain HTML:** When both `@angular-eslint/template-parser` and
 > `@html-eslint/parser` are installed, Deslint routes `**/*.component.html` to
@@ -57,7 +76,7 @@ export default [
 ];
 ```
 
-## Rules (37)
+## Rules (62)
 
 | Rule | Category | Description | Fixable | Default |
 |------|----------|-------------|:-------:|---------|
@@ -98,6 +117,31 @@ export default [
 | `safe-external-links` | Frontend Safety | Require `rel="noopener noreferrer"` on `<a target="_blank">` | Yes | warn |
 | `iframe-sandbox` | Frontend Safety | Require a `sandbox` attribute on `<iframe>` | No | warn |
 | `max-component-lines` | Code Quality | Flag overly large components | No | off |
+| `no-hardcoded-secrets` | Backend Safety | Provider-fingerprinted API keys (AWS/GitHub/Stripe/Google/Slack/OpenAI/Anthropic/JWT/PEM) + high-entropy secrets | No | error |
+| `no-sql-injection` | Backend Safety | SQL built by `+` concat or template-literal interpolation | No | error |
+| `no-shell-injection` | Backend Safety | `child_process.exec` / `spawn({shell:true})` with dynamic input | No | error |
+| `no-path-traversal` | Backend Safety | `fs.readFile` / `path.join` / `res.sendFile` with request input (CWE-22) | No | error |
+| `no-ssrf` | Backend Safety | `fetch` / `axios` / `http` with request-derived URL (CWE-918) | No | error |
+| `no-eval` | Backend Safety | `eval()`, `new Function()`, `vm.run*`, string-arg `setTimeout` | No | error |
+| `no-permissive-cors` | Backend Safety | `cors({ origin:"*", credentials:true })` and reflect-any-origin | No | error |
+| `no-disabled-tls` | Backend Safety | `rejectUnauthorized: false`, `NODE_TLS_REJECT_UNAUTHORIZED=0` | No | error |
+| `secure-cookies` | Backend Safety | Missing `httpOnly`/`secure`/`sameSite` on session cookies | No | warn |
+| `require-jwt-expiry` | Backend Safety | `jwt.sign(...)` without `expiresIn`; `algorithm: "none"` | No | warn |
+| `no-weak-crypto` | Backend Safety | `createHash("md5"\|"sha1")`, deprecated ciphers, `Math.random()` for tokens | No | warn |
+| `safe-redirect` | Backend Safety | Open redirect (`res.redirect(req.query.next)`) on Express/Koa/Fastify/Next.js | No | warn |
+| `no-hydration-mismatch` | Next.js | `Math.random`/`Date.now`/`new Date()` inline in JSX | No | warn |
+| `no-leaked-env-on-client` | Next.js | Non-public `process.env.X` reads from `"use client"` files | No | error |
+| `no-server-only-in-client` | Next.js | `fs`/`crypto`/`child_process`/DB drivers in `"use client"` files | No | error |
+| `no-async-useeffect` | Next.js | `useEffect(async () => ...)` antipattern | No | error |
+| `no-floating-promise-handler` | AI-coding | Async Express/Fastify route handlers without try/catch or wrapper | No | error |
+| `no-unsafe-mass-assignment` | AI-coding | `Object.assign(user, req.body)` / `{ ...user, ...req.body }` | No | error |
+| `no-empty-catch` | AI-coding | `try { … } catch {}`, `catch (e) {}`, `catch (e) { /* TODO */ }` — silently swallow runtime errors | No | error |
+| `no-leaked-stack-trace` | AI-coding | `res.send(err.stack)` / `res.json({ error: err })` / `new Response(err.stack)` | No | error |
+| `no-unvalidated-input` | AI-coding | `as T` / `satisfies T` on `req.body` / `await request.json()` without a validator | No | warn |
+| `no-prod-console` | AI-coding | `console.log`/`debug`/`info`/`table`/`time*` in non-test source; `error`/`warn` allowed | No | warn |
+| `no-mock-data-in-prod` | AI-coding | `mockUsers`/`fakeOrders`/`seedData` arrays + placeholder emails outside test paths | No | warn |
+| `no-placeholder-code` | AI-coding | `throw new Error("not implemented")` / TODO-stub shapes | No | warn |
+| `no-hardcoded-localhost` | AI-coding | `localhost` / `127.0.0.1` / `0.0.0.0` URLs shipping to production | No | warn |
 
 ---
 
@@ -373,8 +417,11 @@ Create `.deslintrc.json` to define your design system tokens:
 | React / Next.js | Yes | Yes | Cal.com, Dub.co, taxonomy, saas-starter |
 | Vue / Nuxt | Yes | Yes | Elk |
 | Svelte | Yes | Yes | Parser ready |
+| Astro | Yes† | Partial | withastro/astro@4.16.18 (examples/blog + examples/basics) |
 | Angular | Yes | No* | Vintor |
 | Plain HTML | Yes** | Yes*** | html5-boilerplate, StartBootstrap |
+
+† Via optional peer dependency `astro-eslint-parser@>=1.0.0`. Configure a `files: ['**/*.astro']` override with `languageOptions.parser: astroParser` in your flat config. Class-based rules read `class="…"` and the canonical `class:list={[…, { active: cond }]}` form; the XSS rule (`no-dangerous-html`) flags Astro's `set:html={…}` alongside React's `dangerouslySetInnerHTML`; frontmatter (`---`) ESM is linted by all backend-safety rules (`no-hardcoded-secrets`, `no-sql-injection`, `no-shell-injection`, …) since it's regular JS/TS.
 
 \* Angular template parser nodes lack `range` property. Violations are reported but auto-fix is skipped. JSX-specific rules (`a11y-color-contrast`, `missing-states`, `consistent-component-spacing`, `max-component-lines`, `responsive-required`, `prefer-semantic-html`) require JSX AST patterns and produce 0 violations on Angular templates.
 

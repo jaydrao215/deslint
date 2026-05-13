@@ -18,10 +18,25 @@ Concretely, before `git commit` or `git push`:
    so the build step covers this for `apps/docs`. For packages without a build
    step, run `pnpm -r typecheck` or equivalent.
 3. **Run the tests** for anything non-trivial (`pnpm -r test` or filtered).
-4. **Only then commit and push.**
+4. **Run lint** (`pnpm -r lint`). The lint task is SEPARATE from build and
+   tests in this monorepo — `pnpm -r build` doesn't run it, and CI's lint job
+   will fail independently. Common gotchas it catches: `no-useless-escape`
+   inside regex character classes (`[A-Za-z0-9_\-]` vs `[A-Za-z0-9_-]`),
+   unused imports, unused variables. **Skipping this is what gets a build
+   to fail in CI after every other check passes locally.**
+5. **Commit `action/dist/index.js` if anything changed under
+   `packages/eslint-plugin`, `packages/cli`, `packages/shared`, or
+   `action/src`.** The action bundles those packages directly via esbuild;
+   CI runs `git diff --quiet -- action/dist` after the workspace build and
+   fails if the committed bundle is stale. Do NOT `git checkout
+   action/dist/index.js` to "drop build-artifact churn" — `action/dist` is
+   the durable artifact that `uses: jaydrao215/deslint/action@main`
+   consumers download. It's intentionally tracked, unlike the per-package
+   `dist/` folders that are regenerated on `npm publish`.
+6. **Only then commit and push.**
 
-If the build/tests/types fail, fix the underlying issue; do not paper over it
-with `--no-verify`, `// @ts-expect-error`, or `git push --force`.
+If the build/tests/types/lint fail, fix the underlying issue; do not paper
+over it with `--no-verify`, `// @ts-expect-error`, or `git push --force`.
 
 ### Common traps this has caught
 

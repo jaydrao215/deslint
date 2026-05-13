@@ -35,6 +35,31 @@ import spacingRhythmConsistency from './rules/spacing-rhythm-consistency.js';
 import noDangerousHtml from './rules/no-dangerous-html.js';
 import safeExternalLinks from './rules/safe-external-links.js';
 import iframeSandbox from './rules/iframe-sandbox.js';
+import noHardcodedSecrets from './rules/no-hardcoded-secrets.js';
+import noSqlInjection from './rules/no-sql-injection.js';
+import noShellInjection from './rules/no-shell-injection.js';
+import noWeakCrypto from './rules/no-weak-crypto.js';
+import safeRedirect from './rules/safe-redirect.js';
+import noPathTraversal from './rules/no-path-traversal.js';
+import noSsrf from './rules/no-ssrf.js';
+import secureCookies from './rules/secure-cookies.js';
+import noPermissiveCors from './rules/no-permissive-cors.js';
+import noEval from './rules/no-eval.js';
+import noDisabledTls from './rules/no-disabled-tls.js';
+import requireJwtExpiry from './rules/require-jwt-expiry.js';
+import noHydrationMismatch from './rules/no-hydration-mismatch.js';
+import noLeakedEnvOnClient from './rules/no-leaked-env-on-client.js';
+import noAsyncUseEffect from './rules/no-async-useeffect.js';
+import noFloatingPromiseHandler from './rules/no-floating-promise-handler.js';
+import noUnsafeMassAssignment from './rules/no-unsafe-mass-assignment.js';
+import noServerOnlyInClient from './rules/no-server-only-in-client.js';
+import noPlaceholderCode from './rules/no-placeholder-code.js';
+import noHardcodedLocalhost from './rules/no-hardcoded-localhost.js';
+import noEmptyCatch from './rules/no-empty-catch.js';
+import noProdConsole from './rules/no-prod-console.js';
+import noLeakedStackTrace from './rules/no-leaked-stack-trace.js';
+import noUnvalidatedInput from './rules/no-unvalidated-input.js';
+import noMockDataInProd from './rules/no-mock-data-in-prod.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -83,6 +108,31 @@ const plugin = {
     'no-dangerous-html': noDangerousHtml,
     'safe-external-links': safeExternalLinks,
     'iframe-sandbox': iframeSandbox,
+    'no-hardcoded-secrets': noHardcodedSecrets,
+    'no-sql-injection': noSqlInjection,
+    'no-shell-injection': noShellInjection,
+    'no-weak-crypto': noWeakCrypto,
+    'safe-redirect': safeRedirect,
+    'no-path-traversal': noPathTraversal,
+    'no-ssrf': noSsrf,
+    'secure-cookies': secureCookies,
+    'no-permissive-cors': noPermissiveCors,
+    'no-eval': noEval,
+    'no-disabled-tls': noDisabledTls,
+    'require-jwt-expiry': requireJwtExpiry,
+    'no-hydration-mismatch': noHydrationMismatch,
+    'no-leaked-env-on-client': noLeakedEnvOnClient,
+    'no-async-useeffect': noAsyncUseEffect,
+    'no-floating-promise-handler': noFloatingPromiseHandler,
+    'no-unsafe-mass-assignment': noUnsafeMassAssignment,
+    'no-server-only-in-client': noServerOnlyInClient,
+    'no-placeholder-code': noPlaceholderCode,
+    'no-hardcoded-localhost': noHardcodedLocalhost,
+    'no-empty-catch': noEmptyCatch,
+    'no-prod-console': noProdConsole,
+    'no-leaked-stack-trace': noLeakedStackTrace,
+    'no-unvalidated-input': noUnvalidatedInput,
+    'no-mock-data-in-prod': noMockDataInProd,
   },
   configs: {} as Record<string, any>,
 };
@@ -128,6 +178,34 @@ plugin.configs.recommended = {
     'deslint/no-dangerous-html': 'warn',
     'deslint/safe-external-links': 'warn',
     'deslint/iframe-sandbox': 'warn',
+    // Backend safety — high-signal, low false-positive defaults.
+    'deslint/no-hardcoded-secrets': 'error',
+    'deslint/no-sql-injection': 'error',
+    'deslint/no-shell-injection': 'error',
+    'deslint/no-weak-crypto': 'warn',
+    'deslint/safe-redirect': 'warn',
+    'deslint/no-path-traversal': 'error',
+    'deslint/no-ssrf': 'error',
+    'deslint/secure-cookies': 'warn',
+    'deslint/no-permissive-cors': 'error',
+    'deslint/no-eval': 'error',
+    'deslint/no-disabled-tls': 'error',
+    'deslint/require-jwt-expiry': 'warn',
+    // Frontend-stability / Next.js distribution.
+    'deslint/no-hydration-mismatch': 'warn',
+    'deslint/no-leaked-env-on-client': 'error',
+    // AI-coding hygiene — patterns ESLint and TS won't catch.
+    'deslint/no-async-useeffect': 'error',
+    'deslint/no-floating-promise-handler': 'error',
+    'deslint/no-unsafe-mass-assignment': 'error',
+    'deslint/no-server-only-in-client': 'error',
+    'deslint/no-placeholder-code': 'warn',
+    'deslint/no-hardcoded-localhost': 'warn',
+    'deslint/no-empty-catch': 'error',
+    'deslint/no-prod-console': 'warn',
+    'deslint/no-leaked-stack-trace': 'error',
+    'deslint/no-unvalidated-input': 'warn',
+    'deslint/no-mock-data-in-prod': 'warn',
   },
 };
 
@@ -171,6 +249,76 @@ plugin.configs.strict = {
     'deslint/no-dangerous-html': 'error',
     'deslint/safe-external-links': 'error',
     'deslint/iframe-sandbox': 'error',
+    'deslint/no-hardcoded-secrets': 'error',
+    'deslint/no-sql-injection': 'error',
+    'deslint/no-shell-injection': 'error',
+    'deslint/no-weak-crypto': 'error',
+    'deslint/safe-redirect': 'error',
+    'deslint/no-path-traversal': 'error',
+    'deslint/no-ssrf': 'error',
+    'deslint/secure-cookies': 'error',
+    'deslint/no-permissive-cors': 'error',
+    'deslint/no-eval': 'error',
+    'deslint/no-disabled-tls': 'error',
+    'deslint/require-jwt-expiry': 'error',
+    'deslint/no-hydration-mismatch': 'error',
+    'deslint/no-leaked-env-on-client': 'error',
+    'deslint/no-async-useeffect': 'error',
+    'deslint/no-floating-promise-handler': 'error',
+    'deslint/no-unsafe-mass-assignment': 'error',
+    'deslint/no-server-only-in-client': 'error',
+    'deslint/no-placeholder-code': 'error',
+    'deslint/no-hardcoded-localhost': 'error',
+    'deslint/no-empty-catch': 'error',
+    'deslint/no-prod-console': 'error',
+    'deslint/no-leaked-stack-trace': 'error',
+    'deslint/no-unvalidated-input': 'error',
+    'deslint/no-mock-data-in-prod': 'error',
+  },
+};
+
+// Backend-only preset — for server packages that don't render UI.
+// Skips the frontend/design/a11y rules and enables only the backend-safety
+// rules at error severity, so deslint can guard API workers, edge handlers,
+// and serverless functions alongside the design-system gate.
+plugin.configs.backend = {
+  plugins: { deslint: plugin },
+  rules: {
+    'deslint/no-hardcoded-secrets': 'error',
+    'deslint/no-sql-injection': 'error',
+    'deslint/no-shell-injection': 'error',
+    'deslint/no-weak-crypto': 'error',
+    'deslint/safe-redirect': 'error',
+    'deslint/no-path-traversal': 'error',
+    'deslint/no-ssrf': 'error',
+    'deslint/secure-cookies': 'error',
+    'deslint/no-permissive-cors': 'error',
+    'deslint/no-eval': 'error',
+    'deslint/no-disabled-tls': 'error',
+    'deslint/require-jwt-expiry': 'warn',
+    'deslint/no-floating-promise-handler': 'error',
+    'deslint/no-unsafe-mass-assignment': 'error',
+    'deslint/no-placeholder-code': 'warn',
+    'deslint/no-hardcoded-localhost': 'warn',
+    'deslint/no-empty-catch': 'error',
+    'deslint/no-prod-console': 'warn',
+    'deslint/no-leaked-stack-trace': 'error',
+    'deslint/no-unvalidated-input': 'warn',
+  },
+};
+
+// Next.js preset — the rules that matter most when AI generates a
+// Next.js app: server-only env leakage into client components, JSX
+// hydration mismatches, the backend pack for route handlers /
+// server actions, plus the frontend recommended pack.
+plugin.configs.nextjs = {
+  plugins: { deslint: plugin },
+  rules: {
+    ...plugin.configs.recommended.rules,
+    'deslint/no-leaked-env-on-client': 'error',
+    'deslint/no-hydration-mismatch': 'error',
+    'deslint/no-async-useeffect': 'error',
+    'deslint/no-server-only-in-client': 'error',
   },
 };
 
