@@ -35,6 +35,11 @@ import spacingRhythmConsistency from './rules/spacing-rhythm-consistency.js';
 import noDangerousHtml from './rules/no-dangerous-html.js';
 import safeExternalLinks from './rules/safe-external-links.js';
 import iframeSandbox from './rules/iframe-sandbox.js';
+import noHardcodedSecrets from './rules/no-hardcoded-secrets.js';
+import noSqlInjection from './rules/no-sql-injection.js';
+import noShellInjection from './rules/no-shell-injection.js';
+import noWeakCrypto from './rules/no-weak-crypto.js';
+import safeRedirect from './rules/safe-redirect.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -83,6 +88,11 @@ const plugin = {
     'no-dangerous-html': noDangerousHtml,
     'safe-external-links': safeExternalLinks,
     'iframe-sandbox': iframeSandbox,
+    'no-hardcoded-secrets': noHardcodedSecrets,
+    'no-sql-injection': noSqlInjection,
+    'no-shell-injection': noShellInjection,
+    'no-weak-crypto': noWeakCrypto,
+    'safe-redirect': safeRedirect,
   },
   configs: {} as Record<string, any>,
 };
@@ -128,6 +138,12 @@ plugin.configs.recommended = {
     'deslint/no-dangerous-html': 'warn',
     'deslint/safe-external-links': 'warn',
     'deslint/iframe-sandbox': 'warn',
+    // Backend safety — high-signal, low false-positive defaults.
+    'deslint/no-hardcoded-secrets': 'error',
+    'deslint/no-sql-injection': 'error',
+    'deslint/no-shell-injection': 'error',
+    'deslint/no-weak-crypto': 'warn',
+    'deslint/safe-redirect': 'warn',
   },
 };
 
@@ -171,6 +187,26 @@ plugin.configs.strict = {
     'deslint/no-dangerous-html': 'error',
     'deslint/safe-external-links': 'error',
     'deslint/iframe-sandbox': 'error',
+    'deslint/no-hardcoded-secrets': 'error',
+    'deslint/no-sql-injection': 'error',
+    'deslint/no-shell-injection': 'error',
+    'deslint/no-weak-crypto': 'error',
+    'deslint/safe-redirect': 'error',
+  },
+};
+
+// Backend-only preset — for server packages that don't render UI.
+// Skips the frontend/design/a11y rules and enables only the backend-safety
+// rules at error severity, so deslint can guard API workers, edge handlers,
+// and serverless functions alongside the design-system gate.
+plugin.configs.backend = {
+  plugins: { deslint: plugin },
+  rules: {
+    'deslint/no-hardcoded-secrets': 'error',
+    'deslint/no-sql-injection': 'error',
+    'deslint/no-shell-injection': 'error',
+    'deslint/no-weak-crypto': 'error',
+    'deslint/safe-redirect': 'error',
   },
 };
 
