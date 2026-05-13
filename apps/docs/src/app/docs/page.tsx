@@ -15,7 +15,7 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 export const metadata: Metadata = {
   title: 'Documentation — Deslint',
   description:
-    'Deslint documentation hub. Pick a surface (MCP server, ESLint plugin, CLI, or GitHub Action), follow the getting-started guide, browse the 57-rule reference, or read the configuration schema. Verification for AI-generated code — frontend, backend, and the Next.js client/server boundary.',
+    'Deslint documentation hub. Pick a surface (MCP server, ESLint plugin, CLI, or GitHub Action), follow the getting-started guide, browse the 62-rule reference, or read the configuration schema. Verification for AI-generated code — frontend, backend, Next.js, and AI-coding hygiene.',
   alternates: { canonical: '/docs' },
   keywords: [
     'deslint docs',
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Deslint Documentation — MCP, ESLint Plugin, CLI, and GitHub Action',
     description:
-      'Pick a surface, follow getting-started, browse 57 rules, or read the configuration schema. Verification for AI-generated code — frontend, backend, and Next.js.',
+      'Pick a surface, follow getting-started, browse 62 rules, or read the configuration schema. Verification for AI-generated code — frontend, backend, and Next.js.',
     url: 'https://deslint.com/docs',
     type: 'website',
   },
@@ -92,7 +92,7 @@ const CARDS = [
     href: '/docs/rules',
     icon: Shield,
     title: 'Rules Reference',
-    description: 'All 57 rules — design, accessibility, backend safety, Next.js stability, and AI-coding hygiene — with examples, options, and auto-fix behavior.',
+    description: 'All 62 rules — design, accessibility, backend safety, Next.js stability, and AI-coding hygiene — with examples, options, and auto-fix behavior.',
     color: 'text-warn bg-warn/10 border-warn/20',
   },
 ];

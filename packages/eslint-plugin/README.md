@@ -5,7 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/@deslint/eslint-plugin)](https://www.npmjs.com/package/@deslint/eslint-plugin)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-The rule set behind Deslint, the verification layer for AI-generated code. 57 deterministic ESLint rules that verify design-system, accessibility, **backend-safety**, and **Next.js stability** standards on code written by Claude Code, Cursor, Codex, Windsurf, Copilot, and any other AI coding agent. Auto-fix support for 14 rules. **Works with React / Next.js, Vue / Nuxt, Svelte, Astro, Angular, and plain HTML** — including Astro's `class:list={[...]}` form and `set:html` (frontmatter ESM is linted by every backend-safety rule too).
+The rule set behind Deslint, the verification layer for AI-generated code. 62 deterministic ESLint rules that verify design-system, accessibility, **backend-safety**, **Next.js stability**, and **AI-coding hygiene** standards on code written by Claude Code, Cursor, Codex, Windsurf, Copilot, and any other AI coding agent. Auto-fix support for 14 rules. **Works with React / Next.js, Vue / Nuxt, Svelte, Astro, Angular, and plain HTML** — including Astro's `class:list={[...]}` form and `set:html` (frontmatter ESM is linted by every backend-safety rule too).
 
 Use `@deslint/cli` alongside the plugin to get a Fix Plan that prioritizes
 auto-fixes, token decisions, accessibility risks, and design debt after every
@@ -76,7 +76,7 @@ export default [
 ];
 ```
 
-## Rules (57)
+## Rules (62)
 
 | Rule | Category | Description | Fixable | Default |
 |------|----------|-------------|:-------:|---------|
@@ -135,6 +135,11 @@ export default [
 | `no-async-useeffect` | Next.js | `useEffect(async () => ...)` antipattern | No | error |
 | `no-floating-promise-handler` | AI-coding | Async Express/Fastify route handlers without try/catch or wrapper | No | error |
 | `no-unsafe-mass-assignment` | AI-coding | `Object.assign(user, req.body)` / `{ ...user, ...req.body }` | No | error |
+| `no-empty-catch` | AI-coding | `try { … } catch {}`, `catch (e) {}`, `catch (e) { /* TODO */ }` — silently swallow runtime errors | No | error |
+| `no-leaked-stack-trace` | AI-coding | `res.send(err.stack)` / `res.json({ error: err })` / `new Response(err.stack)` | No | error |
+| `no-unvalidated-input` | AI-coding | `as T` / `satisfies T` on `req.body` / `await request.json()` without a validator | No | warn |
+| `no-prod-console` | AI-coding | `console.log`/`debug`/`info`/`table`/`time*` in non-test source; `error`/`warn` allowed | No | warn |
+| `no-mock-data-in-prod` | AI-coding | `mockUsers`/`fakeOrders`/`seedData` arrays + placeholder emails outside test paths | No | warn |
 | `no-placeholder-code` | AI-coding | `throw new Error("not implemented")` / TODO-stub shapes | No | warn |
 | `no-hardcoded-localhost` | AI-coding | `localhost` / `127.0.0.1` / `0.0.0.0` URLs shipping to production | No | warn |
 

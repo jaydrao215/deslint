@@ -1,4 +1,4 @@
-// Single source of truth for the 57 Deslint rules.
+// Single source of truth for the 62 Deslint rules.
 //
 // Consumed by:
 //   - apps/docs/src/app/docs/rules/page.tsx       (hub / category index)
@@ -964,6 +964,76 @@ export const RULES: Rule[] = [
     badCode: `fetch('http://localhost:3000/api/users');`,
     goodCode: `fetch(process.env.NEXT_PUBLIC_API_URL + '/users');`,
     relatedSlugs: ['no-placeholder-code', 'no-ssrf', 'no-leaked-env-on-client'],
+  },
+  {
+    slug: 'no-empty-catch',
+    name: 'no-empty-catch',
+    category: 'AI-coding hygiene',
+    tagline:
+      'Forbid empty `catch` blocks (`catch {}`, `catch (e) {}`, `catch (e) { /* TODO */ }`).',
+    description:
+      'AI coding tools use this shape to silence the type checker without addressing the underlying error — the runtime failure then ships invisibly. Distinguishes "truly empty" from "contains only comments" so the report points at the exact AI pattern.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `try { doThing(); } catch (e) { /* TODO */ }`,
+    goodCode: `try { doThing(); } catch (e) { logger.error({ err: e }, 'doThing failed'); throw e; }`,
+    relatedSlugs: ['no-leaked-stack-trace', 'no-floating-promise-handler', 'no-prod-console'],
+  },
+  {
+    slug: 'no-prod-console',
+    name: 'no-prod-console',
+    category: 'AI-coding hygiene',
+    tagline:
+      'Forbid `console.log`/`debug`/`info`/`dir`/`trace`/`table`/`time*` in production source.',
+    description:
+      'Differs from ESLint\'s stock `no-console` in three ways tuned for AI-coding: test/spec/fixture/e2e/script directories are auto-exempted by filename; `console.error` and `console.warn` are allowed (they\'re production logging channels); the default forbidden set targets `log`/`debug`/`info`/`dir`/`trace`/`table`/`time*` — the methods AI tools leave behind from "let me print this to understand what\'s happening" mid-build sessions.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `console.log("got here", payload);`,
+    goodCode: `logger.info({ payload }, "request received");`,
+    relatedSlugs: ['no-empty-catch', 'no-leaked-stack-trace', 'no-placeholder-code'],
+  },
+  {
+    slug: 'no-leaked-stack-trace',
+    name: 'no-leaked-stack-trace',
+    category: 'AI-coding hygiene',
+    tagline:
+      'Forbid HTTP responses that include a stack trace or the raw caught-exception object.',
+    description:
+      'AI-generated error handlers default to `res.status(500).send(err.stack)` or `res.json({ error: err })`, leaking file paths, library versions, embedded secrets, and the internal call graph. Covers Express, Koa, Fastify, Web Response/`NextResponse.json` shapes, plus chained `res.status(...).json(...)`.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `app.use((err, req, res, next) => res.status(500).send(err.stack));`,
+    goodCode: `app.use((err, req, res, next) => { logger.error(err); res.status(500).json({ error: "internal_error" }); });`,
+    relatedSlugs: ['no-empty-catch', 'no-floating-promise-handler', 'no-hardcoded-secrets'],
+  },
+  {
+    slug: 'no-unvalidated-input',
+    name: 'no-unvalidated-input',
+    category: 'AI-coding hygiene',
+    tagline:
+      'Flag `as T` / `satisfies T` on `req.body`, `req.query`, `req.params`, `await request.json()`, etc.',
+    description:
+      'AI tools love to "make TypeScript happy" by asserting the shape of untrusted runtime data: `const body = req.body as CreateUserInput;`. The type system is satisfied; the runtime is not. Mass-assignment, NoSQL injection, and undefined-property crashes all follow downstream. The rule is intentionally narrow — only fires on assertions targeting known untrusted request properties, and skips `as any`/`as unknown` (those are widening, not narrowing).',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `const body = req.body as CreateUserInput;`,
+    goodCode: `const body = userSchema.parse(req.body);`,
+    relatedSlugs: ['no-unsafe-mass-assignment', 'no-sql-injection', 'no-leaked-stack-trace'],
+  },
+  {
+    slug: 'no-mock-data-in-prod',
+    name: 'no-mock-data-in-prod',
+    category: 'AI-coding hygiene',
+    tagline:
+      'Flag `mockUsers`/`fakeData`/`seedData`/`dummyConfig` arrays and placeholder emails (`john.doe@example.com`).',
+    description:
+      'The "AI wrote the boilerplate, then nobody removed the fake data" antipattern. Two arms: (1) variables whose name matches `mock*`/`fake*`/`dummy*`/`placeholder*`/`stub*`/`seed*`/`sample*` and whose initializer is a literal array or object, including `Object.freeze([...])` and `[...] as const` wrappers; (2) placeholder emails (`john.doe@example.com`, `jane.smith@test.com`, `user@example.com`, etc.) anywhere in production source. Test/fixture/story files are exempted by path.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `export const mockUsers = [{ id: 1, email: "john.doe@example.com" }];`,
+    goodCode: `export async function listUsers() { return db.users.findAll(); }`,
+    relatedSlugs: ['no-placeholder-code', 'no-hardcoded-localhost', 'no-hardcoded-secrets'],
   },
 ];
 

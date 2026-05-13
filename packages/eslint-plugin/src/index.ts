@@ -55,6 +55,11 @@ import noUnsafeMassAssignment from './rules/no-unsafe-mass-assignment.js';
 import noServerOnlyInClient from './rules/no-server-only-in-client.js';
 import noPlaceholderCode from './rules/no-placeholder-code.js';
 import noHardcodedLocalhost from './rules/no-hardcoded-localhost.js';
+import noEmptyCatch from './rules/no-empty-catch.js';
+import noProdConsole from './rules/no-prod-console.js';
+import noLeakedStackTrace from './rules/no-leaked-stack-trace.js';
+import noUnvalidatedInput from './rules/no-unvalidated-input.js';
+import noMockDataInProd from './rules/no-mock-data-in-prod.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -123,6 +128,11 @@ const plugin = {
     'no-server-only-in-client': noServerOnlyInClient,
     'no-placeholder-code': noPlaceholderCode,
     'no-hardcoded-localhost': noHardcodedLocalhost,
+    'no-empty-catch': noEmptyCatch,
+    'no-prod-console': noProdConsole,
+    'no-leaked-stack-trace': noLeakedStackTrace,
+    'no-unvalidated-input': noUnvalidatedInput,
+    'no-mock-data-in-prod': noMockDataInProd,
   },
   configs: {} as Record<string, any>,
 };
@@ -191,6 +201,11 @@ plugin.configs.recommended = {
     'deslint/no-server-only-in-client': 'error',
     'deslint/no-placeholder-code': 'warn',
     'deslint/no-hardcoded-localhost': 'warn',
+    'deslint/no-empty-catch': 'error',
+    'deslint/no-prod-console': 'warn',
+    'deslint/no-leaked-stack-trace': 'error',
+    'deslint/no-unvalidated-input': 'warn',
+    'deslint/no-mock-data-in-prod': 'warn',
   },
 };
 
@@ -254,6 +269,11 @@ plugin.configs.strict = {
     'deslint/no-server-only-in-client': 'error',
     'deslint/no-placeholder-code': 'error',
     'deslint/no-hardcoded-localhost': 'error',
+    'deslint/no-empty-catch': 'error',
+    'deslint/no-prod-console': 'error',
+    'deslint/no-leaked-stack-trace': 'error',
+    'deslint/no-unvalidated-input': 'error',
+    'deslint/no-mock-data-in-prod': 'error',
   },
 };
 
@@ -280,6 +300,10 @@ plugin.configs.backend = {
     'deslint/no-unsafe-mass-assignment': 'error',
     'deslint/no-placeholder-code': 'warn',
     'deslint/no-hardcoded-localhost': 'warn',
+    'deslint/no-empty-catch': 'error',
+    'deslint/no-prod-console': 'warn',
+    'deslint/no-leaked-stack-trace': 'error',
+    'deslint/no-unvalidated-input': 'warn',
   },
 };
 

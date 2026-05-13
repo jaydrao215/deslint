@@ -85,7 +85,7 @@ next actions.
 - Expanded MCP surface for compliance, rule metadata, prioritization, and
   budget vetoes
 
-## Rules (57)
+## Rules (62)
 
 ### Design system & layout (7)
 
@@ -183,7 +183,7 @@ Use `deslint.configs.nextjs` for the bundled Next.js preset.
 | `no-server-only-in-client` | Imports of `node:fs`, `node:crypto`, `child_process`, DB drivers (`@prisma/client`, `mongoose`, `redis`, …), and the `server-only` package from `"use client"` files | No | error |
 | `no-async-useeffect` | `useEffect(async () => …)` / `useLayoutEffect(async () => …)` — returns a Promise instead of a cleanup function | No | error |
 
-### AI-coding hygiene (4)
+### AI-coding hygiene (9)
 
 Patterns ESLint and TypeScript won't catch on their own, distilled from real-world
 post-mortems of AI-introduced regressions.
@@ -192,6 +192,11 @@ post-mortems of AI-introduced regressions.
 |------|-------------|:--------:|---------|
 | `no-floating-promise-handler` | Async Express/Fastify route handlers without `try/catch`, `.catch(next)`, or an async-wrapper (`asyncHandler`/`catchAsync`/`wrap`/`tryCatch`) | No | error |
 | `no-unsafe-mass-assignment` | `Object.assign(user, req.body)`, `{ ...user, ...req.body }`, `User.create(req.body)`, `user.update(req.body)` (OWASP A04) | No | error |
+| `no-empty-catch` | `try { … } catch {}`, `catch (e) {}`, `catch (e) { /* TODO */ }` — AI tools silence the type checker without addressing the runtime failure | No | error |
+| `no-leaked-stack-trace` | `res.status(500).send(err.stack)` / `res.json({ error: err })` / `new Response(err.stack)` — leaks file paths, library versions, and the internal call graph to the client | No | error |
+| `no-unvalidated-input` | `as T` / `satisfies T` on `req.body`, `req.query`, `req.params`, `await request.json()` without going through a validator | No | warn |
+| `no-prod-console` | `console.log`/`debug`/`info`/`dir`/`trace`/`table`/`time*` in non-test source. `console.error`/`console.warn` allowed; test/spec/fixture/script paths exempt | No | warn |
+| `no-mock-data-in-prod` | `mockUsers`/`fakeOrders`/`dummyConfig`/`seedData` arrays + placeholder emails (`john.doe@example.com`, `test@test.com`) outside test/fixture/story paths | No | warn |
 | `no-placeholder-code` | `throw new Error("not implemented")` / `"TODO: implement"` / `"placeholder"` / `"coming soon"` shipping to `main` | No | warn |
 | `no-hardcoded-localhost` | `localhost` / `127.0.0.1` / `0.0.0.0` / `host.docker.internal` URLs in source code. Test/fixture paths exempt by filename | No | warn |
 
@@ -201,7 +206,7 @@ post-mortems of AI-introduced regressions.
 |------|-------------|:--------:|---------|
 | `max-component-lines` | Flag overly large components (default: 300 lines) | No | off |
 
-**Auto-fix coverage:** 14 of 57 rules auto-correct in place (the rest report only — adding a responsive breakpoint, naming a design token, moving a secret to a secret manager, wrapping an async route handler in try/catch, or rewriting a SQL query to use placeholders is a human decision).
+**Auto-fix coverage:** 14 of 62 rules auto-correct in place (the rest report only — adding a responsive breakpoint, naming a design token, moving a secret to a secret manager, wrapping an async route handler in try/catch, or rewriting a SQL query to use placeholders is a human decision).
 
 **Validation:** tested across React/Next.js, Vue/Nuxt, Angular, and plain HTML codebases. No crashes observed in testing; false-positive rate has been low in the projects we've scanned, but we have not formally quantified it. Every rule is wrapped in try/catch. If you hit a false positive, please [open an issue](https://github.com/jaydrao215/deslint/issues).
 

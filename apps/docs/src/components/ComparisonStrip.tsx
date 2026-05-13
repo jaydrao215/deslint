@@ -99,7 +99,7 @@ export function ComparisonStrip() {
             href="/docs/rules"
             className="inline-flex items-center gap-1.5 font-medium text-primary hover:text-primary-light"
           >
-            Browse all 57 rules
+            Browse all 62 rules
             <span aria-hidden>→</span>
           </a>
         </div>

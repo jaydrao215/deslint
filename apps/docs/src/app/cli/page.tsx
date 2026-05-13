@@ -255,7 +255,7 @@ export default function CliHubPage() {
             href="/docs/rules"
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 motion-safe:transition-all"
           >
-            All 57 rules
+            All 62 rules
           </Link>
           <Link
             href="/mcp"

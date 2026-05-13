@@ -47,7 +47,7 @@ const JSON_LD = {
       applicationCategory: 'DeveloperApplication',
       operatingSystem: 'macOS, Linux, Windows',
       description:
-        'The verification layer for AI-generated code. 57 deterministic rules across design-system, accessibility, backend safety (secrets, SQL/shell injection, path traversal, SSRF, weak crypto, insecure cookies, permissive CORS), and Next.js client/server boundary. Reproducible attestations and a commit trailer the merge gate re-verifies. MCP server for Claude Code, Cursor, Codex, and Windsurf.',
+        'The verification layer for AI-generated code. 62 deterministic rules across design-system, accessibility, backend safety (secrets, SQL/shell injection, path traversal, SSRF, weak crypto, insecure cookies, permissive CORS), Next.js client/server boundary, and AI-coding hygiene (empty catches, console.log left in production, leaked stack traces, unvalidated input, mock-data in prod). Reproducible attestations and a commit trailer the merge gate re-verifies. MCP server for Claude Code, Cursor, Codex, and Windsurf.',
       url: 'https://deslint.com',
       offers: [
         {
@@ -70,7 +70,7 @@ const JSON_LD = {
         },
       ],
       featureList: [
-        '57 deterministic rules across design, accessibility, backend safety, and AI-coding antipatterns',
+        '62 deterministic rules across design, accessibility, backend safety, and AI-coding antipatterns',
         'Backend pack: hardcoded secrets, SQL/shell injection, path traversal, SSRF, weak crypto, open redirect, JWT expiry, insecure cookies',
         'Next.js pack: client/server boundary, server-only imports in client bundles, hydration mismatch, leaked env vars',
         'AI-coding hygiene: async useEffect, unwrapped async route handlers, mass-assignment, placeholder code, hardcoded localhost',
@@ -106,7 +106,7 @@ const JSON_LD = {
           name: 'What does Deslint catch that ESLint does not?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Design-system drift (arbitrary Tailwind values, hex colours outside your token scale), accessibility failures (WCAG contrast, missing landmarks, alt text), dark-mode gaps, responsive layout issues, plus AI-coding-specific failures: leaked API keys, SQL/shell injection, path traversal, SSRF, weak crypto, open redirects, insecure cookies, permissive CORS, async useEffect, unwrapped Express handlers, mass-assignment, server-only imports in client bundles, and hydration mismatches. 57 rules in total, purpose-built for code written by AI.',
+            text: 'Design-system drift (arbitrary Tailwind values, hex colours outside your token scale), accessibility failures (WCAG contrast, missing landmarks, alt text), dark-mode gaps, responsive layout issues, plus AI-coding-specific failures: leaked API keys, SQL/shell injection, path traversal, SSRF, weak crypto, open redirects, insecure cookies, permissive CORS, async useEffect, unwrapped Express handlers, mass-assignment, server-only imports in client bundles, hydration mismatches, empty catch blocks, console.log left in production source, leaked stack traces in HTTP responses, type assertions on unvalidated request input, and mock data shipped to prod. 62 rules in total, purpose-built for code written by AI.',
           },
         },
       ],

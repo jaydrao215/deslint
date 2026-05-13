@@ -62,6 +62,10 @@ import noUnsafeMassAssignment from '../../src/rules/no-unsafe-mass-assignment.js
 import noServerOnlyInClient from '../../src/rules/no-server-only-in-client.js';
 import noPlaceholderCode from '../../src/rules/no-placeholder-code.js';
 import noHardcodedLocalhost from '../../src/rules/no-hardcoded-localhost.js';
+import noEmptyCatch from '../../src/rules/no-empty-catch.js';
+import noProdConsole from '../../src/rules/no-prod-console.js';
+import noLeakedStackTrace from '../../src/rules/no-leaked-stack-trace.js';
+import noMockDataInProd from '../../src/rules/no-mock-data-in-prod.js';
 
 const REPO_URL = 'https://github.com/expressjs/express.git';
 const REPO_REF = '4.21.2';
@@ -233,6 +237,9 @@ describe('backend rules — false-positive baseline against expressjs/express ' 
     { ruleName: 'no-unsafe-mass-assignment', rule: noUnsafeMassAssignment },
     { ruleName: 'no-placeholder-code', rule: noPlaceholderCode },
     { ruleName: 'no-hardcoded-localhost', rule: noHardcodedLocalhost },
+    { ruleName: 'no-empty-catch', rule: noEmptyCatch },
+    { ruleName: 'no-leaked-stack-trace', rule: noLeakedStackTrace },
+    { ruleName: 'no-mock-data-in-prod', rule: noMockDataInProd },
   ]) {
     it(`${ruleName}: zero violations across express/{lib,examples}`, () => {
       if (NO_CLONE || !CLONE_DIR) {
@@ -711,6 +718,85 @@ describe('next.js / react rules — known AI-mistake fixtures', () => {
     `;
     const messages = lintWithRule(source, 'no-hardcoded-localhost', noHardcodedLocalhost);
     expect(messages.some((m) => m.messageId === 'hardcodedLocalhost')).toBe(true);
+  });
+
+  // ── Quality-gate rules (wave 4) — AI-mistake fixtures ─────────────
+
+  it('no-empty-catch catches `try { … } catch {}`', () => {
+    const source = `
+      app.get('/users', async (req, res) => {
+        try { const u = await loadUsers(); res.json(u); } catch {}
+      });
+    `;
+    const messages = lintWithRule(source, 'no-empty-catch', noEmptyCatch);
+    expect(messages.some((m) => m.messageId === 'emptyCatch')).toBe(true);
+  });
+
+  it('no-empty-catch catches `catch (e) { /* TODO */ }`', () => {
+    const source = `
+      function safeParse(s) {
+        try { return JSON.parse(s); } catch (e) { /* TODO: handle error */ }
+      }
+    `;
+    const messages = lintWithRule(source, 'no-empty-catch', noEmptyCatch);
+    expect(messages.some((m) => m.messageId === 'commentOnlyCatch')).toBe(true);
+  });
+
+  it('no-prod-console catches a `console.log` left in production source', () => {
+    const source = `
+      export function chargeCustomer(amount) {
+        console.log('charging', amount);
+        return billing.charge(amount);
+      }
+    `;
+    const messages = lintWithRule(source, 'no-prod-console', noProdConsole);
+    expect(messages.some((m) => m.messageId === 'prodConsole')).toBe(true);
+  });
+
+  it('no-prod-console stays quiet on console.error', () => {
+    const source = `console.error('Boot failed', err);`;
+    const messages = lintWithRule(source, 'no-prod-console', noProdConsole);
+    expect(messages.length).toBe(0);
+  });
+
+  it('no-leaked-stack-trace catches `res.status(500).send(err.stack)`', () => {
+    const source = `
+      app.use((err, req, res, next) => {
+        res.status(500).send(err.stack);
+      });
+    `;
+    const messages = lintWithRule(source, 'no-leaked-stack-trace', noLeakedStackTrace);
+    expect(messages.some((m) => m.messageId === 'leakedStack')).toBe(true);
+  });
+
+  it('no-leaked-stack-trace catches `res.json({ error: err })`', () => {
+    const source = `
+      app.use((err, req, res, next) => {
+        res.json({ error: err });
+      });
+    `;
+    const messages = lintWithRule(source, 'no-leaked-stack-trace', noLeakedStackTrace);
+    expect(messages.some((m) => m.messageId === 'leakedErrorObject')).toBe(true);
+  });
+
+  it('no-mock-data-in-prod catches `const mockUsers = [...]` in production code', () => {
+    const source = `
+      export const mockUsers = [
+        { id: 1, name: 'Alice', email: 'alice@example.com' },
+        { id: 2, name: 'Bob', email: 'bob@example.com' },
+      ];
+      export function listUsers() { return mockUsers; }
+    `;
+    const messages = lintWithRule(source, 'no-mock-data-in-prod', noMockDataInProd);
+    expect(messages.some((m) => m.messageId === 'mockNamedDeclaration')).toBe(true);
+  });
+
+  it('no-mock-data-in-prod catches a `john.doe@example.com` literal', () => {
+    const source = `
+      export const defaultAdmin = { email: "john.doe@example.com", role: "admin" };
+    `;
+    const messages = lintWithRule(source, 'no-mock-data-in-prod', noMockDataInProd);
+    expect(messages.some((m) => m.messageId === 'placeholderEmail')).toBe(true);
   });
 
   it('no-hardcoded-localhost stays quiet inside test fixture paths', () => {
