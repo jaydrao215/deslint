@@ -40,6 +40,15 @@ import noSqlInjection from './rules/no-sql-injection.js';
 import noShellInjection from './rules/no-shell-injection.js';
 import noWeakCrypto from './rules/no-weak-crypto.js';
 import safeRedirect from './rules/safe-redirect.js';
+import noPathTraversal from './rules/no-path-traversal.js';
+import noSsrf from './rules/no-ssrf.js';
+import secureCookies from './rules/secure-cookies.js';
+import noPermissiveCors from './rules/no-permissive-cors.js';
+import noEval from './rules/no-eval.js';
+import noDisabledTls from './rules/no-disabled-tls.js';
+import requireJwtExpiry from './rules/require-jwt-expiry.js';
+import noHydrationMismatch from './rules/no-hydration-mismatch.js';
+import noLeakedEnvOnClient from './rules/no-leaked-env-on-client.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -93,6 +102,15 @@ const plugin = {
     'no-shell-injection': noShellInjection,
     'no-weak-crypto': noWeakCrypto,
     'safe-redirect': safeRedirect,
+    'no-path-traversal': noPathTraversal,
+    'no-ssrf': noSsrf,
+    'secure-cookies': secureCookies,
+    'no-permissive-cors': noPermissiveCors,
+    'no-eval': noEval,
+    'no-disabled-tls': noDisabledTls,
+    'require-jwt-expiry': requireJwtExpiry,
+    'no-hydration-mismatch': noHydrationMismatch,
+    'no-leaked-env-on-client': noLeakedEnvOnClient,
   },
   configs: {} as Record<string, any>,
 };
@@ -144,6 +162,16 @@ plugin.configs.recommended = {
     'deslint/no-shell-injection': 'error',
     'deslint/no-weak-crypto': 'warn',
     'deslint/safe-redirect': 'warn',
+    'deslint/no-path-traversal': 'error',
+    'deslint/no-ssrf': 'error',
+    'deslint/secure-cookies': 'warn',
+    'deslint/no-permissive-cors': 'error',
+    'deslint/no-eval': 'error',
+    'deslint/no-disabled-tls': 'error',
+    'deslint/require-jwt-expiry': 'warn',
+    // Frontend-stability / Next.js distribution.
+    'deslint/no-hydration-mismatch': 'warn',
+    'deslint/no-leaked-env-on-client': 'error',
   },
 };
 
@@ -192,6 +220,15 @@ plugin.configs.strict = {
     'deslint/no-shell-injection': 'error',
     'deslint/no-weak-crypto': 'error',
     'deslint/safe-redirect': 'error',
+    'deslint/no-path-traversal': 'error',
+    'deslint/no-ssrf': 'error',
+    'deslint/secure-cookies': 'error',
+    'deslint/no-permissive-cors': 'error',
+    'deslint/no-eval': 'error',
+    'deslint/no-disabled-tls': 'error',
+    'deslint/require-jwt-expiry': 'error',
+    'deslint/no-hydration-mismatch': 'error',
+    'deslint/no-leaked-env-on-client': 'error',
   },
 };
 
@@ -207,6 +244,26 @@ plugin.configs.backend = {
     'deslint/no-shell-injection': 'error',
     'deslint/no-weak-crypto': 'error',
     'deslint/safe-redirect': 'error',
+    'deslint/no-path-traversal': 'error',
+    'deslint/no-ssrf': 'error',
+    'deslint/secure-cookies': 'error',
+    'deslint/no-permissive-cors': 'error',
+    'deslint/no-eval': 'error',
+    'deslint/no-disabled-tls': 'error',
+    'deslint/require-jwt-expiry': 'warn',
+  },
+};
+
+// Next.js preset — the rules that matter most when AI generates a
+// Next.js app: server-only env leakage into client components, JSX
+// hydration mismatches, the backend pack for route handlers /
+// server actions, plus the frontend recommended pack.
+plugin.configs.nextjs = {
+  plugins: { deslint: plugin },
+  rules: {
+    ...plugin.configs.recommended.rules,
+    'deslint/no-leaked-env-on-client': 'error',
+    'deslint/no-hydration-mismatch': 'error',
   },
 };
 

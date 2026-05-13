@@ -47,6 +47,15 @@ import noSqlInjection from '../../src/rules/no-sql-injection.js';
 import noShellInjection from '../../src/rules/no-shell-injection.js';
 import noWeakCrypto from '../../src/rules/no-weak-crypto.js';
 import safeRedirect from '../../src/rules/safe-redirect.js';
+import noPathTraversal from '../../src/rules/no-path-traversal.js';
+import noSsrf from '../../src/rules/no-ssrf.js';
+import secureCookies from '../../src/rules/secure-cookies.js';
+import noPermissiveCors from '../../src/rules/no-permissive-cors.js';
+import noEval from '../../src/rules/no-eval.js';
+import noDisabledTls from '../../src/rules/no-disabled-tls.js';
+import requireJwtExpiry from '../../src/rules/require-jwt-expiry.js';
+import noHydrationMismatch from '../../src/rules/no-hydration-mismatch.js';
+import noLeakedEnvOnClient from '../../src/rules/no-leaked-env-on-client.js';
 
 const REPO_URL = 'https://github.com/expressjs/express.git';
 const REPO_REF = '4.21.2';
@@ -191,6 +200,13 @@ describe('backend rules — false-positive baseline against expressjs/express ' 
     { ruleName: 'no-shell-injection', rule: noShellInjection },
     { ruleName: 'no-weak-crypto', rule: noWeakCrypto },
     { ruleName: 'safe-redirect', rule: safeRedirect },
+    { ruleName: 'no-path-traversal', rule: noPathTraversal },
+    { ruleName: 'no-ssrf', rule: noSsrf },
+    { ruleName: 'secure-cookies', rule: secureCookies },
+    { ruleName: 'no-permissive-cors', rule: noPermissiveCors },
+    { ruleName: 'no-eval', rule: noEval },
+    { ruleName: 'no-disabled-tls', rule: noDisabledTls },
+    { ruleName: 'require-jwt-expiry', rule: requireJwtExpiry },
   ]) {
     it(`${ruleName}: zero violations across express/{lib,examples}`, () => {
       if (NO_CLONE || !CLONE_DIR) {
@@ -346,5 +362,237 @@ describe('backend rules — known AI-mistake fixtures', () => {
     `;
     const messages = lintWithRule(source, 'safe-redirect', safeRedirect);
     expect(messages.length).toBe(0);
+  });
+
+  // ── New backend rules — additional AI-mistake fixtures ──────────────
+
+  it('no-path-traversal catches `fs.readFile(req.query.file)`', () => {
+    const source = `
+      app.get('/file', (req, res) => {
+        fs.readFile(req.query.file, (err, data) => res.send(data));
+      });
+    `;
+    const messages = lintWithRule(source, 'no-path-traversal', noPathTraversal);
+    expect(messages.some((m) => m.messageId === 'pathTraversal')).toBe(true);
+  });
+
+  it('no-path-traversal catches `res.sendFile(req.params.name)`', () => {
+    const source = `app.get('/dl', (req, res) => res.sendFile(req.params.name));`;
+    const messages = lintWithRule(source, 'no-path-traversal', noPathTraversal);
+    expect(messages.some((m) => m.messageId === 'sendFileTraversal')).toBe(true);
+  });
+
+  it('no-path-traversal stays quiet on `res.sendFile(path.join(__dirname, ...))`', () => {
+    const source = `res.sendFile(path.join(__dirname, 'public', 'index.html'));`;
+    const messages = lintWithRule(source, 'no-path-traversal', noPathTraversal);
+    expect(messages.length).toBe(0);
+  });
+
+  it('no-ssrf catches `fetch(req.body.url)`', () => {
+    const source = `
+      app.post('/proxy', async (req, res) => {
+        const r = await fetch(req.body.url);
+        res.send(await r.text());
+      });
+    `;
+    const messages = lintWithRule(source, 'no-ssrf', noSsrf);
+    expect(messages.some((m) => m.messageId === 'ssrf')).toBe(true);
+  });
+
+  it('no-ssrf stays quiet on a hardcoded API URL', () => {
+    const source = `fetch("https://api.example.com/v1/data");`;
+    const messages = lintWithRule(source, 'no-ssrf', noSsrf);
+    expect(messages.length).toBe(0);
+  });
+
+  it('secure-cookies catches a session cookie missing the security trio', () => {
+    const source = `
+      app.post('/login', (req, res) => {
+        res.cookie('session', token);
+        res.redirect('/');
+      });
+    `;
+    const messages = lintWithRule(source, 'secure-cookies', secureCookies);
+    expect(messages.some((m) => m.messageId === 'insecureSession')).toBe(true);
+  });
+
+  it('secure-cookies stays quiet on a properly configured cookie', () => {
+    const source = `
+      res.cookie('session', token, { httpOnly: true, secure: true, sameSite: 'lax' });
+    `;
+    const messages = lintWithRule(source, 'secure-cookies', secureCookies);
+    expect(messages.length).toBe(0);
+  });
+
+  it('no-permissive-cors catches origin:* with credentials:true', () => {
+    const source = `app.use(cors({ origin: "*", credentials: true }));`;
+    const messages = lintWithRule(source, 'no-permissive-cors', noPermissiveCors);
+    expect(messages.some((m) => m.messageId === 'wildcardWithCredentials')).toBe(true);
+  });
+
+  it('no-permissive-cors stays quiet on an allowlist with credentials', () => {
+    const source = `app.use(cors({ origin: ["https://app.example.com"], credentials: true }));`;
+    const messages = lintWithRule(source, 'no-permissive-cors', noPermissiveCors);
+    expect(messages.length).toBe(0);
+  });
+
+  it('no-eval catches eval(req.body.code) — the worst RCE shape AI writes', () => {
+    const source = `app.post('/run', (req, res) => res.json({ result: eval(req.body.code) }));`;
+    const messages = lintWithRule(source, 'no-eval', noEval);
+    expect(messages.some((m) => m.messageId === 'evalDynamic')).toBe(true);
+  });
+
+  it('no-eval catches new Function(body)', () => {
+    const source = `const fn = new Function("ctx", req.body.formula);`;
+    const messages = lintWithRule(source, 'no-eval', noEval);
+    expect(messages.some((m) => m.messageId === 'newFunctionDynamic')).toBe(true);
+  });
+
+  it('no-disabled-tls catches `rejectUnauthorized: false` in an https.Agent', () => {
+    const source = `const agent = new https.Agent({ rejectUnauthorized: false });`;
+    const messages = lintWithRule(source, 'no-disabled-tls', noDisabledTls);
+    expect(messages.some((m) => m.messageId === 'agentInsecureTls')).toBe(true);
+  });
+
+  it('no-disabled-tls catches NODE_TLS_REJECT_UNAUTHORIZED = "0"', () => {
+    const source = `process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";`;
+    const messages = lintWithRule(source, 'no-disabled-tls', noDisabledTls);
+    expect(messages.some((m) => m.messageId === 'tlsEnvDisabled')).toBe(true);
+  });
+
+  it('require-jwt-expiry catches `jwt.sign(payload, secret)`', () => {
+    const source = `const token = jwt.sign({ sub: user.id }, secret);`;
+    const messages = lintWithRule(source, 'require-jwt-expiry', requireJwtExpiry);
+    expect(messages.some((m) => m.messageId === 'missingExpiry')).toBe(true);
+  });
+
+  it('require-jwt-expiry stays quiet on `jwt.sign(payload, secret, { expiresIn })`', () => {
+    const source = `const token = jwt.sign({ sub: user.id }, secret, { expiresIn: "15m" });`;
+    const messages = lintWithRule(source, 'require-jwt-expiry', requireJwtExpiry);
+    expect(messages.length).toBe(0);
+  });
+});
+
+/* ────────────────────────────────────────────────────────────────────── */
+/*  Part 3 — Next.js / React hydration & env-leak fixtures                 */
+/* ────────────────────────────────────────────────────────────────────── */
+
+function lintJsx(
+  source: string,
+  ruleName: string,
+  rule: any,
+  filename?: string,
+): Linter.LintMessage[] {
+  const linter = new Linter();
+  const messages = linter.verify(
+    source,
+    {
+      // ESLint v10 flat config: with no `files` filter the config only
+      // applies to .js. Add an explicit glob so .tsx/.jsx files match.
+      files: ['**/*.{js,jsx,ts,tsx}'],
+      plugins: { deslint: { rules: { [ruleName]: rule } } },
+      rules: { [`deslint/${ruleName}`]: 'error' },
+      languageOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        parserOptions: { ecmaFeatures: { jsx: true } },
+      },
+    },
+    filename ?? 'file.tsx',
+  );
+  // If ESLint reports parse errors, surface them so the test fails
+  // with a useful message rather than silently returning zero rule hits.
+  const parseError = messages.find((m) => m.fatal);
+  if (parseError) {
+    throw new Error(`Parse error at ${parseError.line}:${parseError.column}: ${parseError.message}`);
+  }
+  return messages;
+}
+
+describe('next.js / react rules — known AI-mistake fixtures', () => {
+  it('no-hydration-mismatch catches the Math.random() ID antipattern', () => {
+    const source = `
+      export default function Card() {
+        return <div key={Math.random()}>Hello</div>;
+      }
+    `;
+    const messages = lintJsx(source, 'no-hydration-mismatch', noHydrationMismatch);
+    expect(messages.some((m) => m.messageId === 'nonDeterministicInJsx')).toBe(true);
+  });
+
+  it('no-hydration-mismatch catches new Date() inline (the "current time" bug)', () => {
+    const source = `
+      export default function Clock() {
+        return <time>{new Date().toLocaleTimeString()}</time>;
+      }
+    `;
+    const messages = lintJsx(source, 'no-hydration-mismatch', noHydrationMismatch);
+    expect(messages.some((m) => m.messageId === 'nonDeterministicInJsx')).toBe(true);
+  });
+
+  it('no-hydration-mismatch stays quiet inside useEffect', () => {
+    const source = `
+      export default function Clock() {
+        const [now, setNow] = useState("");
+        useEffect(() => {
+          setNow(new Date().toLocaleTimeString());
+        }, []);
+        return <time>{now}</time>;
+      }
+    `;
+    const messages = lintJsx(source, 'no-hydration-mismatch', noHydrationMismatch);
+    expect(messages.length).toBe(0);
+  });
+
+  it('no-leaked-env-on-client catches process.env.SECRET in a "use client" file', () => {
+    const source = `
+      'use client';
+      import React from 'react';
+      export function ChatBox() {
+        const key = process.env.OPENAI_API_KEY;
+        return <div>{key ? 'configured' : 'not configured'}</div>;
+      }
+    `;
+    const messages = lintJsx(source, 'no-leaked-env-on-client', noLeakedEnvOnClient);
+    expect(messages.some((m) => m.messageId === 'leakedEnv')).toBe(true);
+  });
+
+  it('no-leaked-env-on-client stays quiet on NEXT_PUBLIC_*', () => {
+    const source = `
+      'use client';
+      export function Hero() {
+        return <a href={process.env.NEXT_PUBLIC_APP_URL}>Open app</a>;
+      }
+    `;
+    const messages = lintJsx(source, 'no-leaked-env-on-client', noLeakedEnvOnClient);
+    expect(messages.length).toBe(0);
+  });
+
+  it('no-leaked-env-on-client stays quiet on server files (no "use client" directive)', () => {
+    const source = `
+      // server component / route handler — full env is fine
+      export async function getServerSideProps() {
+        return { props: { apiKey: process.env.OPENAI_API_KEY } };
+      }
+    `;
+    const messages = lintJsx(source, 'no-leaked-env-on-client', noLeakedEnvOnClient);
+    expect(messages.length).toBe(0);
+  });
+
+  it('no-leaked-env-on-client catches the *.client.tsx filename convention', () => {
+    const source = `
+      import React from 'react';
+      export function Inner() {
+        return <span>{process.env.STRIPE_SECRET_KEY}</span>;
+      }
+    `;
+    // Use a relative filename so the flat-config `files` glob matches.
+    const messages = lintJsx(
+      source,
+      'no-leaked-env-on-client',
+      noLeakedEnvOnClient,
+      'app/components/Inner.client.tsx',
+    );
+    expect(messages.some((m) => m.messageId === 'leakedEnv')).toBe(true);
   });
 });
