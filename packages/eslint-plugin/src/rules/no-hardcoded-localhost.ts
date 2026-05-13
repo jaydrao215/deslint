@@ -46,7 +46,7 @@ function extractHost(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
   // Full URL with scheme.
-  const schemed = /^([a-z][a-z0-9+.\-]*:)?\/\/([^/?#]+)/i.exec(trimmed);
+  const schemed = /^([a-z][a-z0-9+.-]*:)?\/\/([^/?#]+)/i.exec(trimmed);
   if (schemed) {
     const authority = schemed[2];
     // Strip user-info if present.
@@ -170,7 +170,7 @@ export default createRule<Options, MessageIds>({
         // For the bare-host form (no scheme), only fire when the call
         // site explicitly demands a URL — otherwise lots of innocuous
         // host-port pairs slip through.
-        const hasScheme = /^[a-z][a-z0-9+.\-]*:/i.test(t) || t.startsWith('//');
+        const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(t) || t.startsWith('//');
         if (!hasScheme && !bareHostAllowed) return null;
         return host;
       }

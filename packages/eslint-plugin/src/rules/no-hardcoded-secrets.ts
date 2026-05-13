@@ -46,13 +46,13 @@ const HIGH_CONFIDENCE_PATTERNS: ReadonlyArray<{ id: string; re: RegExp }> = [
   // Slack tokens (bot / user / app / config tokens)
   { id: 'slack-token', re: /\bxox[abprs]-[A-Za-z0-9-]{10,}\b/ },
   // OpenAI / Anthropic project keys (best-effort — these keep evolving)
-  { id: 'openai-key', re: /\bsk-(?:proj-)?[A-Za-z0-9_\-]{40,}\b/ },
-  { id: 'anthropic-key', re: /\bsk-ant-[A-Za-z0-9_\-]{20,}\b/ },
+  { id: 'openai-key', re: /\bsk-(?:proj-)?[A-Za-z0-9_-]{40,}\b/ },
+  { id: 'anthropic-key', re: /\bsk-ant-[A-Za-z0-9_-]{20,}\b/ },
   // PEM private key blocks
   { id: 'private-key-pem', re: /-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----/ },
   // JWT — 3 base64url segments. Require an `eyJ` header to avoid generic
   // `a.b.c` matches; the header decodes to `{"…` for any real JWT.
-  { id: 'jwt', re: /\beyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\b/ },
+  { id: 'jwt', re: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/ },
 ];
 
 /**
