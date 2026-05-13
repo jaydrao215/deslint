@@ -231,12 +231,15 @@ npx deslint scan
 | React / Next.js | Yes | Yes | Yes (multiple projects) |
 | Vue / Nuxt | Yes | Yes | Yes |
 | Svelte | Yes | Yes | Parser ready |
+| Astro | Yes\*\*\* | Partial | `withastro/astro@4.16.18` (`examples/blog` + `examples/basics`) |
 | Angular | Yes | Partial\* | Yes |
 | Plain HTML | Yes | Yes\*\* | Yes (via `@html-eslint/parser`) |
 
 \* Angular template parser nodes lack `range` — violations reported but auto-fix skipped on those rules.
 
 \*\* A handful of rules (`consistent-component-spacing`, `consistent-border-radius`, `max-component-lines`, `missing-states`, `prefer-semantic-html`) are JSX-only by design.
+
+\*\*\* Via optional peer dependency `astro-eslint-parser`. Class rules read both `class="…"` and the canonical `class:list={[…, { active: cond }]}` form. The XSS rule (`no-dangerous-html`) also flags Astro's `set:html={…}`. Frontmatter (`---`) is regular ESM, so every backend-safety rule (`no-hardcoded-secrets`, `no-sql-injection`, etc.) fires there too.
 
 ## Packages
 

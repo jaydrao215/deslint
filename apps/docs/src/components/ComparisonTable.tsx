@@ -80,7 +80,7 @@ const ROWS: Row[] = [
   },
   {
     label: 'Framework-agnostic',
-    detail: 'React, Vue, Svelte, Angular, HTML',
+    detail: 'React, Vue, Svelte, Astro, Angular, HTML',
     deslint: 'full',
     jsxA11y: 'none',
     tailwindEslint: 'partial',

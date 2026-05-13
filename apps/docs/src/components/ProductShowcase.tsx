@@ -31,7 +31,7 @@ export function ProductShowcase() {
       description:
         'ESLint v10 flat config plugin. Drop into any existing setup — no new toolchain, no peer-dep war. Errors and autofixes appear in Cursor, VS Code, WebStorm, and every ESLint-aware IDE instantly.',
       bullets: [
-        { icon: <Code2 className="h-4 w-4" />, text: 'React, Vue, Svelte, Angular, HTML' },
+        { icon: <Code2 className="h-4 w-4" />, text: 'React, Vue, Svelte, Astro, Angular, HTML' },
         { icon: <Sparkles className="h-4 w-4" />, text: 'Autofix for color + spacing drift' },
         { icon: <ShieldIcon />, text: 'Every rule try/catch wrapped — never crashes lint' },
       ],

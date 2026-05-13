@@ -26,11 +26,36 @@ type CheckFn = (value: string, node: TSESTree.Node) => void;
  */
 export function createClassVisitor(check: CheckFn): Record<string, (node: any) => void> {
   return {
-    // ─── React / Preact / Solid: className="..." or class="..." ───
+    // ─── React / Preact / Solid / Astro: className="…" / class="…" / class:list={…} ───
+    //
+    // Astro's `class:list={...}` is parsed by astro-eslint-parser as a
+    // JSXAttribute whose `name` is a JSXNamespacedName (namespace
+    // 'class', name 'list'). It's the canonical conditional/array class
+    // form in Astro, and pre-1.0 deslint silently skipped it — that
+    // was the dominant source of false negatives reported on Astro
+    // codebases. We treat it as a class binding: the value can be a
+    // string literal, an array of class strings (or objects), an
+    // object whose keys are class names (clsx-style), or a wrapper
+    // call like `clsx(...)`. The same `visitExpression` helper that
+    // walks React's `className={cn(...)}` handles them all.
     JSXAttribute(node: TSESTree.JSXAttribute) {
       try {
-        const name = node.name.type === 'JSXIdentifier' ? node.name.name : null;
-        if (name !== 'className' && name !== 'class') return;
+        let isClassAttr = false;
+        if (node.name.type === 'JSXIdentifier') {
+          const n = node.name.name;
+          if (n === 'className' || n === 'class') isClassAttr = true;
+        } else if ((node.name as any).type === 'JSXNamespacedName') {
+          const ns = (node.name as any).namespace;
+          const local = (node.name as any).name;
+          if (
+            ns?.type === 'JSXIdentifier' &&
+            ns.name === 'class' &&
+            local?.type === 'JSXIdentifier'
+          ) {
+            isClassAttr = true;
+          }
+        }
+        if (!isClassAttr) return;
 
         if (node.value?.type === 'Literal' && typeof node.value.value === 'string') {
           check(node.value.value, node.value);
@@ -180,6 +205,33 @@ function visitExpression(expr: any, check: CheckFn): void {
     for (const quasi of expr.quasis) {
       if (quasi.value.raw) {
         check(quasi.value.raw, quasi);
+      }
+    }
+  }
+
+  // Array expression: `class:list={["bg-[#FF0000]", "p-[13px]", { active: true }]}`
+  // — the canonical Astro form. Each element can be a plain string,
+  //   an object whose KEYS are class names (clsx-style), an array
+  //   (nested), or a CallExpression (e.g. `cn(...)`).
+  if (expr.type === 'ArrayExpression') {
+    for (const el of expr.elements ?? []) {
+      if (!el) continue;
+      visitExpression(el, check);
+    }
+  }
+
+  // Object expression: `class:list={{ active: isActive, "p-[13px]": true }}`
+  // — keys are class names. This handles both clsx-style usage on
+  //   class:list and the conditional shape Astro encourages in docs.
+  if (expr.type === 'ObjectExpression') {
+    for (const prop of expr.properties ?? []) {
+      if (prop.type !== 'Property') continue;
+      const key = prop.key;
+      if (!key) continue;
+      if (key.type === 'Literal' && typeof key.value === 'string') {
+        check(key.value, key);
+      } else if (key.type === 'Identifier' && typeof key.name === 'string') {
+        check(key.name, key);
       }
     }
   }

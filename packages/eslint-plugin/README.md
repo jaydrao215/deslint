@@ -5,7 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/@deslint/eslint-plugin)](https://www.npmjs.com/package/@deslint/eslint-plugin)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-The rule set behind Deslint, the verification layer for AI-generated code. 37 deterministic ESLint rules that verify design-system, accessibility, and frontend-safety standards on code written by Claude Code, Cursor, Codex, Windsurf, Copilot, and any other AI coding agent — arbitrary colours, inconsistent spacing, missing responsive breakpoints, WCAG 2.2 accessibility gaps, `dangerouslySetInnerHTML` XSS surfaces, missing `rel="noopener noreferrer"` on external links, and more. Auto-fix support for 14 rules. Works with React, Vue, Svelte, Angular, and plain HTML.
+The rule set behind Deslint, the verification layer for AI-generated code. 57 deterministic ESLint rules that verify design-system, accessibility, **backend-safety**, and **Next.js stability** standards on code written by Claude Code, Cursor, Codex, Windsurf, Copilot, and any other AI coding agent. Auto-fix support for 14 rules. **Works with React / Next.js, Vue / Nuxt, Svelte, Astro, Angular, and plain HTML** — including Astro's `class:list={[...]}` form and `set:html` (frontmatter ESM is linted by every backend-safety rule too).
 
 Use `@deslint/cli` alongside the plugin to get a Fix Plan that prioritizes
 auto-fixes, token decisions, accessibility risks, and design debt after every
@@ -35,9 +35,28 @@ pnpm add -D vue-eslint-parser
 pnpm add -D @angular-eslint/template-parser
 # Svelte
 pnpm add -D svelte-eslint-parser
+# Astro
+pnpm add -D astro-eslint-parser
 # Plain HTML (.html files)
 pnpm add -D @html-eslint/parser
 ```
+
+> **Astro setup:** Install `astro-eslint-parser` and add an override
+> block to your flat config so `.astro` files are parsed correctly:
+> ```js
+> import astroParser from 'astro-eslint-parser';
+> import deslint from '@deslint/eslint-plugin';
+>
+> export default [
+>   deslint.configs.recommended,
+>   {
+>     files: ['**/*.astro'],
+>     languageOptions: { parser: astroParser },
+>   },
+> ];
+> ```
+> Without the override, ESLint silently skips `.astro` files — that's
+> the dominant source of false-negative reports on Astro projects.
 
 > **Angular vs plain HTML:** When both `@angular-eslint/template-parser` and
 > `@html-eslint/parser` are installed, Deslint routes `**/*.component.html` to
@@ -393,8 +412,11 @@ Create `.deslintrc.json` to define your design system tokens:
 | React / Next.js | Yes | Yes | Cal.com, Dub.co, taxonomy, saas-starter |
 | Vue / Nuxt | Yes | Yes | Elk |
 | Svelte | Yes | Yes | Parser ready |
+| Astro | Yes† | Partial | withastro/astro@4.16.18 (examples/blog + examples/basics) |
 | Angular | Yes | No* | Vintor |
 | Plain HTML | Yes** | Yes*** | html5-boilerplate, StartBootstrap |
+
+† Via optional peer dependency `astro-eslint-parser@>=1.0.0`. Configure a `files: ['**/*.astro']` override with `languageOptions.parser: astroParser` in your flat config. Class-based rules read `class="…"` and the canonical `class:list={[…, { active: cond }]}` form; the XSS rule (`no-dangerous-html`) flags Astro's `set:html={…}` alongside React's `dangerouslySetInnerHTML`; frontmatter (`---`) ESM is linted by all backend-safety rules (`no-hardcoded-secrets`, `no-sql-injection`, `no-shell-injection`, …) since it's regular JS/TS.
 
 \* Angular template parser nodes lack `range` property. Violations are reported but auto-fix is skipped. JSX-specific rules (`a11y-color-contrast`, `missing-states`, `consistent-component-spacing`, `max-component-lines`, `responsive-required`, `prefer-semantic-html`) require JSX AST patterns and produce 0 violations on Angular templates.
 

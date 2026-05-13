@@ -102,7 +102,7 @@ const HOW_TO_JSON_LD = {
   estimatedCost: { '@type': 'MonetaryAmount', currency: 'USD', value: '0' },
   tool: [
     { '@type': 'HowToTool', name: 'Node.js (≥ 20.19)' },
-    { '@type': 'HowToTool', name: 'A frontend project (React, Vue, Svelte, Angular, or plain HTML)' },
+    { '@type': 'HowToTool', name: 'A frontend project (React, Vue, Svelte, Astro, Angular, or plain HTML)' },
   ],
   step: [
     {
