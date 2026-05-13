@@ -6,7 +6,7 @@ import { CATEGORIES, RULES, getRulesByCategory } from '@/lib/rules';
 export const metadata: Metadata = {
   title: 'Rules Reference — 37 Design, Accessibility & Frontend-Safety Lint Rules',
   description:
-    'All 37 Deslint rules with examples, options, and auto-fix behaviour. Design-token rules (no-arbitrary-colors, consistent-border-radius), accessibility (a11y-color-contrast, aria-validation), responsive layout, dark-mode coverage, and frontend-safety basics (no-dangerous-html, safe-external-links, iframe-sandbox) — every rule is its own indexable page.',
+    'All 62 Deslint rules with examples, options, and auto-fix behaviour. Design-token rules, accessibility (WCAG 2.2 AA-mapped), responsive layout, dark-mode coverage, frontend safety (no-dangerous-html, iframe-sandbox), backend safety (secrets, SQL/shell injection, path traversal, SSRF, weak crypto, insecure cookies, permissive CORS), Next.js stability (hydration mismatch, env-var leakage, server-only imports), and AI-coding hygiene (async useEffect, empty catches, leaked stack traces) — every rule is its own indexable page.',
   alternates: { canonical: '/docs/rules' },
   keywords: [
     'eslint rule reference',
@@ -33,7 +33,7 @@ const JSON_LD = {
   '@type': 'ItemList',
   name: 'Deslint Rules Reference',
   description:
-    'All 34 deterministic rules shipped by Deslint for design-token, accessibility, responsive-layout, dark-mode, and consistency coverage. Each entry links to the rule\'s own page.',
+    'All 62 deterministic rules shipped by Deslint — design-token, accessibility, responsive-layout, dark-mode, frontend safety, backend safety, Next.js stability, and AI-coding hygiene. Each entry links to the rule\'s own page.',
   url: 'https://deslint.com/docs/rules',
   numberOfItems: RULES.length,
   itemListElement: RULES.map((rule, i) => ({

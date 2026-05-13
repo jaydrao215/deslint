@@ -238,7 +238,7 @@ export default function FrontendLaunchReadinessChecklist() {
             </Link>
             <span aria-hidden="true">·</span>
             <Link href="/docs/rules" className="text-primary hover:underline">
-              All 37 rules
+              All 62 rules
             </Link>
           </div>
         </FadeIn>

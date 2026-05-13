@@ -4,7 +4,7 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 export const metadata: Metadata = {
   title: 'Configuration — .deslintrc.json Schema, Design Tokens, Profiles',
   description:
-    "Complete .deslintrc.json reference for Deslint. Configure design-system tokens (colors, spacing, radii, typography), rule severities, ignore patterns, and profiles for AI-generated frontend code.",
+    "Complete .deslintrc.json reference for Deslint. Configure design-system tokens (colors, spacing, radii, typography), rule severities, ignore patterns, and profiles for AI-generated code — frontend, backend, Next.js, and AI-coding hygiene rules.",
   alternates: { canonical: '/docs/configuration' },
   keywords: [
     'deslintrc.json',

@@ -7,7 +7,7 @@ import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 export const metadata: Metadata = {
   title: 'Deslint CLI — Scan, Fix, and Attest AI-Generated Frontend Code',
   description:
-    "Deslint ships a local CLI for AI-generated frontend code. Scan a repo, fix deterministic violations, import design tokens from Figma / Style Dictionary / Google Stitch, and emit a reproducible, Sigstore-signable attestation. Zero LLM in the hot path. Zero code leaves your machine.",
+    "Deslint ships a local CLI for AI-generated code — frontend, backend, and Next.js. Scan a repo, fix deterministic violations, import design tokens from Figma / Style Dictionary / Google Stitch, and emit a reproducible, Sigstore-signable attestation. 62 rules covering design, accessibility, backend safety, and AI-coding hygiene. Zero LLM in the hot path. Zero code leaves your machine.",
   alternates: { canonical: '/cli' },
   keywords: [
     'deslint cli',
