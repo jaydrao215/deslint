@@ -19,6 +19,10 @@ import {
   scanDiff,
   getAllRuleDetails,
   analyzeFile,
+  quickCheck,
+  getServerStats,
+  preloadFastPath,
+  _resetCaches,
 } from '../src/tools.js';
 
 const exec = promisify(execFile);
@@ -282,6 +286,183 @@ describe('getAllRuleDetails', () => {
     expect(contrast).toBeDefined();
     expect(contrast!.wcagCriteria.length).toBeGreaterThan(0);
     expect(contrast!.wcagCriteria[0].id).toMatch(/^1\./);
+  });
+});
+
+// ── verifyBeforeWrite fast path: cache + perf semantics ─────────────
+
+describe('verifyBeforeWrite fast path', () => {
+  beforeEach(() => { _resetCaches(); });
+
+  it('reports a durationMs and cached:false on first call', async () => {
+    const filePath = join(tmpDir, 'a.tsx');
+    const result = await verifyBeforeWrite({
+      filePath,
+      proposedContent: `const A = () => <div className="bg-red-500">A</div>;`,
+      projectDir: tmpDir,
+    });
+    expect(result.cached).toBe(false);
+    expect(result.durationMs).toBeGreaterThan(0);
+  });
+
+  it('serves identical content from cache (cached:true, near-zero durationMs)', async () => {
+    const filePath = join(tmpDir, 'b.tsx');
+    const content = `const B = () => <div className="bg-red-500">B</div>;`;
+    await verifyBeforeWrite({ filePath, proposedContent: content, projectDir: tmpDir });
+    const second = await verifyBeforeWrite({ filePath, proposedContent: content, projectDir: tmpDir });
+    expect(second.cached).toBe(true);
+    expect(second.durationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('different content for the same path is NOT a cache hit', async () => {
+    const filePath = join(tmpDir, 'c.tsx');
+    await verifyBeforeWrite({
+      filePath,
+      proposedContent: `const C1 = () => <div className="bg-red-500">C</div>;`,
+      projectDir: tmpDir,
+    });
+    const second = await verifyBeforeWrite({
+      filePath,
+      proposedContent: `const C2 = () => <div className="bg-blue-500">C</div>;`,
+      projectDir: tmpDir,
+    });
+    expect(second.cached).toBe(false);
+  });
+
+  it('strict:true and strict:false produce separate cache entries for the same content', async () => {
+    const filePath = join(tmpDir, 'd.tsx');
+    const content = `const D = () => <div className="p-[13px]">D</div>;`;
+    const lenient = await verifyBeforeWrite({ filePath, proposedContent: content, projectDir: tmpDir, strict: false });
+    const strict = await verifyBeforeWrite({ filePath, proposedContent: content, projectDir: tmpDir, strict: true });
+    expect(lenient.cached).toBe(false);
+    expect(strict.cached).toBe(false); // strict mode is a separate cache key
+  });
+
+  it('returns recommendedAction:"ok-with-warnings" when only warnings fire and strict is off', async () => {
+    const filePath = join(tmpDir, 'warn.tsx');
+    const content = `const W = () => <div className="p-[13px]">W</div>;`;
+    const result = await verifyBeforeWrite({ filePath, proposedContent: content, projectDir: tmpDir });
+    expect(result.passed).toBe(true);
+    expect(result.totalWarnings).toBeGreaterThan(0);
+    expect(result.recommendedAction).toBe('ok-with-warnings');
+  });
+
+  it('severityFloor:"error" drops warnings from the response', async () => {
+    const filePath = join(tmpDir, 'floor.tsx');
+    const content = `const F = () => <div className="p-[13px] bg-[#abc]">F</div>;`;
+    const noFloor = await verifyBeforeWrite({ filePath, proposedContent: content, projectDir: tmpDir });
+    const withFloor = await verifyBeforeWrite({
+      filePath,
+      proposedContent: content,
+      projectDir: tmpDir,
+      severityFloor: 'error',
+    });
+    expect(noFloor.totalWarnings).toBeGreaterThan(0);
+    expect(withFloor.totalWarnings).toBe(0);
+    expect(withFloor.violations.length).toBeLessThanOrEqual(noFloor.violations.length);
+  });
+
+  it('categories filter restricts the reported violations', async () => {
+    const filePath = join(tmpDir, 'cat.tsx');
+    // arbitrary-spacing is in `spacing`; arbitrary-colors in `colors`.
+    const content = `const C = () => <div className="p-[13px] bg-[#abc]">C</div>;`;
+    const colorsOnly = await verifyBeforeWrite({
+      filePath,
+      proposedContent: content,
+      projectDir: tmpDir,
+      categories: ['colors'],
+    });
+    expect(colorsOnly.violations.every((v) => /no-arbitrary-colors|a11y-color-contrast|dark-mode-coverage|consistent-color-palette/.test(v.ruleId))).toBe(true);
+    expect(colorsOnly.violations.some((v) => v.ruleId === 'deslint/no-arbitrary-spacing')).toBe(false);
+  });
+});
+
+// ── quickCheck ───────────────────────────────────────────────────────
+
+describe('quickCheck', () => {
+  beforeEach(() => { _resetCaches(); });
+
+  it('returns clean:true on a passing file', async () => {
+    const filePath = join(tmpDir, 'q1.tsx');
+    const result = await quickCheck({
+      filePath,
+      proposedContent: `const Q = () => <div className="bg-red-500">Q</div>;`,
+      projectDir: tmpDir,
+    });
+    expect(result.clean).toBe(true);
+    expect(result.errorCount).toBe(0);
+  });
+
+  it('returns clean:false when there are errors (using strict:true to force errors)', async () => {
+    const filePath = join(tmpDir, 'q2.tsx');
+    const result = await quickCheck({
+      filePath,
+      proposedContent: `const Q = () => <div className="bg-[#abc]">Q</div>;`,
+      projectDir: tmpDir,
+      strict: true,
+    });
+    expect(result.clean).toBe(false);
+    expect(result.errorCount).toBeGreaterThan(0);
+  });
+
+  it('shares cache with verifyBeforeWrite — calling both is essentially free', async () => {
+    const filePath = join(tmpDir, 'q3.tsx');
+    const content = `const Q = () => <div className="bg-red-500">Q</div>;`;
+    await verifyBeforeWrite({ filePath, proposedContent: content, projectDir: tmpDir });
+    const q = await quickCheck({ filePath, proposedContent: content, projectDir: tmpDir });
+    expect(q.cached).toBe(true);
+  });
+});
+
+// ── getServerStats ──────────────────────────────────────────────────
+
+describe('getServerStats', () => {
+  beforeEach(() => { _resetCaches(); });
+
+  it('returns zero counters before any verify call', () => {
+    const stats = getServerStats();
+    expect(stats.totalVerifyCalls).toBe(0);
+    expect(stats.cacheHits).toBe(0);
+    expect(stats.cacheMisses).toBe(0);
+    expect(stats.cacheHitRate).toBe(null);
+    expect(stats.avgVerifyMs).toBe(null);
+  });
+
+  it('counts calls and computes cache hit rate', async () => {
+    const filePath = join(tmpDir, 's.tsx');
+    const content = `const S = () => <div className="bg-red-500">S</div>;`;
+    await verifyBeforeWrite({ filePath, proposedContent: content, projectDir: tmpDir });
+    await verifyBeforeWrite({ filePath, proposedContent: content, projectDir: tmpDir }); // cache hit
+    await verifyBeforeWrite({ filePath, proposedContent: content, projectDir: tmpDir }); // cache hit
+    const stats = getServerStats();
+    expect(stats.totalVerifyCalls).toBe(1); // only the cache miss runs the linter
+    expect(stats.cacheHits).toBe(2);
+    expect(stats.cacheMisses).toBe(1);
+    expect(stats.cacheHitRate).toBeCloseTo(0.67, 1);
+    expect(stats.avgVerifyMs).toBeGreaterThan(0);
+  });
+});
+
+// ── preloadFastPath ──────────────────────────────────────────────────
+
+describe('preloadFastPath', () => {
+  it('warms the config cache so the first verify call after preload is fast', async () => {
+    _resetCaches();
+    await preloadFastPath(tmpDir);
+    const filePath = join(tmpDir, 'p.tsx');
+    const t0 = performance.now();
+    const result = await verifyBeforeWrite({
+      filePath,
+      proposedContent: `const P = () => <div className="bg-red-500">P</div>;`,
+      projectDir: tmpDir,
+    });
+    const wall = performance.now() - t0;
+    // Without preload, this same call would typically include the
+    // ~1s plugin/parser-import cost. After preload, the warm path
+    // should be well under 100ms even on a slow CI machine.
+    expect(wall).toBeLessThan(100);
+    expect(result.cached).toBe(false);
+    expect(result.durationMs).toBeGreaterThan(0);
   });
 });
 

@@ -58,10 +58,12 @@ All three run entirely on the user's machine. Source code never leaves the host.
 
 ## MCP tools
 
-Exposed by \`@deslint/mcp\` over stdio:
+Exposed by \`@deslint/mcp\` over stdio. **Designed for agent throughput**: in-process \`Linter.verify\` fast path (no temp file, no engine spin-up), preloaded on server startup, with module-level caches so identical-content re-calls return in ~0.05ms with \`cached: true\`.
 
-- **\`verify_before_write\`** — THE pre-write gate. Agent passes proposed file content; server lints it via a same-directory temp file (no permanent disk write); returns \`passed\`, \`violations\`, \`score\`, and a one-line \`recommendedAction\` (\`ok-to-write\` | \`fix-and-retry\` | \`consult-user\`). Supports \`strict: true\` to promote warnings to errors for AI-coding contexts.
-- **\`scan_diff\`** — lint only files changed against a base ref (default \`origin/main\`); separates \`newViolations\` from \`preExisting\` so the merge gate can hard-block new failures.
+- **\`verify_before_write\`** — pre-write gate. Agent passes proposed file content; server returns \`passed\` + violations + \`recommendedAction\` (\`ok-to-write\` | \`ok-with-warnings\` | \`fix-and-retry\` | \`consult-user\`) + \`durationMs\` + \`cached\`. Supports \`strict\`, \`severityFloor\` (\`'error'|'warn'\`), and \`categories\` filters. Cold ~1s, warm 3-7ms, cached 0.05ms.
+- **\`quick_check\`** — sub-200-byte yes/no check (\`{ clean, errorCount, warningCount }\`). Agent's "is this worth a full verify?" decision; shares cache with verify_before_write.
+- **\`scan_diff\`** — lint only files changed against a base ref; separates \`newViolations\` from \`preExisting\`.
+- **\`get_server_stats\`** — per-session telemetry: total verify calls, total wall-clock spent linting, cache hit rate, average call cost. Surface to the user so deslint's overhead is visible.
 - \`analyze_file\` — lint a single existing file. Supports \`strict: true\`.
 - \`analyze_project\` — scan an entire project, return the Design Health Score.
 - \`analyze_and_fix\` — return corrected code for a specific file.
@@ -80,7 +82,7 @@ tool calls:
 
 ## MCP prompts
 
-- \`/deslint-fix\` — slash-command workflow that primes the agent for a structured \`analyze → fix → verify\` loop on a given file. Calls \`analyze_file\`, consults the rule docs resource, applies fixes, then \`verify_before_write\` before each disk write.
+- \`/deslint-fix\` — cost-aware slash-command workflow. Leads with \`quick_check\` to skip clean files for free, calls \`verify_before_write\` AT MOST ONCE for the actual fix, treats \`ok-with-warnings\` as ship-it (no retry on advisory drift), and surfaces \`get_server_stats\` so the user sees the verification overhead. Hard cap: never more than two verify calls per file per turn.
 
 ## MCP setup guides
 

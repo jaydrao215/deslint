@@ -266,9 +266,11 @@ npx deslint-mcp install
 ```
 
 **Tools exposed:**
-- **`verify_before_write`** — lint candidate code BEFORE the agent writes it. The pre-write gate: agent passes the proposed content, gets `passed: boolean` + violations + a one-line `recommendedAction` (`ok-to-write` / `fix-and-retry` / `consult-user`). Supports `strict: true` to promote warnings to errors.
-- **`scan_diff`** — lint only files changed against a base ref (default `origin/main`). Separates `newViolations` (introduced by this branch) from `preExisting`, so agents and merge gates can hard-block on new failures without re-litigating legacy ones.
-- `analyze_file` — lint a single file, get violations + score. Now supports `strict: true`.
+- **`verify_before_write`** — lint candidate code BEFORE the agent writes it. The pre-write gate: agent passes the proposed content, gets `passed` + violations + `recommendedAction` (`ok-to-write` / `ok-with-warnings` / `fix-and-retry` / `consult-user`) + `durationMs` + `cached`. **Fast path**: in-process `Linter.verify` (no temp file, no engine spin-up). Cold start ~1s, warm calls ~3-7ms, identical-content re-calls ~0.05ms. Supports `strict`, `severityFloor`, and `categories` filters.
+- **`quick_check`** — sub-200-byte yes/no check. Returns just `{ clean, errorCount, warningCount, durationMs, cached }`. Designed for the agent's "is this even worth a full verify?" decision; shares cache with `verify_before_write` so calling both for the same content is essentially free.
+- **`scan_diff`** — lint only files changed against a base ref. Separates `newViolations` from `preExisting` so agents/merge gates can hard-block on new failures without re-litigating legacy ones.
+- **`get_server_stats`** — per-session telemetry: total verify calls, total wall-clock spent linting, cache hit rate, average call cost. Surface this to the user so they see deslint's overhead is small.
+- `analyze_file` — lint a single file, get violations + score. Supports `strict: true`.
 - `analyze_project` — scan entire project, get score + top violations
 - `analyze_and_fix` — analyze and auto-fix in one step
 - `compliance_check` — evaluate WCAG 2.2 / WCAG 2.1 AA coverage

@@ -84,7 +84,7 @@ export { generateAgentsMd } from './templates/agents-md.js';
 export { calculateScore } from './score.js';
 export type { ScoreResult, CategoryScore, HistoryEntry } from './score.js';
 export { discoverFiles } from './discover.js';
-export { runLint, aggregateResults } from './lint-runner.js';
+export { runLint, aggregateResults, buildLintConfigs } from './lint-runner.js';
 export type { LintResult, LintFileResult, LintMessage, RuleCategory } from './lint-runner.js';
 export { computeTokenCoverage } from './token-coverage.js';
 export type {

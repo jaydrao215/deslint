@@ -75,6 +75,17 @@ export function McpLoopSection() {
             <em>before the file is written to disk</em> — not after.
           </p>
           <p className="mt-4 text-sm text-gray-500 leading-relaxed">
+            <strong className="text-gray-300">Built for agent throughput.</strong>{' '}
+            In-process{' '}
+            <code className="text-primary-light/80 font-mono text-xs">Linter.verify</code>{' '}
+            (no temp file, no engine spin-up), preloaded on startup, with module-level caches.
+            Cold start ~1s; warm calls 3–7ms; identical-content re-checks ~0.05ms with{' '}
+            <code className="text-primary-light/80 font-mono text-xs">cached: true</code>.
+            The <code className="text-primary-light/80 font-mono text-xs">/deslint-fix</code>{' '}
+            prompt template hard-caps verify at twice per file per turn — never an
+            indefinite retry loop.
+          </p>
+          <p className="mt-4 text-sm text-gray-500 leading-relaxed">
             Your AI stays on your terms. Deslint itself runs zero LLMs — it&apos;s
             the deterministic check in the loop, not another model in the stack.
           </p>

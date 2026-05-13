@@ -72,23 +72,65 @@ can parse results without scraping stringified JSON.
 
 ### `verify_before_write` ★
 
-**The pre-write gate.** Lint candidate code BEFORE the agent writes it to
-disk. The agent passes the proposed content; the server lints it via a
-same-directory `.deslint-verify-*` temp file (so the project's flat-config
-parser dispatch applies unchanged), returns pass/fail + violations + a
-one-line `recommendedAction`. The temp file is removed in a finally block.
+**The pre-write gate.** Lint candidate code BEFORE the agent writes it
+to disk. The agent passes the proposed content; the server runs ESLint's
+`Linter.verify` in-process (no temp file, no engine spin-up), returns
+pass/fail + violations + a one-line `recommendedAction`.
+
+**Performance.** Cold start ~1s (one-time plugin/parser-import cost,
+preloaded on server startup). Warm fresh-content calls 3–7ms.
+Identical-content re-calls hit the in-memory result cache and return in
+~0.05ms with `cached: true` — agents in retry loops should short-circuit
+on that signal.
 
 - **Inputs:** `filePath` (required, may or may not exist on disk yet),
   `proposedContent` (required, max 10 MB), `projectDir` (optional),
-  `strict` (optional, promotes warns to errors)
-- **Returns:** `passed: boolean`, `violations[]`, `score`,
-  `totalErrors`, `totalWarnings`, `recommendedAction`
-  (`'ok-to-write' | 'fix-and-retry' | 'consult-user'`)
+  `strict` (optional, promotes warns to errors), `severityFloor`
+  (optional, `'error' | 'warn'`), `categories` (optional rule-category
+  allowlist, e.g. `['backend-safety','ai-coding']`)
+- **Returns:** `passed`, `violations[]`, `score`, `totalErrors`,
+  `totalWarnings`, `recommendedAction` (`'ok-to-write' |
+  'ok-with-warnings' | 'fix-and-retry' | 'consult-user'`),
+  `durationMs`, `cached`
 
-> **Why this is the killer feature.** Without this, agents call
+`recommendedAction` semantics — **ship-it vs. retry, designed to NOT
+slow the user down**:
+
+| Value | Meaning |
+|---|---|
+| `ok-to-write` | Zero violations. Write the file. |
+| `ok-with-warnings` | Passed all hard blockers; only advisory warnings. **Write the file.** Do NOT retry. |
+| `fix-and-retry` | At least one error-severity violation. Apply corrections and call again — but at most ONCE. |
+| `consult-user` | Token-decision violation the agent can't resolve alone (e.g. "use `bg-primary` or `bg-brand-navy`?"). Surface to the user; don't guess. |
+
+> **Why this is the killer feature.** Without it, agents call
 > `analyze_file` AFTER writing — too late; the bad code is already in
 > the diff. `verify_before_write` flips the moment of truth: agent
-> proposes → we verify → agent writes (or doesn't).
+> proposes → we verify → agent writes (or doesn't). The fast path makes
+> calling it on every write essentially free.
+
+### `quick_check`
+
+Sub-200-byte yes/no lint check. Returns just
+`{ clean, errorCount, warningCount, durationMs, cached }` — no
+enumerated violations, fixed payload size regardless of file content.
+
+- **Inputs:** same as `verify_before_write` minus `severityFloor` and
+  `categories`
+- **Returns:** `clean: boolean`, `errorCount`, `warningCount`,
+  `durationMs`, `cached`
+
+**Use this first.** Agent's "is this even worth a full verify?"
+decision. Shares the result cache with `verify_before_write` — calling
+both for the same content is free; the second call hits the cache.
+
+### `get_server_stats`
+
+Per-session telemetry. Returns
+`{ totalVerifyCalls, totalVerifyMs, cacheHits, cacheMisses,
+cacheHitRate, avgVerifyMs }`. The `/deslint-fix` prompt asks the agent
+to surface this in its final response so the user sees deslint's
+overhead is small.
 
 ### `scan_diff`
 
