@@ -56,6 +56,12 @@ import noDisabledTls from '../../src/rules/no-disabled-tls.js';
 import requireJwtExpiry from '../../src/rules/require-jwt-expiry.js';
 import noHydrationMismatch from '../../src/rules/no-hydration-mismatch.js';
 import noLeakedEnvOnClient from '../../src/rules/no-leaked-env-on-client.js';
+import noAsyncUseEffect from '../../src/rules/no-async-useeffect.js';
+import noFloatingPromiseHandler from '../../src/rules/no-floating-promise-handler.js';
+import noUnsafeMassAssignment from '../../src/rules/no-unsafe-mass-assignment.js';
+import noServerOnlyInClient from '../../src/rules/no-server-only-in-client.js';
+import noPlaceholderCode from '../../src/rules/no-placeholder-code.js';
+import noHardcodedLocalhost from '../../src/rules/no-hardcoded-localhost.js';
 
 const REPO_URL = 'https://github.com/expressjs/express.git';
 const REPO_REF = '4.21.2';
@@ -136,14 +142,30 @@ function lintWithRule(
   options: unknown[] = [],
 ): Linter.LintMessage[] {
   const linter = new Linter();
-  return linter.verify(source, {
+  // Auto-detect: if the source uses ESM (`import`/`export`/top-level
+  // `await`), use module; otherwise commonjs. Avoids forcing every
+  // fixture to declare which mode it's in.
+  const usesEsm =
+    /\bimport\s/m.test(source) ||
+    /\bexport\s/m.test(source) ||
+    /^[ \t]*await\s/m.test(source);
+  const sourceType: 'module' | 'commonjs' = usesEsm ? 'module' : 'commonjs';
+  const messages = linter.verify(source, {
+    files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: { deslint: { rules: { [ruleName]: rule } } },
     rules: { [`deslint/${ruleName}`]: ['error', ...options] },
     languageOptions: {
       ecmaVersion: 'latest',
-      sourceType: 'commonjs',
+      sourceType,
     },
   });
+  const parseError = messages.find((m) => m.fatal);
+  if (parseError) {
+    throw new Error(
+      `Parse error at ${parseError.line}:${parseError.column}: ${parseError.message}\nsourceType=${sourceType}\nSource:\n${source}`,
+    );
+  }
+  return messages;
 }
 
 /**
@@ -207,6 +229,10 @@ describe('backend rules — false-positive baseline against expressjs/express ' 
     { ruleName: 'no-eval', rule: noEval },
     { ruleName: 'no-disabled-tls', rule: noDisabledTls },
     { ruleName: 'require-jwt-expiry', rule: requireJwtExpiry },
+    { ruleName: 'no-floating-promise-handler', rule: noFloatingPromiseHandler },
+    { ruleName: 'no-unsafe-mass-assignment', rule: noUnsafeMassAssignment },
+    { ruleName: 'no-placeholder-code', rule: noPlaceholderCode },
+    { ruleName: 'no-hardcoded-localhost', rule: noHardcodedLocalhost },
   ]) {
     it(`${ruleName}: zero violations across express/{lib,examples}`, () => {
       if (NO_CLONE || !CLONE_DIR) {
@@ -576,6 +602,130 @@ describe('next.js / react rules — known AI-mistake fixtures', () => {
       }
     `;
     const messages = lintJsx(source, 'no-leaked-env-on-client', noLeakedEnvOnClient);
+    expect(messages.length).toBe(0);
+  });
+
+  // ── New AI-coding-pattern fixtures (wave 3) ────────────────────────
+
+  it('no-async-useeffect catches the canonical async-effect antipattern', () => {
+    const source = `
+      'use client';
+      import { useEffect } from 'react';
+      export function Profile() {
+        useEffect(async () => {
+          const u = await fetch('/api/me').then(r => r.json());
+          setUser(u);
+        }, []);
+        return null;
+      }
+    `;
+    const messages = lintJsx(source, 'no-async-useeffect', noAsyncUseEffect);
+    expect(messages.some((m) => m.messageId === 'asyncEffect')).toBe(true);
+  });
+
+  it('no-async-useeffect stays quiet on the IIFE-wrapped pattern', () => {
+    const source = `
+      'use client';
+      import { useEffect } from 'react';
+      export function Profile() {
+        useEffect(() => {
+          (async () => { await fetch('/api/me'); })();
+        }, []);
+        return null;
+      }
+    `;
+    const messages = lintJsx(source, 'no-async-useeffect', noAsyncUseEffect);
+    expect(messages.length).toBe(0);
+  });
+
+  it('no-floating-promise-handler catches the unwrapped async-handler shape', () => {
+    const source = `
+      app.get('/users/:id', async (req, res) => {
+        const u = await User.findById(req.params.id);
+        res.json(u);
+      });
+    `;
+    const messages = lintWithRule(source, 'no-floating-promise-handler', noFloatingPromiseHandler);
+    expect(messages.some((m) => m.messageId === 'unwrappedAsyncHandler')).toBe(true);
+  });
+
+  it('no-floating-promise-handler stays quiet when wrapped in asyncHandler', () => {
+    const source = `
+      app.get('/users/:id', asyncHandler(async (req, res) => {
+        const u = await User.findById(req.params.id);
+        res.json(u);
+      }));
+    `;
+    const messages = lintWithRule(source, 'no-floating-promise-handler', noFloatingPromiseHandler);
+    expect(messages.length).toBe(0);
+  });
+
+  it('no-unsafe-mass-assignment catches Object.assign(user, req.body)', () => {
+    const source = `
+      app.patch('/profile', async (req, res) => {
+        const u = await User.findById(req.user.id);
+        Object.assign(u, req.body);
+        await u.save();
+        res.json(u);
+      });
+    `;
+    const messages = lintWithRule(source, 'no-unsafe-mass-assignment', noUnsafeMassAssignment);
+    expect(messages.some((m) => m.messageId === 'massAssignObject')).toBe(true);
+  });
+
+  it('no-unsafe-mass-assignment catches the spread-body shape', () => {
+    const source = `
+      const updated = { ...user, ...req.body };
+      await user.update(updated);
+    `;
+    const messages = lintWithRule(source, 'no-unsafe-mass-assignment', noUnsafeMassAssignment);
+    expect(messages.some((m) => m.messageId === 'massAssignSpread')).toBe(true);
+  });
+
+  it('no-server-only-in-client catches `import fs from "fs"` in a client file', () => {
+    const source = `
+      'use client';
+      import fs from 'fs';
+      export function FileBrowser() { return null; }
+    `;
+    const messages = lintJsx(source, 'no-server-only-in-client', noServerOnlyInClient);
+    expect(messages.some((m) => m.messageId === 'serverOnlyImport')).toBe(true);
+  });
+
+  it('no-placeholder-code catches `throw new Error("not implemented")`', () => {
+    const source = `
+      export function chargeCustomer(amount) {
+        throw new Error('not implemented');
+      }
+    `;
+    const messages = lintWithRule(source, 'no-placeholder-code', noPlaceholderCode);
+    expect(messages.some((m) => m.messageId === 'notImplemented')).toBe(true);
+  });
+
+  it('no-hardcoded-localhost catches a localhost URL in a fetch call', () => {
+    const source = `
+      export async function loadUsers() {
+        const r = await fetch('http://localhost:3000/api/users');
+        return r.json();
+      }
+    `;
+    const messages = lintWithRule(source, 'no-hardcoded-localhost', noHardcodedLocalhost);
+    expect(messages.some((m) => m.messageId === 'hardcodedLocalhost')).toBe(true);
+  });
+
+  it('no-hardcoded-localhost stays quiet inside test fixture paths', () => {
+    const linter = new Linter();
+    const source = `await fetch('http://localhost:3000/health');`;
+    const messages = linter.verify(
+      source,
+      {
+        files: ['**/*.{js,jsx,ts,tsx}'],
+        plugins: { deslint: { rules: { 'no-hardcoded-localhost': noHardcodedLocalhost as any } } },
+        rules: { 'deslint/no-hardcoded-localhost': 'error' },
+        languageOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+      },
+      'tests/api.spec.ts',
+    );
     expect(messages.length).toBe(0);
   });
 

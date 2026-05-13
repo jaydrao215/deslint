@@ -49,6 +49,12 @@ import noDisabledTls from './rules/no-disabled-tls.js';
 import requireJwtExpiry from './rules/require-jwt-expiry.js';
 import noHydrationMismatch from './rules/no-hydration-mismatch.js';
 import noLeakedEnvOnClient from './rules/no-leaked-env-on-client.js';
+import noAsyncUseEffect from './rules/no-async-useeffect.js';
+import noFloatingPromiseHandler from './rules/no-floating-promise-handler.js';
+import noUnsafeMassAssignment from './rules/no-unsafe-mass-assignment.js';
+import noServerOnlyInClient from './rules/no-server-only-in-client.js';
+import noPlaceholderCode from './rules/no-placeholder-code.js';
+import noHardcodedLocalhost from './rules/no-hardcoded-localhost.js';
 
 import { createRequire } from 'node:module';
 const _require = createRequire(import.meta.url);
@@ -111,6 +117,12 @@ const plugin = {
     'require-jwt-expiry': requireJwtExpiry,
     'no-hydration-mismatch': noHydrationMismatch,
     'no-leaked-env-on-client': noLeakedEnvOnClient,
+    'no-async-useeffect': noAsyncUseEffect,
+    'no-floating-promise-handler': noFloatingPromiseHandler,
+    'no-unsafe-mass-assignment': noUnsafeMassAssignment,
+    'no-server-only-in-client': noServerOnlyInClient,
+    'no-placeholder-code': noPlaceholderCode,
+    'no-hardcoded-localhost': noHardcodedLocalhost,
   },
   configs: {} as Record<string, any>,
 };
@@ -172,6 +184,13 @@ plugin.configs.recommended = {
     // Frontend-stability / Next.js distribution.
     'deslint/no-hydration-mismatch': 'warn',
     'deslint/no-leaked-env-on-client': 'error',
+    // AI-coding hygiene — patterns ESLint and TS won't catch.
+    'deslint/no-async-useeffect': 'error',
+    'deslint/no-floating-promise-handler': 'error',
+    'deslint/no-unsafe-mass-assignment': 'error',
+    'deslint/no-server-only-in-client': 'error',
+    'deslint/no-placeholder-code': 'warn',
+    'deslint/no-hardcoded-localhost': 'warn',
   },
 };
 
@@ -229,6 +248,12 @@ plugin.configs.strict = {
     'deslint/require-jwt-expiry': 'error',
     'deslint/no-hydration-mismatch': 'error',
     'deslint/no-leaked-env-on-client': 'error',
+    'deslint/no-async-useeffect': 'error',
+    'deslint/no-floating-promise-handler': 'error',
+    'deslint/no-unsafe-mass-assignment': 'error',
+    'deslint/no-server-only-in-client': 'error',
+    'deslint/no-placeholder-code': 'error',
+    'deslint/no-hardcoded-localhost': 'error',
   },
 };
 
@@ -251,6 +276,10 @@ plugin.configs.backend = {
     'deslint/no-eval': 'error',
     'deslint/no-disabled-tls': 'error',
     'deslint/require-jwt-expiry': 'warn',
+    'deslint/no-floating-promise-handler': 'error',
+    'deslint/no-unsafe-mass-assignment': 'error',
+    'deslint/no-placeholder-code': 'warn',
+    'deslint/no-hardcoded-localhost': 'warn',
   },
 };
 
@@ -264,6 +293,8 @@ plugin.configs.nextjs = {
     ...plugin.configs.recommended.rules,
     'deslint/no-leaked-env-on-client': 'error',
     'deslint/no-hydration-mismatch': 'error',
+    'deslint/no-async-useeffect': 'error',
+    'deslint/no-server-only-in-client': 'error',
   },
 };
 

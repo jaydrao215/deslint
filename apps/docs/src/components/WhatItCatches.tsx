@@ -1,7 +1,10 @@
 'use client';
 
 import { FadeIn, StaggerContainer, StaggerItem } from './motion';
-import { Palette, Ruler, Type, Smartphone, Accessibility, Moon } from 'lucide-react';
+import {
+  Palette, Ruler, Type, Smartphone, Accessibility, Moon,
+  KeyRound, ShieldAlert, Server, Bug,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 
 interface Category {
@@ -79,6 +82,56 @@ const CATEGORIES: Category[] = [
     },
     rules: ['dark-mode-coverage'],
   },
+  {
+    icon: <KeyRound className="h-5 w-5" />,
+    title: 'Leaked secrets & credentials',
+    description:
+      'Provider-fingerprinted API keys (AWS, GitHub, Stripe, Google, Slack, OpenAI, Anthropic, JWT, PEM) plus high-entropy literals bound to a secret-named identifier.',
+    examples: {
+      bad: 'const apiKey = "sk-proj-XYZ…"',
+      good: 'const apiKey = process.env.OPENAI_API_KEY',
+    },
+    rules: ['no-hardcoded-secrets'],
+  },
+  {
+    icon: <ShieldAlert className="h-5 w-5" />,
+    title: 'Injection & RCE paths',
+    description:
+      'SQL built by `+` concat, `child_process.exec` with a `${path}`, `eval(req.body.code)`, `fetch(req.body.url)`, and `fs.readFile(req.query.file)`.',
+    examples: {
+      bad: 'db.query(`SELECT * FROM u WHERE id=${id}`)',
+      good: 'db.query("SELECT * FROM u WHERE id = ?", [id])',
+    },
+    rules: ['no-sql-injection', 'no-shell-injection', 'no-eval', 'no-ssrf', 'no-path-traversal'],
+  },
+  {
+    icon: <Server className="h-5 w-5" />,
+    title: 'Insecure defaults',
+    description:
+      'Missing httpOnly/secure/sameSite on cookies, `cors({ origin:"*", credentials:true })`, `rejectUnauthorized:false`, JWTs minted without `expiresIn`.',
+    examples: {
+      bad: 'res.cookie("session", token)',
+      good: 'res.cookie("session", token, { httpOnly: true, secure: true, sameSite: "lax" })',
+    },
+    rules: ['secure-cookies', 'no-permissive-cors', 'no-disabled-tls', 'require-jwt-expiry'],
+  },
+  {
+    icon: <Bug className="h-5 w-5" />,
+    title: 'AI-coding antipatterns',
+    description:
+      '`useEffect(async …)` (cleanup never runs), async Express handlers with no try/catch, `Object.assign(user, req.body)`, `throw new Error("not implemented")`, `fetch("http://localhost:3000")` shipping to prod.',
+    examples: {
+      bad: 'useEffect(async () => { await load() }, [])',
+      good: 'useEffect(() => { (async () => { await load() })() }, [])',
+    },
+    rules: [
+      'no-async-useeffect',
+      'no-floating-promise-handler',
+      'no-unsafe-mass-assignment',
+      'no-placeholder-code',
+      'no-hardcoded-localhost',
+    ],
+  },
 ];
 
 export function WhatItCatches() {
@@ -93,10 +146,13 @@ export function WhatItCatches() {
             The bugs that slip past type checkers and tests
           </h2>
           <p className="text-lg text-gray-500 leading-relaxed">
-            AI code compiles. It passes your tests. It renders. And then a designer
-            opens the screen and finds six shades of blue, inconsistent spacing, and
-            a contrast ratio that fails an audit. Deslint catches all of it before
-            the commit lands.
+            AI code compiles. It passes your tests. It renders. Then it ships a
+            hardcoded Stripe key, a SQL string concatenated with{' '}
+            <code className="rounded bg-gray-200/70 px-1 py-0.5 font-mono text-xs">req.body</code>,
+            a <code className="rounded bg-gray-200/70 px-1 py-0.5 font-mono text-xs">useEffect(async&hellip;)</code>{' '}
+            that leaks subscriptions, a contrast ratio that fails an audit, and a
+            redirect to <code className="rounded bg-gray-200/70 px-1 py-0.5 font-mono text-xs">req.query.next</code>.
+            Deslint catches all of it before the commit lands.
           </p>
         </FadeIn>
 

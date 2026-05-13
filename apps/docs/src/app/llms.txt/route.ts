@@ -6,11 +6,11 @@
 
 const BODY = `# Deslint
 
-> Deterministic design-system linter for AI-generated frontend code. Local ESLint plugin + CLI + Model Context Protocol (MCP) server. No cloud, no telemetry, no LLM in the check path.
+> Deterministic verification layer for AI-generated code, frontend and backend. Local ESLint plugin + CLI + Model Context Protocol (MCP) server. No cloud, no telemetry, no LLM in the check path.
 
 Deslint ships as three npm packages:
 
-- \`@deslint/eslint-plugin\` — 37 rules across colors, spacing, typography, responsive, accessibility, consistency, and motion.
+- \`@deslint/eslint-plugin\` — 57 rules across design (colors, spacing, typography, responsive), accessibility (WCAG 2.2 AA-mapped), backend safety (secrets, SQL/shell injection, path traversal, SSRF, weak crypto, open redirects, insecure cookies, permissive CORS, disabled TLS, JWT expiry), Next.js client/server boundary (hydration mismatch, env-var leakage, server-only imports), and AI-coding antipatterns (\`useEffect(async ...)\`, unwrapped Express handlers, mass-assignment, placeholder code, hardcoded localhost).
 - \`@deslint/cli\` — scanning, fixing, coverage reports, Design Health Score, budget enforcement, and compliance attestation.
 - \`@deslint/mcp\` — stdio MCP server exposing the rules as tools that Claude Code, Cursor, Codex, Windsurf, and other MCP clients can call pre-commit.
 
@@ -26,7 +26,7 @@ All three run entirely on the user's machine. Source code never leaves the host.
 
 - [Getting started](https://deslint.com/docs/getting-started/): install, configure, first scan.
 - [Configuration](https://deslint.com/docs/configuration/): \`.deslintrc.json\`, design-system tokens, severity profiles, budgets, quality gates.
-- [Rules index](https://deslint.com/docs/rules/): all 37 rules grouped by category.
+- [Rules index](https://deslint.com/docs/rules/): all 57 rules grouped by category.
 
 ## Rule categories
 
@@ -37,6 +37,10 @@ All three run entirely on the user's machine. Source code never leaves the host.
 - [Accessibility](https://deslint.com/docs/rules/#accessibility): \`image-alt-text\`, \`form-labels\`, \`autocomplete-attribute\`, \`aria-validation\`, \`link-text\`, \`lang-attribute\`, \`viewport-meta\`, \`prefer-semantic-html\`.
 - [Consistency](https://deslint.com/docs/rules/#consistency): \`consistent-component-spacing\`, \`no-arbitrary-border-radius\`, \`consistent-border-radius\`, \`max-component-lines\`, \`missing-states\`, \`no-arbitrary-zindex\`, \`no-inline-styles\`, \`no-conflicting-classes\`, \`no-duplicate-class-strings\`, \`max-tailwind-classes\`.
 - [Motion & Animation](https://deslint.com/docs/rules/#motion-animation): \`prefers-reduced-motion\`, \`icon-accessibility\`, \`focus-trap-patterns\`, \`responsive-image-optimization\`, \`spacing-rhythm-consistency\`.
+- [Frontend safety](https://deslint.com/docs/rules/#frontend-safety): \`no-dangerous-html\`, \`safe-external-links\`, \`iframe-sandbox\`.
+- [Backend safety](https://deslint.com/docs/rules/#backend-safety): \`no-hardcoded-secrets\`, \`no-sql-injection\`, \`no-shell-injection\`, \`no-path-traversal\`, \`no-ssrf\`, \`no-eval\`, \`no-permissive-cors\`, \`no-disabled-tls\`, \`secure-cookies\`, \`require-jwt-expiry\`, \`no-weak-crypto\`, \`safe-redirect\`.
+- [Next.js / framework stability](https://deslint.com/docs/rules/#nextjs): \`no-hydration-mismatch\`, \`no-leaked-env-on-client\`, \`no-server-only-in-client\`, \`no-async-useeffect\`.
+- [AI-coding hygiene](https://deslint.com/docs/rules/#ai-coding-hygiene): \`no-floating-promise-handler\`, \`no-unsafe-mass-assignment\`, \`no-placeholder-code\`, \`no-hardcoded-localhost\`.
 
 ## CLI commands
 

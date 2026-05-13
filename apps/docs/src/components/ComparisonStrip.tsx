@@ -9,6 +9,9 @@ import {
   Moon,
   MousePointerClick,
   Wand2,
+  KeyRound,
+  Database,
+  Cpu,
 } from 'lucide-react';
 
 /**
@@ -54,9 +57,10 @@ export function ComparisonStrip() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="max-w-2xl text-lg leading-relaxed text-gray-500"
           >
-            Six dimensions of design quality that ESLint, type-checkers, and
-            accessibility audits don’t cover on their own — enforced in-editor,
-            in CI, and deterministically from a single config.
+            Nine dimensions of design, accessibility, and runtime-safety
+            quality that ESLint, type-checkers, and security scanners don’t
+            cover on their own — enforced in-editor, in CI, and deterministically
+            from a single config.
           </motion.p>
         </div>
 
@@ -95,7 +99,7 @@ export function ComparisonStrip() {
             href="/docs/rules"
             className="inline-flex items-center gap-1.5 font-medium text-primary hover:text-primary-light"
           >
-            Browse all 37 rules
+            Browse all 57 rules
             <span aria-hidden>→</span>
           </a>
         </div>
@@ -141,6 +145,24 @@ const CAPABILITIES: Capability[] = [
     body: 'Buttons, inputs, and form controls are audited for hover, focus-visible, disabled, and error-state coverage.',
     example: '<button>  →  missing hover/focus',
     Icon: MousePointerClick,
+  },
+  {
+    title: 'Backend safety · OWASP-mapped',
+    body: 'Hardcoded API keys, SQL/shell injection, path traversal, SSRF, open redirects, weak crypto, and disabled TLS — caught in the same lint pass.',
+    example: 'eval(req.body.code)  →  flag RCE',
+    Icon: KeyRound,
+  },
+  {
+    title: 'Mass-assignment & validation',
+    body: 'Splatting `req.body` into a model is flagged; route handlers without an async error guard are caught before they hang production.',
+    example: 'Object.assign(user, req.body)  →  flag',
+    Icon: Database,
+  },
+  {
+    title: 'Next.js client/server boundary',
+    body: '`process.env.SECRET` reads from `"use client"` files, server-only imports in client bundles, and JSX hydration-mismatch sources all get caught.',
+    example: 'import fs from "fs"  →  flag client leak',
+    Icon: Cpu,
   },
   {
     title: 'Safe autofix tiers',

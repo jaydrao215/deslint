@@ -1,4 +1,4 @@
-// Single source of truth for the 34 Deslint rules.
+// Single source of truth for the 57 Deslint rules.
 //
 // Consumed by:
 //   - apps/docs/src/app/docs/rules/page.tsx       (hub / category index)
@@ -16,7 +16,11 @@ export type RuleCategory =
   | 'Responsive'
   | 'Accessibility'
   | 'Consistency'
-  | 'Motion & Animation';
+  | 'Motion & Animation'
+  | 'Frontend safety'
+  | 'Backend safety'
+  | 'Next.js stability'
+  | 'AI-coding hygiene';
 
 export interface Rule {
   slug: string;
@@ -623,6 +627,344 @@ export const RULES: Rule[] = [
 </section>`,
     relatedSlugs: ['no-arbitrary-spacing', 'consistent-component-spacing', 'consistent-border-radius'],
   },
+
+  // ──────────────────────────────────────────────────────────────────
+  //  Frontend safety
+  // ──────────────────────────────────────────────────────────────────
+  {
+    slug: 'no-dangerous-html',
+    name: 'no-dangerous-html',
+    category: 'Frontend safety',
+    tagline:
+      'Flag `dangerouslySetInnerHTML` — the canonical XSS path on user-supplied input.',
+    description:
+      'AI coding tools reach for `dangerouslySetInnerHTML` whenever they need to render any HTML-shaped string, including ones that originated as user input. The rule excludes the canonical safe uses (`<script type="application/ld+json">` for Schema.org, `<style>` for inline CSS, Next.js `<Script>`).',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `<div dangerouslySetInnerHTML={{ __html: comment }} />`,
+    goodCode: `<div>{comment}</div>`,
+    relatedSlugs: ['safe-external-links', 'iframe-sandbox', 'aria-validation'],
+  },
+  {
+    slug: 'safe-external-links',
+    name: 'safe-external-links',
+    category: 'Frontend safety',
+    tagline:
+      'Require `rel="noopener noreferrer"` on `<a target="_blank">`.',
+    description:
+      'Without the rel guard, an `<a target="_blank">` link leaks the opener and enables reverse-tabnabbing — the destination page can rewrite the original tab to a phishing page. Auto-fixed when missing entirely.',
+    fixable: 'Yes — inserts `rel="noopener noreferrer"` when missing.',
+    suggestions: 'No.',
+    badCode: `<a href="https://x.com" target="_blank">x</a>`,
+    goodCode: `<a href="https://x.com" target="_blank" rel="noopener noreferrer">x</a>`,
+    relatedSlugs: ['no-dangerous-html', 'iframe-sandbox', 'aria-validation'],
+  },
+  {
+    slug: 'iframe-sandbox',
+    name: 'iframe-sandbox',
+    category: 'Frontend safety',
+    tagline:
+      'Require a `sandbox` attribute on `<iframe>` to constrain embedded content.',
+    description:
+      'An `<iframe>` without `sandbox` inherits full ambient authority from the parent (cookies, top-level navigation, etc.). The rule fires on unsandboxed iframes; the developer picks the minimum capability set the embedded content actually needs.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `<iframe src="/embed" />`,
+    goodCode: `<iframe src="/embed" sandbox="allow-scripts" />`,
+    relatedSlugs: ['no-dangerous-html', 'safe-external-links', 'aria-validation'],
+  },
+
+  // ──────────────────────────────────────────────────────────────────
+  //  Backend safety
+  // ──────────────────────────────────────────────────────────────────
+  {
+    slug: 'no-hardcoded-secrets',
+    name: 'no-hardcoded-secrets',
+    category: 'Backend safety',
+    tagline:
+      'Flag hardcoded API keys, tokens, and private keys (AWS, GitHub, Stripe, Google, Slack, OpenAI, Anthropic, JWT, PEM).',
+    description:
+      'Two arms: (1) provider-fingerprinted regexes for AWS access key IDs, GitHub PATs, Stripe live keys, Google API keys, Slack tokens, OpenAI/Anthropic project keys, JWTs, and PEM private-key blocks; (2) high-entropy literals bound to a secret-named identifier (`apiKey`, `token`, `password`, …). Placeholders (`changeme`, `<API_KEY>`) and short test fixtures are exempted so demo code stays quiet.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `const apiKey = "sk-proj-XYZ..."`,
+    goodCode: `const apiKey = process.env.OPENAI_API_KEY`,
+    relatedSlugs: ['no-leaked-env-on-client', 'no-disabled-tls', 'no-sql-injection'],
+  },
+  {
+    slug: 'no-sql-injection',
+    name: 'no-sql-injection',
+    category: 'Backend safety',
+    tagline:
+      'Flag SQL queries built by `+` concatenation or template-literal interpolation.',
+    description:
+      'Detects SQL-shaped strings (anchored at the start so prose containing the word "select" mid-sentence doesn\'t match) built by concatenating or interpolating a dynamic value. Safe carve-outs for `sql`/`postgres` tagged templates and parameterized `?` / `$1` placeholder calls.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `db.query(\`SELECT * FROM users WHERE id = \${req.params.id}\`);`,
+    goodCode: `db.query("SELECT * FROM users WHERE id = ?", [req.params.id]);`,
+    relatedSlugs: ['no-shell-injection', 'no-unsafe-mass-assignment', 'no-eval'],
+  },
+  {
+    slug: 'no-shell-injection',
+    name: 'no-shell-injection',
+    category: 'Backend safety',
+    tagline:
+      'Flag `child_process.exec` / `spawn({ shell: true })` with a dynamic command string.',
+    description:
+      'AI-generated handlers regularly splice `req.body.filename` into a shell command, which is RCE if any operand contains a shell metacharacter. The rule distinguishes the real `child_process.exec` from regex `pattern.exec` by requiring a bare-identifier call or a known `child_process` receiver.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `exec(\`tar xf \${userUpload}\`)`,
+    goodCode: `execFile('/usr/bin/tar', ['xf', userUpload])`,
+    relatedSlugs: ['no-eval', 'no-path-traversal', 'no-sql-injection'],
+  },
+  {
+    slug: 'no-path-traversal',
+    name: 'no-path-traversal',
+    category: 'Backend safety',
+    tagline:
+      'Flag `fs.readFile` / `path.join` / `res.sendFile` with request-sourced input (CWE-22).',
+    description:
+      'Filesystem and path-building functions invoked with `req.query.file` / `req.params.path` are an arbitrary-file-read vector unless the resolved path is constrained to an allowlisted root. Recognises Express\'s `{ root }` second-arg option as the safe pattern.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `res.sendFile(req.query.name);`,
+    goodCode: `res.sendFile(req.query.name, { root: FILES_DIR });`,
+    relatedSlugs: ['no-ssrf', 'safe-redirect', 'no-shell-injection'],
+  },
+  {
+    slug: 'no-ssrf',
+    name: 'no-ssrf',
+    category: 'Backend safety',
+    tagline:
+      'Flag outbound HTTP calls whose URL is derived from request input (CWE-918).',
+    description:
+      'AI-generated "fetch a URL the user supplies" features ship SSRF almost every time. The rule covers `fetch`, `axios`, `http.request`, `got`, `ky`, `superagent`, and `axios({ url })` config shapes, plus `new URL(req.query.path, base)`. Block private/loopback/metadata IPs explicitly and resolve hosts before fetching.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `fetch(req.body.url);`,
+    goodCode: `fetch(allowedHosts[req.body.target]);`,
+    relatedSlugs: ['safe-redirect', 'no-path-traversal', 'no-hardcoded-localhost'],
+  },
+  {
+    slug: 'safe-redirect',
+    name: 'safe-redirect',
+    category: 'Backend safety',
+    tagline:
+      'Flag redirects derived from request input (open redirect / phishing path).',
+    description:
+      'Covers Express, Koa, Fastify, and Next.js redirect surfaces. Only fires when the redirect target hits a well-known untrusted property path (`query`/`body`/`params`/`headers`/`cookies`/`url`/`nextUrl`) — server-loaded resources like `req.user.id` and `req.pet.id` stay quiet so canonical "redirect to your own profile" code doesn\'t dominate.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `res.redirect(req.query.next);`,
+    goodCode: `res.redirect(allowedNextUrls[req.query.next] ?? '/');`,
+    relatedSlugs: ['no-ssrf', 'no-path-traversal', 'secure-cookies'],
+  },
+  {
+    slug: 'no-eval',
+    name: 'no-eval',
+    category: 'Backend safety',
+    tagline:
+      'Flag `eval()`, `new Function(...)`, `vm.runInNewContext`, and string-arg timers.',
+    description:
+      'Catches the full arbitrary-code-execution surface: bare `eval`, `new Function(body)`, `vm.runInNewContext`/`runInThisContext`/`runInContext`, plus the string-arg form of `setTimeout`/`setInterval`. The `vm` module is not a security boundary — do not rely on it to "sandbox" untrusted input.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `const result = eval(req.body.expr);`,
+    goodCode: `const result = evaluateInSandbox(req.body.expr);`,
+    relatedSlugs: ['no-shell-injection', 'no-sql-injection', 'no-weak-crypto'],
+  },
+  {
+    slug: 'no-permissive-cors',
+    name: 'no-permissive-cors',
+    category: 'Backend safety',
+    tagline:
+      'Flag `cors({ origin:"*", credentials:true })` and reflect-any-origin handlers.',
+    description:
+      'Browsers reflect the caller\'s origin when credentials are enabled, so `origin: "*"` with `credentials: true` is functionally "allow any site to make authenticated requests on the user\'s behalf." Covers the cors() option object, the `origin: (o, cb) => cb(null, true)` reflect callback, and the manual-header form via `res.setHeader`.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `app.use(cors({ origin: "*", credentials: true }));`,
+    goodCode: `app.use(cors({ origin: ["https://app.example.com"], credentials: true }));`,
+    relatedSlugs: ['secure-cookies', 'no-disabled-tls', 'safe-redirect'],
+  },
+  {
+    slug: 'no-disabled-tls',
+    name: 'no-disabled-tls',
+    category: 'Backend safety',
+    tagline:
+      'Flag `rejectUnauthorized: false` and `NODE_TLS_REJECT_UNAUTHORIZED=0`.',
+    description:
+      'Each of these turns HTTPS into "HTTP plus a vague feeling." AI tools paste them as "make the local cert work" fixes; the line then ships. Trust a CA bundle (`ca: fs.readFileSync(...)`) or fix the underlying cert error.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `const agent = new https.Agent({ rejectUnauthorized: false });`,
+    goodCode: `const agent = new https.Agent({ ca: fs.readFileSync(caPath) });`,
+    relatedSlugs: ['no-weak-crypto', 'no-permissive-cors', 'secure-cookies'],
+  },
+  {
+    slug: 'secure-cookies',
+    name: 'secure-cookies',
+    category: 'Backend safety',
+    tagline:
+      'Require httpOnly / secure / sameSite on `res.cookie` / `reply.setCookie` / `cookies().set`.',
+    description:
+      'Session-shaped cookie names (`session`, `sid`, `next-auth.session-token`, `auth_token`, …) get a louder consolidated message; UI-flag cookies that carry a primitive value (`1`, `true`, short strings) are exempted from `missingHttpOnly` so demo code primitives don\'t dominate.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `res.cookie('session', token);`,
+    goodCode: `res.cookie('session', token, { httpOnly: true, secure: true, sameSite: 'lax' });`,
+    relatedSlugs: ['no-permissive-cors', 'require-jwt-expiry', 'no-disabled-tls'],
+  },
+  {
+    slug: 'require-jwt-expiry',
+    name: 'require-jwt-expiry',
+    category: 'Backend safety',
+    tagline:
+      'Require `expiresIn` on `jwt.sign(...)` and forbid `algorithm: "none"`.',
+    description:
+      'Tokens minted without an expiry stay valid until the secret rotates — which never happens — so every leaked token becomes permanent access. Also catches `algorithm: "none"`, which accepts unsigned tokens, and the (less safe) shape where `exp` is set on the payload directly.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `jwt.sign({ sub: id }, secret);`,
+    goodCode: `jwt.sign({ sub: id }, secret, { expiresIn: "15m" });`,
+    relatedSlugs: ['secure-cookies', 'no-weak-crypto', 'no-hardcoded-secrets'],
+  },
+  {
+    slug: 'no-weak-crypto',
+    name: 'no-weak-crypto',
+    category: 'Backend safety',
+    tagline:
+      'Flag `createHash("md5"|"sha1")`, deprecated ciphers, and `Math.random()` for security values.',
+    description:
+      'AI coding tools default to whichever algorithm shows up first in their training data — that is frequently MD5/SHA-1, neither of which are collision-resistant for any modern threat model. The `Math.random()` arm only fires when the value is bound to a security-sensitive identifier (`token`, `csrf`, `nonce`, …) so jitter/animation use stays quiet.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `crypto.createHash("md5").update(pw).digest("hex");`,
+    goodCode: `crypto.createHash("sha256").update(pw).digest("hex");`,
+    relatedSlugs: ['require-jwt-expiry', 'no-disabled-tls', 'no-hardcoded-secrets'],
+  },
+
+  // ──────────────────────────────────────────────────────────────────
+  //  Next.js stability
+  // ──────────────────────────────────────────────────────────────────
+  {
+    slug: 'no-hydration-mismatch',
+    name: 'no-hydration-mismatch',
+    category: 'Next.js stability',
+    tagline:
+      'Flag non-deterministic values (`Math.random`, `Date.now`, `new Date()`) inline in JSX.',
+    description:
+      'Non-deterministic expressions in JSX produce different server- and client-rendered HTML, triggering React\'s hydration warning. Safe inside `useEffect`/`useLayoutEffect`/`useMemo`/`useCallback` callbacks — those run after hydration.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `<time>{new Date().toLocaleTimeString()}</time>`,
+    goodCode: `useEffect(() => setNow(new Date()), []);\n<time>{now?.toLocaleTimeString()}</time>`,
+    relatedSlugs: ['no-async-useeffect', 'no-leaked-env-on-client', 'no-server-only-in-client'],
+  },
+  {
+    slug: 'no-leaked-env-on-client',
+    name: 'no-leaked-env-on-client',
+    category: 'Next.js stability',
+    tagline:
+      'Flag non-public `process.env.X` reads from `"use client"` or `*.client.{ts,tsx}` files.',
+    description:
+      'Next.js inlines `process.env.X` into the client bundle only when `X` matches a public prefix (`NEXT_PUBLIC_*`, etc.). Referencing a server-only env var from a client component either leaks the secret or silently resolves to `undefined` at runtime.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `'use client';\nconst k = process.env.OPENAI_API_KEY;`,
+    goodCode: `'use client';\nconst k = process.env.NEXT_PUBLIC_API_BASE;`,
+    relatedSlugs: ['no-server-only-in-client', 'no-hardcoded-secrets', 'no-hydration-mismatch'],
+  },
+  {
+    slug: 'no-server-only-in-client',
+    name: 'no-server-only-in-client',
+    category: 'Next.js stability',
+    tagline:
+      'Forbid Node-core / DB-driver imports from `"use client"` and `*.client.{ts,tsx}` files.',
+    description:
+      'AI-generated React components routinely `import fs from "fs"` or `import { PrismaClient } from "@prisma/client"` inside a client component. Webpack/Turbopack either crash the build or ship a bundled stub that fails at runtime. Move the call to a server boundary (route handler, server action, server component).',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `'use client';\nimport fs from 'fs';`,
+    goodCode: `'use server';\nimport fs from 'fs';`,
+    relatedSlugs: ['no-leaked-env-on-client', 'no-async-useeffect', 'no-hydration-mismatch'],
+  },
+  {
+    slug: 'no-async-useeffect',
+    name: 'no-async-useeffect',
+    category: 'Next.js stability',
+    tagline:
+      'Disallow `useEffect(async () => …)` — returns a Promise instead of a cleanup.',
+    description:
+      'The single most common AI-generated React antipattern. An async callback returns `Promise<undefined>`, which React does not treat as a cleanup. Subscriptions leak; React 18 Strict Mode\'s double-invoke produces races that look impossible to reproduce. Wrap the async body in an inner function and call it.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `useEffect(async () => { await load(); }, []);`,
+    goodCode: `useEffect(() => { (async () => { await load(); })(); }, []);`,
+    relatedSlugs: ['no-hydration-mismatch', 'no-leaked-env-on-client', 'no-floating-promise-handler'],
+  },
+
+  // ──────────────────────────────────────────────────────────────────
+  //  AI-coding hygiene
+  // ──────────────────────────────────────────────────────────────────
+  {
+    slug: 'no-floating-promise-handler',
+    name: 'no-floating-promise-handler',
+    category: 'AI-coding hygiene',
+    tagline:
+      'Require try/catch (or an async wrapper) on async Express/Fastify route handlers.',
+    description:
+      'In Express 4 a rejected promise from a handler hangs the request forever; in some Express 5 setups it crashes the process. AI-generated route handlers ship this shape constantly. The rule accepts try/catch at the top level, a returned `.catch(next)`, or wrapping the handler in `asyncHandler` / `catchAsync` / `wrap` / `tryCatch`.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `app.get('/x', async (req, res) => { const u = await load(); res.json(u); });`,
+    goodCode: `app.get('/x', asyncHandler(async (req, res) => { const u = await load(); res.json(u); }));`,
+    relatedSlugs: ['no-unsafe-mass-assignment', 'no-placeholder-code', 'safe-redirect'],
+  },
+  {
+    slug: 'no-unsafe-mass-assignment',
+    name: 'no-unsafe-mass-assignment',
+    category: 'AI-coding hygiene',
+    tagline:
+      'Flag `Object.assign(user, req.body)` and `{ ...model, ...req.body }` shapes.',
+    description:
+      'Splatting an unfiltered request body into a database model lets a client send fields the server never intended to expose (`isAdmin`, `tenantId`, …). OWASP A04. Covers `Object.assign`, object spread, and the ORM-shortcut `User.create(req.body)` / `user.update(req.body)` forms.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `Object.assign(user, req.body); await user.save();`,
+    goodCode: `const parsed = userSchema.parse(req.body); Object.assign(user, parsed); await user.save();`,
+    relatedSlugs: ['no-floating-promise-handler', 'no-sql-injection', 'safe-redirect'],
+  },
+  {
+    slug: 'no-placeholder-code',
+    name: 'no-placeholder-code',
+    category: 'AI-coding hygiene',
+    tagline:
+      'Flag `throw new Error("not implemented")` and TODO/FIXME stubs the AI left behind.',
+    description:
+      'Catches the structural pattern `throw new <X>Error("not implemented" | "TODO" | "stub" | "placeholder" | "coming soon" | …)`. The fix is always the same: implement the function or remove the unreachable branch before shipping.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `export function chargeCustomer(amount) { throw new Error("not implemented"); }`,
+    goodCode: `export function chargeCustomer(amount) { return billingClient.charge(amount); }`,
+    relatedSlugs: ['no-floating-promise-handler', 'no-hardcoded-localhost', 'no-unsafe-mass-assignment'],
+  },
+  {
+    slug: 'no-hardcoded-localhost',
+    name: 'no-hardcoded-localhost',
+    category: 'AI-coding hygiene',
+    tagline:
+      'Flag hardcoded `localhost`/`127.0.0.1`/`0.0.0.0` URLs that ship to production.',
+    description:
+      'AI tools paste local-dev URLs straight from curl tests; the result is a feature that 404s every real user. Test and fixture file paths (`tests/`, `__tests__/`, `cypress/`, `playwright/`, `e2e/`, `*.test.*`, `*.spec.*`) are exempted by filename.',
+    fixable: 'No.',
+    suggestions: 'No.',
+    badCode: `fetch('http://localhost:3000/api/users');`,
+    goodCode: `fetch(process.env.NEXT_PUBLIC_API_URL + '/users');`,
+    relatedSlugs: ['no-placeholder-code', 'no-ssrf', 'no-leaked-env-on-client'],
+  },
 ];
 
 export const RULES_BY_SLUG: Record<string, Rule> = Object.fromEntries(
@@ -647,6 +989,10 @@ export const CATEGORIES: RuleCategory[] = [
   'Accessibility',
   'Consistency',
   'Motion & Animation',
+  'Frontend safety',
+  'Backend safety',
+  'Next.js stability',
+  'AI-coding hygiene',
 ];
 
 export function getRulesByCategory(category: RuleCategory): Rule[] {

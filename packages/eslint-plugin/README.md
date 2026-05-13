@@ -57,7 +57,7 @@ export default [
 ];
 ```
 
-## Rules (37)
+## Rules (57)
 
 | Rule | Category | Description | Fixable | Default |
 |------|----------|-------------|:-------:|---------|
@@ -98,6 +98,26 @@ export default [
 | `safe-external-links` | Frontend Safety | Require `rel="noopener noreferrer"` on `<a target="_blank">` | Yes | warn |
 | `iframe-sandbox` | Frontend Safety | Require a `sandbox` attribute on `<iframe>` | No | warn |
 | `max-component-lines` | Code Quality | Flag overly large components | No | off |
+| `no-hardcoded-secrets` | Backend Safety | Provider-fingerprinted API keys (AWS/GitHub/Stripe/Google/Slack/OpenAI/Anthropic/JWT/PEM) + high-entropy secrets | No | error |
+| `no-sql-injection` | Backend Safety | SQL built by `+` concat or template-literal interpolation | No | error |
+| `no-shell-injection` | Backend Safety | `child_process.exec` / `spawn({shell:true})` with dynamic input | No | error |
+| `no-path-traversal` | Backend Safety | `fs.readFile` / `path.join` / `res.sendFile` with request input (CWE-22) | No | error |
+| `no-ssrf` | Backend Safety | `fetch` / `axios` / `http` with request-derived URL (CWE-918) | No | error |
+| `no-eval` | Backend Safety | `eval()`, `new Function()`, `vm.run*`, string-arg `setTimeout` | No | error |
+| `no-permissive-cors` | Backend Safety | `cors({ origin:"*", credentials:true })` and reflect-any-origin | No | error |
+| `no-disabled-tls` | Backend Safety | `rejectUnauthorized: false`, `NODE_TLS_REJECT_UNAUTHORIZED=0` | No | error |
+| `secure-cookies` | Backend Safety | Missing `httpOnly`/`secure`/`sameSite` on session cookies | No | warn |
+| `require-jwt-expiry` | Backend Safety | `jwt.sign(...)` without `expiresIn`; `algorithm: "none"` | No | warn |
+| `no-weak-crypto` | Backend Safety | `createHash("md5"\|"sha1")`, deprecated ciphers, `Math.random()` for tokens | No | warn |
+| `safe-redirect` | Backend Safety | Open redirect (`res.redirect(req.query.next)`) on Express/Koa/Fastify/Next.js | No | warn |
+| `no-hydration-mismatch` | Next.js | `Math.random`/`Date.now`/`new Date()` inline in JSX | No | warn |
+| `no-leaked-env-on-client` | Next.js | Non-public `process.env.X` reads from `"use client"` files | No | error |
+| `no-server-only-in-client` | Next.js | `fs`/`crypto`/`child_process`/DB drivers in `"use client"` files | No | error |
+| `no-async-useeffect` | Next.js | `useEffect(async () => ...)` antipattern | No | error |
+| `no-floating-promise-handler` | AI-coding | Async Express/Fastify route handlers without try/catch or wrapper | No | error |
+| `no-unsafe-mass-assignment` | AI-coding | `Object.assign(user, req.body)` / `{ ...user, ...req.body }` | No | error |
+| `no-placeholder-code` | AI-coding | `throw new Error("not implemented")` / TODO-stub shapes | No | warn |
+| `no-hardcoded-localhost` | AI-coding | `localhost` / `127.0.0.1` / `0.0.0.0` URLs shipping to production | No | warn |
 
 ---
 

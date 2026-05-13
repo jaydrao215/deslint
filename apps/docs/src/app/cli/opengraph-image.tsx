@@ -4,7 +4,7 @@ export const runtime = 'edge';
 export const size = OG_SIZE;
 export const contentType = 'image/png';
 export const alt =
-  'Deslint CLI — local scan, fix, and Sigstore-ready attestation for AI-generated frontend code. 34 deterministic rules, zero LLM in the hot path, zero code egress.';
+  'Deslint CLI — local scan, fix, and Sigstore-ready attestation for AI-generated code. 57 deterministic rules across design, accessibility, backend safety, and Next.js stability. Zero LLM in the hot path, zero code egress.';
 
 export default async function Image() {
   return await renderAgentOg({
