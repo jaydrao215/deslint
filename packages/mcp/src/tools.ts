@@ -14,8 +14,9 @@
  *
  * v0.3.0 additions: compliance_check, get_rule_details, suggest_fix_strategy
  */
-import { resolve, relative, dirname, join, normalize, isAbsolute, sep } from 'node:path';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { resolve, relative, dirname, join, normalize, isAbsolute, sep, extname, basename } from 'node:path';
+import { existsSync, readFileSync, statSync, writeFileSync, unlinkSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 // ── Security constants ────────────────────────────────────────────────
 /** Maximum file size (10 MB) to prevent memory exhaustion via oversized files. */
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -64,6 +65,20 @@ export interface AnalyzeAndFixResult {
   fixedCode: string;
   fixedViolations: number;
   remainingViolations: Violation[];
+}
+export interface VerifyBeforeWriteResult {
+  filePath: string;
+  /** Did the candidate code pass every rule? Honours `strict` if set. */
+  passed: boolean;
+  violations: Violation[];
+  /** 0-100 sub-score — same calculation as `analyze_file`. */
+  score: number;
+  totalErrors: number;
+  totalWarnings: number;
+  /** One-line, agent-actionable recommendation: "ok-to-write" /
+   *  "fix-and-retry" / "consult-user". The agent's prompt template
+   *  pivots on this string. */
+  recommendedAction: 'ok-to-write' | 'fix-and-retry' | 'consult-user';
 }
 export interface ComplianceCheckResult {
   projectDir: string;
@@ -221,6 +236,11 @@ async function loadUserRules(projectDir: string): Promise<Record<string, unknown
 export async function analyzeFile(params: {
   filePath: string;
   projectDir?: string;
+  /** When true, every reported violation is promoted to error severity
+   *  before counting. Intended for AI-coding contexts that want to
+   *  hold themselves to a stricter bar than the default preset's
+   *  warn/error mix. Defaults to false. */
+  strict?: boolean;
 }): Promise<AnalyzeFileResult> {
   const { absPath, projectDir } = resolveProjectDir(params.filePath, params.projectDir);
   validateFile(absPath, params.filePath);
@@ -231,11 +251,13 @@ export async function analyzeFile(params: {
     cwd: projectDir,
     ruleOverrides: userRules,
   });
+  const strict = params.strict === true;
   const violations: Violation[] = [];
   let errors = 0;
   let warnings = 0;
   for (const result of lintResult.results) {
     for (const msg of result.messages) {
+      if (strict && msg.severity === 1) msg.severity = 2;
       violations.push(toViolation(msg));
       if (msg.severity === 2) errors++;
       else warnings++;
@@ -732,6 +754,44 @@ const RULE_METADATA: Record<string, { description: string; category: string; aut
   'deslint/focus-trap-patterns': { description: 'Require role, aria-modal, and labels on dialog/modal elements (WCAG 2.4.3, 2.1.2).', category: 'consistency', autoFixable: true },
   'deslint/responsive-image-optimization': { description: 'Require loading, width/height, and srcset on <img> for performance and CLS prevention.', category: 'responsive', autoFixable: true },
   'deslint/spacing-rhythm-consistency': { description: 'Detect inconsistent spacing patterns across similar elements; flag deviations from dominant rhythm.', category: 'spacing', autoFixable: false },
+  // ── Consistency expansion (v0.6) ───────────────────────────────────
+  'deslint/no-conflicting-classes': { description: 'Detect contradictory Tailwind utilities like `flex hidden` on the same element.', category: 'consistency', autoFixable: false },
+  'deslint/no-duplicate-class-strings': { description: 'Flag identical class strings repeated 3+ times in a file; extract to a constant.', category: 'consistency', autoFixable: false },
+  'deslint/max-tailwind-classes': { description: 'Cap utility classes per element so deeply-styled markup gets refactored.', category: 'consistency', autoFixable: false },
+  'deslint/prefer-semantic-html': { description: 'Prefer semantic <button>/<nav>/<header>/<main> over <div role="…"> equivalents.', category: 'consistency', autoFixable: false },
+  'deslint/consistent-color-palette': { description: 'Cap unique color families per file; flag palettes that have crept beyond design intent.', category: 'colors', autoFixable: false },
+  // ── Frontend safety (v0.8) ─────────────────────────────────────────
+  'deslint/no-dangerous-html': { description: 'Flag `dangerouslySetInnerHTML` and Astro `set:html` — XSS path on user-supplied input.', category: 'frontend-safety', autoFixable: false },
+  'deslint/safe-external-links': { description: 'Require `rel="noopener noreferrer"` on `<a target="_blank">` to block reverse-tabnabbing.', category: 'frontend-safety', autoFixable: true },
+  'deslint/iframe-sandbox': { description: 'Require a `sandbox` attribute on `<iframe>` to constrain embedded content.', category: 'frontend-safety', autoFixable: false },
+  // ── Backend safety (v0.9 — wave 1+2) ───────────────────────────────
+  'deslint/no-hardcoded-secrets': { description: 'Provider-fingerprinted API keys/tokens (AWS, GitHub, Stripe, Google, Slack, OpenAI, Anthropic, JWT, PEM) plus high-entropy literals bound to secret-named identifiers.', category: 'backend-safety', autoFixable: false },
+  'deslint/no-sql-injection': { description: 'SQL queries built by `+` concatenation or template-literal interpolation; safe carve-outs for `sql\\`…\\`` tagged templates and parameterized placeholders.', category: 'backend-safety', autoFixable: false },
+  'deslint/no-shell-injection': { description: '`child_process.exec` / `execSync` / `spawn({ shell: true })` with a dynamic command string.', category: 'backend-safety', autoFixable: false },
+  'deslint/no-weak-crypto': { description: '`createHash("md5"|"sha1")`, deprecated ciphers, and `Math.random()` bound to security-sensitive identifiers.', category: 'backend-safety', autoFixable: false },
+  'deslint/safe-redirect': { description: 'Open-redirect / phishing path: `res.redirect(req.query.next)` and equivalents on Express, Koa, Fastify, and Next.js.', category: 'backend-safety', autoFixable: false },
+  'deslint/no-path-traversal': { description: '`fs.readFile` / `path.join` / `res.sendFile` with request-sourced input (CWE-22). Recognises Express\'s `{ root }` allowlist as safe.', category: 'backend-safety', autoFixable: false },
+  'deslint/no-ssrf': { description: '`fetch` / `axios` / `http.request` / `got` / `ky` / `superagent` called with a request-derived URL (CWE-918).', category: 'backend-safety', autoFixable: false },
+  'deslint/secure-cookies': { description: '`res.cookie` / `reply.setCookie` / `cookies().set` missing `httpOnly` / `secure` / `sameSite`. Session-named cookies get a louder consolidated message.', category: 'backend-safety', autoFixable: false },
+  'deslint/no-permissive-cors': { description: '`cors({ origin: "*", credentials: true })`, reflect-any-origin callbacks, and manual `Access-Control-Allow-Origin: *` with credentials.', category: 'backend-safety', autoFixable: false },
+  'deslint/no-eval': { description: '`eval()`, `new Function(...)`, `vm.runInNewContext` / `runInThisContext` / `runInContext`, plus string-arg `setTimeout`/`setInterval`.', category: 'backend-safety', autoFixable: false },
+  'deslint/no-disabled-tls': { description: '`rejectUnauthorized: false`, `new https.Agent({ rejectUnauthorized: false })`, and `process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"`.', category: 'backend-safety', autoFixable: false },
+  'deslint/require-jwt-expiry': { description: '`jwt.sign(...)` without `expiresIn`; `algorithm: "none"`.', category: 'backend-safety', autoFixable: false },
+  // ── Next.js stability (v0.9 — wave 2+3) ────────────────────────────
+  'deslint/no-hydration-mismatch': { description: '`Math.random()` / `Date.now()` / `new Date()` / `performance.now()` / `crypto.randomUUID()` inline in JSX. Safe inside useEffect/useLayoutEffect.', category: 'nextjs', autoFixable: false },
+  'deslint/no-leaked-env-on-client': { description: 'Non-public `process.env.X` reads from `"use client"` or `*.client.{ts,tsx,js,jsx}` files (where X isn\'t `NEXT_PUBLIC_*` / `VITE_*` / `PUBLIC_*` / etc.).', category: 'nextjs', autoFixable: false },
+  'deslint/no-server-only-in-client': { description: 'Imports of Node core (`fs`, `crypto`, `child_process`, …), DB drivers (`@prisma/client`, `mongoose`, `redis`, …), and the `server-only` package from `"use client"` files.', category: 'nextjs', autoFixable: false },
+  'deslint/no-async-useeffect': { description: '`useEffect(async () => …)` / `useLayoutEffect(async () => …)` — returns a Promise instead of a cleanup function.', category: 'nextjs', autoFixable: false },
+  // ── AI-coding hygiene (v0.9 — wave 3+4) ────────────────────────────
+  'deslint/no-floating-promise-handler': { description: 'Async Express/Fastify route handlers without `try/catch`, `.catch(next)`, or an async-wrapper (`asyncHandler`/`catchAsync`/`wrap`/`tryCatch`).', category: 'ai-coding', autoFixable: false },
+  'deslint/no-unsafe-mass-assignment': { description: '`Object.assign(user, req.body)`, `{ ...user, ...req.body }`, `User.create(req.body)`, `user.update(req.body)` (OWASP A04).', category: 'ai-coding', autoFixable: false },
+  'deslint/no-placeholder-code': { description: '`throw new Error("not implemented" | "TODO" | "FIXME" | "placeholder" | "coming soon" | …)` left behind by AI.', category: 'ai-coding', autoFixable: false },
+  'deslint/no-hardcoded-localhost': { description: '`localhost` / `127.0.0.1` / `0.0.0.0` / `host.docker.internal` URLs hardcoded in production source. Test/fixture paths exempt by filename.', category: 'ai-coding', autoFixable: false },
+  'deslint/no-empty-catch': { description: '`try { … } catch {}`, `catch (e) {}`, `catch (e) { /* TODO */ }` — silently swallow runtime errors.', category: 'ai-coding', autoFixable: false },
+  'deslint/no-prod-console': { description: '`console.log`/`debug`/`info`/`dir`/`trace`/`table`/`time*` in non-test source. `console.error`/`console.warn` allowed.', category: 'ai-coding', autoFixable: false },
+  'deslint/no-leaked-stack-trace': { description: '`res.status(500).send(err.stack)` / `res.json({ error: err })` / `new Response(err.stack)` — leaks the internal call graph.', category: 'ai-coding', autoFixable: false },
+  'deslint/no-unvalidated-input': { description: '`as T` / `<T>x` / `satisfies T` on `req.body` / `req.query` / `req.params` / `await request.json()` without going through a validator.', category: 'ai-coding', autoFixable: false },
+  'deslint/no-mock-data-in-prod': { description: '`mockUsers`/`fakeOrders`/`seedData` arrays + placeholder emails (`john.doe@example.com`, `test@test.com`) outside test/fixture/story paths.', category: 'ai-coding', autoFixable: false },
 };
 /**
  * Return metadata for a specific deslint rule, including its WCAG mapping,
@@ -755,13 +815,38 @@ export async function getRuleDetails(params: {
     .filter((c) => c.rules.includes(ruleId))
     .map((c) => ({ id: c.id, title: c.title, level: c.level }));
   // Determine default severity from recommended config
+  // Maps each rule to its severity in `configs.recommended`. New rules
+  // default to `'warn'`. Errors here mirror packages/eslint-plugin/src/index.ts
+  // — when that file's recommended preset changes, update both sides.
   const RECOMMENDED_SEVERITY: Record<string, string> = {
+    // Frontend / a11y errors
     'deslint/viewport-meta': 'error',
     'deslint/aria-validation': 'error',
     'deslint/max-component-lines': 'off',
     'deslint/missing-states': 'off',
     'deslint/dark-mode-coverage': 'off',
     'deslint/no-inline-styles': 'off',
+    'deslint/no-duplicate-class-strings': 'off',
+    'deslint/max-tailwind-classes': 'off',
+    'deslint/consistent-color-palette': 'off',
+    'deslint/spacing-rhythm-consistency': 'off',
+    // Backend safety — most are error in recommended
+    'deslint/no-hardcoded-secrets': 'error',
+    'deslint/no-sql-injection': 'error',
+    'deslint/no-shell-injection': 'error',
+    'deslint/no-path-traversal': 'error',
+    'deslint/no-ssrf': 'error',
+    'deslint/no-permissive-cors': 'error',
+    'deslint/no-eval': 'error',
+    'deslint/no-disabled-tls': 'error',
+    // Next.js / AI-coding errors
+    'deslint/no-leaked-env-on-client': 'error',
+    'deslint/no-async-useeffect': 'error',
+    'deslint/no-server-only-in-client': 'error',
+    'deslint/no-floating-promise-handler': 'error',
+    'deslint/no-unsafe-mass-assignment': 'error',
+    'deslint/no-empty-catch': 'error',
+    'deslint/no-leaked-stack-trace': 'error',
   };
   const defaultSeverity = RECOMMENDED_SEVERITY[ruleId] ?? 'warn';
   return {
@@ -775,6 +860,29 @@ export async function getRuleDetails(params: {
     docsUrl: `https://deslint.com/docs/rules/${ruleId.replace('deslint/', '')}`,
   };
 }
+/**
+ * Return RuleDetails for every rule the plugin exports — the
+ * collection backing the `deslint://rules` MCP resource.
+ *
+ * Implementation note: we reuse `getRuleDetails` per-rule so the
+ * WCAG mapping + severity logic stays in one place; the loop runs in
+ * ~5ms across all 60+ rules and is cheap to call repeatedly. Agents
+ * are expected to cache the result for the session.
+ */
+export async function getAllRuleDetails(): Promise<RuleDetails[]> {
+  const out: RuleDetails[] = [];
+  for (const ruleId of Object.keys(RULE_METADATA)) {
+    try {
+      out.push(await getRuleDetails({ ruleId }));
+    } catch {
+      // Defensive — should never throw given we iterate the
+      // metadata keys themselves, but a failure on one rule
+      // shouldn't deny the resource entirely.
+    }
+  }
+  return out;
+}
+
 // ── Tool: suggest_fix_strategy ─────────────────────────────────────
 /**
  * Analyze a project and suggest which violations to fix first, ordered by
@@ -873,3 +981,297 @@ export async function suggestFixStrategy(params: {
     totalEffortMinutes,
   };
 }
+
+// ── Tool: verify_before_write ───────────────────────────────────────
+/**
+ * Pre-write gate: lint candidate code BEFORE the agent commits it to
+ * disk.
+ *
+ * Why this exists. The existing `analyze_file` tool runs *after* the
+ * agent has written the file. By then the bad code is already on disk,
+ * already in the diff, already shaping the agent's next reasoning step.
+ * `verify_before_write` flips the moment of truth — the agent passes
+ * the proposed content, gets a pass/fail + violations + a one-line
+ * recommended action, and decides what to do BEFORE touching disk.
+ *
+ * How it works. We write the proposed content to a temp file in the
+ * *same directory* as the intended target so:
+ *   - the extension matches (so the parser dispatch in `runLint` is
+ *     identical to what the real write would produce),
+ *   - the temp file matches the same flat-config `files: [...]` globs
+ *     as the target (so plugin presets apply unchanged),
+ *   - the user's `.deslintrc.json` rule overrides apply transparently.
+ *
+ * The temp file's basename starts with `.deslint-verify-` so a
+ * developer who finds one knows where it came from. It's removed in a
+ * `finally` block; we leak at most one temp file if the process is
+ * killed mid-call.
+ *
+ * `strict: true` promotes every reported violation to error severity
+ * before scoring. The intended caller is an AI agent that wants to
+ * hold itself to a higher bar than the default preset's warn/error
+ * mix — same idea as the "AI-commit detection" promotion logic the
+ * Action will eventually grow.
+ */
+export async function verifyBeforeWrite(params: {
+  filePath: string;
+  proposedContent: string;
+  projectDir?: string;
+  strict?: boolean;
+}): Promise<VerifyBeforeWriteResult> {
+  const { absPath, projectDir } = resolveProjectDir(params.filePath, params.projectDir);
+
+  // Validate the proposed content's size (mirror validateFile's
+  // MAX_FILE_SIZE_BYTES guard, but on an in-memory string).
+  const byteLen = Buffer.byteLength(params.proposedContent, 'utf8');
+  if (byteLen > MAX_FILE_SIZE_BYTES) {
+    throw new Error(
+      `Proposed content too large for ${params.filePath} (${Math.round(byteLen / 1024 / 1024)}MB). Maximum: ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`,
+    );
+  }
+
+  // Build a temp file path in the same directory as the target. Same
+  // extension => same parser dispatch => same rule behaviour as a
+  // direct write would have produced.
+  const targetDir = dirname(absPath);
+  const ext = extname(absPath);
+  const tempName = `.deslint-verify-${randomBytes(6).toString('hex')}${ext}`;
+  const tempPath = join(targetDir, tempName);
+
+  let tempWritten = false;
+  try {
+    writeFileSync(tempPath, params.proposedContent, 'utf-8');
+    tempWritten = true;
+
+    const { runLint } = await import('@deslint/cli');
+    const userRules = await loadUserRules(projectDir);
+    const lintResult = await runLint({
+      files: [tempPath],
+      cwd: projectDir,
+      ruleOverrides: userRules,
+    });
+
+    const strict = params.strict === true;
+    const violations: Violation[] = [];
+    let errors = 0;
+    let warnings = 0;
+    for (const result of lintResult.results) {
+      for (const msg of result.messages) {
+        // Strict mode: promote warning-severity messages (severity===1)
+        // to errors before counting. We do this BEFORE `toViolation`
+        // so the resulting `severity` field reflects the promotion.
+        if (strict && msg.severity === 1) msg.severity = 2;
+        violations.push(toViolation(msg));
+        if (msg.severity === 2) errors++;
+        else warnings++;
+      }
+    }
+
+    const score = Math.max(0, 100 - violations.length * 10);
+    const passed = errors === 0 && (!strict || warnings === 0);
+
+    let recommendedAction: VerifyBeforeWriteResult['recommendedAction'];
+    if (passed) {
+      recommendedAction = 'ok-to-write';
+    } else if (
+      // Errors that ask the developer to choose a design token (e.g.
+      // "use bg-primary or bg-brand-navy?") can't be auto-resolved by
+      // the agent — they're a "consult the user" moment. We surface
+      // that explicitly when ANY violation comes from a rule whose
+      // fix requires a token decision and there's no exact match.
+      violations.some((v) => /no-arbitrary-(colors|spacing|typography|border-radius|zindex)/.test(v.ruleId)) &&
+      !violations.some((v) => v.fix)
+    ) {
+      recommendedAction = 'consult-user';
+    } else {
+      recommendedAction = 'fix-and-retry';
+    }
+
+    return {
+      filePath: relative(projectDir, absPath),
+      passed,
+      violations,
+      score,
+      totalErrors: errors,
+      totalWarnings: warnings,
+      recommendedAction,
+    };
+  } finally {
+    if (tempWritten) {
+      try { unlinkSync(tempPath); } catch { /* best-effort cleanup */ }
+    }
+  }
+}
+
+// ── Tool: scan_diff ──────────────────────────────────────────────
+/**
+ * Lint only files changed against a base ref (default: origin/main).
+ * The result separates `newViolations` (introduced by changes in this
+ * branch) from `preExisting` (lived in the file before the change),
+ * so an agent / merge gate can hard-block on new failures while
+ * staying quiet on legacy ones.
+ *
+ * "New" means the violation's (ruleId, line) is not present in the
+ * base ref's version of the same file. The line-number heuristic is
+ * deliberate: it tolerates a re-indented file (where every legacy
+ * violation moves by a constant) without flagging the whole file as
+ * new. If the file is new (added in the branch), every violation is
+ * new.
+ *
+ * This is the MCP-side mirror of the `--ai-diff` CLI mode I called
+ * out in last session's gap analysis. Agents reading the diff before
+ * proposing further edits should call this first so they don't waste
+ * a turn fixing pre-existing violations.
+ */
+export interface ScanDiffViolation extends Violation {
+  filePath: string;
+  /** 'new' = introduced by changes in this branch; 'pre-existing' =
+   *  also fires on the base-ref version of the file. */
+  status: 'new' | 'pre-existing';
+}
+
+export interface ScanDiffResult {
+  projectDir: string;
+  baseRef: string;
+  totalChangedFiles: number;
+  totalNewViolations: number;
+  totalPreExistingViolations: number;
+  newViolations: ScanDiffViolation[];
+  preExisting: ScanDiffViolation[];
+}
+
+export async function scanDiff(params: {
+  projectDir?: string;
+  baseRef?: string;
+  maxFiles?: number;
+}): Promise<ScanDiffResult> {
+  const projectDir = resolve(params.projectDir ?? process.cwd());
+  const baseRef = params.baseRef ?? 'origin/main';
+  const maxFiles = clampMaxFiles(params.maxFiles);
+
+  // Discover changed files via `git diff --name-only baseRef...HEAD`.
+  // We use the merge-base form (`...`) so commits the base has but the
+  // branch doesn't aren't counted as "changes." Same convention as the
+  // CLI's existing `scan --diff` mode.
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const exec = promisify(execFile);
+
+  let changedRaw = '';
+  try {
+    const { stdout } = await exec('git', ['diff', '--name-only', '--diff-filter=AM', `${baseRef}...HEAD`], {
+      cwd: projectDir,
+      timeout: 15_000,
+    });
+    changedRaw = stdout;
+  } catch (err) {
+    throw new Error(
+      `git diff failed against ${baseRef}: ${err instanceof Error ? err.message : String(err)}. Is ${baseRef} fetched?`,
+    );
+  }
+
+  const SUPPORTED_EXT = /\.(?:tsx?|jsx?|mjs|cjs|vue|svelte|astro|html)$/i;
+  const changedFiles = changedRaw
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter((p) => SUPPORTED_EXT.test(p))
+    .slice(0, maxFiles)
+    .map((p) => join(projectDir, p));
+
+  if (changedFiles.length === 0) {
+    return {
+      projectDir,
+      baseRef,
+      totalChangedFiles: 0,
+      totalNewViolations: 0,
+      totalPreExistingViolations: 0,
+      newViolations: [],
+      preExisting: [],
+    };
+  }
+
+  const { runLint } = await import('@deslint/cli');
+  const userRules = await loadUserRules(projectDir);
+
+  // Lint the branch version (the files on disk now).
+  const branchResult = await runLint({
+    files: changedFiles,
+    cwd: projectDir,
+    ruleOverrides: userRules,
+  });
+
+  // For each changed file, try to retrieve the base-ref version via
+  // `git show baseRef:<relpath>`. If the file is new (added in the
+  // branch), `git show` exits non-zero — we treat every violation in
+  // the new file as a new violation. If it exists in base, we lint
+  // that content too (via the same `.deslint-verify-*` temp-file
+  // dance used by verifyBeforeWrite) and diff the violation sets.
+  const newViolations: ScanDiffViolation[] = [];
+  const preExisting: ScanDiffViolation[] = [];
+
+  for (const fileResult of branchResult.results) {
+    const absPath = fileResult.filePath;
+    const relPath = relative(projectDir, absPath);
+
+    let baseViolationKeys: Set<string> | null = null;
+    try {
+      const { stdout: baseSrc } = await exec('git', ['show', `${baseRef}:${relPath}`], {
+        cwd: projectDir,
+        timeout: 10_000,
+        maxBuffer: MAX_FILE_SIZE_BYTES,
+      });
+
+      // Lint the base content via a temp file in the same dir.
+      const ext = extname(absPath);
+      const tempName = `.deslint-verify-${randomBytes(6).toString('hex')}${ext}`;
+      const tempPath = join(dirname(absPath), tempName);
+      try {
+        writeFileSync(tempPath, baseSrc, 'utf-8');
+        const baseLintResult = await runLint({
+          files: [tempPath],
+          cwd: projectDir,
+          ruleOverrides: userRules,
+        });
+        baseViolationKeys = new Set<string>();
+        for (const r of baseLintResult.results) {
+          for (const m of r.messages) {
+            baseViolationKeys.add(`${m.ruleId ?? 'unknown'}:${m.line}`);
+          }
+        }
+      } finally {
+        try { unlinkSync(tempPath); } catch { /* ignore */ }
+      }
+    } catch {
+      // File is new in the branch — leave baseViolationKeys null, so
+      // every branch violation is considered new.
+      baseViolationKeys = null;
+    }
+
+    for (const msg of fileResult.messages) {
+      const v = toViolation(msg);
+      const out: ScanDiffViolation = { ...v, filePath: relPath, status: 'new' };
+      const key = `${v.ruleId}:${v.line}`;
+      if (baseViolationKeys && baseViolationKeys.has(key)) {
+        out.status = 'pre-existing';
+        preExisting.push(out);
+      } else {
+        newViolations.push(out);
+      }
+    }
+  }
+
+  return {
+    projectDir,
+    baseRef,
+    totalChangedFiles: changedFiles.length,
+    totalNewViolations: newViolations.length,
+    totalPreExistingViolations: preExisting.length,
+    newViolations,
+    preExisting,
+  };
+}
+
+/* Internal helper export — `basename` re-export so server.ts can use
+ * it in the resource handlers without re-importing 'node:path'. */
+export const _internal = { basename };

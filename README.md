@@ -266,13 +266,22 @@ npx deslint-mcp install
 ```
 
 **Tools exposed:**
-- `analyze_file` — lint a single file, get violations + score
+- **`verify_before_write`** — lint candidate code BEFORE the agent writes it. The pre-write gate: agent passes the proposed content, gets `passed: boolean` + violations + a one-line `recommendedAction` (`ok-to-write` / `fix-and-retry` / `consult-user`). Supports `strict: true` to promote warnings to errors.
+- **`scan_diff`** — lint only files changed against a base ref (default `origin/main`). Separates `newViolations` (introduced by this branch) from `preExisting`, so agents and merge gates can hard-block on new failures without re-litigating legacy ones.
+- `analyze_file` — lint a single file, get violations + score. Now supports `strict: true`.
 - `analyze_project` — scan entire project, get score + top violations
 - `analyze_and_fix` — analyze and auto-fix in one step
 - `compliance_check` — evaluate WCAG 2.2 / WCAG 2.1 AA coverage
 - `get_rule_details` — get rule metadata, docs URL, effort, and WCAG mapping
 - `suggest_fix_strategy` — prioritize fixes by impact and effort
 - `enforce_budget` — veto completion when the repo is over budget
+
+**Resources exposed:**
+- `deslint://rules` — JSON index of every rule (id, category, default severity, auto-fix, WCAG mapping, docs URL). Fetch once per session.
+- `deslint://rules/{slug}` — per-rule documentation.
+
+**Prompt template:**
+- **`/deslint-fix`** — structured `analyze → fix → verify` loop bound to a `filePath`. Appears as a slash command in MCP-aware UIs (Claude Desktop, Cursor, Windsurf).
 
 ## GitHub Action
 

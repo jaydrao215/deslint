@@ -66,17 +66,50 @@ Typical config locations:
 
 ## Tools
 
-Every tool is declared with MCP `annotations`
-(`readOnlyHint: true`, `destructiveHint: false`, `idempotentHint: true`,
-`openWorldHint: false`) and returns typed `structuredContent` in addition to
-a human-readable text block, so agents can parse results without scraping
-stringified JSON.
+Every tool is declared with MCP `annotations` and returns typed
+`structuredContent` in addition to a human-readable text block, so agents
+can parse results without scraping stringified JSON.
+
+### `verify_before_write` ★
+
+**The pre-write gate.** Lint candidate code BEFORE the agent writes it to
+disk. The agent passes the proposed content; the server lints it via a
+same-directory `.deslint-verify-*` temp file (so the project's flat-config
+parser dispatch applies unchanged), returns pass/fail + violations + a
+one-line `recommendedAction`. The temp file is removed in a finally block.
+
+- **Inputs:** `filePath` (required, may or may not exist on disk yet),
+  `proposedContent` (required, max 10 MB), `projectDir` (optional),
+  `strict` (optional, promotes warns to errors)
+- **Returns:** `passed: boolean`, `violations[]`, `score`,
+  `totalErrors`, `totalWarnings`, `recommendedAction`
+  (`'ok-to-write' | 'fix-and-retry' | 'consult-user'`)
+
+> **Why this is the killer feature.** Without this, agents call
+> `analyze_file` AFTER writing — too late; the bad code is already in
+> the diff. `verify_before_write` flips the moment of truth: agent
+> proposes → we verify → agent writes (or doesn't).
+
+### `scan_diff`
+
+Lint only files changed against a base ref. Separates `newViolations`
+(introduced by this branch) from `preExisting` (also fire on the base
+ref's version of the same file), so the merge gate can hard-block on new
+failures without re-litigating legacy ones.
+
+- **Inputs:** `projectDir` (optional), `baseRef` (optional, default
+  `origin/main`), `maxFiles` (optional, default 200)
+- **Returns:** `totalChangedFiles`, `totalNewViolations`,
+  `totalPreExistingViolations`, `newViolations[]`, `preExisting[]`
+- **Requires:** `git` in PATH and the base ref to be fetched
 
 ### `analyze_file`
 
-Lint a single file and return violations with a file-level score.
+Lint a single existing file and return violations with a file-level score.
 
-- **Inputs:** `filePath` (required), `projectDir` (optional, defaults to cwd)
+- **Inputs:** `filePath` (required), `projectDir` (optional, defaults to cwd),
+  `strict` (optional — promote warns to errors, recommended when the
+  caller is an AI agent)
 - **Returns:** `violations[]`, `score` (0–100), `totalErrors`, `totalWarnings`
 
 ### `analyze_project`
@@ -120,6 +153,36 @@ Suggest which design violations to fix first, ordered by impact-per-effort.
   `maxSuggestions` (optional, default 10, max 100)
 - **Returns:** Suggestions ranked by `impactScore`, with per-rule effort
   estimates and actionable recommendations.
+
+## Resources
+
+MCP resources are read-only data sources an agent can fetch up front and
+cache between tool calls. Two are exposed:
+
+### `deslint://rules`
+
+JSON index of every Deslint rule — id, category, default severity,
+auto-fix support, WCAG mapping, docs URL. Fetch once per session and
+cache; the rule taxonomy is stable within a deslint release. Backed by
+the same engine `get_rule_details` uses.
+
+### `deslint://rules/{slug}`
+
+Per-rule documentation. Replace `{slug}` with a rule id
+(e.g. `deslint://rules/no-arbitrary-colors`). Returns the same shape as
+`get_rule_details`.
+
+## Prompts
+
+### `/deslint-fix`
+
+A templated `analyze → fix → verify` workflow that appears as a slash
+command in MCP-aware UIs (Claude Desktop, Cursor, Windsurf). Takes a
+`filePath` (required) and an optional `strict` flag; primes the agent
+to call `analyze_file`, consult the matching `deslint://rules/{slug}`
+resource per violation, apply fixes, and call `verify_before_write`
+before committing — with a max-3-retries cap and a "consult-user"
+escape hatch for token-decision violations.
 
 ## How it works
 

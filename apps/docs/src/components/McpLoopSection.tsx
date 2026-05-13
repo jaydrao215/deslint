@@ -66,11 +66,13 @@ export function McpLoopSection() {
             server speaks the Model Context Protocol over stdio — the same
             transport Cursor and Claude Code already use. Your assistant
             calls{' '}
-            <code className="text-primary-light font-mono text-base">analyze_file</code>{' '}
-            and{' '}
-            <code className="text-primary-light font-mono text-base">analyze_and_fix</code>
-            , gets back structured violations with rule IDs and autofixes,
-            and corrects its own output before you even see it.
+            <code className="text-primary-light font-mono text-base">verify_before_write</code>{' '}
+            with the candidate file content, gets back{' '}
+            <code className="text-primary-light font-mono text-base">passed</code> +
+            violations + a{' '}
+            <code className="text-primary-light font-mono text-base">recommendedAction</code>,
+            and corrects its own output{' '}
+            <em>before the file is written to disk</em> — not after.
           </p>
           <p className="mt-4 text-sm text-gray-500 leading-relaxed">
             Your AI stays on your terms. Deslint itself runs zero LLMs — it&apos;s

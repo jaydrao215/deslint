@@ -60,13 +60,27 @@ All three run entirely on the user's machine. Source code never leaves the host.
 
 Exposed by \`@deslint/mcp\` over stdio:
 
-- \`analyze_file\` — lint a single file, return violations plus sub-score.
+- **\`verify_before_write\`** — THE pre-write gate. Agent passes proposed file content; server lints it via a same-directory temp file (no permanent disk write); returns \`passed\`, \`violations\`, \`score\`, and a one-line \`recommendedAction\` (\`ok-to-write\` | \`fix-and-retry\` | \`consult-user\`). Supports \`strict: true\` to promote warnings to errors for AI-coding contexts.
+- **\`scan_diff\`** — lint only files changed against a base ref (default \`origin/main\`); separates \`newViolations\` from \`preExisting\` so the merge gate can hard-block new failures.
+- \`analyze_file\` — lint a single existing file. Supports \`strict: true\`.
 - \`analyze_project\` — scan an entire project, return the Design Health Score.
 - \`analyze_and_fix\` — return corrected code for a specific file.
 - \`compliance_check\` — WCAG 2.2 compliance evaluation.
 - \`enforce_budget\` — evaluate a scan against \`.deslint/budget.yml\` and report breaches.
 - \`get_rule_details\` — return full documentation for a rule id.
 - \`suggest_fix_strategy\` — structured guidance for resolving a class of violation.
+
+## MCP resources
+
+Read-only data sources an agent can fetch up front and cache between
+tool calls:
+
+- \`deslint://rules\` — JSON index of every rule (id, category, default severity, auto-fix, WCAG mapping, docs URL).
+- \`deslint://rules/{slug}\` — per-rule documentation (e.g. \`deslint://rules/no-arbitrary-colors\`).
+
+## MCP prompts
+
+- \`/deslint-fix\` — slash-command workflow that primes the agent for a structured \`analyze → fix → verify\` loop on a given file. Calls \`analyze_file\`, consults the rule docs resource, applies fixes, then \`verify_before_write\` before each disk write.
 
 ## MCP setup guides
 

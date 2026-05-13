@@ -1,8 +1,8 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { VERSION } from './index.js';
-import { analyzeFile, analyzeProject, analyzeAndFix, complianceCheck, getRuleDetails, suggestFixStrategy, enforceBudget } from './tools.js';
+import { analyzeFile, analyzeProject, analyzeAndFix, complianceCheck, getRuleDetails, suggestFixStrategy, enforceBudget, verifyBeforeWrite, scanDiff } from './tools.js';
 
 function ok<T extends object>(data: T) {
   return {
@@ -66,6 +66,12 @@ export function createServer(): McpServer {
       inputSchema: {
         filePath: z.string().max(1024).describe('Path to the file to analyze (relative to projectDir or absolute).'),
         projectDir: z.string().max(1024).optional().describe('Project root directory. Defaults to current working directory.'),
+        strict: z
+          .boolean()
+          .optional()
+          .describe(
+            'When true, every reported violation is promoted to error severity before counting. Set this when the caller is an AI coding agent that wants a stricter bar than the default warn/error mix. Defaults to false.',
+          ),
       },
       outputSchema: {
         filePath: z.string(),
@@ -80,6 +86,113 @@ export function createServer(): McpServer {
         const result = await analyzeFile({
           filePath: params.filePath,
           projectDir: params.projectDir,
+          strict: params.strict,
+        });
+        return ok(result);
+      } catch (err) {
+        return fail(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'verify_before_write',
+    {
+      title: 'Verify Proposed File Content BEFORE Writing It',
+      description:
+        'Lint candidate code BEFORE writing it to disk. The agent passes the proposed content; the server lints it, returns pass/fail + violations + a one-line recommended action. ' +
+        'PRIMARY USE: call this immediately before every file write the agent makes. If `passed: true` → write the file. ' +
+        'If `recommendedAction: "fix-and-retry"` → fix the violations in-place and call again. ' +
+        'If `recommendedAction: "consult-user"` → the violations require a design-token decision the agent cannot make alone; surface them to the user. ' +
+        'Pass `strict: true` to promote warnings to errors — recommended for AI-generated code. ' +
+        'Never sends source code to external services. The proposed content is briefly written to a same-directory temp file so the project\'s flat-config parser dispatch applies unchanged; the temp file is deleted in a finally block.',
+      annotations: {
+        readOnlyHint: false, // briefly writes a `.deslint-verify-*` temp file
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        title: 'Verify Proposed File Content BEFORE Writing It',
+      },
+      inputSchema: {
+        filePath: z.string().max(1024).describe('Path the file WILL be written to (relative to projectDir or absolute). May or may not exist on disk yet.'),
+        proposedContent: z.string().max(10 * 1024 * 1024).describe('The candidate file content the agent intends to write. Max 10 MB.'),
+        projectDir: z.string().max(1024).optional().describe('Project root directory. Defaults to current working directory.'),
+        strict: z
+          .boolean()
+          .optional()
+          .describe('When true, every reported violation is promoted to error severity and ANY violation flips `passed` to false. Recommended for AI-generated code.'),
+      },
+      outputSchema: {
+        filePath: z.string(),
+        passed: z.boolean(),
+        violations: z.array(violationSchema),
+        score: z.number(),
+        totalErrors: z.number().int(),
+        totalWarnings: z.number().int(),
+        recommendedAction: z.enum(['ok-to-write', 'fix-and-retry', 'consult-user']),
+      },
+    },
+    async (params) => {
+      try {
+        const result = await verifyBeforeWrite({
+          filePath: params.filePath,
+          proposedContent: params.proposedContent,
+          projectDir: params.projectDir,
+          strict: params.strict,
+        });
+        return ok(result);
+      } catch (err) {
+        return fail(err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'scan_diff',
+    {
+      title: 'Scan Files Changed in the Current Branch',
+      description:
+        'Lint only files changed against a base ref (default: origin/main). The result separates `newViolations` (introduced by changes in this branch) from `preExisting` (also fire on the base-ref version), so an agent or merge gate can hard-block on new failures without re-litigating legacy ones. ' +
+        'PRIMARY USE: an agent reviewing a PR / its own diff should call this first — wasting a turn fixing pre-existing violations is the dominant agent-time leak in long-running sessions. ' +
+        'Requires git in PATH and the base ref to be fetched. Temp files are written under the project directory and removed in a finally block.',
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        title: 'Scan Files Changed in the Current Branch',
+      },
+      inputSchema: {
+        projectDir: z.string().max(1024).optional().describe('Project root directory. Defaults to current working directory.'),
+        baseRef: z.string().max(255).optional().describe('Git ref to compare against (e.g. `origin/main`, `main`, a commit SHA). Defaults to `origin/main`.'),
+        maxFiles: z.number().int().min(1).max(5000).optional().describe('Maximum number of changed files to lint. Defaults to 200.'),
+      },
+      outputSchema: {
+        projectDir: z.string(),
+        baseRef: z.string(),
+        totalChangedFiles: z.number().int(),
+        totalNewViolations: z.number().int(),
+        totalPreExistingViolations: z.number().int(),
+        newViolations: z.array(
+          violationSchema.extend({
+            filePath: z.string(),
+            status: z.enum(['new', 'pre-existing']),
+          }),
+        ),
+        preExisting: z.array(
+          violationSchema.extend({
+            filePath: z.string(),
+            status: z.enum(['new', 'pre-existing']),
+          }),
+        ),
+      },
+    },
+    async (params) => {
+      try {
+        const result = await scanDiff({
+          projectDir: params.projectDir,
+          baseRef: params.baseRef,
+          maxFiles: params.maxFiles,
         });
         return ok(result);
       } catch (err) {
@@ -363,6 +476,119 @@ export function createServer(): McpServer {
       } catch (err) {
         return fail(err);
       }
+    },
+  );
+
+  // ─── Resources ──────────────────────────────────────────────────
+  //
+  // MCP supports three primitives — tools, resources, prompts. Agents
+  // can fetch resources up front, cache them, and consult them between
+  // tool calls without re-asking the server. Exposing the rule
+  // taxonomy as a resource lets the agent read the full set once
+  // (instead of N `get_rule_details` calls) and reason about which
+  // rules might fire on the file it's about to write.
+  //
+  //   deslint://rules            — JSON index of every rule
+  //   deslint://rules/{slug}     — per-rule docs (description + WCAG)
+  //
+  // The data comes from the same `getRuleDetails` engine the tool
+  // surface uses, so there's no duplication or drift between the
+  // resource and the tool view.
+
+  const RULES_INDEX_URI = 'deslint://rules';
+  const RULE_DETAIL_URI_TEMPLATE = 'deslint://rules/{slug}';
+
+  server.registerResource(
+    'rules-index',
+    RULES_INDEX_URI,
+    {
+      title: 'Deslint rule index',
+      description:
+        'JSON index of every Deslint rule (id, category, default severity, auto-fix support, WCAG mapping, docs URL). Fetch once; consult between tool calls instead of issuing N `get_rule_details` requests.',
+      mimeType: 'application/json',
+    },
+    async () => {
+      const { getAllRuleDetails } = await import('./tools.js');
+      const rules = await getAllRuleDetails();
+      return {
+        contents: [
+          {
+            uri: RULES_INDEX_URI,
+            mimeType: 'application/json',
+            text: JSON.stringify({ rules }, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerResource(
+    'rule-detail',
+    new ResourceTemplate(RULE_DETAIL_URI_TEMPLATE, { list: undefined }),
+    {
+      title: 'Deslint rule documentation',
+      description:
+        'Per-rule documentation. Replace `{slug}` with a rule id (e.g. `deslint://rules/no-arbitrary-colors`). Returns the rule\'s description, category, default severity, auto-fix support, WCAG mapping, and docs URL.',
+      mimeType: 'application/json',
+    },
+    async (uri, { slug }) => {
+      const ruleId = Array.isArray(slug) ? slug[0] : slug;
+      const result = await getRuleDetails({ ruleId });
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: 'application/json',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // ─── Prompt template: /deslint-fix ─────────────────────────────
+  //
+  // Prompts are templated workflows the user can invoke as a slash
+  // command in MCP-aware UIs (Claude Desktop, Cursor, Windsurf). The
+  // /deslint-fix prompt primes the agent for a structured
+  // analyze → fix → verify loop — the same workflow every "clean up
+  // this file" interaction collapses into anyway, made explicit so
+  // it's discoverable and consistent across agents.
+
+  server.registerPrompt(
+    'deslint-fix',
+    {
+      title: 'Fix Deslint violations in a file',
+      description:
+        'Run a structured analyze → fix → verify loop on a file. The agent calls `analyze_file`, applies the suggested fixes, then calls `verify_before_write` with the candidate content before writing.',
+      argsSchema: {
+        filePath: z.string().describe('Path to the file to clean up.'),
+        strict: z
+          .string()
+          .optional()
+          .describe('Set to "true" to promote warnings to errors throughout the loop.'),
+      },
+    },
+    ({ filePath, strict }) => {
+      const wantStrict = strict === 'true';
+      return {
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text:
+                `Clean up Deslint violations in \`${filePath}\` using this loop:\n\n` +
+                `1. Call \`analyze_file({ filePath: "${filePath}"${wantStrict ? ', strict: true' : ''} })\` to list current violations and the file score.\n` +
+                `2. For each violation, consult the matching rule via the \`deslint://rules/{slug}\` resource (or \`get_rule_details\`) so you understand the fix shape.\n` +
+                `3. If the rule is auto-fixable AND the suggested fix is a token-for-token substitution, apply it directly. Otherwise propose a manual fix consistent with the project's design tokens.\n` +
+                `4. Before writing the modified file to disk, call \`verify_before_write({ filePath: "${filePath}", proposedContent: <candidate>${wantStrict ? ', strict: true' : ''} })\`.\n` +
+                `5. If \`passed: true\` → write the file. If \`recommendedAction: "fix-and-retry"\` → revise and verify again (max 3 retries). If \`recommendedAction: "consult-user"\` → surface the violations to the user instead of guessing.\n\n` +
+                `Stop when the file passes verification, you've retried 3 times, or you hit a "consult-user" recommendation. Report the final score and the diff you applied.`,
+            },
+          },
+        ],
+      };
     },
   );
 
