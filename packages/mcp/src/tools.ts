@@ -1057,7 +1057,33 @@ const SESSION_STATS = {
   totalVerifyMs: 0,
   cacheHits: 0,
   cacheMisses: 0,
+  slowVerifyCount: 0,
 };
+
+/**
+ * Soft wall-clock budget for `verify_before_write`. We CANNOT
+ * cancel ESLint mid-run (`Linter.verify` is synchronous), so this
+ * is an observability gate, not a hard cancellation:
+ *
+ *   - measure elapsed wall-clock on every verify
+ *   - if it exceeds the budget, log a structured warning to stderr
+ *     (NOT stdout — stdout is the MCP JSON-RPC channel) and
+ *     increment `slowVerifyCount` in SESSION_STATS so the agent
+ *     can `get_server_stats` to see degradation over a session
+ *   - the verify still completes and its result still ships back
+ *
+ * Why soft rather than hard: catastrophic verifies on real-world
+ * inputs are vanishingly rare (10 MB content cap + well-tested
+ * plugin = bounded worst case), and a fake-AbortSignal that lies
+ * about cancelling sync work is worse than no abort at all. The
+ * structured warning gives users + ops the signal they need to
+ * investigate, without changing the deterministic verdict contract.
+ *
+ * Tuned generously: 2 seconds. The integration script measures
+ * real-world verify at sub-10 ms on shadcn-ui production code,
+ * so any cross-of-2-seconds is a real anomaly worth surfacing.
+ */
+const VERIFY_BUDGET_MS = 2000;
 
 function configCacheKey(projectDir: string, ruleOverrides: Record<string, unknown>): string {
   const sorted = Object.keys(ruleOverrides).sort().map((k) => `${k}=${JSON.stringify(ruleOverrides[k])}`).join(';');
@@ -1226,6 +1252,17 @@ export async function verifyBeforeWrite(params: {
   SESSION_STATS.totalVerifyCalls++;
   SESSION_STATS.totalVerifyMs += durationMs;
 
+  // Soft budget. If this single verify took longer than the budget,
+  // log a one-line structured warning to stderr (never stdout — that
+  // would corrupt the JSON-RPC channel) and bump the session-stats
+  // counter so the agent's get_server_stats call surfaces it.
+  if (durationMs > VERIFY_BUDGET_MS) {
+    SESSION_STATS.slowVerifyCount++;
+    process.stderr.write(
+      `[deslint] verify_before_write slow path: ${durationMs}ms on ${relPath} (budget ${VERIFY_BUDGET_MS}ms, content ${byteLen}B)\n`,
+    );
+  }
+
   const result: VerifyBeforeWriteResult = {
     filePath: relPath,
     passed,
@@ -1350,6 +1387,12 @@ export interface ServerStats {
   cacheHitRate: number | null;
   /** Average wall-clock cost per non-cached verify call, in ms. */
   avgVerifyMs: number | null;
+  /** Number of verify_before_write calls that exceeded the 2 s soft
+   *  budget. Stays at 0 in healthy operation; any non-zero value is
+   *  a signal that ESLint hit a pathological input. The MCP server
+   *  also writes one line to stderr per slow call so logs surface
+   *  the file path. */
+  slowVerifyCount: number;
 }
 
 export function getServerStats(): ServerStats {
@@ -1364,6 +1407,7 @@ export function getServerStats(): ServerStats {
       SESSION_STATS.totalVerifyCalls === 0
         ? null
         : Math.round((SESSION_STATS.totalVerifyMs / SESSION_STATS.totalVerifyCalls) * 100) / 100,
+    slowVerifyCount: SESSION_STATS.slowVerifyCount,
   };
 }
 
@@ -1376,6 +1420,7 @@ export function _resetCaches(): void {
   SESSION_STATS.totalVerifyMs = 0;
   SESSION_STATS.cacheHits = 0;
   SESSION_STATS.cacheMisses = 0;
+  SESSION_STATS.slowVerifyCount = 0;
 }
 
 // ── Tool: scan_diff ──────────────────────────────────────────────
@@ -1550,3 +1595,390 @@ export async function scanDiff(params: {
 /* Internal helper export — `basename` re-export so server.ts can use
  * it in the resource handlers without re-importing 'node:path'. */
 export const _internal = { basename };
+
+// ── Agent Action Firewall: verify_shell_exec ─────────────────────────
+//
+// Extends Deslint from "lint files" to "intercept agent actions." The
+// agent calls verifyShellExec BEFORE actually running the shell
+// command. We consult the project's `.deslint/policy.yml`, evaluate
+// deny → allow → defaultAction → builtinChecks, and return a verdict
+// the agent must honour.
+//
+// Strategic context: this is the first interceptor of the
+// "verify_before_*" family the 2027 roadmap calls for. The shape it
+// establishes here (cached policy, deterministic verdict, deny-wins
+// semantics, builtinChecks layered on top) is the template every
+// subsequent interceptor (network, file read, secret access, git op)
+// inherits.
+//
+// Performance contract: warm calls < 1ms. The policy is loaded once
+// per project per session via the existing config-cache shape, then
+// matcher predicates are compiled and cached as well. No I/O on the
+// hot path.
+
+export interface VerifyShellExecResult {
+  /** The command the agent proposed to run, verbatim. */
+  command: string;
+  /** The verdict: 'allow' = ok to run; 'warn' = run but flagged;
+   *  'deny' = MUST NOT run. The agent's prompt template treats deny
+   *  as a hard stop. */
+  verdict: 'allow' | 'warn' | 'deny';
+  /** Why the firewall reached this verdict — one of:
+   *  - 'denylist'      — matched the policy's `shellExec.deny` list
+   *  - 'allowlist'     — matched the policy's `shellExec.allow` list
+   *  - 'default'       — fell through to `shellExec.defaultAction`
+   *  - 'builtin:<id>'  — caught by a built-in check (id is the
+   *                      check category, e.g. 'destructive-rm')
+   *  - 'no-policy'     — no `.deslint/policy.yml` found in the
+   *                      project, so the firewall is a no-op (returns
+   *                      verdict='allow', reason='no-policy'). */
+  reason:
+    | 'denylist'
+    | 'allowlist'
+    | 'default'
+    | 'no-policy'
+    | `builtin:${string}`;
+  /** Human-readable message — what the agent should say to the user
+   *  when surfacing the verdict. Mirrors the lint-message convention
+   *  used by analyze_file / verify_before_write. */
+  message: string;
+  /** Optional pattern that matched (when reason is 'denylist' /
+   *  'allowlist'). Lets the agent cite the policy line in its
+   *  response: "blocked by `re:^pnpm publish` in your firewall
+   *  policy." */
+  matchedPattern?: string;
+  /** Wall-clock cost of the verify call. Stays under 1ms warm so the
+   *  agent never feels the firewall in its loop. */
+  durationMs: number;
+  /** Whether this result was served from the result cache. Identical
+   *  (command, policy) pairs return instantly with cached:true. */
+  cached: boolean;
+}
+
+/**
+ * Built-in dangerous-pattern detectors. Each entry is a vetted
+ * matcher we ship and update across the deslint ecosystem so users
+ * don't have to maintain these regexes themselves. The category id
+ * is what gets returned in `reason` as `builtin:<id>`.
+ *
+ * Patterns are conservative — false positives here mean the firewall
+ * blocks legitimate work, which is the WORST thing it can do. We
+ * deliberately err on the side of letting borderline cases through.
+ *
+ * Maintained here (not in policy-schema.ts) so the matchers can be
+ * tuned without breaking the policy DSL's shape.
+ */
+const BUILTIN_SHELL_CHECKS: Record<string, { matcher: RegExp; message: string }> = {
+  'destructive-rm': {
+    // rm -rf /, rm -rf ~, rm -rf $HOME, rm -rf "/", and the leading-
+    // path variants like `rm -rf / *`. Does NOT match `rm -rf
+    // ./build` or `rm -rf node_modules` — those are legitimate.
+    matcher: /\brm\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r|-rf|-fr|--recursive\s+--force)\s+(?:["']?(?:\/|~|\$HOME|\$\{HOME\})["']?(?:\s|$|\s*\*))/,
+    message: 'destructive `rm -rf` targeting filesystem root, home, or HOME env var — blocked as a built-in check.',
+  },
+  'curl-pipe-shell': {
+    // curl ... | sh / bash, wget ... | sh, and their variants. The
+    // canonical "trust this random script to install itself" pattern.
+    matcher: /\b(?:curl|wget|fetch)\b[^|]*\|\s*(?:bash|sh|zsh|ksh|fish|dash|cmd|powershell|pwsh)\b/,
+    message: 'piping a network download into a shell interpreter — blocked. Download to a file, audit it, then run it.',
+  },
+  'sudo': {
+    matcher: /(?:^|\s|;|&&|\|\|)sudo\s+/,
+    message: '`sudo` invocation — flagged. Agents should not need root privileges; if this is intentional, allowlist explicitly.',
+  },
+  'history-rewrite': {
+    matcher: /\bgit\s+(?:reset\s+--hard|filter-branch|push\s+(?:--force|-f)(?:\s|$)|filter-repo|reflog\s+expire)\b/,
+    message: 'git history-rewriting command — blocked by default. These operations are destructive across collaborators.',
+  },
+  'process-substitution': {
+    matcher: /(?:<|>)\((?:curl|wget|nc|ncat)\s/,
+    message: 'process substitution invoking a network command — blocked. Common in obfuscated supply-chain exploits.',
+  },
+  'crypto-mining': {
+    matcher: /\b(?:xmrig|cgminer|minerd|ethminer|cpuminer)\b/i,
+    message: 'known cryptocurrency miner binary — blocked. If this is intentional, allowlist explicitly.',
+  },
+  'reverse-shell': {
+    // nc -e, bash -i >& /dev/tcp/host/port, python -c 'socket...'
+    // canonical reverse-shell patterns. Each is a known exploit sig.
+    matcher: /(?:\bnc\b[^|]*\s-[a-z]*e\b|\bbash\b[^|]*-i[^|]*>&\s*\/dev\/tcp\/|python\s+-c\s+["'][^"']*socket[^"']*connect)/,
+    message: 'reverse-shell pattern detected — blocked. This signature is associated with active exploitation.',
+  },
+};
+
+/**
+ * Compiled-matcher cache. Keyed by `${policyHash}:${section}` — when
+ * the policy file content is unchanged, matcher predicates are
+ * compiled ONCE and reused across every shell-exec call. Cleared
+ * (along with everything else) by `_resetCaches`.
+ */
+interface CompiledShellPolicy {
+  denyMatch: (cmd: string) => boolean;
+  allowMatch: (cmd: string) => boolean;
+  denyPatterns: readonly string[];
+  allowPatterns: readonly string[];
+}
+const SHELL_POLICY_CACHE = new Map<string, CompiledShellPolicy>();
+const POLICY_FILE_CACHE = new Map<string, { policy: any | null; loadedAt: number }>();
+const POLICY_TTL_MS = 5_000; // re-read the file at most every 5 seconds
+
+const SHELL_RESULT_CACHE = new Map<string, VerifyShellExecResult>();
+const SHELL_RESULT_CACHE_MAX = 256;
+
+async function loadPolicyForProject(projectDir: string): Promise<any | null> {
+  const cached = POLICY_FILE_CACHE.get(projectDir);
+  if (cached && Date.now() - cached.loadedAt < POLICY_TTL_MS) {
+    return cached.policy;
+  }
+
+  const ymlPath = join(projectDir, '.deslint', 'policy.yml');
+  const yamlPath = join(projectDir, '.deslint', 'policy.yaml');
+  const jsonPath = join(projectDir, '.deslint', 'policy.json');
+
+  let raw: string | null = null;
+  let format: 'yaml' | 'json' = 'json';
+  for (const [path, fmt] of [
+    [ymlPath, 'yaml'],
+    [yamlPath, 'yaml'],
+    [jsonPath, 'json'],
+  ] as const) {
+    if (existsSync(path)) {
+      try {
+        raw = readFileSync(path, 'utf-8');
+        format = fmt;
+        break;
+      } catch { /* keep trying */ }
+    }
+  }
+
+  if (raw === null) {
+    POLICY_FILE_CACHE.set(projectDir, { policy: null, loadedAt: Date.now() });
+    return null;
+  }
+
+  // YAML is parsed via `js-yaml`, which is already shipped as a
+  // transitive dependency of @deslint/shared (the budget loader uses
+  // the same parser). JSON policies parse directly with no extra
+  // module load.
+  let parsed: unknown;
+  try {
+    if (format === 'json') {
+      parsed = JSON.parse(raw);
+    } else {
+      try {
+        const yamlMod = (await import('js-yaml')) as {
+          load?: (s: string) => unknown;
+          default?: { load?: (s: string) => unknown };
+        };
+        const loadFn = yamlMod.load ?? yamlMod.default?.load;
+        if (!loadFn) {
+          POLICY_FILE_CACHE.set(projectDir, { policy: null, loadedAt: Date.now() });
+          return null;
+        }
+        parsed = loadFn(raw);
+      } catch {
+        POLICY_FILE_CACHE.set(projectDir, { policy: null, loadedAt: Date.now() });
+        return null;
+      }
+    }
+  } catch {
+    POLICY_FILE_CACHE.set(projectDir, { policy: null, loadedAt: Date.now() });
+    return null;
+  }
+
+  const { safeParsePolicy } = await import('@deslint/shared');
+  const result = safeParsePolicy(parsed);
+  const policy = result.success ? result.data : null;
+  POLICY_FILE_CACHE.set(projectDir, { policy, loadedAt: Date.now() });
+  return policy;
+}
+
+function getCompiledShellPolicy(projectDir: string, policy: any): CompiledShellPolicy {
+  const policyJson = JSON.stringify(policy?.shellExec ?? {});
+  const hash = createHash('sha1').update(projectDir).update(':').update(policyJson).digest('hex');
+  const cached = SHELL_POLICY_CACHE.get(hash);
+  if (cached) return cached;
+
+  // Inline implementation of compileMatchers — kept here to avoid the
+  // dynamic import on the hot path. (We're already importing
+  // `safeParsePolicy` lazily; importing the matcher every call would
+  // add latency. The compiled cache makes this a one-time cost per
+  // session per policy version.)
+  const compile = (patterns: readonly string[]) => {
+    const literals = new Set<string>();
+    const regexes: RegExp[] = [];
+    for (const p of patterns) {
+      if (p.startsWith('re:')) {
+        try { regexes.push(new RegExp(p.slice(3))); } catch { /* skip malformed */ }
+      } else {
+        literals.add(p);
+      }
+    }
+    return (input: string) => {
+      if (literals.has(input)) return true;
+      for (const re of regexes) if (re.test(input)) return true;
+      return false;
+    };
+  };
+
+  const denyPatterns = (policy?.shellExec?.deny ?? []) as readonly string[];
+  const allowPatterns = (policy?.shellExec?.allow ?? []) as readonly string[];
+  const compiled: CompiledShellPolicy = {
+    denyMatch: compile(denyPatterns),
+    allowMatch: compile(allowPatterns),
+    denyPatterns,
+    allowPatterns,
+  };
+  SHELL_POLICY_CACHE.set(hash, compiled);
+  return compiled;
+}
+
+/**
+ * Find the first matching deny/allow pattern, returning the pattern
+ * string so the verdict's `matchedPattern` field is populated.
+ * (compileMatchers returns a boolean predicate; we need the source
+ * pattern for the report.)
+ */
+function findMatchingPattern(patterns: readonly string[], input: string): string | null {
+  for (const p of patterns) {
+    if (p.startsWith('re:')) {
+      try {
+        if (new RegExp(p.slice(3)).test(input)) return p;
+      } catch { /* skip malformed */ }
+    } else if (p === input) {
+      return p;
+    }
+  }
+  return null;
+}
+
+export async function verifyShellExec(params: {
+  command: string;
+  projectDir?: string;
+}): Promise<VerifyShellExecResult> {
+  const t0 = performance.now();
+  const projectDir = resolve(params.projectDir ?? process.cwd());
+  const command = params.command;
+
+  // Length cap mirrors the existing 10 MB content cap on
+  // verify_before_write — but shell commands shouldn't approach that.
+  // 32 KB is generous and lets us cache cheaply.
+  if (command.length > 32 * 1024) {
+    throw new Error(`Proposed shell command too long (${command.length} bytes). Maximum: 32 KB.`);
+  }
+
+  // Result cache: (projectDir, command) → verdict
+  const cacheKey = `${projectDir}\x00${command}`;
+  const hit = SHELL_RESULT_CACHE.get(cacheKey);
+  if (hit) {
+    return { ...hit, cached: true, durationMs: Math.round((performance.now() - t0) * 100) / 100 };
+  }
+
+  const policy = await loadPolicyForProject(projectDir);
+
+  if (!policy) {
+    const result: VerifyShellExecResult = {
+      command,
+      verdict: 'allow',
+      reason: 'no-policy',
+      message:
+        'No `.deslint/policy.yml` found in this project — the firewall is a no-op. Add a policy file to start enforcing shell-exec rules.',
+      durationMs: Math.round((performance.now() - t0) * 100) / 100,
+      cached: false,
+    };
+    cacheShellResult(cacheKey, result);
+    return result;
+  }
+
+  const compiled = getCompiledShellPolicy(projectDir, policy);
+  const shellPolicy = policy.shellExec;
+
+  // 1. deny list wins
+  const denyMatch = findMatchingPattern(compiled.denyPatterns, command);
+  if (denyMatch) {
+    const result: VerifyShellExecResult = {
+      command,
+      verdict: 'deny',
+      reason: 'denylist',
+      matchedPattern: denyMatch,
+      message: `Blocked by your firewall policy (\`shellExec.deny\` matched \`${denyMatch}\`).`,
+      durationMs: Math.round((performance.now() - t0) * 100) / 100,
+      cached: false,
+    };
+    cacheShellResult(cacheKey, result);
+    return result;
+  }
+
+  // 2. allow list permits
+  const allowMatch = findMatchingPattern(compiled.allowPatterns, command);
+  if (allowMatch) {
+    const result: VerifyShellExecResult = {
+      command,
+      verdict: 'allow',
+      reason: 'allowlist',
+      matchedPattern: allowMatch,
+      message: `Permitted by your firewall policy (\`shellExec.allow\` matched \`${allowMatch}\`).`,
+      durationMs: Math.round((performance.now() - t0) * 100) / 100,
+      cached: false,
+    };
+    cacheShellResult(cacheKey, result);
+    return result;
+  }
+
+  // 3. built-in checks (always layered on top — even when defaultAction='allow')
+  const builtinList: string[] = shellPolicy?.builtinChecks ?? ['destructive-rm', 'curl-pipe-shell', 'reverse-shell'];
+  for (const checkId of builtinList) {
+    const check = BUILTIN_SHELL_CHECKS[checkId];
+    if (!check) continue;
+    if (check.matcher.test(command)) {
+      const result: VerifyShellExecResult = {
+        command,
+        verdict: 'deny',
+        reason: `builtin:${checkId}`,
+        message: check.message,
+        durationMs: Math.round((performance.now() - t0) * 100) / 100,
+        cached: false,
+      };
+      cacheShellResult(cacheKey, result);
+      return result;
+    }
+  }
+
+  // 4. fallthrough — defaultAction decides
+  const defaultAction = (shellPolicy?.defaultAction ?? 'warn') as 'allow' | 'warn' | 'deny';
+  const result: VerifyShellExecResult = {
+    command,
+    verdict: defaultAction,
+    reason: 'default',
+    message:
+      defaultAction === 'allow'
+        ? 'Command not on any list; firewall defaults to allow.'
+        : defaultAction === 'deny'
+          ? `Command not on the allow list; firewall defaults to deny. Add it to \`shellExec.allow\` if intentional.`
+          : 'Command not on any list; firewall defaults to warn. Review before running, or add to `shellExec.allow` to silence.',
+    durationMs: Math.round((performance.now() - t0) * 100) / 100,
+    cached: false,
+  };
+  cacheShellResult(cacheKey, result);
+  return result;
+}
+
+function cacheShellResult(key: string, result: VerifyShellExecResult): void {
+  if (SHELL_RESULT_CACHE.size >= SHELL_RESULT_CACHE_MAX) {
+    const oldest = SHELL_RESULT_CACHE.keys().next().value;
+    if (oldest !== undefined) SHELL_RESULT_CACHE.delete(oldest);
+  }
+  SHELL_RESULT_CACHE.set(key, result);
+}
+
+/**
+ * Test-only: clear the firewall's per-session caches alongside the
+ * existing _resetCaches. Exported here rather than added to that
+ * function so the tests can wipe only the firewall state when they
+ * want to.
+ */
+export function _resetFirewallCaches(): void {
+  SHELL_POLICY_CACHE.clear();
+  POLICY_FILE_CACHE.clear();
+  SHELL_RESULT_CACHE.clear();
+}

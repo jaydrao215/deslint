@@ -2,6 +2,76 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.10.0] — 2026-05-14
+
+The Agent Action Firewall — Deslint extends from "lint files" to
+"intercept every agent action." First interceptor ships: a
+pre-execution gate every shell command the agent proposes now runs
+through. Deterministic verdict in under a millisecond. The chokepoint
+AI coding tools plug into to be production-trustable.
+
+### Added (`@deslint/mcp`)
+
+- **`verify_shell_exec`** — pre-execution firewall tool. Agent passes
+  a candidate command; the server consults `.deslint/policy.yml` and
+  returns a deterministic `allow` / `warn` / `deny` verdict + reason
+  (`denylist` / `allowlist` / `default` / `builtin:<id>` / `no-policy`)
+  + the matched pattern. Warm calls under 1 ms. Identical `(command,
+  project)` pairs return from cache instantly with `cached: true`.
+- **Seven built-in dangerous-pattern checks.** Each policy ships with
+  a curated set of categories the firewall flags without authoring a
+  regex: `destructive-rm` (`rm -rf /` and variants — does NOT flag
+  `rm -rf node_modules`), `curl-pipe-shell`, `reverse-shell`,
+  `history-rewrite`, `sudo`, `process-substitution`, `crypto-mining`.
+  Default-on: `destructive-rm`, `curl-pipe-shell`, `reverse-shell`.
+  Explicit `allow` patterns always win over builtin matches, so
+  legitimate `sudo` or `git push --force` use cases have an escape
+  hatch.
+- **YAML and JSON policy formats.** `.deslint/policy.yml`,
+  `policy.yaml`, and `policy.json` all load. YAML parsed via
+  `js-yaml` (now a direct dependency of `@deslint/mcp`).
+- **Performance.** Module-level caches for the policy file (5-second
+  TTL), the compiled matchers (keyed by policy content hash), and the
+  per-`(command, project)` result. 32 KB command-length cap mirrors
+  the existing `verify_before_write` DoS guard.
+
+### Added (`@deslint/shared`)
+
+- **`policy-schema.ts`** — Zod schema for the Agent Action Firewall
+  policy DSL. Sections declared for every interceptor the roadmap
+  calls for (`shellExec`, `outboundRequest`, `fileRead`,
+  `secretAccess`, `gitOp`) so users can author the whole policy now
+  and the firewall progressively enforces each section as the
+  corresponding interceptor lands. Schema is stable from v0.10 onward.
+- Exports: `FirewallPolicySchema`, `ShellExecPolicySchema`,
+  `MatchPatternSchema`, `parsePolicy`, `safeParsePolicy`,
+  `compileMatchers`, `validatePatterns`, `resolveSeverity`, plus
+  matching type exports.
+
+### Marketing
+
+- New `/firewall` page on deslint.com — why this is structurally
+  AI-proof, the `verify_before_*` interceptor roadmap, the seven
+  built-in checks, and a copy-pastable policy file.
+- Homepage gains an `AgentFirewallSection` sequenced between the MCP
+  loop section and ProductShowcase.
+- `WhatItCatches`, `ComparisonStrip`, `ComparisonTable`, `/pricing`,
+  and `/compare/deslint-vs-stylelint` all surface the firewall.
+- Firewall added to Navbar + Footer.
+
+### Roadmap (sequenced for upcoming releases)
+
+The policy DSL's section shape is stable now so users can author the
+whole firewall policy at v0.10 and only the interceptors they
+explicitly invoke do anything until the tool lands.
+
+- `verify_outbound_request` — HTTP allowlist + SSRF detection
+- `verify_file_read` — project-root confinement + secrets-dir blocks
+- `verify_secret_access` — `process.env.*` runtime intercept
+- `verify_git_op` — force-push / history-rewrite blocking
+- `deslint-firewall` standalone binary that wraps the MCP transport
+  so non-MCP agents can adopt the firewall as a shell layer
+
 ## [0.8.0] — unreleased
 
 Launch-readiness scoring + three new frontend-safety rules. `npx deslint

@@ -141,6 +141,15 @@ const ROWS: Row[] = [
     sonarQube: 'none',
     codeRabbit: 'partial',
   },
+  {
+    label: 'Agent Action Firewall',
+    detail: 'Pre-execution gating for shell commands the agent proposes',
+    deslint: 'full',
+    jsxA11y: 'none',
+    tailwindEslint: 'none',
+    sonarQube: 'none',
+    codeRabbit: 'none',
+  },
 ];
 
 export function ComparisonTable() {

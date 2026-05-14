@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Menu, X, BookOpen, Zap, CreditCard, Terminal, FileText, PackageCheck, GitPullRequest, Rocket } from 'lucide-react';
+import { Menu, X, BookOpen, Zap, CreditCard, Terminal, FileText, PackageCheck, GitPullRequest, Rocket, ShieldCheck } from 'lucide-react';
 import { BrandLockup } from './BrandLockup';
 
 const NAV_LINKS = [
   { href: '/launch-check', label: 'Launch Check', icon: Rocket },
   { href: '/mcp', label: 'MCP', icon: Terminal },
+  { href: '/firewall', label: 'Firewall', icon: ShieldCheck },
   { href: '/cli', label: 'CLI', icon: PackageCheck },
   { href: '/action', label: 'PR Gate', icon: GitPullRequest },
   { href: '/docs', label: 'Docs', icon: BookOpen },

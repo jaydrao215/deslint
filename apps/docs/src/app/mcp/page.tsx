@@ -55,6 +55,11 @@ const AGENTS = [
 
 const TOOLS = [
   {
+    name: 'verify_shell_exec',
+    blurb:
+      'Agent Action Firewall — pre-execution gate for shell commands. Agent calls before running any command; server reads `.deslint/policy.yml` and returns allow / warn / deny + reason + matched pattern. Built-in detection for rm -rf /, curl | sh, reverse shells, and history rewrites. Sub-1 ms warm. Same input, same verdict, every time.',
+  },
+  {
     name: 'verify_before_write',
     blurb:
       'The pre-write gate. Agent passes the proposed file content; server returns passed / violations / recommendedAction (ok-to-write | ok-with-warnings | fix-and-retry | consult-user). In-process Linter.verify, no temp file. Cold ~1s, warm 3-7ms, identical-content cache hit ~0.05ms.',
@@ -127,16 +132,17 @@ export default function McpHubPage() {
           Model Context Protocol
         </p>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 leading-[1.1] mb-6">
-          Deslint MCP — the verification layer inside your AI coding agent.
+          The verification layer inside your AI coding agent.
         </h1>
         <p className="text-lg text-gray-600 leading-relaxed mb-10 max-w-2xl">
           Deslint ships a Model Context Protocol server that runs as a local
-          subprocess of any MCP-compatible agent. The agent calls deterministic
-          tools — <code className="font-mono text-sm">analyze_and_fix</code>,{' '}
-          <code className="font-mono text-sm">enforce_budget</code>,{' '}
-          <code className="font-mono text-sm">compliance_check</code> — before
-          it writes code, so drift and accessibility failures never land in
-          your PR. Zero LLM in the hot path. Zero code leaves your machine.
+          subprocess of any MCP-compatible agent. 12 tools the agent calls
+          before it writes a file or runs a shell command:{' '}
+          <code className="font-mono text-sm">verify_shell_exec</code>,{' '}
+          <code className="font-mono text-sm">verify_before_write</code>,{' '}
+          <code className="font-mono text-sm">analyze_and_fix</code>, and
+          nine more. Sub-1 ms warm verdict. Zero LLM in the hot path. Zero
+          code leaves your machine.
         </p>
 
         {/* Install */}

@@ -14,15 +14,21 @@ const FOOTER_LINKS: Record<string, FooterLink[]> = {
     { label: 'Getting Started', href: '/docs/getting-started' },
     { label: 'Rules Reference', href: '/docs/rules' },
     { label: 'Configuration', href: '/docs/configuration' },
+    { label: 'Agent Action Firewall', href: '/firewall' },
     { label: 'Pricing', href: '/pricing' },
   ],
   Resources: [
     { label: 'Documentation', href: '/docs' },
     { label: 'Blog', href: '/blog' },
-    { label: 'Deslint vs. stylelint', href: '/compare/deslint-vs-stylelint' },
+    { label: 'Visual proof', href: '/proof' },
     { label: 'Framework & WCAG coverage', href: '/coverage' },
     { label: 'GitHub', href: GITHUB_URL, external: true },
     { label: 'npm', href: 'https://www.npmjs.com/package/@deslint/eslint-plugin', external: true },
+  ],
+  Compare: [
+    { label: 'Deslint vs. CodeRabbit', href: '/compare/deslint-vs-coderabbit' },
+    { label: 'Deslint vs. SonarQube', href: '/compare/deslint-vs-sonarqube' },
+    { label: 'Deslint vs. stylelint', href: '/compare/deslint-vs-stylelint' },
   ],
   Community: [
     { label: 'Discussions', href: `${GITHUB_URL}/discussions`, external: true },
@@ -35,7 +41,7 @@ export function Footer() {
   return (
     <footer className="border-t border-gray-100 bg-surface-100">
       <div className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-5">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" aria-label="Deslint home" className="inline-block mb-4">
               <BrandLockup size="footer" showTagline />

@@ -21,6 +21,8 @@ const STATIC_ROUTES: { path: string; priority: number; changeFrequency: Metadata
   { path: '/mcp/cursor',                     priority: 0.9,  changeFrequency: 'weekly'  },
   { path: '/mcp/windsurf',                   priority: 0.9,  changeFrequency: 'weekly'  },
   { path: '/mcp/codex',                      priority: 0.9,  changeFrequency: 'weekly'  },
+  { path: '/firewall',                       priority: 0.95, changeFrequency: 'weekly'  },
+  { path: '/proof',                          priority: 0.75, changeFrequency: 'monthly' },
   { path: '/pricing',                        priority: 0.8,  changeFrequency: 'monthly' },
   { path: '/coverage',                       priority: 0.7,  changeFrequency: 'monthly' },
   { path: '/docs',                           priority: 0.8,  changeFrequency: 'weekly'  },
@@ -29,6 +31,8 @@ const STATIC_ROUTES: { path: string; priority: number; changeFrequency: Metadata
   { path: '/docs/rules',                     priority: 0.7,  changeFrequency: 'weekly'  },
   { path: '/blog',                           priority: 0.85, changeFrequency: 'weekly'  },
   { path: '/compare/deslint-vs-stylelint',   priority: 0.7,  changeFrequency: 'monthly' },
+  { path: '/compare/deslint-vs-coderabbit',  priority: 0.8,  changeFrequency: 'monthly' },
+  { path: '/compare/deslint-vs-sonarqube',   priority: 0.8,  changeFrequency: 'monthly' },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
