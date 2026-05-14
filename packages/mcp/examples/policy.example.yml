@@ -1,0 +1,66 @@
+# Deslint Agent Action Firewall — example policy
+#
+# Copy this to `.deslint/policy.yml` in your project root, then the
+# MCP server's `verify_shell_exec` tool will consult it before every
+# shell command the agent proposes to run.
+#
+# Verdicts: 'allow' | 'warn' | 'deny'.
+# Evaluation order: deny → allow → builtinChecks → defaultAction.
+#
+# Pattern types:
+#   "foo bar"        — literal exact match
+#   "re:^foo "       — regex (anything starting with re: is compiled)
+
+version: 1
+name: example-strict
+
+# Top-level severity propagates to every section that doesn't
+# override it. Set to 'error' if you want the firewall to be a
+# hard gate; 'warn' if you want it advisory.
+severity: error
+
+shellExec:
+  # Commands that are ALWAYS blocked. Deny beats allow on overlap.
+  deny:
+    - "pnpm publish"
+    - "re:^npm install -g"
+    - "re:^git push --force"
+
+  # Commands that are ALWAYS permitted. Useful as a positive
+  # allowlist when defaultAction is 'deny'.
+  allow:
+    - "re:^pnpm (test|run |install$|build$)"
+    - "re:^git (status|diff|log|add|commit|fetch|pull)"
+    - "re:^ls( |$)"
+    - "re:^cat( |$)"
+    - "pwd"
+
+  # What happens when a command matches neither deny nor allow:
+  #   'allow'  — firewall is advisory only (loosest)
+  #   'warn'   — flagged but not blocked (default)
+  #   'deny'   — strict explicit-allowlist mode (tightest)
+  defaultAction: deny
+
+  # Curated dangerous-pattern checks the firewall flags WITHOUT
+  # forcing you to author regex. Always-on; allowlist matches can
+  # override individual ones. Full list:
+  #   destructive-rm        rm -rf / and home-dir wipes
+  #   curl-pipe-shell       curl ... | sh / bash
+  #   sudo                  any sudo invocation
+  #   history-rewrite       git reset --hard, filter-branch, push --force
+  #   process-substitution  <(curl ...) — supply-chain exploit pattern
+  #   crypto-mining         known miner binaries (xmrig, cgminer, …)
+  #   reverse-shell         nc -e, bash -i >& /dev/tcp/..., python socket trick
+  builtinChecks:
+    - destructive-rm
+    - curl-pipe-shell
+    - reverse-shell
+    - history-rewrite
+
+# Other firewall sections (placeholders for upcoming interceptors):
+#   outboundRequest:  block agent HTTP calls to non-allowlisted hosts
+#   fileRead:         confine reads to project root; block .env etc.
+#   secretAccess:     intercept process.env.* reads at runtime
+#   gitOp:            block force-push, history rewrite, etc.
+# These sections are SCHEMA-STABLE — you can author them now and
+# they'll start enforcing as the corresponding interceptors ship.

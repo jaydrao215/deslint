@@ -122,3 +122,20 @@ export {
   parseEmToMilliEm,
 } from './design-system-bridge.js';
 export type { BridgeOptions, BridgeResult } from './design-system-bridge.js';
+
+// ── Agent Action Firewall policy DSL (v0.10) ─────────────────────────
+export {
+  FirewallPolicySchema,
+  ShellExecPolicySchema,
+  MatchPatternSchema,
+  parsePolicy,
+  safeParsePolicy,
+  compileMatchers,
+  validatePatterns,
+  resolveSeverity,
+} from './policy-schema.js';
+export type {
+  FirewallPolicy,
+  ShellExecPolicy,
+  MatchPattern,
+} from './policy-schema.js';

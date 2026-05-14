@@ -2,7 +2,7 @@ import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mc
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { VERSION } from './index.js';
-import { analyzeFile, analyzeProject, analyzeAndFix, complianceCheck, getRuleDetails, suggestFixStrategy, enforceBudget, verifyBeforeWrite, scanDiff, quickCheck, getServerStats, preloadFastPath } from './tools.js';
+import { analyzeFile, analyzeProject, analyzeAndFix, complianceCheck, getRuleDetails, suggestFixStrategy, enforceBudget, verifyBeforeWrite, scanDiff, quickCheck, getServerStats, preloadFastPath, verifyShellExec } from './tools.js';
 
 function ok<T extends object>(data: T) {
   return {
@@ -703,6 +703,57 @@ export function createServer(): McpServer {
           },
         ],
       };
+    },
+  );
+
+  // ─── Agent Action Firewall: verify_shell_exec ───────────────────
+  //
+  // The first interceptor of the v0.10 "verify_before_*" family.
+  // Agent calls this BEFORE running any shell command; firewall
+  // consults `.deslint/policy.yml` and returns a deterministic
+  // verdict. Sub-1ms warm; identical (command, project) pairs return
+  // from cache instantly.
+  server.registerTool(
+    'verify_shell_exec',
+    {
+      title: 'Verify a Shell Command Before the Agent Runs It (Agent Firewall)',
+      description:
+        'Pre-execution gate for shell commands. The agent passes the candidate command; the server consults `.deslint/policy.yml` and returns a deterministic verdict (`allow` | `warn` | `deny`) + reason + matched pattern. ' +
+        'PRIMARY USE: call this immediately before EVERY shell command the agent runs. If `verdict: "deny"` → DO NOT RUN the command and surface the reason to the user. If `"warn"` → run it but flag in the response. If `"allow"` → run normally. ' +
+        'Reasons explained: `denylist` (policy explicitly blocks), `allowlist` (policy explicitly permits), `default` (fell through to `defaultAction`), `builtin:<id>` (caught by a built-in dangerous-pattern check — `destructive-rm`, `curl-pipe-shell`, `reverse-shell`, etc.), `no-policy` (no `.deslint/policy.yml` found; firewall is a no-op). ' +
+        'Identical (command, project) pairs return from cache instantly with `cached: true` — safe to call as a guard before every exec, no perf concern. ' +
+        'Never sends source code to external services. The shell command stays local.',
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+        title: 'Verify a Shell Command Before the Agent Runs It',
+      },
+      inputSchema: {
+        command: z.string().min(1).max(32 * 1024).describe('The candidate shell command the agent intends to run, verbatim (rendered string, not argv). Max 32 KB.'),
+        projectDir: z.string().max(1024).optional().describe('Project root directory. Defaults to current working directory. The firewall reads policy from `<projectDir>/.deslint/policy.yml` (or .yaml / .json).'),
+      },
+      outputSchema: {
+        command: z.string(),
+        verdict: z.enum(['allow', 'warn', 'deny']),
+        reason: z.string(),
+        message: z.string(),
+        matchedPattern: z.string().optional(),
+        durationMs: z.number(),
+        cached: z.boolean(),
+      },
+    },
+    async (params) => {
+      try {
+        const result = await verifyShellExec({
+          command: params.command,
+          projectDir: params.projectDir,
+        });
+        return ok(result);
+      } catch (err) {
+        return fail(err);
+      }
     },
   );
 

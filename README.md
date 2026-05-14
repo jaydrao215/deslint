@@ -266,6 +266,7 @@ npx deslint-mcp install
 ```
 
 **Tools exposed:**
+- **`verify_shell_exec`** — **Agent Action Firewall** pre-execution gate. Agent calls before running any shell command; server consults `.deslint/policy.yml` and returns deterministic `allow` / `warn` / `deny` verdict + reason + matched pattern. Built-in dangerous-pattern detection (`rm -rf /`, `curl | sh`, reverse shells, history rewrites, sudo, miners, process substitution). Sub-1ms warm; identical-command cache hit instant. The deterministic guardrail AI agents need to be trusted in production.
 - **`verify_before_write`** — lint candidate code BEFORE the agent writes it. The pre-write gate: agent passes the proposed content, gets `passed` + violations + `recommendedAction` (`ok-to-write` / `ok-with-warnings` / `fix-and-retry` / `consult-user`) + `durationMs` + `cached`. **Fast path**: in-process `Linter.verify` (no temp file, no engine spin-up). Cold start ~1s, warm calls ~3-7ms, identical-content re-calls ~0.05ms. Supports `strict`, `severityFloor`, and `categories` filters.
 - **`quick_check`** — sub-200-byte yes/no check. Returns just `{ clean, errorCount, warningCount, durationMs, cached }`. Designed for the agent's "is this even worth a full verify?" decision; shares cache with `verify_before_write` so calling both for the same content is essentially free.
 - **`scan_diff`** — lint only files changed against a base ref. Separates `newViolations` from `preExisting` so agents/merge gates can hard-block on new failures without re-litigating legacy ones.

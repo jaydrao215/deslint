@@ -70,6 +70,73 @@ Every tool is declared with MCP `annotations` and returns typed
 `structuredContent` in addition to a human-readable text block, so agents
 can parse results without scraping stringified JSON.
 
+### `verify_shell_exec` ★ — Agent Action Firewall
+
+**The deterministic guardrail.** Pre-execution gate for shell commands.
+The agent passes a candidate command; the server consults
+`.deslint/policy.yml` and returns a deterministic verdict
+(`allow` | `warn` | `deny`) + reason + the pattern that matched.
+
+This is the first interceptor of the Agent Action Firewall — Deslint's
+extension from "lint files" to "intercept every agent action." An AI
+agent cannot be its own firewall; the firewall is what makes agents
+trustable in production.
+
+**Verdicts and reasons.**
+
+| Verdict | Reason | Meaning |
+|---|---|---|
+| `deny` | `denylist` | Matched a `shellExec.deny` pattern in your policy |
+| `deny` | `builtin:<id>` | Matched a built-in dangerous-pattern check (`destructive-rm`, `curl-pipe-shell`, `reverse-shell`, etc.) |
+| `allow` | `allowlist` | Matched a `shellExec.allow` pattern |
+| `allow` / `warn` / `deny` | `default` | Fell through to `shellExec.defaultAction` |
+| `allow` | `no-policy` | No `.deslint/policy.yml` found; firewall is a no-op |
+
+**Performance.** Warm calls under 1 ms. Identical `(command,
+project)` pairs return from cache instantly with `cached: true` —
+safe to call as a guard before every shell exec without any
+perf concern.
+
+**Built-in dangerous-pattern checks.** Each policy ships with a
+curated set of categories that the firewall flags WITHOUT the user
+authoring a regex. Defaults to `['destructive-rm', 'curl-pipe-shell',
+'reverse-shell']`. Full list: `destructive-rm`, `curl-pipe-shell`,
+`sudo`, `history-rewrite`, `process-substitution`, `crypto-mining`,
+`reverse-shell`. Layered on top of the user's allow/deny — but an
+explicit `allow` match wins over a built-in check, so legitimate
+sudo or `git push --force` use cases have an escape hatch.
+
+**Inputs.** `command` (required, max 32 KB), `projectDir` (optional,
+defaults to cwd).
+
+**Returns.** `verdict`, `reason`, `message`, `matchedPattern`
+(optional), `durationMs`, `cached`.
+
+**Policy file (`.deslint/policy.yml` or `.json`).** Minimal example:
+
+```yaml
+version: 1
+name: acme-corp/strict
+severity: error
+shellExec:
+  deny:
+    - "pnpm publish"
+    - "re:^npm install -g"
+  allow:
+    - "re:^pnpm (test|run |install$)"
+    - "re:^git (status|diff|log)"
+  defaultAction: deny
+  builtinChecks:
+    - destructive-rm
+    - curl-pipe-shell
+    - reverse-shell
+    - sudo
+```
+
+The agent's prompt should call `verify_shell_exec` before every
+shell command. Most agents already wrap shell execution; adding a
+deterministic verify step to that wrapper is one block of code.
+
 ### `verify_before_write` ★
 
 **The pre-write gate.** Lint candidate code BEFORE the agent writes it

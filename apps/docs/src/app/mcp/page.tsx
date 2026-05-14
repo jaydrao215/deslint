@@ -55,6 +55,11 @@ const AGENTS = [
 
 const TOOLS = [
   {
+    name: 'verify_shell_exec',
+    blurb:
+      'Agent Action Firewall — pre-execution gate for shell commands. Agent calls before running any command; server consults `.deslint/policy.yml` and returns deterministic allow / warn / deny verdict + reason + matched pattern. Built-in dangerous-pattern detection (rm -rf /, curl | sh, reverse shells, history rewrites). Sub-1ms warm. The deterministic guardrail AI agents need to be trusted in production.',
+  },
+  {
     name: 'verify_before_write',
     blurb:
       'The pre-write gate. Agent passes the proposed file content; server returns passed / violations / recommendedAction (ok-to-write | ok-with-warnings | fix-and-retry | consult-user). In-process Linter.verify, no temp file. Cold ~1s, warm 3-7ms, identical-content cache hit ~0.05ms.',
