@@ -1711,31 +1711,26 @@ async function loadPolicyForProject(projectDir: string): Promise<any | null> {
     return null;
   }
 
-  // YAML support is opt-in via the optional `yaml` peer dep. If it
-  // isn't installed, JSON is the only supported format and YAML
-  // policies are silently skipped. This mirrors how the existing
-  // budget loader handles YAML.
+  // YAML is parsed via `js-yaml`, which is already shipped as a
+  // transitive dependency of @deslint/shared (the budget loader uses
+  // the same parser). JSON policies parse directly with no extra
+  // module load.
   let parsed: unknown;
   try {
     if (format === 'json') {
       parsed = JSON.parse(raw);
     } else {
       try {
-        // `yaml` is an OPTIONAL runtime peer — JSON policies always
-        // work; YAML policies require the user to install `yaml`
-        // alongside us. The type cast keeps TypeScript happy when the
-        // dep is absent at build time; the try/catch keeps the
-        // firewall silent when it's absent at runtime.
-        const yamlMod = (await import('yaml' as string)) as {
-          parse?: (s: string) => unknown;
-          default?: { parse?: (s: string) => unknown };
+        const yamlMod = (await import('js-yaml')) as {
+          load?: (s: string) => unknown;
+          default?: { load?: (s: string) => unknown };
         };
-        const parseFn = yamlMod.parse ?? yamlMod.default?.parse;
-        if (!parseFn) {
+        const loadFn = yamlMod.load ?? yamlMod.default?.load;
+        if (!loadFn) {
           POLICY_FILE_CACHE.set(projectDir, { policy: null, loadedAt: Date.now() });
           return null;
         }
-        parsed = parseFn(raw);
+        parsed = loadFn(raw);
       } catch {
         POLICY_FILE_CACHE.set(projectDir, { policy: null, loadedAt: Date.now() });
         return null;

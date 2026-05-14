@@ -9,6 +9,14 @@ Claude Desktop, Windsurf, and any MCP-compatible client verify and auto-fix
 AI-generated code in real time — before it writes the file. Pure local
 static analysis. Zero LLM in the hot path. Zero code leaves your machine.
 
+**New in v0.10 — the Agent Action Firewall.** The MCP server now exposes
+[`verify_shell_exec`](#verify_shell_exec---agent-action-firewall), a
+pre-execution gate every agent action runs through. Allow / deny shell
+commands per pattern, deterministic verdict in under a millisecond, built-in
+detection for `rm -rf /`, `curl | sh`, reverse shells, and history rewrites.
+Author policy in `.deslint/policy.yml`. The chokepoint AI coding tools plug
+into to be production-trustable. [Read the firewall page →](https://deslint.com/firewall)
+
 <p align="center">
   <img src="https://deslint.com/demo/mcp-loop.gif" alt="Deslint MCP self-correction loop: analyze_file returns structured violations, analyze_and_fix returns autofixed code, all over stdio in under a second" width="720">
 </p>
