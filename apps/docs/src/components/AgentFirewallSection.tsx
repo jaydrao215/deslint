@@ -55,8 +55,8 @@ const INTERCEPTORS: InterceptorTile[] = [
  * Homepage section introducing the Agent Action Firewall.
  *
  * Positioned between McpLoopSection (file-write verification) and ProductShowcase.
- * The narrative arc: "MCP catches bad files before write" → "the firewall extends
- * the same chokepoint to every agent action." Sub-1ms warm latency is the contract.
+ * The arc: "MCP pre-checks the file before write" → "the firewall pre-checks every
+ * other action the agent takes." Sub-1 ms warm latency is the contract.
  */
 export function AgentFirewallSection() {
   return (
@@ -88,16 +88,16 @@ export function AgentFirewallSection() {
             </span>
           </h2>
           <p className="text-lg leading-relaxed text-gray-600">
-            The same MCP chokepoint that pre-checks file writes now gates the
+            The same MCP gate that pre-checks file writes now pre-checks the
             other ways an agent touches your machine. Your AI calls{' '}
             <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-base text-primary">
               verify_shell_exec
             </code>{' '}
-            before running any command; Deslint reads{' '}
+            before running any command. Deslint reads{' '}
             <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm">
               .deslint/policy.yml
             </code>{' '}
-            and returns a deterministic{' '}
+            and returns{' '}
             <code className="rounded bg-pass/10 px-1.5 py-0.5 font-mono text-sm text-pass">
               allow
             </code>
@@ -109,7 +109,7 @@ export function AgentFirewallSection() {
             <code className="rounded bg-fail/10 px-1.5 py-0.5 font-mono text-sm text-fail">
               deny
             </code>{' '}
-            verdict in under a millisecond. No LLM in the loop. Same policy file
+            in under a millisecond. Same input, same verdict. Same policy file
             covers every interceptor as it ships.
           </p>
         </FadeIn>
@@ -152,8 +152,8 @@ export function AgentFirewallSection() {
                   Read the firewall page
                 </h3>
                 <p className="text-sm leading-relaxed text-gray-500">
-                  Why this is structurally AI-proof, the policy DSL spec, and
-                  the seven built-in dangerous-pattern checks.
+                  Why a deterministic firewall, the policy DSL spec, and the
+                  seven built-in dangerous-pattern checks.
                 </p>
               </div>
               <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:text-primary-light">

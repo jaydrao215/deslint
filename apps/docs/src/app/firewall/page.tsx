@@ -5,15 +5,14 @@ import { Footer } from '@/components/Footer';
 import { BreadcrumbJsonLd } from '@/components/BreadcrumbJsonLd';
 
 export const metadata: Metadata = {
-  title: 'Agent Action Firewall — Deterministic Guardrail for AI Coding Agents',
+  title: 'Agent Action Firewall — Pre-Execution Gate for AI Coding Agents',
   description:
-    'The Agent Action Firewall extends Deslint from "lint files" to "intercept every agent action." AI agents call verify_shell_exec before running any shell command; Deslint consults .deslint/policy.yml and returns a deterministic allow / warn / deny verdict. Sub-1ms warm. Built-in detection for rm -rf /, curl | sh, reverse shells, history rewrites. Local-first, MCP-native, MIT.',
+    'A pre-execution gate for every shell command an AI coding agent proposes. verify_shell_exec consults .deslint/policy.yml and returns allow / warn / deny in under 1 ms. Built-in detection for rm -rf /, curl | sh, reverse shells, and history rewrites. Local. MCP-native. MIT.',
   alternates: { canonical: '/firewall' },
   keywords: [
     'agent action firewall',
     'AI agent sandbox',
     'verify_shell_exec',
-    'deterministic agent guardrail',
     'MCP firewall',
     'AI coding agent security',
     'shell command interception',
@@ -21,9 +20,9 @@ export const metadata: Metadata = {
     'claude code sandbox',
   ],
   openGraph: {
-    title: 'Deslint Agent Action Firewall — The Deterministic Guardrail AI Agents Need',
+    title: 'Deslint Agent Action Firewall — Stop the Shell Command Before It Runs',
     description:
-      'Pre-execution gate for every agent action. Sub-1ms verdict. Built-in detection for the canonical exploit patterns. MCP-native. Local. The chokepoint AI coding tools plug into to be production-trustable.',
+      'Pre-execution gate for every shell command your AI agent proposes. Sub-1 ms verdict. Built-in detection for rm -rf /, curl | sh, reverse shells, and history rewrites. MCP-native. Local. MIT.',
     url: 'https://deslint.com/firewall',
     type: 'website',
   },
@@ -114,27 +113,25 @@ function Hero() {
           New — v0.10
         </div>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-[1.05] mb-6 text-balance">
-          The deterministic guardrail{' '}
-          <span className="gradient-text-hero">AI agents need to be production-trustable.</span>
+          Stop the shell command{' '}
+          <span className="gradient-text-hero">before your AI agent runs it.</span>
         </h1>
         <p className="text-lg sm:text-xl text-gray-600 leading-relaxed mb-8 max-w-3xl">
-          The <strong className="text-gray-900">Agent Action Firewall</strong> extends Deslint
-          from &ldquo;lint files&rdquo; to &ldquo;intercept every agent action.&rdquo; Your AI
-          calls{' '}
+          Your AI calls{' '}
           <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-base text-primary">
             verify_shell_exec
           </code>{' '}
-          before running any shell command; Deslint consults{' '}
+          first. Deslint reads{' '}
           <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm">
             .deslint/policy.yml
           </code>{' '}
-          and returns a deterministic{' '}
+          and returns{' '}
           <code className="rounded bg-pass/10 px-1.5 py-0.5 font-mono text-sm text-pass">allow</code>
           {' / '}
           <code className="rounded bg-warn/10 px-1.5 py-0.5 font-mono text-sm text-warn">warn</code>
           {' / '}
           <code className="rounded bg-fail/10 px-1.5 py-0.5 font-mono text-sm text-fail">deny</code>{' '}
-          verdict in under a millisecond.
+          in under a millisecond. Same input, same verdict, every time.
         </p>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
           <span className="flex items-center gap-2">
@@ -163,15 +160,15 @@ function WhyAiProof() {
     <section className="px-6 py-20 bg-white">
       <div className="mx-auto max-w-5xl">
         <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">
-          Why this is structurally AI-proof
+          Why a deterministic firewall
         </p>
         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 text-balance leading-tight">
           An AI cannot be its own firewall.
         </h2>
         <p className="text-lg text-gray-600 leading-relaxed mb-10 max-w-3xl">
-          Every AI coding tool ships an &ldquo;AI reviews AI&rdquo; layer by 2027. None of them
-          can serve as the deterministic guardrail regulated industries and CISOs need. Four
-          structural properties separate the firewall from the rest of the market:
+          Every IDE will ship an &ldquo;AI reviews AI&rdquo; layer by 2027. Useful for taste,
+          unusable as a compliance control: variance per run, slow per call, cloud round-trip
+          required, no signed verdict. Four properties separate the firewall from a reviewer:
         </p>
 
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">

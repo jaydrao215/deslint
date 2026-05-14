@@ -58,10 +58,10 @@ export function ComparisonStrip() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="max-w-2xl text-lg leading-relaxed text-gray-500"
           >
-            Ten dimensions of design, accessibility, runtime safety, and
-            agent-action gating that ESLint, type-checkers, and security
-            scanners don’t cover on their own — enforced in-editor, in CI, and
-            deterministically from a single config.
+            Design, accessibility, runtime safety, and agent-action gating —
+            ten categories of check that ESLint, type-checkers, and security
+            scanners don’t cover on their own. One config, enforced in-editor,
+            in CI, and deterministically.
           </motion.p>
         </div>
 

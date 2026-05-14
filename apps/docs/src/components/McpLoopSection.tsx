@@ -118,18 +118,18 @@ export function McpLoopSection() {
         <FadeIn delay={0.25}>
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             <TrustCell
-              value="7 tools"
+              value="12 tools"
               label="registered over MCP"
-              detail="analyze · fix · compliance · rules · strategy · budget"
+              detail="verify_before_write · verify_shell_exec · analyze · fix · compliance · budget · stats"
             />
             <TrustCell
-              value="<1s"
-              label="total round trip"
-              detail="initialize + list + analyze + fix"
+              value="<1ms"
+              label="warm verdict"
+              detail="cached config + in-process Linter.verify · no engine spin-up"
             />
             <TrustCell
               value="0 bytes"
-              label="of source code sent anywhere"
+              label="of source code leave your machine"
               detail="stdio transport · no network · no LLM"
             />
           </div>

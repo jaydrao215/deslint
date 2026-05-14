@@ -27,17 +27,17 @@ const METRICS: Metric[] = [
     sublabel: 'No cloud, no telemetry, no LLM',
   },
   {
-    value: 33,
+    value: 62,
     label: 'Deterministic rules',
-    sublabel: 'Design drift + WCAG 2.2 AA',
+    sublabel: 'Design, WCAG 2.2 AA, backend safety',
   },
   {
-    value: 5,
-    label: 'Frameworks, one config',
-    sublabel: 'React · Vue · Svelte · Angular · HTML',
+    value: 12,
+    label: 'MCP tools for your agent',
+    sublabel: 'verify_shell_exec · verify_before_write · …',
   },
   {
-    value: 1362,
+    value: 2152,
     label: 'Tests passing',
     sublabel: 'Every rule: valid + invalid + fix',
     format: (n) => n.toLocaleString(),
