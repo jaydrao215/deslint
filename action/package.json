@@ -25,7 +25,7 @@
     "sigstore": "^4.1.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.1",
+    "@types/node": "^25.7.0",
     "esbuild": "^0.27.4",
     "typescript": "^5.7.2",
     "vitest": "^3.2.4"
