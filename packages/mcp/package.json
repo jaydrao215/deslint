@@ -38,6 +38,7 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "node scripts/release-gate-integration.mjs",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
