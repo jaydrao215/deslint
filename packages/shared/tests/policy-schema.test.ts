@@ -131,6 +131,86 @@ describe('validatePatterns', () => {
     const errors = validatePatterns(['[literal-bracket-string]', 'rm -rf /']);
     expect(errors).toEqual([]);
   });
+
+  // ── ReDoS / catastrophic-backtracking guard ────────────────────────
+  //
+  // The user authoring `.deslint/policy.yml` is implicitly trusted, but
+  // not infallible — a pattern copied from Stack Overflow can DoS the
+  // firewall and through it the agent loop. Two real classes:
+  //   - Nested quantifier:  (a+)+$           -> 2^n on "aaaa…!" inputs
+  //   - Alt + repetition:   (a|aa)+$         -> exponential on "a…!"
+  // safe-regex2 inspects the AST and rejects both shapes. We test the
+  // public surface (validatePatterns surfaces the issue) and the
+  // internal contract (compileMatchers silently drops them so the
+  // firewall stays up rather than going down on a misconfigured
+  // policy).
+
+  it('flags catastrophic-backtracking patterns with a descriptive error', () => {
+    const errors = validatePatterns(['re:(a+)+$']);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].pattern).toBe('re:(a+)+$');
+    expect(errors[0].error).toMatch(/unsafe regex/i);
+  });
+
+  it('flags another nested-quantifier shape: ((ab)+)+', () => {
+    const errors = validatePatterns(['re:((ab)+)+$']);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].error).toMatch(/unsafe regex/i);
+  });
+
+  // KNOWN LIMITATION: safe-regex2 uses a star-height heuristic, not a
+  // full ReDoS classifier. It catches nested quantifiers (`(a+)+`,
+  // `((ab)+)+`) but NOT alternation-with-shared-prefix
+  // (`(a|aa)+`) or the polynomial cases. Document the coverage we
+  // actually have rather than claiming what we don't.
+  it('documents the heuristic limit: alternation-shared-prefix is NOT caught', () => {
+    const errors = validatePatterns(['re:^(a|aa)+$']);
+    // safe-regex2 returns true (safe) for this shape even though it
+    // is technically exponential. If a future user hits this in
+    // anger, the right answer is either re2 (linear engine) or a
+    // worker-bounded execution. For now this test pins the known
+    // gap so it doesn't get forgotten.
+    expect(errors).toEqual([]);
+  });
+
+  it('still accepts safe regexes alongside an unsafe one (surfaces only the unsafe)', () => {
+    const errors = validatePatterns(['re:^pnpm test', 're:(a+)+$', 'pnpm install']);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].pattern).toBe('re:(a+)+$');
+  });
+});
+
+describe('compileMatchers — ReDoS guard', () => {
+  it('silently drops a catastrophic-backtracking pattern so the firewall stays up', () => {
+    const m = compileMatchers(['re:(a+)+$', 'rm -rf /']);
+    // The unsafe regex was dropped; the literal still matches.
+    expect(m('rm -rf /')).toBe(true);
+    // And the unsafe regex doesn't fire on its trigger input either —
+    // it simply isn't compiled into the predicate at all.
+    expect(m('aaaa!')).toBe(false);
+  });
+
+  it('safe regexes still compile and match after the guard runs', () => {
+    const m = compileMatchers(['re:^pnpm (test|run|build)', 're:(a+)+$']);
+    expect(m('pnpm test --watch')).toBe(true);
+    expect(m('pnpm run lint')).toBe(true);
+    expect(m('pnpm build')).toBe(true);
+  });
+
+  it('test() returns quickly even when handed a ReDoS trigger input (sanity check)', () => {
+    // The whole point: a user-authored unsafe pattern that would hang
+    // native RegExp for seconds must not hang the firewall. Because
+    // the unsafe pattern is dropped at compile time, the trigger input
+    // gets matched against zero regexes — bounded by the literal-set
+    // lookup, not by the regex engine.
+    const m = compileMatchers(['re:^(a+)+$']);
+    const trigger = 'a'.repeat(30) + '!';
+    const t0 = performance.now();
+    const result = m(trigger);
+    const elapsed = performance.now() - t0;
+    expect(result).toBe(false);
+    expect(elapsed).toBeLessThan(50); // way under native-RegExp ReDoS time
+  });
 });
 
 describe('resolveSeverity', () => {

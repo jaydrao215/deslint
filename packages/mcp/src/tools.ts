@@ -1057,7 +1057,33 @@ const SESSION_STATS = {
   totalVerifyMs: 0,
   cacheHits: 0,
   cacheMisses: 0,
+  slowVerifyCount: 0,
 };
+
+/**
+ * Soft wall-clock budget for `verify_before_write`. We CANNOT
+ * cancel ESLint mid-run (`Linter.verify` is synchronous), so this
+ * is an observability gate, not a hard cancellation:
+ *
+ *   - measure elapsed wall-clock on every verify
+ *   - if it exceeds the budget, log a structured warning to stderr
+ *     (NOT stdout — stdout is the MCP JSON-RPC channel) and
+ *     increment `slowVerifyCount` in SESSION_STATS so the agent
+ *     can `get_server_stats` to see degradation over a session
+ *   - the verify still completes and its result still ships back
+ *
+ * Why soft rather than hard: catastrophic verifies on real-world
+ * inputs are vanishingly rare (10 MB content cap + well-tested
+ * plugin = bounded worst case), and a fake-AbortSignal that lies
+ * about cancelling sync work is worse than no abort at all. The
+ * structured warning gives users + ops the signal they need to
+ * investigate, without changing the deterministic verdict contract.
+ *
+ * Tuned generously: 2 seconds. The integration script measures
+ * real-world verify at sub-10 ms on shadcn-ui production code,
+ * so any cross-of-2-seconds is a real anomaly worth surfacing.
+ */
+const VERIFY_BUDGET_MS = 2000;
 
 function configCacheKey(projectDir: string, ruleOverrides: Record<string, unknown>): string {
   const sorted = Object.keys(ruleOverrides).sort().map((k) => `${k}=${JSON.stringify(ruleOverrides[k])}`).join(';');
@@ -1226,6 +1252,17 @@ export async function verifyBeforeWrite(params: {
   SESSION_STATS.totalVerifyCalls++;
   SESSION_STATS.totalVerifyMs += durationMs;
 
+  // Soft budget. If this single verify took longer than the budget,
+  // log a one-line structured warning to stderr (never stdout — that
+  // would corrupt the JSON-RPC channel) and bump the session-stats
+  // counter so the agent's get_server_stats call surfaces it.
+  if (durationMs > VERIFY_BUDGET_MS) {
+    SESSION_STATS.slowVerifyCount++;
+    process.stderr.write(
+      `[deslint] verify_before_write slow path: ${durationMs}ms on ${relPath} (budget ${VERIFY_BUDGET_MS}ms, content ${byteLen}B)\n`,
+    );
+  }
+
   const result: VerifyBeforeWriteResult = {
     filePath: relPath,
     passed,
@@ -1350,6 +1387,12 @@ export interface ServerStats {
   cacheHitRate: number | null;
   /** Average wall-clock cost per non-cached verify call, in ms. */
   avgVerifyMs: number | null;
+  /** Number of verify_before_write calls that exceeded the 2 s soft
+   *  budget. Stays at 0 in healthy operation; any non-zero value is
+   *  a signal that ESLint hit a pathological input. The MCP server
+   *  also writes one line to stderr per slow call so logs surface
+   *  the file path. */
+  slowVerifyCount: number;
 }
 
 export function getServerStats(): ServerStats {
@@ -1364,6 +1407,7 @@ export function getServerStats(): ServerStats {
       SESSION_STATS.totalVerifyCalls === 0
         ? null
         : Math.round((SESSION_STATS.totalVerifyMs / SESSION_STATS.totalVerifyCalls) * 100) / 100,
+    slowVerifyCount: SESSION_STATS.slowVerifyCount,
   };
 }
 
@@ -1376,6 +1420,7 @@ export function _resetCaches(): void {
   SESSION_STATS.totalVerifyMs = 0;
   SESSION_STATS.cacheHits = 0;
   SESSION_STATS.cacheMisses = 0;
+  SESSION_STATS.slowVerifyCount = 0;
 }
 
 // ── Tool: scan_diff ──────────────────────────────────────────────

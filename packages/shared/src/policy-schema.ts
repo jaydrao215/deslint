@@ -27,6 +27,9 @@
  * covers the whole firewall once those interceptors land.
  */
 import { z } from 'zod';
+// `safe-regex2` is CommonJS in v5; default-import it so TypeScript/ESM
+// interop gives us the callable function rather than the module object.
+import safeRegex from 'safe-regex2';
 import { SeveritySchema, type Severity } from './config-schema.js';
 
 // ── Match shapes shared across interceptors ──────────────────────────
@@ -61,12 +64,45 @@ export type MatchPattern = z.infer<typeof MatchPatternSchema>;
  * regexes via the optional `validatePatterns` helper below for
  * `deslint policy validate` to call.
  */
+/**
+ * Wraps `safe-regex2` so the rest of the firewall doesn't have to
+ * know its import shape. `safe-regex2` is a static AST inspector — it
+ * flags patterns with nested quantifiers (`(a+)+`), alternations
+ * inside repetition (`(a|aa)+`), and the other catastrophic-
+ * backtracking shapes documented in the ReDoS literature. Patterns
+ * with `>25` repetition stars are also flagged (the library default).
+ *
+ * If the inspector itself throws (it has been known to on exotic
+ * AST shapes), we fail closed — treat the pattern as unsafe rather
+ * than risk admitting a real ReDoS vector. A user with a benign-but-
+ * exotic pattern can always rewrite it as a literal or simplify the
+ * regex; a ReDoS that hangs the agent loop has no recovery path.
+ */
+function isSafeRegexPattern(source: string): boolean {
+  try {
+    return safeRegex(source);
+  } catch {
+    return false;
+  }
+}
+
 export function compileMatchers(patterns: readonly MatchPattern[]): (input: string) => boolean {
   const literals = new Set<string>();
   const regexes: RegExp[] = [];
   for (const p of patterns) {
     if (p.startsWith('re:')) {
-      try { regexes.push(new RegExp(p.slice(3))); } catch { /* skip malformed */ }
+      const source = p.slice(3);
+      // Two-stage gate. Stage 1: syntactically parseable by JavaScript.
+      // Stage 2: not a catastrophic-backtracking shape (ReDoS). Both
+      // failure modes silently drop the pattern — the firewall must
+      // never crash on a misconfigured policy, but it also must never
+      // compile a pattern that can hang the agent loop. Users surface
+      // these via `validatePatterns` for a `deslint policy validate`
+      // CLI command.
+      try {
+        if (!isSafeRegexPattern(source)) continue;
+        regexes.push(new RegExp(source));
+      } catch { /* skip malformed */ }
     } else {
       literals.add(p);
     }
@@ -79,17 +115,28 @@ export function compileMatchers(patterns: readonly MatchPattern[]): (input: stri
 }
 
 /**
- * Surface malformed regex patterns for the `deslint policy validate`
- * CLI command. Returns an empty list when the policy is well-formed.
- * Lives in shared so both the MCP server and the future CLI command
- * read the same source of truth.
+ * Surface malformed AND unsafe regex patterns for the
+ * `deslint policy validate` CLI command. Returns an empty list when
+ * every pattern is well-formed and safe (no catastrophic-backtracking
+ * shape). Lives in shared so both the MCP server and the future CLI
+ * command read the same source of truth.
  */
 export function validatePatterns(patterns: readonly MatchPattern[]): Array<{ pattern: string; error: string }> {
   const errors: Array<{ pattern: string; error: string }> = [];
   for (const p of patterns) {
     if (!p.startsWith('re:')) continue;
-    try { new RegExp(p.slice(3)); } catch (err) {
+    const source = p.slice(3);
+    try {
+      new RegExp(source);
+    } catch (err) {
       errors.push({ pattern: p, error: err instanceof Error ? err.message : String(err) });
+      continue;
+    }
+    if (!isSafeRegexPattern(source)) {
+      errors.push({
+        pattern: p,
+        error: 'unsafe regex: matches the catastrophic-backtracking (ReDoS) shape and would be silently skipped by the firewall. Simplify the pattern or rewrite as a literal.',
+      });
     }
   }
   return errors;

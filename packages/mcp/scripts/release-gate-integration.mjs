@@ -371,6 +371,70 @@ try {
     }
   }
 
+  // ── H. Concurrency stress: 100 parallel tools/call requests ───────
+  //
+  // Agents that pipeline (Claude Code in some configurations, Cursor
+  // when batching edits) fire multiple tools/call requests before the
+  // first response returns. The MCP server processes them in event-
+  // loop order, but the cached Maps must survive concurrent reads/
+  // writes without corruption and the perf budget must hold under
+  // contention. This block fires 100 calls before awaiting any of
+  // them, then awaits all — the surface that detects ordering bugs
+  // and pathological tail latency.
+  console.log('\n[8/8] Concurrency stress (100 parallel tools/call requests)');
+  const stressContents = Array.from({ length: 100 }, (_, i) => badJsx + `\n// stress nonce ${i}\n`);
+  const stressT0 = performance.now();
+  let stressCrashed = 0;
+  let stressViolations = 0;
+  const stressResults = await Promise.allSettled(
+    stressContents.map((c) =>
+      call('verify_before_write', { filePath: join(project, 'src', 'Stress.tsx'), proposedContent: c }),
+    ),
+  );
+  for (const r of stressResults) {
+    if (r.status === 'rejected') stressCrashed++;
+    else if (r.value && r.value.violations) stressViolations += r.value.violations.length;
+  }
+  const stressElapsed = performance.now() - stressT0;
+  const stressPerCall = stressElapsed / 100;
+
+  if (stressCrashed > 0) {
+    fail(`Concurrency stress: ${stressCrashed}/100 calls rejected — race condition or queue overflow`);
+  } else {
+    pass(`Concurrency stress: 100/100 calls succeeded, ${stressViolations} total violations seen (consistent verdict)`);
+  }
+  if (stressPerCall > 50) {
+    fail(`Concurrency stress: ${stressPerCall.toFixed(2)}ms/call under load — over 50 ms budget per call`);
+  } else {
+    pass(`Concurrency stress: ${stressElapsed.toFixed(0)}ms total · ${stressPerCall.toFixed(2)}ms/call avg (budget: 50 ms/call)`);
+  }
+
+  // Verdict consistency: every call sees the same violation count.
+  // Anything else means the result-cache or config-cache is leaking
+  // state across concurrent callers.
+  const counts = new Set(
+    stressResults
+      .filter((r) => r.status === 'fulfilled')
+      .map((r) => r.value.violations.length),
+  );
+  if (counts.size > 1) {
+    fail(`Concurrency stress: violation counts diverged across parallel calls (${[...counts].join(', ')}) — cache corruption`);
+  } else {
+    pass(`Concurrency stress: all 100 calls returned identical violation count (deterministic under load)`);
+  }
+
+  // Slow-verify counter: under healthy operation this stays at 0
+  // even at p99. Bump means ESLint hit a pathological input on at
+  // least one call.
+  const statsAfter = await call('get_server_stats', {});
+  if (typeof statsAfter.slowVerifyCount !== 'number') {
+    fail(`get_server_stats missing slowVerifyCount field — soft-budget instrumentation regressed`);
+  } else if (statsAfter.slowVerifyCount > 0) {
+    fail(`Soft budget breach: ${statsAfter.slowVerifyCount} verify calls exceeded 2s budget — check stderr for paths`);
+  } else {
+    pass(`Soft budget: 0 verify calls exceeded the 2s soft budget across the entire run`);
+  }
+
 } finally {
   proc.kill();
   if (stderrLog.length > 0) {

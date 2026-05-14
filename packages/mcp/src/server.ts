@@ -217,6 +217,7 @@ export function createServer(): McpServer {
         cacheMisses: z.number().int(),
         cacheHitRate: z.number().nullable(),
         avgVerifyMs: z.number().nullable(),
+        slowVerifyCount: z.number().int(),
       },
     },
     async () => {
@@ -761,6 +762,17 @@ export function createServer(): McpServer {
 }
 
 export async function startServer(): Promise<void> {
+  // Agents that pipeline (Claude Code, Cursor batching edits) can
+  // fire many tools/call requests before the first response returns.
+  // Node's default EventEmitter limit (10) trips a noisy
+  // MaxListenersExceededWarning on stdio sockets under ~10+
+  // concurrent in-flight calls. The behavior is benign — drain
+  // listeners self-clean — but the warning pollutes production
+  // logs. Raise the limit to a value well above the realistic
+  // concurrent-agent-request count.
+  process.stdout.setMaxListeners(64);
+  process.stdin.setMaxListeners(64);
+
   const server = createServer();
   const transport = new StdioServerTransport();
   // Eat the ~1s plugin/parser-import cost ONCE on startup, before
