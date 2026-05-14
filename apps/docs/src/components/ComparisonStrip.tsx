@@ -12,6 +12,7 @@ import {
   KeyRound,
   Database,
   Cpu,
+  Terminal,
 } from 'lucide-react';
 
 /**
@@ -57,10 +58,10 @@ export function ComparisonStrip() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="max-w-2xl text-lg leading-relaxed text-gray-500"
           >
-            Nine dimensions of design, accessibility, and runtime-safety
-            quality that ESLint, type-checkers, and security scanners don’t
-            cover on their own — enforced in-editor, in CI, and deterministically
-            from a single config.
+            Ten dimensions of design, accessibility, runtime safety, and
+            agent-action gating that ESLint, type-checkers, and security
+            scanners don’t cover on their own — enforced in-editor, in CI, and
+            deterministically from a single config.
           </motion.p>
         </div>
 
@@ -151,6 +152,12 @@ const CAPABILITIES: Capability[] = [
     body: 'Hardcoded API keys, SQL/shell injection, path traversal, SSRF, open redirects, weak crypto, and disabled TLS — caught in the same lint pass.',
     example: 'eval(req.body.code)  →  flag RCE',
     Icon: KeyRound,
+  },
+  {
+    title: 'Agent Action Firewall · v0.10',
+    body: 'Pre-execution gating for shell commands the agent proposes. Built-in detection for rm -rf /, curl|sh, reverse shells, and history rewrites — sub-1ms warm.',
+    example: 'rm -rf /  →  deny (destructive-rm)',
+    Icon: Terminal,
   },
   {
     title: 'Mass-assignment & validation',

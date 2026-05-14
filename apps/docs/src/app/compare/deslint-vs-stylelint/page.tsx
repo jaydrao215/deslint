@@ -184,6 +184,10 @@ export default function DeslintVsStylelint() {
                     <td className="px-5 py-3 text-gray-700">Works with AI coding agents via MCP</td>
                     <td className="px-5 py-3"><VerdictBadge v="deslint" /></td>
                   </tr>
+                  <tr>
+                    <td className="px-5 py-3 text-gray-700">Pre-execution gate for shell commands the agent runs (Agent Action Firewall)</td>
+                    <td className="px-5 py-3"><VerdictBadge v="deslint" /></td>
+                  </tr>
                 </tbody>
               </table>
             </div>

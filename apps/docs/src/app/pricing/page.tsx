@@ -33,6 +33,7 @@ const TIERS: Tier[] = [
     features: [
       'MCP server — Claude Code, Cursor, Codex, Windsurf',
       '62 deterministic rules across design, a11y, backend safety, Next.js, and AI-coding hygiene; 14 with safe auto-fix',
+      'Agent Action Firewall — verify_shell_exec with 7 built-in dangerous-pattern checks; sub-1ms warm verdict',
       'Fix Plan in CLI, reports, and PR comments',
       'WCAG 2.2 AA compliance reports',
       'Design Health Score + quality gates',
@@ -82,6 +83,8 @@ const TIERS: Tier[] = [
       'SAML SSO + SCIM provisioning',
       'Audit logs + compliance exports',
       'Custom rule development',
+      'Hosted Policy Registry — central .deslint/policy.yml synced across every repo',
+      'Audit log of every blocked agent action and human override',
       'Dedicated success engineer',
       'SLA-backed support (< 4 h)',
       'Volume licensing',

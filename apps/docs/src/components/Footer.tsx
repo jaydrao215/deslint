@@ -14,6 +14,7 @@ const FOOTER_LINKS: Record<string, FooterLink[]> = {
     { label: 'Getting Started', href: '/docs/getting-started' },
     { label: 'Rules Reference', href: '/docs/rules' },
     { label: 'Configuration', href: '/docs/configuration' },
+    { label: 'Agent Action Firewall', href: '/firewall' },
     { label: 'Pricing', href: '/pricing' },
   ],
   Resources: [

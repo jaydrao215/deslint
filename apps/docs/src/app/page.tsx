@@ -7,6 +7,7 @@ import { getGitHubStars } from '@/lib/github-stars';
 import { getNpmWeeklyDownloads } from '@/lib/npm-downloads';
 import { VisualProofSection } from '@/components/VisualProofSection';
 import { McpLoopSection } from '@/components/McpLoopSection';
+import { AgentFirewallSection } from '@/components/AgentFirewallSection';
 import { ProductShowcase } from '@/components/ProductShowcase';
 import { OssProofSection } from '@/components/OssProofSection';
 import { WhatItCatches } from '@/components/WhatItCatches';
@@ -47,7 +48,7 @@ const JSON_LD = {
       applicationCategory: 'DeveloperApplication',
       operatingSystem: 'macOS, Linux, Windows',
       description:
-        'The verification layer for AI-generated code. 62 deterministic rules across design-system, accessibility, backend safety (secrets, SQL/shell injection, path traversal, SSRF, weak crypto, insecure cookies, permissive CORS), Next.js client/server boundary, and AI-coding hygiene (empty catches, console.log left in production, leaked stack traces, unvalidated input, mock-data in prod). Reproducible attestations and a commit trailer the merge gate re-verifies. MCP server for Claude Code, Cursor, Codex, and Windsurf.',
+        'The verification layer for AI-generated code. 62 deterministic rules across design-system, accessibility, backend safety (secrets, SQL/shell injection, path traversal, SSRF, weak crypto, insecure cookies, permissive CORS), Next.js client/server boundary, and AI-coding hygiene (empty catches, console.log left in production, leaked stack traces, unvalidated input, mock-data in prod). Agent Action Firewall pre-gates shell commands the agent proposes (verify_shell_exec) with built-in detection for rm -rf /, curl | sh, reverse shells, and history rewrites — local YAML policy, sub-1ms warm verdict. Reproducible attestations and a commit trailer the merge gate re-verifies. MCP server for Claude Code, Cursor, Codex, and Windsurf.',
       url: 'https://deslint.com',
       offers: [
         {
@@ -71,11 +72,12 @@ const JSON_LD = {
       ],
       featureList: [
         '62 deterministic rules across design, accessibility, backend safety, and AI-coding antipatterns',
+        'Agent Action Firewall: pre-execution gating for shell commands (verify_shell_exec) with 7 built-in dangerous-pattern checks (rm -rf, curl|sh, reverse shells, history rewrites)',
         'Backend pack: hardcoded secrets, SQL/shell injection, path traversal, SSRF, weak crypto, open redirect, JWT expiry, insecure cookies',
         'Next.js pack: client/server boundary, server-only imports in client bundles, hydration mismatch, leaked env vars',
         'AI-coding hygiene: async useEffect, unwrapped async route handlers, mass-assignment, placeholder code, hardcoded localhost',
         'Reproducible attestations and commit-trailer verification',
-        'MCP server for Claude Code, Cursor, Codex, Windsurf',
+        'MCP server with 12 tools for Claude Code, Cursor, Codex, Windsurf',
         'ESLint plugin for React, Vue, Svelte, Angular, Astro',
         'CLI with coverage reports and auto-fix',
         'GitHub Action with PR comments and trailer verification',
@@ -133,6 +135,7 @@ export default async function Home() {
         <TrustBanner />
         <VisualProofSection />
         <McpLoopSection />
+        <AgentFirewallSection />
         <ProductShowcase />
         <OssProofSection />
         <WhatItCatches />
