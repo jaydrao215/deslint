@@ -1,5 +1,23 @@
 # @deslint/cli
 
+## 0.10.0
+
+### Minor Changes
+
+- Version bumped alongside the workspace 0.10.0 release. No CLI
+  command changes vs 0.9.0. The CLI continues to use `@deslint/shared`
+  as the source of truth for design-system tokens, budget loading,
+  and (new in 0.10.0) Agent Action Firewall policy parsing — so a
+  future `deslint policy validate` subcommand can be added without
+  re-installing the CLI.
+
+## 0.9.0
+
+### Minor Changes
+
+- Workspace bumped to 0.9.0 alongside the MCP fast-path work. CLI
+  command surface unchanged.
+
 ## 0.8.0
 
 ### Minor Changes

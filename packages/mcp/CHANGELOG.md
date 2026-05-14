@@ -1,5 +1,40 @@
 # @deslint/mcp
 
+## 0.10.0
+
+### Minor Changes
+
+- Agent Action Firewall — `verify_shell_exec` pre-execution gate. Agent
+  passes a candidate command; server reads `.deslint/policy.yml` and
+  returns deterministic `allow` / `warn` / `deny` + reason + matched
+  pattern. Built-in detection for `rm -rf /`, `curl | sh`, reverse
+  shells, history rewrites, miners, sudo, process substitution.
+  Sub-1 ms warm; identical-command cache hit instant.
+- Production-grade hardening: `safe-regex2` validates user policy
+  regex patterns at load (ReDoS guard); soft 2-second verify budget
+  with structured stderr telemetry on slow paths; `slowVerifyCount`
+  exposed via `get_server_stats`. EventEmitter limits raised so
+  parallel agent calls don't trip `MaxListenersExceededWarning`.
+- YAML policy parsing via `js-yaml` (now a direct dep — the previous
+  optional-peer-dep dance silently no-op'd YAML policies on a fresh
+  install).
+- Total tool count: 12 (was 11). All 12 exercised by a tarball-install
+  release-gate integration script run before each publish.
+
+## 0.9.0
+
+### Minor Changes
+
+- MCP performance pass: in-process `Linter.verify` fast path (no temp
+  file, no engine spin-up), preloaded on startup, with module-level
+  result + config caches. Cold ~1 s; warm 3-7 ms; identical-content
+  cache hit ~0.05 ms with `cached: true`.
+- `quick_check` for the "is this even worth a full verify?" decision
+  (200-byte payload); `scan_diff` for diff-scoped linting;
+  `get_server_stats` for per-session telemetry.
+- The `/deslint-fix` prompt template hard-caps verify at twice per
+  file per turn — never an indefinite retry loop.
+
 ## 0.8.0
 
 ### Minor Changes

@@ -1,5 +1,29 @@
 # @deslint/shared
 
+## 0.10.0
+
+### Minor Changes
+
+- New `policy-schema.ts` — Zod schema + helpers for the Agent Action
+  Firewall policy DSL. Exports `FirewallPolicySchema`,
+  `ShellExecPolicySchema`, `parsePolicy`, `safeParsePolicy`,
+  `compileMatchers`, `validatePatterns`, `resolveSeverity`. Sections
+  reserved for all five interceptor families (`shellExec`,
+  `outboundRequest`, `fileRead`, `secretAccess`, `gitOp`) so users
+  can author the whole policy now and the firewall progressively
+  enforces each section as the corresponding interceptor lands.
+- `safe-regex2` added as a dependency. `compileMatchers` rejects
+  catastrophic-backtracking patterns silently (firewall stays up on
+  a misconfigured policy); `validatePatterns` surfaces them with a
+  descriptive error for `deslint policy validate` to print.
+
+## 0.9.0
+
+### Minor Changes
+
+- Shared package bumped alongside MCP 0.9 to unblock the workspace
+  dependency chain after the MCP fast-path work.
+
 ## 0.8.0
 
 ### Minor Changes

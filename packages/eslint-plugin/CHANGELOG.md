@@ -1,5 +1,28 @@
 # @deslint/eslint-plugin
 
+## 0.10.0
+
+### Minor Changes
+
+- Version bumped alongside the workspace 0.10.0 release. No rule
+  changes vs 0.9.0; all 1,735 plugin tests pass against the same
+  shadcn-ui snapshot used by 0.9.0. The bump keeps the four
+  workspace packages on a single coordinated version so consumers
+  installing `@deslint/eslint-plugin@latest` and `@deslint/cli@latest`
+  always pair compatible internal types.
+- The integration release-gate now runs `verify_before_write` through
+  the MCP server against 10 real shadcn-ui production .tsx files
+  before every publish — zero parse-error tolerance, sane
+  errors-per-file budget enforced. The plugin's rule behaviour is
+  the underlying gate.
+
+## 0.9.0
+
+### Minor Changes
+
+- Workspace bumped to 0.9.0 alongside the MCP fast-path work.
+  No rule-level changes vs 0.8.0.
+
 ## 0.8.0
 
 ### Minor Changes
