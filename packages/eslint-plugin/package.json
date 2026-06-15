@@ -80,13 +80,13 @@
     }
   },
   "dependencies": {
-    "@typescript-eslint/utils": "^8.0.0"
+    "@typescript-eslint/utils": "^8.61.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@html-eslint/parser": "^0.59.0",
     "@types/node": "^25.5.0",
-    "@typescript-eslint/parser": "^8.0.0",
+    "@typescript-eslint/parser": "^8.61.0",
     "@typescript-eslint/rule-tester": "^8.0.0",
     "@vitest/coverage-v8": "^3.0.0",
     "astro-eslint-parser": "^1.2.2",
