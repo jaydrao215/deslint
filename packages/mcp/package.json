@@ -44,11 +44,11 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@clack/prompts": "^1.2.0",
+    "@clack/prompts": "^1.7.0",
     "@deslint/cli": "workspace:^",
     "@deslint/eslint-plugin": "workspace:^",
     "@deslint/shared": "workspace:*",
-    "eslint": "^10.0.0",
+    "eslint": "^9.39.5",
     "js-yaml": "^4.1.0",
     "zod": "^3.23.0"
   },

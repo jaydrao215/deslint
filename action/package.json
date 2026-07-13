@@ -18,8 +18,8 @@
     "@deslint/eslint-plugin": "workspace:*",
     "@deslint/shared": "workspace:*",
     "@sigstore/bundle": "^4.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "eslint": "^9.27.0",
+    "@typescript-eslint/parser": "^8.63.0",
+    "eslint": "^9.39.5",
     "glob": "^13.0.6",
     "minimatch": "^10.0.1",
     "sigstore": "^4.1.0"
